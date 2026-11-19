@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Check, Copy, QrCode } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import { createRoomInvite, listRoomInvites, revokeRoomInvite, roomInviteUrl } from "../../rooms/client";
 import { ROOM_MAX_MEMBERS, type RoomInviteRole, type RoomInviteSummary, type RoomViewerSnapshot } from "../../rooms/contracts";
+import { EmptyState, Loading } from "../../design-system/kit";
 import { RoomChoice } from "./RoomCreateForm";
 import {
   INVITE_EXPIRY_OPTIONS,
@@ -44,17 +45,17 @@ function NewInviteLink({ url, role }: { url: string; role: RoomInviteRole }) {
     }
   };
   return (
-    <div className={css({ mt: "0.75rem", display: "grid", gap: "0.65rem", border: "1px solid var(--ink)", bg: "var(--paper)", p: "0.75rem" })}>
+    <div className="rm-created-invite">
       <p className={css({ fontSize: "0.75rem", fontWeight: 750 })}>New {role} link. Copy it now; it is shown only once.</p>
-      <div className={css({ display: "grid", justifyItems: "center", bg: "#f6f2e8", border: "1px solid var(--ink)", p: "0.4rem" })}>
-        {qr ? <img src={qr} alt={`QR code that opens the ${role} invitation`} width={208} height={208} /> : <span className={s.help}>Rendering QR code…</span>}
+      <div className="rm-qr k-grid">
+        {qr ? <img src={qr} alt={`QR code that opens the ${role} invitation`} width={208} height={208} /> : <Loading size="inline" label="Rendering QR code…" />}
       </div>
       <label>
         <span className={css({ srOnly: true })}>Invitation link</span>
-        <input readOnly className={s.input} style={{ fontFamily: "var(--mono-body)", fontSize: "0.68rem" }} value={url} onFocus={(event) => event.currentTarget.select()} />
+        <input readOnly className="k-input" style={{ fontFamily: "var(--mono-body)", fontSize: "0.68rem" }} value={url} onFocus={(event) => event.currentTarget.select()} />
       </label>
-      <button type="button" className={s.button} onClick={() => void copy()}>
-        {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />} {copied ? "Copied" : "Copy link"}
+      <button type="button" className="k-button k-ghost k-sm" onClick={() => void copy()}>
+        {copied ? <KeatingGlyph name="check" size={13} /> : <KeatingGlyph name="copy" size={13} />} {copied ? "Copied" : "Copy link"}
       </button>
       {copyError ? <p role="alert" className={s.error}>{copyError}</p> : null}
     </div>
@@ -107,7 +108,7 @@ export function RoomInvitesPanel({ snapshot }: { snapshot: RoomViewerSnapshot })
   if (!snapshot.permissions.canInvite) {
     return (
       <section aria-labelledby={`${id}-heading`} className={s.section}>
-        <h2 id={`${id}-heading`} className={s.heading}>Invitations</h2>
+        <h2 id={`${id}-heading`} className="rm-heading">Invitations</h2>
         <p className={s.help}>
           {snapshot.room.status === "ended"
             ? "The room has ended, so no new invitations can be made."
@@ -144,7 +145,7 @@ export function RoomInvitesPanel({ snapshot }: { snapshot: RoomViewerSnapshot })
 
   return (
     <section aria-labelledby={`${id}-heading`} className={s.section}>
-      <h2 id={`${id}-heading`} className={s.heading}><QrCode size={15} aria-hidden="true" className={css({ display: "inline", mr: "0.3rem", verticalAlign: "-2px" })} />Invite people</h2>
+      <h2 id={`${id}-heading`} className="rm-heading"><KeatingGlyph name="qr" size={15} className={css({ display: "inline", mr: "0.3rem", verticalAlign: "-2px" })} />Invite people</h2>
       <p className={s.help}>Anyone with the link signs in, sees what joining shares, and then chooses to join.</p>
       <div className={css({ mt: "0.65rem", display: "grid", gap: "0.65rem" })}>
         {roles.length > 1 ? (
@@ -162,14 +163,14 @@ export function RoomInvitesPanel({ snapshot }: { snapshot: RoomViewerSnapshot })
         <div className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem" })}>
           <label className={s.field}>
             <span className={s.fieldLabel}>Expires after</span>
-            <select className={s.input} value={hours} onChange={(event) => setHours(Number(event.target.value))}>
+            <select className="k-input" value={hours} onChange={(event) => setHours(Number(event.target.value))}>
               {INVITE_EXPIRY_OPTIONS.map((option) => <option key={option.hours} value={option.hours}>{option.label}</option>)}
             </select>
           </label>
           <label className={s.field}>
             <span className={s.fieldLabel}>Uses</span>
             <input
-              className={s.input}
+              className="k-input"
               type="number"
               inputMode="numeric"
               min={1}
@@ -181,7 +182,7 @@ export function RoomInvitesPanel({ snapshot }: { snapshot: RoomViewerSnapshot })
           </label>
         </div>
         <button type="button" className={s.primary} disabled={creating} onClick={() => void create()}>
-          {creating ? "Creating link…" : "Create invite link"}
+          {creating ? <Loading size="inline" label="Creating link…" /> : "Create invite link"}
         </button>
       </div>
       {created ? <NewInviteLink url={created.url} role={created.role} /> : null}
@@ -196,9 +197,9 @@ export function RoomInvitesPanel({ snapshot }: { snapshot: RoomViewerSnapshot })
           <button type="button" className={s.quiet} onClick={() => void load()}>Try again</button>
         </div>
       ) : invites === null ? (
-        <p className={s.help}>Loading…</p>
+        <Loading label="Loading…" />
       ) : invites.length === 0 ? (
-        <p className={s.help}>No invitation links yet.</p>
+        <EmptyState glyph="share" heading="No invitation links yet." />
       ) : (
         <ul className={css({ mt: "0.35rem", display: "grid", gap: "0.35rem" })}>
           {invites.map((invite) => {

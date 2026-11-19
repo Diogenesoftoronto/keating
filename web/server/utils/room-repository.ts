@@ -7,7 +7,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import type { Storage } from "unstorage";
 import { z } from "zod";
 import { courseRoleSchema } from "../../src/courses/contracts";
-import { broadcastRoomChange } from "./room-realtime";
+import { keatingRunState } from "../../src/components/rooms/room-ui";
+import { broadcastRoomChange, presentAccountIds } from "./room-realtime";
 import {
   roomCreateInputSchema,
   roomInviteSchema,
@@ -41,7 +42,7 @@ import {
   RoomAuthorizationError,
   RoomConflictError,
   RoomNotFoundError,
-  roomListItem,
+  roomListItem as baseRoomListItem,
   roomMessagesBefore,
 } from "../../src/rooms/operations";
 
@@ -324,6 +325,25 @@ export async function currentRoom(roomId: string): Promise<Room | null> {
   const cached = (repositoryScope.getStore()?.cache ?? roomCache).get(roomId);
   if (cached && !cached.context.courseId) return cached;
   return withRoomLock(roomId, async () => (await loadRecord(roomId))?.room ?? null);
+}
+
+function roomListItem(room: Room, accountId: string): RoomListItem {
+  const item = baseRoomListItem(room, accountId);
+  if (!item.joined) return item;
+
+  const now = nowMs();
+  const run = keatingRunState(projectRoomForViewer(room, accountId, { now }), now);
+  item.keating = run.kind;
+  if (run.kind === "running") item.viewerIsFacilitator = run.self;
+
+  const connected = new Set(presentAccountIds(room.id));
+  if (connected.size) {
+    const members = room.members.filter(member => connected.has(member.accountId));
+    members.sort((a, b) => Number(b.accountId === accountId) - Number(a.accountId === accountId));
+    item.presentCount = members.length;
+    item.present = members.slice(0, 5).map(({ accountId, displayName, role }) => ({ accountId, displayName, role }));
+  }
+  return item;
 }
 
 export async function listRoomsForAccount(accountId: string): Promise<RoomListItem[]> {

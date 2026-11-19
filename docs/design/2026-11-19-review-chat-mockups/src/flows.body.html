@@ -1,0 +1,216 @@
+<div class="wrap">
+<p class="lede"><b>Live, self-paced courses and building a course.</b> Three parts of Keating that had no drawing yet and still wore the older style. Sample data throughout. Frames are a 1120px viewport scaled to fit; open full screen to use them at size.</p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+<!-- ═══════════════ V1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">V1</span><h2>Live with Keating</h2><p>One screen to get ready, one to talk. What is being sent and kept is said before you start.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt duo" data-enter="panes">
+    <div class="pane"><span class="cap">Before you start</span>
+      <div class="pfl">
+        <div class="row m1-halftone" style="gap:12px"><i class="bot" style="width:56px;height:56px"></i><div><h3>Talk it through out loud</h3><span class="soft" style="font-size:12px">Keating listens, asks, and can look at what you show it.</span></div></div>
+        <div class="sec">
+          <div class="sr"><div><b>Who you talk to</b><span>Select a Live provider</span></div><span class="slt">Tavus KeatingBot {{i:chev:s}}</span></div>
+          <div class="sr"><div><b>Model</b><span>Interactive Tavus video PAL with voice, vision, and Magic Canvas activities.</span></div><span class="slt">KeatingBot PAL {{i:chev:s}}</span></div>
+          <div class="sr"><div><b>Start with</b><span>The Tavus call requests camera and microphone access in its secure video surface.</span></div><div class="seg"><span class="on">{{i:mic:s}}Voice</span></div></div>
+        </div>
+        <div class="call">{{i:info:s}}<span><b>What is kept</b><br>Your transcript is saved to this conversation when you end. Tavus handles the audio and any visual input you share. Keating has no retention period to display for this provider.</span></div>
+        <div class="fail"><b>Tavus Live is unavailable</b><span>This deployment has not enabled the Not Organic account service required by Tavus Live.</span><div class="row"><button class="b sm pri">Choose a live model</button></div></div>
+        <div class="row"><button class="b gh" style="padding-left:0">{{i:left:s}}Back to the conversation</button><span class="sp"></span><button class="b pri" disabled>{{i:wave:s}}Start talking</button></div>
+      </div>
+    </div>
+    <div class="pane"><span class="cap">In a session · native audio</span><div class="row m1-halftone"><b>Live with Keating</b><span class="sp"></span><span class="slt">Gemini Live {{i:chev:s}}</span></div>
+      <div class="lvs"><span class="who">Keating &middot; speaking</span><i class="bot"></i><div class="wv"><i style="height:30%"></i><i style="height:70%"></i><i style="height:100%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:35%"></i><i style="height:60%"></i><i style="height:20%"></i></div><div class="pip m1-grid">Your camera is off</div></div>
+      <div class="ctl"><span class="st-dot ok"><i></i>Live &middot; 02:14</span><span class="sp"></span>
+        <button class="ib" title="Mute your microphone">{{i:mic}}</button><button class="ib" title="Turn your camera on">{{i:cameraoff}}</button><button class="ib" title="Share your screen">{{i:screen}}</button><button class="ib" title="Add an image">{{i:image}}</button><button class="b end">{{i:hangup:s}}End</button></div>
+      <div class="said">
+        <span class="eb mu">You &middot; 02:01</span><p>So the base case is what stops it from going forever?</p>
+        <span class="eb">Keating &middot; 02:06</span><p class="prose" style="font-size:14px">Yes. Now turn it around: what would you see on the stack if the base case were missing?</p>
+        <span class="eb mu">You &middot; now</span><p class="live">It would keep adding calls until&hellip;</p>
+        <div class="row" style="margin-top:2px"><span class="mono faint" style="font-size:9.5px">{{i:lock:s}} Saved to this session when you end</span><span class="sp"></span><button class="b sm ln" aria-pressed="true">Captions on</button></div>
+      </div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>Setup shows provider, model, start mode and retention information before Start talking.</li>
+    <li>Call controls depend on what the selected model can do. End is the filled red control.</li>
+    <li>The transcript stays below the stage. Captions can be turned off.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ SP1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">SP1</span><h2>Self-paced courses</h2><p>Start from a paper or a topic, see the plan, then work through it with the evidence counted.</p></div>
+<div class="m2-stack">
+    <div class="kt m2-frame">
+    <div class="m2-grid">
+    <div class="m2-stack"><span class="cap">Library</span><div class="kt m2-course-shell"><header class="top"><h3>Self-paced courses</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="More actions" title="More actions" >{{i:more:s}}</button></header><div class="m2-frame m2-stack">
+    <div class="m2-stack"><div class="m1-halftone m2-card-body"><div class="m2-row"><i class="bot" aria-hidden="true"></i>
+    <div class="m2-stack"><h3>Study one thing at your own pace</h3><p>Bring a paper or name a topic. Keating drafts a plan you approve.</p></div></div></div>
+    <details><summary>Start another course</summary><div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Start a course</h3></header><div class="m2-card-body m2-stack"><label class="fld">Paper or topic<input class="inp" value="Attention Is All You Need"></label><label class="fld">Link (optional)<input class="inp" value=""></label><label class="fld">What you already know (optional)<textarea class="inp" rows="2"></textarea></label><details><summary>Text to study from (optional)</summary><label class="fld">Text to study from<textarea class="inp" rows="2"></textarea></label></details><label class="fld">What do you want to be able to do?<textarea class="inp" rows="2">Explain self-attention to a colleague and implement one head.</textarea></label><small class="m2-meta">Drafting uses your Chat model and up to 2,400 output tokens. Input and output count toward your 60,000-token course limit.</small></div><footer class="m2-row"><span class="sp"></span><button type="button" class="b sm pri" >{{i:route:s}}Draft a plan</button></footer></div></details><h3>Your courses</h3><ul class="m2-items"><li class="m2-card-body"><div class="m2-row">
+    <div class="m2-stack"><h3>Bayes’ theorem from a medical test</h3><small class="m2-meta">In progress · next: Explain the prior · 3 activities · Medical tests</small></div><span class="sp"></span><button type="button" class="b sm pri" >Continue</button></div></li><li class="m2-card-body"><div class="m2-row">
+    <div class="m2-stack"><h3>How a transformer reads a sentence</h3><small class="m2-meta">Plan drafted · waiting for you to approve · 3 activities · Medical tests</small></div><span class="sp"></span><button type="button" class="b sm ln" >Review plan</button></div></li><li class="m2-card-body"><div class="m2-row">
+    <div class="m2-stack"><h3>Reading a nutrition label</h3><small class="m2-meta">Complete · review your work · 3 activities · Medical tests</small></div><span class="sp"></span><button type="button" class="b sm gh" >Open</button></div></li></ul></div></div></div></div>
+    <div class="m2-stack"><span class="cap">Draft</span><div class="kt m2-course-shell"><header class="top"><button type="button" class="b sm gh" >{{i:left:s}}All courses</button><h3>Self-paced courses</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="More actions" title="More actions" >{{i:more:s}}</button></header><div class="m2-frame m2-stack">
+    <header class="m2-stack m1-halftone"><h3>How a transformer reads a sentence</h3><p><b>You will be able to:</b> Explain why a positive test is rarely 99% bad news.</p><small class="m2-meta">Source: Medical tests · no text supplied</small><details><summary>Before you start (1)</summary><p>Basic percentages</p></details></header>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Review this plan</h3></header><div class="m2-card-body m2-stack"><p>Skip anything you already know, then approve the plan. Keating starts preparing activities after you approve.</p></div><footer class="m2-row"><button type="button" class="b sm gh" >Discard</button><span class="sp"></span><button type="button" class="b sm pri" >Approve and start preparing</button></footer></div><h3>Plan</h3><ol class="m2-items m2-card"><li class="m2-step"><span data-glyph-host>{{i:chevr:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>1 · Read a test result</h3><small class="m2-meta">Learn · Ready</small></div><span class="sp"></span><button type="button" class="b sm gh" >I already know this</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:chevr:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>2 · Explain the prior</h3><small class="m2-meta">Practice · After the previous activity</small></div><span class="sp"></span><button type="button" class="b sm gh" >I already know this</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:lock:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>3 · Apply it to a news story</h3><small class="m2-meta">Apply · final task · After the previous activity</small></div><span class="sp"></span></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li></ol><details><summary>Plan changes (0)</summary></details></div></div></div>
+    <div class="m2-stack"><span class="cap">Active course</span><div class="kt m2-course-shell"><header class="top"><button type="button" class="b sm gh" >{{i:left:s}}All courses</button><h3>Self-paced courses</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="More actions" title="More actions" >{{i:more:s}}</button></header><div class="m2-frame m2-stack">
+    <header class="m2-stack m1-halftone"><h3>Bayes’ theorem from a medical test</h3><p><b>You will be able to:</b> Explain why a positive test is rarely 99% bad news.</p><small class="m2-meta">Source: Medical tests · no text supplied</small><details><summary>Before you start (1)</summary><p>Basic percentages</p></details></header>
+    <div class="m2-grid">
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Where you are</h3></header><div class="m2-card-body m2-stack"><h3>Step 2 of 3</h3><p>Next: Explain the prior. 1 of 3 activities done.</p><div class="steps6"><i class="dn"></i><i class="cu"></i><i class=""></i></div><small class="m2-meta">Without help 0 · With help 0</small><details><summary>Evidence by kind</summary></details></div><footer class="m2-row"><button type="button" class="b sm pri" >Continue</button></footer></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Preparation</h3></header><div class="m2-card-body m2-stack"><p>All 3 activities are prepared.</p><small class="m2-meta">Activities ready · 3 of 3</small><span class="hb"><u style="width:100%"></u></span><small class="m2-meta">Token budget · 11,200 of 60,000</small><span class="hb ink"><u style="width:19%"></u></span><small class="m2-meta">Preparation never goes past the limit without asking.</small></div></div></div><h3>Plan</h3><ol class="m2-items m2-card"><li class="m2-step"><span data-glyph-host>{{i:check:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>1 · Read a test result</h3><small class="m2-meta">Learn · Done</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Review</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:chevr:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>2 · Explain the prior</h3><small class="m2-meta">Practice · Now</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Open</button><button type="button" class="b sm gh" >I already know this</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:lock:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>3 · Apply it to a news story</h3><small class="m2-meta">Apply · final task · After the previous activity</small></div><span class="sp"></span></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li></ol><details><summary>Plan changes (0)</summary></details></div></div></div>
+    <div class="m2-stack"><span class="cap">Open activity</span><div class="kt m2-course-shell"><header class="top"><button type="button" class="b sm gh" >{{i:left:s}}All courses</button><h3>Self-paced courses</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="More actions" title="More actions" >{{i:more:s}}</button></header><div class="m2-frame m2-stack">
+    <header class="m2-stack m1-halftone"><h3>Bayes’ theorem from a medical test</h3><p><b>You will be able to:</b> Explain why a positive test is rarely 99% bad news.</p><small class="m2-meta">Source: Medical tests · no text supplied</small><details><summary>Before you start (1)</summary><p>Basic percentages</p></details></header>
+    <div class="m2-grid">
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Where you are</h3></header><div class="m2-card-body m2-stack"><h3>Step 2 of 3</h3><p>Next: Explain the prior. 1 of 3 activities done.</p><div class="steps6"><i class="dn"></i><i class="cu"></i><i class=""></i></div><small class="m2-meta">Without help 0 · With help 0</small><details><summary>Evidence by kind</summary></details></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Preparation</h3></header><div class="m2-card-body m2-stack"><p>All 3 activities are prepared.</p><small class="m2-meta">Activities ready · 3 of 3</small><span class="hb"><u style="width:100%"></u></span><small class="m2-meta">Token budget · 11,200 of 60,000</small><span class="hb ink"><u style="width:19%"></u></span><small class="m2-meta">Preparation never goes past the limit without asking.</small></div></div></div><h3>Plan</h3><ol class="m2-items m2-card"><li class="m2-step"><span data-glyph-host>{{i:check:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>1 · Read a test result</h3><small class="m2-meta">Learn · Done</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Review</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step m2-current"><span data-glyph-host>{{i:chevr:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>2 · Explain the prior</h3><small class="m2-meta">Practice · Now</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Close</button><button type="button" class="b sm gh" >I already know this</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><span data-glyph-host>{{i:edit:s}}</span><h3>Explain the prior</h3><span class="m2-label">Practice</span><span class="sp"></span><button type="button" class="b sm gh" >Show the notes</button></header><div class="m2-card-body m2-stack"><p>Answer without opening the notes or a hint to count it as independent work.</p><h3>Question 1</h3><p>How does the base rate change the result?</p><label class="fld">Your answer<textarea class="inp" rows="2"></textarea></label><div class="m2-row"><button type="button" class="b sm gh" >{{i:bulb:s}}Show a hint</button><span class="sp"></span><button type="button" class="b sm pri" disabled>{{i:check:s}}Check this answer</button></div></div></div></div></li><li class="m2-step"><span data-glyph-host>{{i:lock:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>3 · Apply it to a news story</h3><small class="m2-meta">Apply · final task · After the previous activity</small></div><span class="sp"></span></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li></ol><details><summary>Plan changes (0)</summary></details></div></div></div>
+    <div class="m2-stack"><span class="cap">Finished course</span><div class="kt m2-course-shell"><header class="top"><button type="button" class="b sm gh" >{{i:left:s}}All courses</button><h3>Self-paced courses</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="More actions" title="More actions" >{{i:more:s}}</button></header><div class="m2-frame m2-stack">
+    <header class="m2-stack m1-halftone"><h3>Reading a nutrition label</h3><p><b>You will be able to:</b> Explain why a positive test is rarely 99% bad news.</p><small class="m2-meta">Source: Medical tests · no text supplied</small><details><summary>Before you start (1)</summary><p>Basic percentages</p></details></header>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Course complete</h3></header><div class="m2-card-body m2-stack"><div class="m2-row"><i class="bot" aria-hidden="true"></i><p>You finished the final task without help. Your materials and answers stay here, and you can download them.</p></div></div></div>
+    <div class="m2-grid">
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Where you are</h3></header><div class="m2-card-body m2-stack"><p>All done. 3 of 3 activities done.</p><div class="steps6"><i class="dn"></i><i class="dn"></i><i class="dn"></i></div><small class="m2-meta">Without help 2 · With help 0</small><details><summary>Evidence by kind</summary></details></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><h3>Preparation</h3></header><div class="m2-card-body m2-stack"><p>All 3 activities are prepared.</p><small class="m2-meta">Activities ready · 3 of 3</small><span class="hb"><u style="width:100%"></u></span><small class="m2-meta">Token budget · 11,200 of 60,000</small><span class="hb ink"><u style="width:19%"></u></span><small class="m2-meta">Preparation never goes past the limit without asking.</small></div></div></div><h3>Plan</h3><ol class="m2-items m2-card"><li class="m2-step"><span data-glyph-host>{{i:check:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>1 · Read a test result</h3><small class="m2-meta">Learn · Done</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Review</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:check:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>2 · Explain the prior</h3><small class="m2-meta">Practice · Done</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Review</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li><li class="m2-step"><span data-glyph-host>{{i:check:s}}</span>
+    <div class="m2-stack"><div class="m2-row">
+    <div class="m2-stack"><h3>3 · Apply it to a news story</h3><small class="m2-meta">Apply · final task · Done</small></div><span class="sp"></span><button type="button" class="b sm gh" >{{i:chev:s}}Review</button></div><details><summary>Why this activity?</summary><p>Explain the result from the base rate.</p><small>From: Worked medical test example</small></details></div></li></ol><details><summary>Plan changes (0)</summary></details></div></div></div></div></div></div><ol class="pts"><li>Draft approval starts preparation. Before approving, learners can skip work they already know.</li><li>Where you are counts completed activities. Preparation tracks ready materials and the token budget.</li><li>Activities open inside the plan. The final task requires evidence without help.</li></ol>
+</section>
+
+<!-- ═══════════════ CB1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">CB1</span><h2>Building a course</h2><p>The outline is the spine. Everything a teacher adds hangs from a place in it.</p></div>
+  <div class="kt scr m2-course-shell m2-builder" data-enter="dash">
+    <header class="top"><button type="button" class="ib sm" aria-label="Back to courses" title="Back to courses" >{{i:left:s}}</button><div class="ttl"><b>Recursion from first principles</b></div><button type="button" class="ib sm" aria-label="Switch course" title="Switch course" >{{i:chev:s}}</button><span class="chip">Owner</span><span class="sp"></span><button type="button" class="b sm ln" >{{i:search:s}}Search this course</button><button type="button" class="b sm ln" >{{i:plus:s}}Add</button><button type="button" class="b sm ln" >Keating</button><button type="button" class="b sm ln" >Invite</button><small class="m2-meta">▪ offline</small></header>
+    <div class="sub"><div class="tabs"><span>{{i:book:s}}Read</span><span>{{i:message:s}}Discuss</span><span>{{i:checklist:s}}Review</span><span class="on">{{i:tool:s}}Build</span></div><span class="sp"></span><button type="button" class="b sm ln">Outline</button><button type="button" class="b sm gh" >{{i:people:s}}People</button></div>
+    <div class="m2-frame m2-stack"><small class="m2-meta">▪ Saved 2:14</small><div class="call"><span>Review course design checks saved objectives, teaching order, assessments, instructions and answer support.</span></div></div>
+    <div class="bld">
+      <nav class="bld-n" data-w>
+        <a class="tr">{{i:info:s}}<span></span><span class="ex">Details</span><span></span></a>
+        <a class="tr on">{{i:tree:s}}<span></span><span class="ex">Outline</span><span class="cnt">12</span></a>
+        <a class="tr">{{i:doc:s}}<span></span><span class="ex">Documents</span><span class="cnt">4</span></a>
+        <a class="tr">{{i:checklist:s}}<span></span><span class="ex">Assignments</span><span class="cnt">2</span></a>
+        <a class="tr">{{i:shapes:s}}<span></span><span class="ex">Artifacts</span><span class="cnt">3</span></a>
+        <a class="tr">{{i:layers:s}}<span></span><span class="ex">Cards</span><span class="cnt">28</span></a>
+        <a class="tr">{{i:people:s}}<span></span><span class="ex">People</span><span class="cnt">9</span></a>
+      </nav>
+      <div class="bld-m" data-w>
+        <div class="row"><h3>The spine</h3><span class="soft" style="font-size:11.5px">Modules hold lessons in the order a learner meets them.</span></div>
+        <div class="mod">
+          <div class="mod-h"><b>1 &middot; Calls</b><small>3 lessons</small><span class="sp"></span><button class="ib sm" title="Rename module">{{i:edit:s}}</button><button class="ib sm" title="Remove module">{{i:trash:s}}</button></div>
+          <div class="lrow"><span class="no">1</span><span>Functions call functions</span><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" disabled>{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" >{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+          <div class="lrow"><span class="no">2</span><span>A function calls itself</span><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" >{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" >{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+          <div class="lrow"><span class="no">3</span><span>Pause and resume</span><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" >{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" disabled>{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+          <div class="addl"><div class="inp pl">New lesson in Calls</div><button class="b sm ln">{{i:plus:s}}Lesson</button></div>
+        </div>
+        <div class="mod">
+          <div class="mod-h"><b>2 &middot; The stack</b><small>4 lessons</small><span class="sp"></span><button class="ib sm" title="Rename module">{{i:edit:s}}</button><button class="ib sm" title="Remove module">{{i:trash:s}}</button></div>
+          <div class="lrow"><span class="no">4</span><span>Predicting output</span><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" disabled>{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" >{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+          <div class="lrow on m2-current"><span class="no">5</span><b style="font-weight:600">The call stack</b><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" >{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" >{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+          <div class="lrow"><span class="no">6</span><span>Base cases</span><span class="acts"><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" >{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" disabled>{{i:down:s}}</button><button type="button" class="ib sm" aria-label="Remove lesson" title="Remove lesson" >{{i:trash:s}}</button></span></div>
+        </div>
+        <div class="addl" style="border:1px dashed var(--line);border-radius:4px"><div class="inp pl">New module title</div><button class="b sm ln">{{i:plus:s}}Module</button></div>
+      </div>
+      <aside class="bld-e" data-w><header class="m2-phone-only m1-halftone"><h3>Edit lesson</h3><button class="ib sm" aria-label="Close lesson editor">{{i:x:s}}</button></header>
+        <div class="row"><span class="eb">Lesson 5</span><span class="sp"></span><button class="ib sm" title="Remove lesson">{{i:trash:s}}</button></div>
+        <div class="two-c" style="grid-template-columns:minmax(0,1fr) 74px"><div class="fld"><label>Title</label><div class="inp">The call stack</div></div><div class="fld"><label>Minutes</label><div class="inp">25</div></div></div>
+        <label class="fld">Summary<textarea class="inp" rows="2">Trace a paused call and its eventual return.</textarea></label><div class="fld"><label>By the end, a learner can <span class="faint">one per line</span></label><div class="inp" style="min-height:44px">Draw the stack for a three-deep call<br>Say which call returns first</div></div>
+        <div class="fld"><label>Reading</label><div class="inp" style="min-height:62px;font-family:var(--ui);font-size:13px">Each time a function calls another, the caller is set aside with everything it knew&hellip;</div></div>
+        <div class="m2-stack"><div class="m2-row"><h3>Practice question</h3><span class="sp"></span><button type="button" class="b sm ln" >Remove question</button></div><label class="fld">Question prompt<textarea class="inp" rows="2">Which call returns first?</textarea></label><label class="fld">Answer field hint (optional)<input class="inp" value=""></label><label class="fld">Rubric<textarea class="inp" rows="2">Name the most recent frame.</textarea></label><div class="m2-row"><span class="chip">0 documents</span><span class="chip">0 artifacts</span><span class="chip">0 assignments</span><span class="chip">0 cards</span></div></div>
+        <div class="unsaved"><span class="st-dot warn"><i></i>2 unsaved changes</span><span class="sp"></span><button class="b sm ln">Discard</button><button class="b sm pri">{{i:save:s}}Save lesson</button></div>
+      </aside>
+    </div>
+  </div>
+<div class="kt m2-frame">
+    <div class="m2-grid">
+    <div class="m2-stack"><span class="cap">Details</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm m2-current" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm gh" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>What this course is</h3></header><label class="fld">Title<input class="inp" value="Recursion from first principles"></label><label class="fld">Description<textarea class="inp" rows="2">Trace and explain recursive calls.</textarea></label><label class="fld">Outcomes · one per line<textarea class="inp" rows="2">Draw the call stack.</textarea></label><div class="m2-row"><span class="sp"></span><button type="button" class="b sm pri" >Save course details</button></div></div></div></div>
+    <div class="m2-stack"><span class="cap">Documents</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm m2-current" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm gh" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>Documents, images, and links</h3><p>Drop in the readings a learner actually needs. Anything attached to a lesson shows up on its desk.</p></header><div class="m1-grid m2-card-body"><b>Drop a file here, or choose one</b><p>PDFs, slides, notes, and images up to 25 MB</p></div><label class="fld">Attach to<select class="inp"><option>Course shelf</option></select></label><div class="m2-row"><button type="button" class="b sm pri" >{{i:clip:s}}Upload files</button><button type="button" class="b sm gh" >{{i:plus:s}}Add link</button></div><label class="fld">Link title<input class="inp" value="Recursion notes"></label><label class="fld">URL<input class="inp" value="https://example.org/recursion"></label><label class="fld">Filter sources<input class="inp" value=""></label></div></div></div>
+    <div class="m2-stack"><span class="cap">Assignments</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm m2-current" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm gh" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>Long-range assignments</h3></header><label class="fld">Attach to<select class="inp"><option>Course</option></select></label><label class="fld">Assignment title<input class="inp" value="Trace a recursive call"></label><label class="fld">Brief<textarea class="inp" rows="2">Explain how each frame resumes.</textarea></label><label class="fld">What should the learner make, investigate, or submit over time?<textarea class="inp" rows="2">Show the frames in return order.</textarea></label><div class="m2-row"><span class="sp"></span><button type="button" class="b sm pri" >Add assignment</button></div></div></div></div>
+    <div class="m2-stack"><span class="cap">Artifacts</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm m2-current" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm gh" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>Quizzes, visuals, and artifacts</h3></header><label class="fld">Attach to<select class="inp"><option>The call stack</option></select></label><label class="fld">New quiz title<input class="inp" value="Frame order check"></label><div class="m2-row"><button type="button" class="b sm pri" >Quiz</button><button type="button" class="b sm ln" >Import artifact</button></div><small class="m2-meta">No artifacts attached.</small></div></div></div>
+    <div class="m2-stack"><span class="cap">Cards</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm m2-current" >Cards</button><button type="button" class="b sm gh" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>Recall deck</h3></header><label class="fld">Attach to<select class="inp"><option>The call stack</option></select></label><label class="fld">New card front<input class="inp" value="Which frame returns first?"></label><label class="fld">New card back<input class="inp" value="The most recent one."></label><div class="m2-row"><button type="button" class="b sm ln" >{{i:plus:s}}Add card</button><button type="button" class="b sm gh" >Choose Anki file</button></div><label class="fld">Filter cards<input class="inp" value=""></label></div></div></div>
+    <div class="m2-stack"><span class="cap">People</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><nav class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm gh" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm m2-current" >People</button></nav></header><div class="m2-card-body m2-stack"><header class="m1-halftone"><h3>People and permissions</h3><p>Who is in the room, what peers may change, and what stays private until a learner says otherwise.</p></header><div class="m2-row"><h3>You</h3><span class="sp"></span><small class="m2-meta">Owner</small></div><div class="m2-row"><button type="button" class="b sm pri" >{{i:people:s}}Invite</button></div><span class="m2-label">Collaboration rules</span><label><input type="checkbox" checked> Peers can comment and react</label><label><input type="checkbox"> Peers can edit the recall deck</label><label class="fld">Teacher access policy<select class="inp"><option>Ask each learner before reading their work</option><option>Require full access when joining</option></select></label><span class="m2-label">Members · 1</span></div></div></div></div></div>
+<div class="kt m2-frame">
+    <div class="m2-grid">
+    <div class="m2-stack"><span class="cap">Assembler</span>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><span class="m2-label">New course</span><span class="sp"></span><button type="button" class="ib sm" aria-label="Close assembler" title="Close assembler" >{{i:x:s}}</button></header><div class="m2-card-body m2-stack"><h3>Assemble the course you want.</h3><p>Start empty, or bring in plans, quizzes, generated UI, visuals, maps, animations, and cards you already made with Keating. Everything stays editable.</p>
+    <div class="m2-grid">
+    <div class="m2-stack"><label class="fld">Course title<input class="inp" value="Untitled course"></label><label class="fld">What this course is for<textarea class="inp" rows="2"></textarea></label><label><input type="checkbox"> Review course design after saving</label><button type="button" class="b sm pri" >Create blank course</button></div>
+    <div class="m2-stack"><h3>Study plans</h3><small class="m2-meta">No saved StudyPlans yet.</small><h3>Flashcard decks</h3><button type="button" class="b sm ln" >{{i:clip:s}}Import Anki package</button><h3>Artifacts</h3><small class="m2-meta">No saved artifacts yet.</small></div></div></div></div></div></div></div>
+  <ol class="pts">
+    <li>Build has separate sections for course details, outline, materials and people.</li>
+    <li>Lesson rows reorder with Up and Down. On phones, the lesson editor opens as a sheet.</li>
+    <li>Saving and course design review are separate actions.</li>
+  </ol>
+</section>
+
+<section class="board">
+  <div class="board-h"><span class="n">V2</span><h2>Live ended</h2><p>The stage shows that the call has ended and the transcript stays available.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-demo m1-live"><header class="row m1-halftone"><h3>Live with Keating</h3><span class="sp"></span><span class="slt">Gemini Live {{i:chev:s}}</span></header>
+    <div class="lvs"><span class="who">Keating · ended</span><div class="wv" aria-hidden="true"><i style="height:15%"></i><i style="height:25%"></i><i style="height:15%"></i></div><div class="pip m1-grid">Your camera is off</div></div>
+    <div class="ctl"><span class="st-dot"><i></i>Ended</span><span class="sp"></span><button class="ib" disabled aria-label="Mute your microphone">{{i:mic}}</button><button class="b end">{{i:hangup:s}}End</button></div>
+    <div class="said"><span class="eb mu">You</span><p>What stops the recursion?</p><span class="eb">Keating</span><p class="prose">The base case gives the calls a place to stop.</p><footer class="row"><span class="soft">Saved to this session when you end</span><span class="sp"></span><button class="b sm ln" aria-pressed="true">Captions on</button></footer></div></div></div></div></div>
+  <ol class="pts">
+    <li>The elapsed clock is shown while Live is active. The ended status replaces it when the call ends.</li>
+  </ol>
+</section>
+
+
+<section class="board">
+  <div class="board-h"><span class="n">V3</span><h2>Live failed</h2><p>A failed call gives a reason and a recovery action.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-demo m1-live"><header class="row m1-halftone"><h3>Live with Keating</h3><span class="sp"></span><span class="slt">Gemini Live {{i:chev:s}}</span></header>
+    <div class="lvs"><span class="who">Keating · not connected</span><div class="wv" aria-hidden="true"><i style="height:15%"></i><i style="height:25%"></i><i style="height:15%"></i></div><div class="pip m1-grid">Your camera is off</div></div>
+    <div class="ctl"><span class="st-dot"><i></i>Not connected</span><span class="sp"></span><button class="ib" disabled aria-label="Mute your microphone">{{i:mic}}</button><button class="b end">{{i:hangup:s}}End</button></div>
+    <div class="fail" role="alert"><div class="row"><b>Microphone blocked</b><span class="sp"></span><button class="ib" aria-label="Dismiss">{{i:x}}</button></div><span>The browser is blocking microphone access for this site.</span><span>Allow the microphone from the padlock in the address bar, then start again.</span><div class="row"><button class="b pri">{{i:refresh:s}}Try again</button></div></div><div class="said"><div class="hero m1-empty"><b>Nothing was said.</b></div><footer class="row"><span class="soft">Saved to this session when you end</span><span class="sp"></span><button class="b sm ln" aria-pressed="true">Captions on</button></footer></div></div></div></div></div>
+  <ol class="pts">
+    <li>Available recovery actions depend on the failure and can include retrying or changing settings.</li>
+  </ol>
+</section>
+
+</div>

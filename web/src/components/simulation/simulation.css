@@ -1,75 +1,3 @@
-/* Keep embedded experiments compact even under the public pages' global controls. */
-.simulation .simulation__header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 0.5rem;
-}
-
-.simulation .simulation__title {
-	display: flex;
-	align-items: baseline;
-	gap: 0.5rem;
-	min-width: 0;
-	margin: 0;
-	padding-block: 0.4rem;
-	font-size: 1rem;
-	font-weight: 700;
-	line-height: 1.35;
-	overflow-wrap: anywhere;
-}
-
-.simulation button.simulation__reset {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.375rem;
-	flex: 0 0 auto;
-	min-width: 44px;
-	min-height: 44px;
-	padding: 0 0.5rem;
-	border: 0;
-	border-radius: 0.5rem;
-	background: transparent;
-	color: var(--foreground);
-	font: inherit;
-	font-size: 0.75rem;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-.simulation button.simulation__reset svg {
-	width: 16px;
-	height: 16px;
-}
-
-.simulation button.simulation__reset:disabled {
-	opacity: 0.45;
-	cursor: default;
-}
-
-.simulation button.simulation__reset:hover:not(:disabled) {
-	background: var(--muted);
-}
-
-.simulation button.simulation__reset:focus-visible,
-.simulation .keating-select.simulation__select:focus-visible {
-	outline: 2px solid var(--ring);
-	outline-offset: 3px;
-}
-
-.simulation .keating-select.simulation__select {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	height: 44px;
-	min-height: 44px;
-	padding: 0 0.375rem;
-	font-size: 0.8125rem;
-	line-height: normal;
-	text-overflow: ellipsis;
-}
-
 .simulation .simulation__parameters input[type="range"] {
 	box-sizing: border-box;
 	height: 44px;
@@ -101,17 +29,20 @@
 	gap: 1rem;
 }
 
-@media (max-width: 640px) {
-	.simulation button.simulation__reset {
-		width: 44px;
-		padding: 0;
-	}
+.simulation .keating-select__value {white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+.simulation__pickers {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.48rem}
+.simulation__figure {margin:0;min-width:0}
+.simulation__figure details {display:none} /* The complete table below also lists undefined samples. */
+.simulation input[type=range]{width:100%;accent-color:var(--ink)}
+.simulation .k-field {min-width:0}
+@media(max-width:640px){.simulation__pickers{grid-template-columns:minmax(0,1fr)}}
 
-	.simulation .simulation__reset-label {
-		display: none;
-	}
+.simulation .kc-ends .kc-label,.simulation .kc-stat .kc-label {white-space:normal;overflow-wrap:anywhere}
+.simulation .lesson-foot > .k-btn {margin-inline-start:auto}
+.simulation .lesson-foot > p {flex:1 1 8rem;font: .5rem/1.5 var(--font-mono);color:var(--ink-soft)}
+.simulation .kc-table {overflow:auto}
+.simulation .lesson-head,.simulation .lesson-foot {text-align:start}
 
-	.simulation .simulation__parameters {
-		row-gap: 0.375rem;
-	}
-}
+.simulation.lesson-frame {border-color:var(--line)}
+.simulation .simulation__pickers .k-field button.simulation__select {border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:transparent;box-shadow:none}
+.simulation .simulation__parameters .k-input {border-color:var(--line)}

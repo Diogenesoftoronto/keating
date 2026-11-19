@@ -1,3 +1,6 @@
+import { FrustrationClip } from "./FrustrationClip";
+import { SceneRenderer } from "./SceneRenderer";
+import { HyperframesPlayer } from "./HyperframesPlayer";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { css } from "../../styled-system/css";
 import { AnimationPlayer } from "./AnimationPlayer";
@@ -110,3 +113,12 @@ export const BrowserAnimationFallback: Story = {
 		}),
 	},
 };
+
+export const NarrowReply: Story = {
+  ...BrowserAnimationFallback,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};
+
+export const SilentClip: Story = {render: () => <FrustrationClip />};
+export const StoryboardNotes: Story = {render: () => <SceneRenderer storyboard={storyboard} />};
+export const TimedPlayer: Story = {render: () => <HyperframesPlayer title="Orbit" html={cssAnimationScene} duration={10} />};

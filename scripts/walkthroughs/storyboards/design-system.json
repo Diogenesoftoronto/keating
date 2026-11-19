@@ -1,0 +1,218 @@
+{
+  "slug": "design-system",
+  "title": "Design-system reel",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [],
+  "ready": [],
+  "steps": [
+    {
+      "kind": "goto",
+      "mockup": "glyphs-mockups.html"
+    },
+    {
+      "kind": "chapter",
+      "id": "glyphs",
+      "title": "Explore the glyph set",
+      "explanation": "Design boards · the glyph set in motion.",
+      "alt": "Explore the glyph set"
+    },
+    {
+      "kind": "caption",
+      "text": "Design boards · the glyph set in motion."
+    },
+    {
+      "kind": "hover",
+      "selector": ".glyph-grid [data-i=left],.ggrid [data-i=left]"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "glyphs"
+    },
+    {
+      "kind": "chapter",
+      "id": "controls",
+      "title": "Try Copy message",
+      "explanation": "The same glyphs live inside controls.",
+      "alt": "Try Copy message"
+    },
+    {
+      "kind": "caption",
+      "text": "The same glyphs live inside controls."
+    },
+    {
+      "kind": "click",
+      "label": "Copy message"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "controls"
+    },
+    {
+      "kind": "chapter",
+      "id": "motion",
+      "title": "Try reduced motion",
+      "explanation": "Reduced motion keeps the state change visible.",
+      "alt": "Try reduced motion"
+    },
+    {
+      "kind": "caption",
+      "text": "Reduced motion keeps the state change visible."
+    },
+    {
+      "kind": "click",
+      "label": "Reduced",
+      "revealPageTop": true
+    },
+    {
+      "kind": "hover",
+      "selector": "[data-copy]"
+    },
+    {
+      "kind": "pause",
+      "ms": 1800
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "motion"
+    },
+    {
+      "kind": "click",
+      "label": "Full",
+      "revealPageTop": true
+    },
+    {
+      "kind": "chapter",
+      "id": "ink",
+      "title": "Explore Marbled ink",
+      "explanation": "Shaders respond to the pointer and theme.",
+      "alt": "Explore Marbled ink"
+    },
+    {
+      "kind": "caption",
+      "text": "Shaders respond to the pointer and theme."
+    },
+    {
+      "kind": "click",
+      "label": "Terminal",
+      "revealPageTop": true
+    },
+    {
+      "kind": "hover",
+      "selector": ".fxt:has(.pass.run)"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "ink"
+    },
+    {
+      "kind": "chapter",
+      "id": "fallback",
+      "title": "Disable shaders",
+      "explanation": "Turn off the shader and keep the layout.",
+      "alt": "Disable shaders"
+    },
+    {
+      "kind": "caption",
+      "text": "Turn off the shader and keep the layout."
+    },
+    {
+      "kind": "click",
+      "selector": "[data-tog=\"fx\"] button[data-v=\"off\"]",
+      "revealPageTop": true
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": ".fxt:has(.pass.run)"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "fallback"
+    },
+    {
+      "kind": "chapter",
+      "id": "charts",
+      "title": "Read the chart sheet",
+      "explanation": "Compare several kinds of evidence on the chart sheet.",
+      "alt": "Read the chart sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Compare several kinds of evidence on the chart sheet."
+    },
+    {
+      "kind": "goto",
+      "mockup": "system-mockups.html"
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "h2",
+        "label": "Charts",
+        "contains": true
+      },
+      "block": "start"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "charts"
+    },
+    {
+      "kind": "chapter",
+      "id": "chart-theme",
+      "title": "Compare chart themes",
+      "explanation": "The chart keeps the same values in both themes.",
+      "alt": "Compare chart themes"
+    },
+    {
+      "kind": "caption",
+      "text": "The chart keeps the same values in both themes."
+    },
+    {
+      "kind": "click",
+      "label": "Terminal",
+      "revealPageTop": true
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "h2",
+        "label": "Charts",
+        "contains": true
+      },
+      "block": "start"
+    },
+    {
+      "kind": "pause",
+      "ms": 2800
+    },
+    {
+      "kind": "click",
+      "label": "Paper",
+      "revealPageTop": true
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "h2",
+        "label": "Charts",
+        "contains": true
+      },
+      "block": "start"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "chart-theme"
+    }
+  ],
+  "viewerNote": "This reel shows interactive design boards. Chart values are sample data."
+}

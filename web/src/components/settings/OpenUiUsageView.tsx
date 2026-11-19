@@ -1,4 +1,7 @@
+import { Meter, ChartTable } from "../../design-system/charts";
+import { SelectField, Segmented, Button, EmptyState } from "../../design-system/kit";
 import { useMemo, useState } from "react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import {
   NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesOpenUiDecisionModel, matchesOpenUiTutor, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
   type OpenUiDiagnosticFilter, type OpenUiDiagnosticRate, type OpenUiDiagnosticSummary, type OpenUiDiagnosticTurn,
@@ -58,9 +61,9 @@ function ReplyDelays({ summary, stage }: {summary: OpenUiDiagnosticSummary; stag
           <td>{delay.firstResponse}</td><td>{delay.later}</td><td>{delay.unresolved}</td></tr>)}</tbody></table></div>}
         {data.byResponse.length > 0 && <ul className="ou-bars" aria-label="Distribution by reply number">
           {data.byResponse.map(b => <li key={b.responseNumber}><span>Reply {b.responseNumber}</span>
-            <span className="ou-track" aria-hidden="true"><i style={{width: 100 * b.count / data.opportunities + "%"}} /></span>
-            <b>{b.count}</b></li>)}
+            <Meter label={`Reply ${b.responseNumber}`} value={b.count} max={data.opportunities} valueText={`${b.count} of ${data.opportunities} cues`}/></li>)}
         </ul>}
+        {data.byResponse.length > 3 && <ChartTable caption="Distribution by reply number" columns={["Reply", "Matched", "Cues"]} rows={data.byResponse.map(b => [b.responseNumber, b.count, data.opportunities])}/>}
         <p className="ou-muted">{data.unresolved} still waiting · {data.superseded} superseded by another cue · {data.unknown} unknown · {data.reminders} reminders</p>
       </>}
     {eligible > 0 && <>
@@ -140,7 +143,7 @@ function describeUnmetCoverage({ matchingTurns, observedOpportunities, unknownOp
 
 function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}) {
   const lost = openUiDiagnosticLoss(row, "draftToSelection") === true;
-  const outcome = lost ? types(row.compiled) + " → no interface" : CUES[row.cue.kind];
+  const outcome = lost ? <>{types(row.compiled)} <KeatingGlyph name="right" /> no interface</> : CUES[row.cue.kind];
   return <details className="ou-turn"><summary>
     <span>{row.experiment?.caseId ?? `Turn ${row.turnIndex + 1}`}</span>
     <span>{row.model ?? (row.requestedModel ? "Requested " + row.requestedModel : "Unknown tutor")}</span>
@@ -249,19 +252,18 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
   }));
   return <div className="ou-view">
     <div className="ou-filters">
-      <label>Tutor<select aria-label="Tutor" value={filter.model ?? ""} onChange={e => changeFilter({model: e.target.value || undefined})}><option value="">All tutors</option>
-        {models.map(m => <option key={m}>{m}</option>)}</select></label>
-      {decisionModels.length > 1 && <label>Decision model<select aria-label="Decision model" value={filter.decisionModel ?? ""} onChange={e => changeFilter({decisionModel: e.target.value || undefined})}>
-        <option value="">All decision models</option>{decisionModels.map(id => <option key={id} value={id}>{id === "unknown" ? "Unrecorded" : id}</option>)}</select></label>}
-      <label>Learner cue<select aria-label="Learner cue" value={filter.cue ?? ""} onChange={e => changeFilter({cue: e.target.value as OpenUiDiagnosticFilter["cue"] || undefined})}><option value="">All cues</option>
-        {OPENUI_DIAGNOSTIC_CUES.map(k => <option value={k} key={k}>{CUES[k]}</option>)}</select></label>
-      <label>Decision mode<select aria-label="Decision mode" value={filter.mode ?? ""} onChange={e => changeFilter({mode: e.target.value as OpenUiDiagnosticFilter["mode"] || undefined})}><option value="">All guidance</option>
-        {OPENUI_DIAGNOSTIC_MODES.map(k => <option value={k} key={k}>{MODES[k]}</option>)}</select></label>
+      <SelectField label="Tutor" value={filter.model ?? ""} onValueChange={value => changeFilter({model: value || undefined})}><option value="">All tutors</option>
+        {models.map(m => <option key={m}>{m}</option>)}</SelectField>
+      {decisionModels.length > 1 && <SelectField label="Decision model" value={filter.decisionModel ?? ""} onValueChange={value => changeFilter({decisionModel: value || undefined})}>
+        <option value="">All decision models</option>{decisionModels.map(id => <option key={id} value={id}>{id === "unknown" ? "Unrecorded" : id}</option>)}</SelectField>}
+      <SelectField label="Learner cue" value={filter.cue ?? ""} onValueChange={value => changeFilter({cue: value as OpenUiDiagnosticFilter["cue"] || undefined})}><option value="">All cues</option>
+        {OPENUI_DIAGNOSTIC_CUES.map(k => <option value={k} key={k}>{CUES[k]}</option>)}</SelectField>
+      <SelectField label="Decision mode" value={filter.mode ?? ""} onValueChange={value => changeFilter({mode: value as OpenUiDiagnosticFilter["mode"] || undefined})}><option value="">All guidance</option>
+        {OPENUI_DIAGNOSTIC_MODES.map(k => <option value={k} key={k}>{MODES[k]}</option>)}</SelectField>
     </div>
     {summary.decisionPlanningFailures && <p className="ou-muted">Recorded decision planning failures · {summary.decisionPlanningFailures.turns}</p>}
-    <div className="ou-stages" role="group" aria-label="Observation stage">
-      {(Object.keys(STAGES) as ObservationStage[]).map(k => <button type="button" key={k} aria-pressed={k === stage} onClick={() => setStage(k)}>{STAGES[k]}</button>)}
-    </div>
+    <Segmented<ObservationStage> className="ou-stages" label="Observation stage" value={stage} onChange={setStage}
+      options={(Object.keys(STAGES) as ObservationStage[]).map(value => ({value, label: STAGES[value]}))}/>
     <p className="ou-muted">{STAGE_NOTES[stage]} {summary.coverage.includedTurns} {summary.coverage.includedTurns === 1 ? "turn" : "turns"} in scope.</p>
     <dl className="ou-metrics">
       <Metric title="Learner turns with OpenUI" value={summary.overall[stage]} />
@@ -288,8 +290,9 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
     </section>}
     <section className="ou-section"><h4>Component types</h4>
       {componentRates.length ? <ul className="ou-bars" aria-label="Turns containing a component">
-        {componentRates.map(c => <li key={c.key}><span>{c.key}</span><span className="ou-track" aria-hidden="true"><i style={{width: percent(c[stage].rate)}} /></span><b>{fraction(c[stage])}</b></li>)}
-      </ul> : <p>{summary.overall[stage].denominator ? "No components recorded at this stage." : "No observations at this stage."}</p>}
+        {componentRates.map(c => <li key={c.key}><span>{c.key}</span>{c[stage].denominator ? <Meter label={c.key} value={c[stage].numerator} max={c[stage].denominator} valueText={fraction(c[stage]) + " observed turns"}/> : <span>Unobserved</span>}</li>)}
+      </ul> : <EmptyState heading={summary.overall[stage].denominator ? "No components recorded at this stage." : "No observations at this stage."}/>}
+      {componentRates.length > 3 && <ChartTable caption="Turns containing a component" columns={["Component", "Turns / observed"]} rows={componentRates.map(c => [c.key, fraction(c[stage])])}/>}
       <p className="ou-muted">Offered type present at this stage · {fraction(summary.overall.offeredType[stage])}</p>
       {summary.overall.nativePageRequested.denominator > 0 && <p className="ou-muted">
         Native interactive page requested · {fraction(summary.overall.nativePageRequested)} observed turns
@@ -316,7 +319,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
     <ReplyDelays summary={summary} stage={stage} />
     <PairedResults comparisons={summary.comparisons} stage={stage} />
     <details className="ou-drill" open={initialView && initialView !== "all" || undefined}><summary>Inspect turns <b>{visible.length}</b></summary>
-      <label>Show turns<select aria-label="Show turns" value={loss} onChange={e => { setLoss(e.target.value as typeof loss); setLimit(10); }}>
+      <SelectField label="Show turns" value={loss} onValueChange={value => { setLoss(value as typeof loss); setLimit(10); }}>
         <option value="all">All matching turns</option>
         <option value="unmet">Missed learner cue</option>
         <option value="combined-unmet">Missed cue across both interface sources</option>
@@ -329,7 +332,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
         <option value="assessment-opt-out">Checkpoint after an assessment opt-out</option>
         <option value="selection">Interface compiled, then dropped</option>
         <option value="render">Interface selected, then missing at presentation</option>
-      </select></label>
+      </SelectField>
       {unmet ? <p className="ou-muted">{describeUnmetCoverage(unmet)}
         {unmet.matchingTurns > 0 && " Later matches appear under “Replies until a matching interface”."}</p>
         : loss === "action-unmet" ? <p className="ou-muted">{drillRows.length} missed on this turn out of {summary.overall.learnerActionSelected.denominator} with a known outcome · {summary.overall.learnerActionSelected.unknown} unknown.</p>
@@ -345,8 +348,8 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
             ].filter(Boolean).join(". ")}.</p>}
         </div> : <p className="ou-muted">{drillRows.length} matching {drillRows.length === 1 ? "turn" : "turns"}</p>}
       {drillRows.slice(0, limit).map(r => <TurnDetails key={JSON.stringify([r.conversationId, r.turnId])} row={r} unmet={unmet !== null} />)}
-      {limit < drillRows.length && <button type="button" onClick={() => setLimit(n => n + 25)}>Show more turns</button>}
+      {limit < drillRows.length && <Button variant="ghost" onClick={() => setLimit(n => n + 25)}>Show more turns</Button>}
     </details>
-    <button type="button" className="ou-save" onClick={() => downloadTextFile("keating-openui-summary.json", JSON.stringify({filter, ...summary}, null, 2))}>Download filtered summary</button>
+    <Button variant="ghost" className="ou-save" onClick={() => downloadTextFile("keating-openui-summary.json", JSON.stringify({filter, ...summary}, null, 2))}>Download filtered summary</Button>
   </div>;
 }

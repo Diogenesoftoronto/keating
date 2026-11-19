@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { Meter } from "../../design-system/charts";
+import { useId, useState, type ReactNode } from "react";
 import { formatActiveWork } from "@keating/learner-contracts";
 import { css } from "../../../styled-system/css";
-import type { PlanReview, TeachingDraftInteraction, TeachingDraftSnapshot, TeachingPolicyCheck } from "@keating/learner-contracts";
+import type { PlanReview, ResourceReview, TeachingDraftInteraction, TeachingDraftSnapshot, TeachingPolicyCheck } from "@keating/learner-contracts";
 import type { TeachingDraftReceiptRecord } from "../../keating/storage";
 import { DRAFT_CHECK_PASS_LINE, describeTeachingCheck } from "../../keating/judgement/check-descriptions";
 import type { DraftCheckVerdict, JudgementLabelRecord } from "../../keating/judgement/turn-records";
@@ -9,7 +10,12 @@ import type { DraftCheckVerdict, JudgementLabelRecord } from "../../keating/judg
 const muted = css({ color: "var(--muted-foreground)", fontSize: "0.75rem", lineHeight: 1.5 });
 const summary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } });
 const pre = css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 });
-
+const draftPicker = css({ display: "flex", flexWrap: "wrap", gap: "0.375rem" });
+const draftButton = css({
+	minHeight: "1.75rem", padding: "0.25rem 0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)",
+	fontSize: "0.75rem", textAlign: "start", "&[aria-pressed=true]": { fontWeight: 650, background: "var(--accent)", color: "var(--accent-foreground)" },
+});
+const passedButton = css({ minHeight: "1.5rem", fontSize: "0.75rem", textDecoration: "underline", textUnderlineOffset: "0.175em" });
 const actionLabels: Record<TeachingDraftInteraction["action"], string> = {
 	none: "no activity recommended",
 	create: "activity recommended",
@@ -24,6 +30,18 @@ const planTriggerLabels: Record<PlanReview["trigger"], string> = {
 	"goal-requested": "a new goal",
 };
 
+const resourceGapLabels: Record<ResourceReview["gap"], string> = {
+	plan: "a study plan",
+	retrieval: "a quiz or flashcards",
+	map: "a concept map",
+	"away-work": "an assignment, practice set, draft or fieldwork",
+};
+
+const resourceTriggerLabels: Record<ResourceReview["trigger"], string> = {
+	"goal-requested": "the learner named a goal",
+	"session-length": "the session had gone several turns without one",
+};
+
 const planActionLabels: Record<PlanReview["action"], string> = {
 	continue: "continue the current item",
 	"suggest-advance": "propose marking the item done",
@@ -33,6 +51,7 @@ const planActionLabels: Record<PlanReview["action"], string> = {
 };
 
 const resultLabels: Record<TeachingPolicyCheck["status"], string> = { pass: "passed", fail: "failed", unknown: "unknown" };
+const attemptLabels = { pass: "passed checks", fail: "failed checks", unknown: "inconclusive", "generation-error": "generation failed" };
 const kindLabels = { model: "judged", runtime: "runtime", quality: "quality" } as const;
 
 /** Reviewer controls for draft checks. Labels are review data; the released reply never changes. */
@@ -72,8 +91,9 @@ function CheckLabel({ attempt, check, controls }: { attempt: number; check: Teac
 	);
 }
 
-function CheckRow({ attempt, check, controls }: { attempt: number; check: TeachingPolicyCheck; controls?: DraftCheckLabelControls }) {
+function CheckRow({ attempt, check, controls, compact }: { attempt: number; check: TeachingPolicyCheck; controls?: DraftCheckLabelControls; compact?: boolean }) {
 	const description = describeTeachingCheck(check.id);
+	const marker = compact && check.source === "jev";
 	return (
 		<tr className={css({ color: check.status === "pass" ? "var(--foreground)" : "var(--destructive)", verticalAlign: "top" })}>
 			<th scope="row" className={css({ fontWeight: 400, overflowWrap: "anywhere", paddingBlock: "0.2rem", paddingInlineEnd: "0.5rem" })}>
@@ -88,10 +108,8 @@ function CheckRow({ attempt, check, controls }: { attempt: number; check: Teachi
 			<td>{resultLabels[check.status]}</td>
 			<td>
 				{check.probability === null ? "Unknown" : (
-					<span className={css({ display: "inline-flex", gap: "0.3rem", alignItems: "center" })}>
-						<meter aria-label={`P(violation) for ${description.title}`} min={0} max={1} low={DRAFT_CHECK_PASS_LINE} high={0.8} optimum={0} value={check.probability} className={css({ width: "3rem" })} />
-						{check.probability.toFixed(3)}
-					</span>
+					<Meter max={1} value={check.probability} valueText={check.probability.toFixed(3)}
+						label={`P(violation) for ${description.title}`} threshold={marker ? { value: DRAFT_CHECK_PASS_LINE, label: "Pass line" } : undefined}/>
 				)}
 			</td>
 			{controls ? <td><CheckLabel attempt={attempt} check={check} controls={controls} /></td> : null}
@@ -99,13 +117,15 @@ function CheckRow({ attempt, check, controls }: { attempt: number; check: Teachi
 	);
 }
 
-function CheckTable({ attempt, checks, controls }: { attempt: number; checks: readonly TeachingPolicyCheck[]; controls?: DraftCheckLabelControls }) {
+function CheckTable({ attempt, checks, controls, compact }: { attempt: number; checks: readonly TeachingPolicyCheck[]; controls?: DraftCheckLabelControls; compact?: boolean }) {
+	const [showPassed, setShowPassed] = useState(false);
+	const passedId = useId();
 	const head = <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">P(violation)</th>{controls ? <th scope="col">Your verdict</th> : null}</tr></thead>;
 	const table = (rows: readonly TeachingPolicyCheck[]) => (
 		<div className={css({ overflowX: "auto", maxWidth: "100%" })}>
 			<table className={css({ width: "100%", fontSize: "0.6875rem", textAlign: "left", borderCollapse: "collapse", "& th, & td": { paddingInlineEnd: "0.75rem", paddingBlock: "0.2rem" } })}>
 				{head}
-				<tbody>{rows.map((check) => <CheckRow key={check.id} attempt={attempt} check={check} controls={controls} />)}</tbody>
+				<tbody>{rows.map((check) => <CheckRow key={check.id} attempt={attempt} check={check} controls={controls} compact={compact} />)}</tbody>
 			</table>
 		</div>
 	);
@@ -115,7 +135,14 @@ function CheckTable({ attempt, checks, controls }: { attempt: number; checks: re
 	return (
 		<>
 			{flagged.length ? table(flagged) : <p className={muted}>No check flagged this draft.</p>}
-			{passed.length ? (
+			{passed.length && compact ? (
+				<div>
+					<button type="button" className={passedButton} aria-expanded={showPassed} aria-controls={passedId} onClick={() => setShowPassed(value => !value)}>
+						{showPassed ? "Hide" : "Show"} {passed.length} passed {passed.length === 1 ? "check" : "checks"}
+					</button>
+					<div id={passedId} hidden={!showPassed}>{showPassed ? table(passed) : null}</div>
+				</div>
+			) : passed.length ? (
 				<details>
 					<summary className={summary}>{passed.length} {passed.length === 1 ? "check" : "checks"} passed</summary>
 					{table(passed)}
@@ -149,14 +176,19 @@ function InteractionSummary({ interaction }: { interaction: TeachingDraftInterac
  * reviewer can see which checks passed, which drafts were rejected and what
  * plan state the drafts were judged against. Draft text is never stored.
  */
-export function DraftReviewReceipt({ receipt, controls, embedded = false, open }: {
+export function DraftReviewReceipt({ receipt, controls, embedded = false, open, compact = false }: {
 	receipt: Pick<TeachingDraftReceiptRecord, "snapshot" | "activeWork"> & { snapshot: TeachingDraftSnapshot };
 	controls?: DraftCheckLabelControls;
 	/** Inside a turn summary the receipt is one section, not a separate card. */
 	embedded?: boolean;
 	open?: boolean;
+	compact?: boolean;
 }) {
 	const snapshot = receipt.snapshot;
+	const [selected, setSelected] = useState<number>();
+	const flagged = snapshot.attempts.find(attempt => attempt.status !== "pass" || attempt.checks.some(check => check.status !== "pass"));
+	const selectedDraft = snapshot.attempts.find(attempt => attempt.attempt === selected)
+		?? flagged ?? snapshot.attempts.find(attempt => attempt.attempt === snapshot.selectedAttempt) ?? snapshot.attempts[0];
 	const activeWork = formatActiveWork(receipt.activeWork);
 	const released = snapshot.phase === "released";
 	const selectedVariant = variantLabel(snapshot.attempts.find(({ attempt }) => attempt === snapshot.selectedAttempt)?.variant);
@@ -185,6 +217,11 @@ export function DraftReviewReceipt({ receipt, controls, embedded = false, open }
 							{` · ${snapshot.activityLearning.counts.labelled} linked graded outcomes · ${snapshot.activityLearning.counts.validation} later checks.`}
 							{" This estimates the next recorded answer; it does not show causal improvement or unaided learning."}</>}
 				</p> : null}
+				{snapshot.resourceReview ? (
+					<p className={muted} data-testid="draft-resource-review">
+						Session resources · the tutor was invited to add {resourceGapLabels[snapshot.resourceReview.gap]} because {resourceTriggerLabels[snapshot.resourceReview.trigger]}. The tutor decides whether it fits.
+					</p>
+				) : null}
 				{snapshot.planReview ? (
 					<p className={muted} data-testid="draft-plan-review">
 						Plan review after {planTriggerLabels[snapshot.planReview.trigger]}: {planActionLabels[snapshot.planReview.action]}
@@ -192,17 +229,32 @@ export function DraftReviewReceipt({ receipt, controls, embedded = false, open }
 					</p>
 				) : null}
 				<p className={muted}>Uncalibrated probability estimates. A check passes at P(violation) ≤ {DRAFT_CHECK_PASS_LINE.toFixed(2)}.{controls ? " Your verdicts are saved as review labels; the released reply does not change." : ""}</p>
-				{snapshot.attempts.map((attempt) => (
+				{compact && snapshot.attempts.length > 1 ? <div className={draftPicker} role="group" aria-label="Drafts">
+					{snapshot.attempts.map(attempt => <button key={attempt.attempt} type="button" className={draftButton}
+						aria-pressed={selectedDraft === attempt} onClick={() => setSelected(attempt.attempt)}>
+						Draft {attempt.attempt}{variantLabel(attempt.variant) ? ` · ${attempt.variant}` : ""} · {released && attempt.attempt === snapshot.selectedAttempt ? "released" : attemptLabels[attempt.status]}
+					</button>)}
+				</div> : null}
+				{snapshot.attempts.map((attempt) => {
+					const content = <>
+						<p className={muted}>Generation {Math.round(attempt.generationMs)} ms · review {Math.round(attempt.judgementMs)} ms</p>
+						{attempt.unavailableTools?.length ? <p className={muted}>Tried to call tools this session does not offer: {attempt.unavailableTools.map(name => <code key={name}>{name}</code>).reduce<ReactNode[]>((all, item, index) => index ? [...all, ", ", item] : [item], [])}</p> : null}
+						<CheckTable attempt={attempt.attempt} checks={attempt.checks} controls={controls} compact={compact} />
+					</>;
+					if (compact) return selectedDraft === attempt ? <div key={attempt.attempt} className={css({ minWidth: 0, display: "grid", gap: "0.375rem" })}>
+						<p className={muted}>Draft {attempt.attempt}{variantLabel(attempt.variant) ? ` · ${attempt.variant}` : ""} · {attempt.reasoning} reasoning · {attempt.standard}</p>
+						{content}
+					</div> : null;
+					return (
 					<details key={attempt.attempt} open={attempt.attempt === snapshot.selectedAttempt}>
 						<summary className={summary}>
 							Draft {attempt.attempt}
 							{variantLabel(attempt.variant) ? ` · ${attempt.variant}` : ""} · {attempt.status} · {attempt.reasoning} reasoning · {attempt.standard}
 						</summary>
-						<p className={muted}>Generation {Math.round(attempt.generationMs)} ms · review {Math.round(attempt.judgementMs)} ms</p>
-						{attempt.unavailableTools?.length ? <p className={muted}>Tried to call tools this session does not offer: {attempt.unavailableTools.map(name => <code key={name}>{name}</code>).reduce<ReactNode[]>((all, item, index) => index ? [...all, ", ", item] : [item], [])}</p> : null}
-						<CheckTable attempt={attempt.attempt} checks={attempt.checks} controls={controls} />
+						{content}
 					</details>
-				))}
+					);
+				})}
 				{activeWork ? (
 					<details>
 						<summary className={summary}>Active work at this turn</summary>

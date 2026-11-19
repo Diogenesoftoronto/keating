@@ -1,5 +1,6 @@
+import "./course-builder.css";
 import { useMemo } from "react";
-import { Box, Image as ImageIcon } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import type { CourseArtifact } from "../../courses/contracts";
 import { parseCourseQuiz } from "../../courses/course-artifacts";
@@ -84,7 +85,7 @@ function ArtifactBody({ artifact }: { artifact: CourseArtifact }) {
     return <AnimationPlayer {...animation} />;
   if (artifact.format === "image" && imageSource)
     return (
-      <figure>
+      <figure className="k-grid">
         <a href={imageSource} target="_blank" rel="noreferrer">
           <img
             src={imageSource}
@@ -142,31 +143,13 @@ export function CourseArtifactCard({
   artifact: CourseArtifact;
   courseWide?: boolean;
 }) {
-  const Icon = artifact.format === "image" ? ImageIcon : Box;
+  const glyph = artifact.format === "image" ? "image" : "shapes";
   return (
     <section
       id={`artifact-${artifact.id}`}
-      className={css({
-        mt: "1.5rem",
-        border: "1px solid var(--ink)",
-        bg: "var(--paper)",
-        boxShadow: "4px 4px 0 color-mix(in srgb, var(--ink) 16%, transparent)",
-      })}
-    >
-      <header
-        className={css({
-          display: "flex",
-          alignItems: "start",
-          gap: "0.65rem",
-          borderBottom: "1px solid var(--ink)",
-          bg: courseWide
-            ? "var(--paper-deep, #e9e2d2)"
-            : "var(--course-wash, #ddebdd)",
-          px: "0.85rem",
-          py: "0.7rem",
-        })}
-      >
-        <Icon size={16} className={css({ mt: "0.15rem", flexShrink: 0 })} />
+      className="cb-artifact">
+      <header className="k-halftone" data-glyph-host>
+        <KeatingGlyph name={glyph} size={16} className={css({ mt: "0.15rem", flexShrink: 0 })} />
         <div>
           <p
             className={css({
@@ -182,13 +165,7 @@ export function CourseArtifactCard({
               ? "Course artifact"
               : artifact.kind.replaceAll("-", " ")}
           </p>
-          <h3
-            className={css({
-              mt: "0.1rem",
-              fontFamily: "Georgia, serif",
-              fontSize: "1.25rem",
-            })}
-          >
+          <h3>
             {artifact.title}
           </h3>
           {artifact.description ? (

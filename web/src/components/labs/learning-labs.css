@@ -18,7 +18,7 @@
 .learning-lab .learning-lab__sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .learning-lab .learning-lab__hint { font-size:13px; }
 .learning-lab .learning-lab__hint summary { min-height:44px; cursor:pointer; padding-block:12px; font-weight:600; }
-.coding-challenge .coding-challenge__editor { overflow:hidden; border-radius:10px; background:#101914; color:#e3efe7; }
+.coding-challenge .coding-challenge__editor { overflow:hidden; border-radius:.1923rem; background:#101914; color:#e3efe7; }
 .coding-challenge .coding-challenge__timer { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; border-block:1px solid var(--border); padding-block:4px; }
 .coding-challenge .coding-challenge__timer-reading { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:12px; }
 .coding-challenge .coding-challenge__timer-digits { font-family:var(--mono-display),monospace; font-size:28px; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.4; }
@@ -31,7 +31,7 @@
 .coding-challenge .coding-challenge__cases > li { border-bottom:1px solid var(--border); }
 .coding-challenge .coding-challenge__cases summary { display:flex; align-items:center; gap:9px; min-height:44px; cursor:pointer; list-style:none; font-size:13px; }
 .coding-challenge .coding-challenge__cases summary::-webkit-details-marker { display:none; }
-.coding-challenge .coding-challenge__case-icon { display:grid; place-items:center; flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--muted); font-size:11px; }
+.coding-challenge .coding-challenge__case-icon { display:grid; place-items:center; flex-shrink:0; width:22px; height:22px; border-radius:0; background:transparent; font-size:11px; }
 .coding-challenge [data-test-result="passed"] .coding-challenge__case-icon { background:var(--primary); color:var(--primary-foreground); }
 .coding-challenge [data-test-result="failed"] .coding-challenge__case-icon { background:var(--muted); color:var(--destructive); }
 .coding-challenge .coding-challenge__case-state { margin-left:auto; padding-left:8px; font-size:11px; white-space:nowrap; color:var(--muted-foreground); }
@@ -40,7 +40,7 @@
 .coding-challenge .coding-challenge__cases dt { color:var(--muted-foreground); }
 .coding-challenge .coding-challenge__cases dd { margin:0; overflow-wrap:anywhere; }
 .coding-challenge .coding-challenge__cases code { white-space:pre-wrap; }
-.music-lab .music-lab__frame { display:block; width:100%; border:0; border-radius:10px; background:#101914; }
+.music-lab .music-lab__frame { display:block; width:100%; border:0; border-radius:0; background:var(--paper); }
 .music-lab .music-lab__credit { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; font-size:11px; color:var(--muted-foreground); }
 .music-lab .music-lab__credit a { text-decoration:underline; text-underline-offset:3px; }
 @media(max-width:480px) { .coding-challenge .coding-challenge__editor textarea { font-size:16px; min-height:220px; } }

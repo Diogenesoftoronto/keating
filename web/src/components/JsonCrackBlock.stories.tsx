@@ -86,3 +86,8 @@ export const PlainString: Story = {
 		title: "string.txt",
 	},
 };
+
+export const NarrowReply: Story = {
+  ...NestedObject,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

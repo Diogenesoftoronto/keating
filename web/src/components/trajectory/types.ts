@@ -157,7 +157,7 @@ export interface TrajectoryReviewWorkspaceCallbacks {
 	onCreateModelPool: () => void;
 	onDeleteModelPool: (poolId: string) => void;
 	onSave: () => void;
-	onExport: () => void;
+	onExport: () => void | Promise<void>;
 }
 
 export interface TrajectoryReviewWorkspaceData {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { saveThemePreference, transitionTheme } from "../theme-sync";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 import { iconButton } from "../../styled-system/recipes";
 
@@ -52,17 +53,11 @@ export function ThemeToggle({ className = "", variant = "icon", onToggled }: The
   }, []);
 
   const toggle = useCallback(() => {
-    const root = document.documentElement;
-    const next = !root.classList.contains("dark");
-    if (next) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-    setIsDark(next);
-    onToggled?.();
+    transitionTheme((next) => {
+      saveThemePreference(next ? "dark" : "light");
+      setIsDark(next);
+      onToggled?.();
+    });
   }, [onToggled]);
 
   const label = isDark ? "Switch to light mode" : "Switch to dark mode";
@@ -75,7 +70,7 @@ export function ThemeToggle({ className = "", variant = "icon", onToggled }: The
         className={`${menuButtonClass} ${className}`.trim()}
         aria-label={label}
       >
-        {isDark ? <Sun size={14} /> : <Moon size={14} />}
+        {isDark ? <KeatingGlyph name="sun" size={16} /> : <KeatingGlyph name="moon" size={16} />}
         {isDark ? "Light mode" : "Dark mode"}
       </button>
     );
@@ -89,7 +84,7 @@ export function ThemeToggle({ className = "", variant = "icon", onToggled }: The
       title={label}
       aria-label={label}
     >
-      {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      {isDark ? <KeatingGlyph name="sun" size={16} /> : <KeatingGlyph name="moon" size={16} />}
     </button>
   );
 }

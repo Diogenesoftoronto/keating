@@ -1,0 +1,310 @@
+.pf-layout {
+	display: grid;
+	position: relative;
+	grid-template-columns: minmax(5rem, 0.62fr) minmax(0, 3fr) minmax(7.5rem, 1fr);
+	grid-template-rows: minmax(min-content, 1fr) auto;
+	column-gap: 0.72rem;
+	min-height: min(27rem, 65dvh);
+	font: 0.625rem/1.45 var(--font-ui, system-ui);
+	color: var(--foreground);
+}
+.pf-layout > *,
+.pf-speech > *,
+.pf-section > * {
+	min-width: 0;
+}
+.pf-outline {
+	grid-row: 1/3;
+	align-self: start;
+	display: grid;
+	gap: 0.1rem;
+}
+.pf-outline button {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	text-align: left;
+	gap: 0.25rem;
+	padding: 0.29rem 0.38rem;
+	font: inherit;
+	cursor: pointer;
+}
+.pf-outline button[aria-current] {
+	background: var(--k-wash);
+	box-shadow: inset 3px 0 var(--primary);
+	font-weight: 600;
+}
+.pf-outline small,
+.pf-layout small,
+.pf-meta,
+.pf-section small {
+	font: 0.5rem/1.4 var(--mono-body, monospace);
+	color: var(--muted-foreground);
+}
+.pf-canvas {
+	grid-column: 2;
+	grid-row: 1;
+	padding-bottom: 0.6rem;
+}
+.pf-canvas h4,
+.pf-section h4,
+.pf-fields h3 {
+	font: 650 0.77rem/1.3 var(--font-ui, system-ui);
+}
+.pf-help,
+.pf-canvas p {
+	font-size: 0.57rem;
+	line-height: 1.45;
+	color: var(--muted-foreground);
+}
+.pf-help {
+	margin: 0.2rem 0 0.8rem;
+}
+.pf-canvas :is(label, legend),
+.pf-context > summary,
+.pf-section label:not(.st-control label) {
+	font: 500 0.5rem/1.45 var(--mono-body, monospace);
+}
+.pf-canvas :is(input, textarea, select, .keating-select) {
+	font-size: 0.6rem;
+	min-height: 1.45rem;
+	border-radius: 0.1923rem;
+	padding: 0.26rem 0.4rem;
+	max-width: 100%;
+	width: 100%;
+}
+.pf-canvas .k-seg {
+	max-width: 100%;
+	height: auto;
+	display: flex;
+	flex-wrap: wrap;
+}
+.pf-canvas .k-seg button {
+	font-size: 0.5rem;
+	line-height: 1.25;
+	white-space: normal;
+	height: auto;
+	min-height: 1.3rem;
+	padding: 0.15rem 0.22rem;
+	flex: 1 1 auto;
+}
+.pf-choice {
+	display: grid;
+	gap: 0.12rem;
+}
+.pf-choice > :is(button, small) {
+	justify-self: end;
+	font: 0.5rem/1.4 var(--mono-body, monospace);
+	color: var(--muted-foreground);
+}
+.pf-choice > button,
+.pf-interface-values a {
+	text-decoration: underline;
+	cursor: pointer;
+}
+.pf-context {
+	grid-area: 1/3/3/4;
+	align-self: start;
+	padding: 0.55rem 0.6rem;
+	border-inline-start: 1px solid var(--border);
+	overflow-wrap: anywhere;
+}
+.pf-context summary {
+	cursor: pointer;
+}
+.pf-context .k-prose {
+	font-size: 0.65rem;
+	line-height: 1.55;
+	margin: 0.5rem 0;
+}
+.pf-context details,
+.pf-context .pf-privacy {
+	font-size: 0.52rem;
+	line-height: 1.5;
+	margin-block: 0.6rem;
+	color: var(--muted-foreground);
+}
+.pf-context pre {
+	white-space: pre-wrap;
+	font: 0.51rem/1.5 var(--mono-body, monospace);
+}
+.pf-privacy svg {
+	display: inline;
+	vertical-align: middle;
+}
+.pf-actions.st-unsaved {
+	grid-area: 2/2/3/3;
+	position: sticky;
+	bottom: 0;
+	z-index: 1;
+	gap: 0.3rem;
+	align-self: end;
+	flex-wrap: wrap;
+	background: var(--background);
+	margin: 0;
+	padding: 0.44rem 0;
+	border-top: 1px solid var(--border);
+}
+.pf-actions .st-status {
+	margin-right: auto;
+	flex: 1 1 7rem;
+	font: 0.5rem/1.45 var(--mono-body, monospace);
+}
+.pf-section,
+.pf-fields,
+.pf-speech,
+.pf-field {
+	display: grid;
+	min-width: 0;
+	gap: 0.55rem;
+}
+.pf-section,
+.pf-speech {
+	gap: 0.8rem;
+}
+.pf-section textarea {
+	width: 100%;
+}
+.pf-section :is(h4, h3) {
+	margin: 0;
+}
+.pf-section #response-comparison input {
+	width: 3rem;
+}
+.pf-persona-actions,
+.pf-endpoint {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+}
+.pf-persona-actions {
+	justify-content: space-between;
+}
+.pf-endpoint span {
+	margin-right: auto;
+	overflow-wrap: anywhere;
+}
+.pf-endpoint-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.55rem;
+}
+.pf-section .st-row {
+	border: 0;
+	border-bottom: 1px solid var(--border);
+	border-radius: 0;
+	padding: 0.5rem 0;
+	grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+.pf-section .st-control {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+.pf-section .st-control :is(select, input) {
+	max-width: 100%;
+}
+.pf-section .st-control p {
+	font-size: 0.55rem;
+}
+.pf-anchor {
+	position: absolute;
+	inset: 0 auto auto 0;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+.pf-layout .pf-back {
+	display: none;
+}
+@media (min-width: 701px) and (max-width: 1150px) {
+	.pf-layout {
+		grid-template-columns: 5rem minmax(0, 1fr);
+	}
+	.pf-context {
+		grid-area: 2/2/3/3;
+	}
+	.pf-actions.st-unsaved {
+		grid-area: 3/2/4/3;
+	}
+}
+@media (max-width: 700px) {
+	.pf-layout {
+		display: flex;
+		flex-direction: column;
+		min-height: calc(100dvh - 10rem);
+		gap: 0.55rem;
+	}
+	.pf-layout[data-list="true"] > :is(.pf-canvas, .pf-context, .pf-actions),
+	.pf-layout[data-list="false"] > .pf-outline {
+		display: none;
+	}
+	.pf-outline {
+		width: 100%;
+	}
+	.pf-outline button {
+		border-bottom: 1px solid var(--border);
+	}
+	.pf-layout .pf-back {
+		display: inline-flex;
+		margin-bottom: 0.35rem;
+	}
+	.pf-context {
+		padding: 0.45rem 0;
+		border: 0;
+		border-top: 1px solid var(--border);
+		width: 100%;
+	}
+	.pf-actions.st-unsaved {
+		width: 100%;
+		margin-top: auto;
+	}
+	.pf-section .st-row,
+	.pf-endpoint-fields {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.pf-outline button,
+	.pf-layout button,
+	.pf-section button,
+	.pf-canvas .k-seg button {
+		min-height: 44px;
+	}
+}
+
+.st-main[data-section="profile"]:has(.pf-layout) {
+	display: flex;
+	flex-direction: column;
+}
+.st-main[data-section="profile"] > div:has(> .pf-layout) {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+.pf-layout {
+	flex: 1;
+}
+.pf-context {
+	background-color: var(--background);
+}
+.pf-section .st-row {
+	background: transparent;
+}
+.pf-layout :is(.k-seg, input, textarea, select) {
+	border-color: var(--line, var(--border));
+}
+
+.pf-section .k-button.k-outline,
+.pf-actions .k-button.k-outline,
+.pf-section .k-switch span {
+	border-color: var(--line-soft, var(--border));
+}
+.pf-context > summary {
+	padding-block: 0.24rem;
+}
+.pf-section .k-select-field {
+	min-width: 0;
+}
+.pf-layout .pf-outline {
+	--k-halftone-strength: 0.18;
+}
+.pf-canvas :is(input, textarea, select, .keating-select) { min-width: 0; }

@@ -1,5 +1,6 @@
+import { EmptyState } from "../../../design-system/kit";
 /** Saved quizzes and generated artifacts that can seed the course. */
-import { Shapes } from "lucide-react";
+import { KeatingGlyph } from "../../../design-system/glyphs";
 import { css, cx } from "../../../../styled-system/css";
 import type { CourseArtifactSource } from "../../../courses/course-assembly";
 import { choiceClass } from "./styles";
@@ -17,7 +18,7 @@ export function ArtifactsSection({
   <section
     className={css({
       mt: "1.25rem",
-      borderTop: "1px solid var(--ink)",
+      borderTop: "1px solid var(--line-soft)",
       pt: "1rem",
     })}
   >
@@ -29,16 +30,14 @@ export function ArtifactsSection({
         gap: "1rem",
       })}
     >
-      <h3
+      <h3 data-glyph-host
         className={css({
           display: "flex",
           alignItems: "center",
           gap: "0.45rem",
-          fontFamily: "Georgia, serif",
-          fontSize: "1.2rem",
         })}
       >
-        <Shapes size={17} /> Artifact tray
+        <KeatingGlyph name="shapes" size={17} /> Artifact tray
       </h3>
       <span
         className={css({
@@ -106,16 +105,7 @@ export function ArtifactsSection({
         ))}
       </div>
     ) : (
-      <p
-        className={css({
-          mt: "0.5rem",
-          fontSize: "0.78rem",
-          color: "var(--ink-soft)",
-        })}
-      >
-        Saved quizzes and generated learning artifacts will appear
-        here.
-      </p>
+      <EmptyState className="cb-source-empty k-halftone" heading="Saved quizzes and generated learning artifacts will appear here." />
     )}
   </section>
   );

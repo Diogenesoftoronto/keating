@@ -14,7 +14,7 @@ describe("InteractivePage fallbacks", () => {
 		expect(markup).toContain("role=\"status\"");
 		expect(markup).toContain("Loading interactive page");
 		expect(markup).toContain(description);
-		expect(markup).toContain(">Reload</button>");
+		expect(markup).toMatch(/<button[^>]*aria-label="Reload"[^>]*>/);
 	});
 
 	test("oversize pages render the description, not a frame", () => {
@@ -36,7 +36,7 @@ describe("InteractivePage fallbacks", () => {
 			const markup = renderToStaticMarkup(<InteractivePageFallback status={status} title="Descent" description={description} message="boom" onReload={() => {}} />);
 			expect(markup).toContain("role=\"alert\"");
 			expect(markup).toContain(description);
-			expect(markup).toContain(">Reload</button>");
+			expect(markup).toMatch(/<button[^>]*aria-label="Reload"[^>]*>/);
 		}
 	});
 

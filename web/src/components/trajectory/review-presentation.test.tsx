@@ -61,11 +61,11 @@ describe("trajectory review presentation", () => {
 		expect(html).toContain("data-review-highlight=\"true\"");
 		expect(html).toContain("data-source-start");
 		expect(html).toContain('aria-label="Transcript layout"');
-		expect(html).toContain("Focused turn");
-		expect(html).not.toContain('id="trajectory-artifact-tab"');
+		expect(html).toContain("One turn");
+		expect(html).not.toContain('id="trajectory-artifact-panel-tab"');
 		expect(html).toContain('aria-label="Message view"');
-		expect(html).toContain(">rendered</button>");
-		expect(html).toContain(">raw</button>");
+		expect(html).toContain(">Rendered</button>");
+		expect(html).toContain(">Raw</button>");
 	});
 
 	test("renders the active model result as markdown in the comparison surface", () => {

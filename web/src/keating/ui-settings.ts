@@ -18,6 +18,7 @@ export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
 export interface KeatingUiSettings {
+	visualEffects: boolean;
 	showToolUi: boolean;
 	/** Explicit opt-in for chat review receipts and technical traces. */
 	showDeveloperDetails: boolean;
@@ -28,6 +29,7 @@ export interface KeatingUiSettings {
 	autoExpandReasoning: boolean;
 	reasoningLevel: ReasoningLevel;
 	animationRenderer: AnimationRenderer;
+	replyTypeface: "serif" | "sans" | "mono";
 	fontFamily: UiFontFamily;
 	shareLinkMode: ShareLinkMode;
 	shareWarningAcknowledged: boolean;
@@ -52,6 +54,7 @@ export interface KeatingUiSettings {
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	// Tool call cards stay out of the transcript until the learner asks for them.
+	visualEffects: true,
 	showToolUi: false,
 	showDeveloperDetails: false,
 	autoOpenArtifacts: true,
@@ -61,6 +64,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	autoExpandReasoning: false,
 	reasoningLevel: "medium",
 	animationRenderer: "hyperframes",
+	replyTypeface: "serif",
 	fontFamily: "jetbrains-mono",
 	shareLinkMode: "portable-short",
 	shareWarningAcknowledged: false,
@@ -188,6 +192,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 			: DEFAULT_UI_SETTINGS.webSearch;
 
 	return {
+		visualEffects: value?.visualEffects !== false,
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
 		showDeveloperDetails: value?.showDeveloperDetails === true,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
@@ -197,6 +202,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		autoExpandReasoning: value?.autoExpandReasoning === true,
 		reasoningLevel: value?.reasoningLevel ?? DEFAULT_UI_SETTINGS.reasoningLevel,
 		animationRenderer: "hyperframes",
+		replyTypeface: value?.replyTypeface === "mono" || value?.replyTypeface === "sans" ? value.replyTypeface : "serif",
 		fontFamily:
 			value?.fontFamily === "space-mono" || value?.fontFamily === "roboto" || value?.fontFamily === "jetbrains-mono"
 				? value.fontFamily
@@ -233,6 +239,7 @@ export function applyKeatingUiTypography(fontFamily: UiFontFamily) {
 	if (typeof document === "undefined") return;
 	const stacks = FONT_STACKS[fontFamily] ?? FONT_STACKS.roboto;
 	const root = document.documentElement;
+	root.setAttribute("data-reply-typeface", loadKeatingUiSettings().replyTypeface);
 	root.style.setProperty("--font-sans", stacks.sans);
 	root.style.setProperty("--font-serif", stacks.serif);
 	root.style.setProperty("--font-mono", stacks.mono);
@@ -252,6 +259,7 @@ export function loadKeatingUiSettings(): KeatingUiSettings {
 
 export function saveKeatingUiSettings(next: KeatingUiSettings) {
 	const normalized = normalizeSettings(next);
+	if (typeof document !== "undefined") document.documentElement.dataset.replyTypeface = normalized.replyTypeface;
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...normalized, schemaVersion: UI_SETTINGS_SCHEMA_VERSION }));
 	} catch (error) {

@@ -271,3 +271,41 @@ export const KeyboardAndResize: Story = {
     ).toBeVisible();
   },
 };
+
+const olderSessions = Array.from({ length: 14 }, (_, index) =>
+  makeSession(
+    `older-${index}`,
+    [
+      "Photosynthesis and the light reactions",
+      "Recursion without the headache",
+      "The causes of the First World War",
+      "Probability with dice and cards",
+    ][index % 4] + ` (${index + 1})`,
+    "An older conversation.",
+    (16 + index * 3) * 24,
+  ),
+);
+const libraryWithEarlier = [...sessions, ...olderSessions];
+/** Sessions untouched for 14 days sit in a collapsed Earlier group. */
+export const PinnedRecentAndEarlier: Story = {
+  args: {
+    store: {
+      ...store,
+      items: libraryWithEarlier,
+      roots: buildSessionTree(libraryWithEarlier),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const earlier = canvas.getByRole("button", { name: /Earlier/ });
+    await expect(earlier).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(earlier);
+    await expect(earlier).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(canvas.getByRole("button", { name: "Show 4 more" }));
+    await expect(canvas.queryByRole("button", { name: /^Show \d+ more$/ })).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "Pin Roman history: the republic" }));
+    await expect(canvas.getByRole("heading", { name: "Pinned" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Unpin Roman history: the republic" }));
+    await userEvent.click(earlier);
+  },
+};

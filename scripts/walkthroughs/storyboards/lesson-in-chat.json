@@ -1,0 +1,333 @@
+{
+  "slug": "lesson-in-chat",
+  "title": "A lesson in Chat",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile"
+  ],
+  "transcript": "lesson-in-chat",
+  "viewerNote": "Keating’s replies are scripted. The progress rail shows its stage labels with independent review turned off.",
+  "ready": [
+    {
+      "selector": "textarea[placeholder='Message Keating']"
+    },
+    {
+      "text": "local-tutor"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat"
+    },
+    {
+      "kind": "chapter",
+      "id": "ask",
+      "title": "Ask Keating",
+      "explanation": "Type a concrete learning question in Message Keating. Send it to start the lesson.",
+      "alt": "The chat composer contains Teach me how recursion returns."
+    },
+    {
+      "kind": "caption",
+      "text": "Ask how recursion returns."
+    },
+    {
+      "kind": "type",
+      "selector": "textarea[placeholder='Message Keating']",
+      "text": "Teach me how recursion returns."
+    },
+    {
+      "kind": "pause",
+      "ms": 1000,
+      "still": "ask"
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "chapter",
+      "id": "draft",
+      "title": "Follow the reply",
+      "explanation": "The progress rail names the stages of the turn. The tutor starts by asking for a prediction.",
+      "alt": "Keating's progress rail shows Draft, Review and Reply."
+    },
+    {
+      "kind": "caption",
+      "text": "Follow Draft, Review and Reply."
+    },
+    {
+      "kind": "wait-for",
+      "selector": "[aria-label='Reply stages']",
+      "still": "draft"
+    },
+    {
+      "kind": "wait-for",
+      "text": "The first call is replaced"
+    },
+    {
+      "kind": "chapter",
+      "id": "predict",
+      "title": "Make a prediction",
+      "explanation": "Choose the first answer and send it. Keating responds with a hint and asks you to think again.",
+      "alt": "The first choice is selected in the recursion quick check."
+    },
+    {
+      "kind": "caption",
+      "text": "Make a prediction in the quick check."
+    },
+    {
+      "kind": "click",
+      "selector": "label.shared-activity__choice:has(input:enabled)",
+      "label": "The first call is replaced",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 1400,
+      "still": "predict"
+    },
+    {
+      "kind": "click",
+      "label": "Finish check"
+    },
+    {
+      "kind": "wait-for",
+      "text": "What happens to that first call while the second one returns?"
+    },
+    {
+      "kind": "wait-for",
+      "selector": "[aria-label='Stop generating']",
+      "absent": true
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "section[aria-label=\"Your response\"]",
+        "nth": 0
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 1700,
+      "still": "your-response"
+    },
+    {
+      "kind": "chapter",
+      "id": "try-again",
+      "title": "Try the question again",
+      "explanation": "Choose The first call waits and send your answer. Keating explains where the waiting call resumes.",
+      "alt": "The second quick check has The first call waits selected."
+    },
+    {
+      "kind": "caption",
+      "text": "Try the check again after the hint."
+    },
+    {
+      "kind": "click",
+      "selector": "label.shared-activity__choice:has(input:enabled)",
+      "label": "The first call waits",
+      "contains": true,
+      "timeout": 5000
+    },
+    {
+      "kind": "wait-for",
+      "condition": "[...document.querySelectorAll('input:checked:enabled')].some(i => i.closest('label')?.innerText.includes('The first call waits'))"
+    },
+    {
+      "kind": "pause",
+      "ms": 1400,
+      "still": "try-again"
+    },
+    {
+      "kind": "click",
+      "label": "Finish check"
+    },
+    {
+      "kind": "wait-for",
+      "text": "The call stack gives each call a place to wait."
+    },
+    {
+      "kind": "wait-for",
+      "selector": "[aria-label='Stop generating']",
+      "absent": true
+    },
+    {
+      "kind": "click",
+      "label": "Close materials"
+    },
+    {
+      "kind": "chapter",
+      "id": "recall",
+      "title": "Reveal a flashcard",
+      "explanation": "Reveal the card, compare your recall with the answer, and rate it Good.",
+      "alt": "A revealed flashcard explains where a recursive call waits."
+    },
+    {
+      "kind": "caption",
+      "text": "Reveal the answer and rate your recall."
+    },
+    {
+      "kind": "click",
+      "label": "Reveal answer"
+    },
+    {
+      "kind": "pause",
+      "ms": 3000,
+      "still": "recall"
+    },
+    {
+      "kind": "click",
+      "label": "Good",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 2000
+    },
+    {
+      "kind": "chapter",
+      "id": "run",
+      "title": "Run the countdown",
+      "explanation": "Run tests executes the starter function with the sample inputs. Read both results in the code activity.",
+      "alt": "The countdown coding activity with its sample test results."
+    },
+    {
+      "kind": "caption",
+      "text": "Run the countdown's sample tests."
+    },
+    {
+      "kind": "click",
+      "label": "Run tests"
+    },
+    {
+      "kind": "wait-for",
+      "text": "2 / 2 sample tests passed"
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": ".coding-challenge__status"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3300,
+      "still": "run"
+    },
+    {
+      "kind": "chapter",
+      "id": "sources",
+      "title": "Read the sources",
+      "explanation": "The Sources footer names the references for the reply. You can return to them after the exercise.",
+      "alt": "The Sources footer links to MDN’s recursion and call stack entries."
+    },
+    {
+      "kind": "caption",
+      "text": "Find the reply’s Sources."
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "a",
+        "label": "MDN · Call stack",
+        "contains": true
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 2900,
+      "still": "sources"
+    },
+    {
+      "kind": "chapter",
+      "id": "study-chip",
+      "title": "Use a study chip",
+      "explanation": "Explain another way adds a follow-up to the composer. Read the suggested wording before you send.",
+      "alt": "The composer has the suggested follow-up from Explain another way."
+    },
+    {
+      "kind": "caption",
+      "text": "Explain another way drafts a follow-up."
+    },
+    {
+      "kind": "click",
+      "label": "Explain another way"
+    },
+    {
+      "kind": "wait-for",
+      "condition": "document.querySelector('textarea[placeholder=\"Message Keating\"]')?.value.includes('concrete example')"
+    },
+    {
+      "kind": "pause",
+      "ms": 1900,
+      "still": "study-chip"
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "chapter",
+      "id": "failed-reply",
+      "title": "Notice the failed reply",
+      "explanation": "The scripted demo tutor interrupts the reply. Your question stays in the conversation.",
+      "alt": "The failed response offers a Retry response button.",
+      "image": "failed-reply"
+    },
+    {
+      "kind": "caption",
+      "text": "The reply failed. Your question is still here."
+    },
+    {
+      "kind": "wait-for",
+      "label": "Retry response"
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "label": "Retry response"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 2500,
+      "still": "failed-reply"
+    },
+    {
+      "kind": "chapter",
+      "id": "recover",
+      "title": "Retry the reply",
+      "explanation": "Retry response sends the same request again. The scripted tutor replies with a folder-tree example.",
+      "alt": "A completed tutor reply explains the folder-tree example.",
+      "image": "poster"
+    },
+    {
+      "kind": "caption",
+      "text": "Retry the turn to continue the lesson."
+    },
+    {
+      "kind": "click",
+      "label": "Retry response"
+    },
+    {
+      "kind": "wait-for",
+      "text": "A folder tree is another example."
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "p",
+        "label": "A folder tree is another example.",
+        "contains": true
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3800,
+      "still": "poster"
+    }
+  ]
+}

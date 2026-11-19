@@ -8,8 +8,11 @@ import {
 	isWebSearchToolName,
 	parseWebSearchResult,
 	type ParsedWebSearch,
+	citationsFromCalls,
+	webSearchRuns,
 } from "../src/components/web-search-result";
-import { WebSearchPart } from "../src/components/WebSearchPart";
+import { WebSearchActivity, WebSearchPart, turnSearchCalls } from "../src/components/WebSearchPart";
+import { isSearchOnlyStep } from "../src/components/TurnProgress";
 
 describe("web search part — tool name detection", () => {
 	test("renders an incomplete result as a failure instead of a spinner", () => {
@@ -199,8 +202,8 @@ describe("web search part — site formatting", () => {
  test("source previews are bounded and keep accessible links", () => {
   const citations = Array.from({ length: 6 }, (_, i) => ({ title: `Paper ${i}`, url: `https://example.com/${i}` }));
   const html = renderToStaticMarkup(createElement(WebSearchPart, { toolName: "web_search", result: { citations } }));
-  expect(html.match(/class="search-result__source"/g)).toHaveLength(3);
-  expect(html).toContain("Show all 6 sources");
+  expect(html.match(/class="search-citations__link"/g)).toHaveLength(4);
+  expect(html).toContain("Show all 6");
   expect(html).toContain('aria-expanded="false"');
   expect(html).toContain('rel="noopener noreferrer"');
  });
@@ -261,5 +264,75 @@ describe("web search part — domains and URLs", () => {
 	test("keeps bracketed titles", () => {
 		const parsed = parseWebSearchResult("[Foo [PDF]](https://ex.com/a.pdf)", {});
 		expect(parsed.sites).toEqual([{ url: "https://ex.com/a.pdf", title: "Foo [PDF]", snippet: undefined }]);
+	});
+});
+
+describe("web search part — grouping consecutive queries", () => {
+	const has = (result: unknown) => result !== undefined;
+	const search = (id: string, query: string, result?: unknown, isError = false) => ({
+		type: "tool-call", toolCallId: id, toolName: "web_search", args: { query }, result, isError,
+	});
+
+	test("groups searches across reasoning and blank text but splits on prose", () => {
+		const runs = webSearchRuns([
+			search("a", "one", { citations: [{ url: "https://a.example/1" }] }),
+			{ type: "reasoning", text: "thinking" },
+			{ type: "text", text: "  " },
+			search("b", "two"),
+			{ type: "text", text: "Here is what I found." },
+			search("c", "three", { citations: [{ url: "https://c.example" }] }),
+		], has);
+		expect(runs.map(run => run.map(call => call.id))).toEqual([["a", "b"], ["c"]]);
+		expect(runs[0].map(call => call.state)).toEqual(["success", "running"]);
+	});
+
+	test("citations dedupe across queries and skip failed searches", () => {
+		const [run] = webSearchRuns([
+			search("a", "one", { citations: [{ url: "https://a.example/1" }, { url: "https://b.example" }] }),
+			search("b", "two", { citations: [{ url: "https://b.example" }, { url: "https://c.example" }] }),
+			search("c", "three", { citations: [{ url: "https://d.example" }] }, true),
+		], has);
+		expect(citationsFromCalls(run).map(site => site.url)).toEqual([
+			"https://a.example/1", "https://b.example", "https://c.example",
+		]);
+	});
+
+	test("renders several queries as one compact line", () => {
+		const [run] = webSearchRuns([
+			search("a", "first query", { citations: [{ url: "https://a.example" }] }),
+			search("b", "second query", { citations: [{ url: "https://b.example" }] }),
+		], has);
+		const html = renderToStaticMarkup(createElement(WebSearchActivity, { calls: run }));
+		expect(html).toContain("Searched the web");
+		expect(html).toContain("2 queries");
+		expect(html).toContain("2 sources");
+		expect(html).toContain('aria-expanded="false"');
+		expect(html).not.toContain("first query");
+	});
+});
+
+describe("web search part — turn scope", () => {
+	const call = (id: string, query: string, result?: unknown) => ({ type: "tool-call", toolCallId: id, toolName: "web_search", args: { query }, result });
+	test("collects searches from every agent step since the learner's message", () => {
+		const messages = [
+			{ id: "u0", role: "user", content: [] },
+			{ id: "a0", role: "assistant", content: [call("old", "old", { citations: [] })] },
+			{ id: "u1", role: "user", content: [] },
+			{ id: "a1", role: "assistant", content: [call("x", "first", { citations: [{ url: "https://x.example" }] })] },
+			{ id: "a2", role: "assistant", content: [call("y", "second")] },
+			{ id: "a3", role: "assistant", content: [{ type: "text", text: "Answer" }] },
+		];
+		expect(turnSearchCalls(messages, 5, true).map(c => [c.id, c.state])).toEqual([["x", "success"], ["y", "running"]]);
+		expect(turnSearchCalls(messages, 5, false).map(c => c.state)).toEqual(["success", "error"]);
+	});
+});
+
+describe("web search part — search-only steps", () => {
+	const search = { type: "tool-call", toolName: "web_search" };
+	test("only searches, reasoning and blank text count as a search step", () => {
+		expect(isSearchOnlyStep([search, { type: "reasoning", text: "…" }, { type: "text", text: " " }, search])).toBe(true);
+		expect(isSearchOnlyStep([search, { type: "text", text: "Let me look that up." }])).toBe(false);
+		expect(isSearchOnlyStep([search, { type: "tool-call", toolName: "generate_image" }])).toBe(false);
+		expect(isSearchOnlyStep([{ type: "reasoning", text: "…" }])).toBe(false);
 	});
 });

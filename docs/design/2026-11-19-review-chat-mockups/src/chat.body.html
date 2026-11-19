@@ -1,0 +1,300 @@
+<div class="wrap">
+<p class="lede"><b>Chat, redrawn around the lesson.</b> Session, new chat and reply states use the Keating glyphs and reading styles. The frames are a 1120&times;700 viewport scaled to fit; open full screen to use them at size. Hover the icons, click a session, a tab or a chip, then press send.</p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Tutor voice <span class="tog" data-tog="voice"><button data-v="serif" aria-pressed="true">Serif</button><button data-v="mono" aria-pressed="false">Mono</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+<!-- ═══════════════ C1 ═══════════════ -->
+<section class="board" data-view="new">
+  <div class="board-h"><span class="n">C1</span><h2>A session in progress</h2><p>The reply is the page; everything else gets quieter.</p>
+    <span class="tog" data-tog="mat"><button data-v="off" aria-pressed="true">Materials closed</button><button data-v="on" aria-pressed="false">open</button></span>
+    <span class="tog" data-tog="view"><button data-v="new" aria-pressed="true">Aligned board</button><button data-v="now" aria-pressed="false">Early reference</button></span>
+  </div>
+  <div class="fit"><div class="canvas"><div class="kt scr chat m2-c1" style="height:740px" data-enter="chat">
+    <header class="top">
+      <button class="ib" title="Sessions">{{i:panel:l}}</button>
+      <i class="logo" role="img" aria-label="Keating"></i>
+      <div class="ttl" style="margin-left:6px"><b>Recursion: pause and resume, not replace</b><span class="m2-phone-hide">Socratic &middot; Computer Science &middot; 8 messages</span><span class="m2-phone-only">Claude Sonnet 5.5 &middot; Socratic</span></div>
+      <span class="sp"></span>
+      <button class="b ln" aria-haspopup="dialog" onclick="this.closest('.board').querySelector('.m2-model-dialog').showModal()"><i class="d" style="--c:var(--green)"></i>Claude Sonnet 5.5 {{i:chev:s}}</button>
+      <button class="b ln">{{i:book:s}}Sources &middot; 0 {{i:chev:s}}</button>
+      <span class="vr"></span>
+      <button class="b gh">{{i:layers}}Materials</button>
+      <button class="b gh">{{i:pen}}Review</button>
+      <button class="ib" title="More">{{i:more}}</button>
+    </header>
+    <div class="body">
+      <aside class="rail">
+        <div class="rail-h"><button class="b sm pri">{{i:plus:s}}New</button><span class="cnt">12 sessions</span><span class="sp"></span><button class="ib sm" title="Collapse sessions">{{i:panel:s}}</button></div>
+        <div class="find">{{i:search:s}}<span>Find a session</span><span class="sp"></span><kbd>/</kbd></div>
+        <div class="chips"><span class="chip on">All</span><span class="chip"><i class="d" style="--c:#7c5cff"></i>CS <b>5</b></span><span class="chip"><i class="d" style="--c:#2f6fed"></i>Math <b>4</b></span><span class="chip"><i class="d" style="--c:#e8a33d"></i>Lang <b>3</b></span></div>
+        <a class="ses"><b>Why a derivative is a slope</b><span><i class="d" style="--c:#2f6fed"></i>Math &middot; 22 messages &middot; study plan</span></a>
+        <a class="ses on"><b>Recursion: pause and resume, not replace</b><span><i class="d" style="--c:#7c5cff"></i>CS &middot; 12:47 &middot; 8 messages</span></a>
+        <a class="ses"><b>SQL joins by example</b><span><i class="d" style="--c:#7c5cff"></i>CS &middot; 14 messages &middot; 09:12</span></a>
+        <a class="ses" style="padding-left:24px"><b>{{i:corner:s}} What if both tables have nulls?</b><span>branch &middot; 5 messages &middot; 09:40</span></a>
+        <a class="ses"><b>Bayes' theorem with a medical test</b><span><i class="d" style="--c:#2f6fed"></i>Math &middot; 6 messages</span></a>
+        <a class="ses"><b>Pass&eacute; compos&eacute; vs imparfait</b><span><i class="d" style="--c:#e8a33d"></i>Language &middot; 9 messages &middot; flashcards</span></a>
+        <a class="ses"><b>Light reactions in photosynthesis</b><span><i class="d" style="--c:#1e9b50"></i>Biology &middot; 11 messages &middot; concept map</span></a>
+        <a class="ses"><b>Reading a nutrition label</b><span><i class="d" style="--c:#1e9b50"></i>Biology &middot; 4 messages</span></a>
+        <div class="rail-f"><i class="d" style="--c:var(--amber)"></i>Storage is not persistent<a>Fix</a><button class="ib sm" aria-label="Dismiss storage notice">{{i:x:s}}</button></div>
+      </aside>
+      <main class="thread fade">
+        <div class="scroll"><div class="col">
+          <article class="tu">
+            <div class="prose">
+              <p>It is <i>paused</i>, waiting, with all of its local variables intact.</p>
+              <figure class="code m2-code"><figcaption><b>Python</b><span>Hosted runs unavailable</span><span class="sp"></span><button class="ib sm" title="Edit">{{i:edit:s}}</button><button class="ib sm" title="Copy" data-copy>{{i:copy:s}}</button><button class="b sm gh" disabled>{{i:play:s}}Run</button></figcaption>
+<pre><span class="n">1</span><span class="kw">def</span> <span class="fn">countdown</span>(n):
+<span class="n">2</span>    <span class="kw">if</span> n == 0:          <span class="cm"># base case</span>
+<span class="n">3</span>        <span class="kw">return</span>
+<span class="n">4</span>    print(<span class="st">"before"</span>, n)
+<span class="n">5</span>    countdown(n - 1)    <span class="cm"># paused here</span>
+<span class="n">6</span>    print(<span class="st">"after"</span>, n)   <span class="cm"># resumes here</span></pre></figure>
+              <p>Predict the output of <code>countdown(2)</code> before you run it. Write down the four lines you expect.</p>
+            </div>
+          </article>
+          <div class="me"><div class="m2-response"><b>Your response</b><p>before 2, before 1, after 1, after 2</p></div></div>
+          <article class="tu">
+            <div class="who"><span class="eb">Keating</span><span class="t">12:11</span></div>
+            <div class="prose">
+              <p>Exactly. You just described the <b>call stack</b> without being told the term. Each paused call sits on a stack, and the most recent one finishes first.</p>
+              <p>Now the question you actually asked, turned around: would you walk a folder tree with a loop or with recursion, and what decides it?</p>
+            </div>
+            <div class="m2-card"><header class="m2-row m1-halftone"><span data-glyph-host>{{i:help:s}}</span><h3>Quick check</h3></header><div class="m2-card-body m2-stack"><h3>When does the paused call resume?</h3><p>After the call it made returns.</p></div><footer class="m2-row"><span class="sp"></span><button type="button" class="b sm pri" disabled>{{i:send:s}}Send answer</button></footer></div>
+            <div class="acts"><button class="ib" title="Copy message" data-copy>{{i:copy}}</button><button class="ib" title="Quote in your message">{{i:quote}}</button><button class="ib" title="Helpful">{{i:up}}</button><button class="ib" title="Not helpful">{{i:dn}}</button><button class="ib" title="Fork session from here">{{i:fork}}</button><span class="sp"></span></div>
+          </article>
+        </div></div>
+        <i class="botseat" title="Keating. Drag him onto anything to ask about it."></i>
+        <div class="dock"><div class="col">
+          <div class="quick"><i class="bot" aria-hidden="true"></i><span class="chip">Explain another way</span><span class="chip">Quiz me</span><span class="chip">Make flashcards</span></div>
+          <div class="comp">
+            <div class="ta">Message Keating</div>
+            <div class="cbar"><button class="ib" title="Attach files">{{i:clip}}</button><button class="ib" title="Record an audio message">{{i:mic}}</button><button class="ib" title="Start a live conversation">{{i:wave}}</button><span class="sp"></span><button class="b sm gh" title="Reasoning level">{{i:bulb:s}}Medium</button><button class="send" title="Send message">{{i:send}}</button></div>
+          </div>
+          <div class="hint"><span>keating won't give you the answer &mdash; <em>that's the point</em></span></div>
+        </div></div>
+      </main>
+      <aside class="mat"><section class="m2-stack">
+    <header class="m2-material-head m1-halftone"><div class="m2-row"><h3>Materials</h3><span class="sp"></span><button type="button" class="b sm gh" >{{i:layers:s}}All materials</button><button type="button" class="ib sm" aria-label="Close materials" title="Close materials" >{{i:x:s}}</button></div><p>Everything Keating made for you in this conversation.</p></header><div class="m2-material-content">
+    <div class="m2-stack"><div class="tabs"><span>All</span><span class="on">Study plan</span><span>Concept map</span><span>Quiz</span><span>Flashcards</span><span>Assignment</span></div><div class="m2-row"><button type="button" class="b sm gh" >{{i:left:s}}All materials in this session</button></div><div class="m2-row"><small class="m2-meta">just now　▪ 1 of 4 done</small><button type="button" class="b sm gh" >{{i:message:s}}Show in conversation</button></div><div class="chip">Revision 2 · 1 change logged</div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><span data-glyph-host>{{i:route:s}}</span><h3>Recursion in four steps</h3><span class="m2-label">Study plan</span><span class="sp"></span><small class="m2-meta">1 of 4</small></header><div class="m2-card-body m2-stack"><div class="plist"><div><span class="box dn">{{i:check:s}}</span><b>Calls pause and resume</b><small>10 min</small></div><div><span class="box"></span><b>When recursion pays for itself</b><small>15 min</small></div><div class="sub1"><span class="box"></span><span>Predict the order of returns</span><a class="lnk">Start</a></div></div><small class="m2-meta">Save &amp; review plan</small></div><footer class="m2-row"><small class="m2-meta">Resumable plan</small><span class="sp"></span><button type="button" class="b sm pri" >Save to Materials</button></footer></div><div class="m2-row"><button type="button" class="b sm gh" >{{i:clock:s}}Hide revisions</button></div>
+    <div class="m2-stack"><p>Revision 1 (before the last change) compared with revision 2 (now).</p><div><b>Added</b><ul><li data-glyph-host>{{i:plus:s}} Predict the order of returns</li></ul></div><details><summary>Show revision 1 as it was</summary><p>The original plan covered calls, returns, base cases and trade-offs.</p></details><div><b>History (newest first)</b><ol><li><b>Rev 2</b> Clarified the return-order exercise <span class="m2-meta">· just now</span></li></ol></div></div></div></div></section></aside>
+    </div>
+  </div></div><img class="now" src="{{asset:now-chat.webp}}" alt="The chat screen before the design pass"></div>
+  <div class="kt m2-frame">
+    <div class="m2-grid">
+    <div class="m2-stack"><span class="cap">Empty Materials</span><section class="m2-stack">
+    <header class="m2-material-head m1-halftone"><div class="m2-row"><h3>Materials</h3><span class="sp"></span><button type="button" class="b sm gh" >{{i:layers:s}}All materials</button><button type="button" class="ib sm" aria-label="Close materials" title="Close materials" >{{i:x:s}}</button></div><p>Everything Keating made for you in this conversation.</p></header><div class="m2-material-content"><div class="m2-empty m1-halftone"><i class="m1-field" aria-hidden="true"></i><span data-glyph-host>{{i:layers:s}}</span><h3>Ask Keating for…</h3><p>Study plans, quizzes, flashcards, assignments and maps Keating makes in this conversation collect here, so you can come back to them.</p><button type="button" class="b sm gh" >{{i:spark:s}}Make me a study plan</button><button type="button" class="b sm gh" >{{i:spark:s}}Quiz me on what we covered</button><button type="button" class="b sm gh" >{{i:spark:s}}Give me an assignment</button></div></div></section></div>
+    <div class="m2-stack"><span class="cap">Materials list</span><section class="m2-stack">
+    <header class="m2-material-head m1-halftone"><div class="m2-row"><h3>Materials</h3><span class="sp"></span><button type="button" class="b sm gh" >{{i:layers:s}}All materials</button><button type="button" class="ib sm" aria-label="Close materials" title="Close materials" >{{i:x:s}}</button></div><p>Everything Keating made for you in this conversation.</p></header><div class="m2-material-content">
+    <div class="m2-stack"><div class="tabs"><span class="on">All</span><span>Study plan</span><span>Concept map</span><span>Quiz</span><span>Flashcards</span><span>Assignment</span><span>Notes</span><span>Goal</span><span>Simulation</span><span>Coding challenge</span><span>Language practice</span><span>Music lab</span><span>Image</span><span>Audio</span><span>Video</span></div>
+    <div class="m2-stack"><span class="m2-label">Plan</span><ul class="m2-items"><li><button class="m2-material-row">{{i:route:s}}<span><b>Recursion in four steps</b><small>Study plan · just now　▪ 1 of 4 done</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Maps and diagrams</span><ul class="m2-items"><li><button class="m2-material-row">{{i:tree:s}}<span><b>The call stack</b><small>Concept map · just now</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Practice</span><ul class="m2-items"><li><button class="m2-material-row">{{i:quiz:s}}<span><b>Recursion check</b><small>Quiz · just now　▪ Not started</small></span></button></li><li><button class="m2-material-row">{{i:layers:s}}<span><b>Stack and base cases</b><small>Flashcards · just now</small></span></button></li><li><button class="m2-material-row">{{i:filter:s}}<span><b>Watch the stack unwind</b><small>Simulation · just now</small></span></button></li><li><button class="m2-material-row">{{i:code:s}}<span><b>Trace a recursive call</b><small>Coding challenge · just now</small></span></button></li><li><button class="m2-material-row">{{i:globe:s}}<span><b>Conditionals in French</b><small>Language practice · just now</small></span></button></li><li><button class="m2-material-row">{{i:music:s}}<span><b>Hear a cadence</b><small>Music lab · just now</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Assignments</span><ul class="m2-items"><li><button class="m2-material-row">{{i:checklist:s}}<span><b>Explain a stack trace</b><small>Assignment · just now　▪ Open</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Notes and goals</span><ul class="m2-items"><li><button class="m2-material-row">{{i:note:s}}<span><b>When recursion pays off</b><small>Notes · just now</small></span></button></li><li><button class="m2-material-row">{{i:target:s}}<span><b>Read a stack trace</b><small>Goal · just now</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Media</span><ul class="m2-items"><li><button class="m2-material-row">{{i:image:s}}<span><b>Stack frame sketch</b><small>Image · just now</small></span></button></li><li><button class="m2-material-row">{{i:wave:s}}<span><b>Pronunciation</b><small>Audio · just now</small></span></button></li><li><button class="m2-material-row">{{i:video:s}}<span><b>Trace walkthrough</b><small>Video · just now</small></span></button></li></ul></div>
+    <div class="m2-stack"><span class="m2-label">Earlier saved items</span><ul class="m2-items"><li><button class="m2-material-row">{{i:route:s}}<span><b>Recursion map</b><small>Map · just now</small></span></button></li><li><button class="m2-material-row">{{i:play:s}}<span><b>Call stack animation</b><small>Animation · just now</small></span></button></li><li><button class="m2-material-row">{{i:layers:s}}<span><b>Recursion deck</b><small>Deck · just now</small></span></button></li><li><button class="m2-material-row">{{i:checklist:s}}<span><b>Worked-example check</b><small>Verification · just now</small></span></button></li></ul></div><span class="m2-label">Ask Keating for…</span><div class="m2-row"><button type="button" class="b sm gh" >Make me a study plan</button><button type="button" class="b sm gh" >Quiz me on what we covered</button><button type="button" class="b sm gh" >Give me an assignment</button></div></div></div></section></div>
+    <div class="m2-stack"><span class="cap">Study plan revisions</span><section class="m2-stack">
+    <header class="m2-material-head m1-halftone"><div class="m2-row"><h3>Materials</h3><span class="sp"></span><button type="button" class="b sm gh" >{{i:layers:s}}All materials</button><button type="button" class="ib sm" aria-label="Close materials" title="Close materials" >{{i:x:s}}</button></div><p>Everything Keating made for you in this conversation.</p></header><div class="m2-material-content">
+    <div class="m2-stack"><div class="tabs"><span>All</span><span class="on">Study plan</span><span>Concept map</span><span>Quiz</span><span>Flashcards</span><span>Assignment</span></div><div class="m2-row"><button type="button" class="b sm gh" >{{i:left:s}}All materials in this session</button></div><div class="m2-row"><small class="m2-meta">just now　▪ 1 of 4 done</small><button type="button" class="b sm gh" >{{i:message:s}}Show in conversation</button></div><div class="chip">Revision 2 · 1 change logged</div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><span data-glyph-host>{{i:route:s}}</span><h3>Recursion in four steps</h3><span class="m2-label">Study plan</span><span class="sp"></span><small class="m2-meta">1 of 4</small></header><div class="m2-card-body m2-stack"><div class="plist"><div><span class="box dn">{{i:check:s}}</span><b>Calls pause and resume</b><small>10 min</small></div><div><span class="box"></span><b>When recursion pays for itself</b><small>15 min</small></div><div class="sub1"><span class="box"></span><span>Predict the order of returns</span><a class="lnk">Start</a></div></div><small class="m2-meta">Save &amp; review plan</small></div><footer class="m2-row"><small class="m2-meta">Resumable plan</small><span class="sp"></span><button type="button" class="b sm pri" >Save to Materials</button></footer></div><div class="m2-row"><button type="button" class="b sm gh" >{{i:clock:s}}Hide revisions</button></div>
+    <div class="m2-stack"><p>Revision 1 (before the last change) compared with revision 2 (now).</p><div><b>Added</b><ul><li data-glyph-host>{{i:plus:s}} Predict the order of returns</li></ul></div><details><summary>Show revision 1 as it was</summary><p>The original plan covered calls, returns, base cases and trade-offs.</p></details><div><b>History (newest first)</b><ol><li><b>Rev 2</b> Clarified the return-order exercise <span class="m2-meta">· just now</span></li></ol></div></div></div></div></section></div></div></div>
+  <div class="kt m2-frame"><details class="kt m2-frame"><summary>Open material examples</summary>
+    <div class="m2-grid">
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Concept map</strong></header><div class="m2-card-body m2-stack"><div class="m1-grid m2-card-body"><b>The call stack</b><p>Call → pause → return → resume</p></div></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Quiz</strong></header><div class="m2-card-body m2-stack"><p><b>Recursion check</b></p><p>1 question · Not started</p><p>Open it in the conversation to answer.</p></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Flashcards</strong></header><div class="m2-card-body m2-stack"><p><b>Stack and base cases</b></p><p>Recall what a paused call keeps.</p><p>Open the deck in the conversation to review.</p></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Assignment</strong></header><div class="m2-card-body m2-stack"><p>A copy to look back at. To answer or change it, use it in the conversation.</p><p><b>Explain a stack trace</b></p><p>Show which call returns first.</p></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Notes and goals</strong></header><div class="m2-card-body m2-stack"><p>A copy to look back at. To answer or change it, use it in the conversation.</p><p><b>When recursion pays off</b></p><p>Keep the paused state and show where it resumes.</p></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Practice</strong></header><div class="m2-card-body m2-stack"><p>A copy to look back at. To answer or change it, use it in the conversation.</p><p>Simulation, coding challenge, language practice and music lab open as copies of the activities in the thread.</p></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Media</strong></header><div class="m2-card-body m2-stack"><p><b>Pronunciation</b></p><audio controls aria-label="Pronunciation"></audio></div></div>
+    <div class="m2-card">
+    <header class="m2-row m1-halftone"><strong>Earlier saved items</strong></header><div class="m2-card-body m2-stack"><p><b>Worked-example check</b></p><p>Read the artifact in Materials.</p></div></div></div></details><button class="b ln" type="button" aria-haspopup="dialog" onclick="this.nextElementSibling.showModal()">Open model picker</button>
+  <dialog aria-label="Choose a model" class="m2-model-dialog hardc"><div class="m2-picker m2-stack"><div class="m2-row"><label class="find">{{i:search:s}}<input placeholder="Choose a model…" autofocus aria-label="Choose a model"></label><button type="button" class="ib sm" aria-label="Close model picker" title="Close model picker" onclick="this.closest('dialog').close()">{{i:x:s}}</button></div><div class="m2-row"><label class="fld">Provider<select class="inp"><option>All providers</option></select></label><label class="fld">Use it for<select class="inp"><option>Any conversation</option></select></label></div>
+    <div class="m2-stack"><span class="m2-label">Provider default</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>Keating default</b><small class="m2-meta">Not Organic</small></button><span class="m2-label">Selected model</span><button class="m2-picker-row" aria-pressed="true" onclick="this.closest('dialog').close()"><b>Claude Sonnet 5.5</b><small class="m2-meta">Anthropic · Step-by-step reasoning</small></button><span class="m2-label">OpenAI</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>GPT-5.4</b><small class="m2-meta">OpenAI · Understands images</small></button></div><small class="m2-meta">↑ ↓ to browse · Enter to choose · Esc to close</small></div></dialog></div><ol class="pts">
+    <li>The header keeps the session title, model, Sources, Materials and Review on one line.</li>
+    <li>The session rail starts with New, search and subject filters. The active session has a leading green bar.</li>
+    <li>Keating replies use the reading face. Learner messages have a soft outline and use the interface face.</li>
+    <li>The three composer icons are quiet. Reasoning sits beside the green Send button.</li>
+    <li>Copy, quote, helpful, not helpful and fork sit together below the reply.</li>
+    <li>Materials uses grouped rows and kind tabs when there is something to browse. Lesson cards sit between the reply prose and the reply actions.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ C2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">C2</span><h2>A new session</h2><p>The first useful action sits in the middle of the screen.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr chat" data-enter="empty">
+    <header class="top">
+      <button class="ib" title="Sessions">{{i:panel:l}}</button>
+      <i class="logo" role="img" aria-label="Keating"></i>
+      <div class="ttl" style="margin-left:6px"><b>New session</b><span>Socratic</span></div>
+      <span class="sp"></span>
+      <button class="b ln"><i class="d" style="--c:var(--green)"></i>Claude Sonnet 5.5 {{i:chev:s}}</button>
+      <button class="b ln">{{i:book:s}}Sources &middot; 0 {{i:chev:s}}</button>
+      <span class="vr"></span>
+      <button class="b gh off">{{i:layers}}Materials</button>
+      <button class="b gh">{{i:pen}}Reviews</button>
+      <button class="ib" title="More">{{i:more}}</button>
+    </header>
+    <div class="body">
+      <aside class="spine"><button class="ib bd" title="Expand session panel">{{i:panel}}</button><button class="ib" title="New session">{{i:plus}}</button><button class="ib" title="Find a session">{{i:search}}</button></aside>
+      <main class="thread">
+        <div class="hero">
+          <i class="bot" style="width:52px;height:52px"></i>
+          <h1>What do you want to understand?</h1>
+          <p>Ask in your own words or choose a starting point. Keating will begin from what you already know.</p>
+          <div class="comp">
+            <div class="ta" style="min-height:52px">Message Keating</div>
+            <div class="cbar"><button class="ib" title="Attach files">{{i:clip}}</button><button class="ib" title="Record an audio message">{{i:mic}}</button><button class="ib" title="Start a live conversation">{{i:wave}}</button><span class="sp"></span><button class="b sm gh" title="Reasoning level">{{i:bulb:s}}Medium</button><button class="send">{{i:send}}</button></div>
+          </div>
+          <div class="starts">
+            <div class="st-c"><span class="eb">Learn</span><span>How do vaccines train the immune system?</span></div>
+            <div class="st-c"><span class="eb">Plan</span><span>Plan a 4-week machine-learning course</span></div>
+            <div class="st-c"><span class="eb">Map</span><span>Map probability to statistics</span></div>
+            <div class="st-c"><span class="eb">Assess</span><span>Test my async/await knowledge</span></div>
+            <div class="st-c"><span class="eb">Create</span><span>Flashcards for Japanese particles</span></div>
+            <div class="st-c"><span class="eb">Learn</span><span>How does jazz improvisation work?</span></div>
+          </div>
+          <div class="row" style="width:620px"><span class="lnk">{{i:refresh:s}} Other suggestions</span><span class="sp"></span><span class="hint" style="margin:0">keating won't give you the answer &mdash;&nbsp;<em>that's the point</em></span></div>
+        </div>
+      </main>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The empty thread offers a prompt and starters before any messages are written.</li>
+    <li>The composer keeps the same attach, microphone, Live, reasoning and Send order.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ C3 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">C3</span><h2>What a turn can look like</h2><p>The in-between states, drawn in the same quiet register as the reply.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt strip" data-enter="strip">
+    <div>
+      <span class="cap">Thinking, checking a draft</span>
+      <div class="who"><i class="bot"></i><span class="eb">Keating</span><span class="dots"><i></i><i></i><i></i></span></div>
+      <div class="prose" style="color:var(--ink-soft)"><p>Keating is thinking</p></div>
+      <div class="rail-p"><span class="ok">Draft</span><i class="ok"></i><b>Review</b><i></i><span>Reply</span></div>
+      <span class="mono faint" style="font-size:10px">Checking the draft against what you said in turn 3 &middot; 4s</span>
+      <span class="lnk" style="align-self:flex-start">2 steps {{i:chev:s}}</span>
+    </div>
+    <div>
+      <span class="cap">Not fully verified</span>
+      <div class="who"><span class="eb">Keating</span><span class="t">12:14</span></div>
+      <div class="prose"><p>A folder contains folders, so each one is the same problem, smaller. <span style="color:var(--amber-deep);white-space:nowrap">{{i:shield:s}}</span></p></div>
+      <div class="tip">Not fully verified: none of Keating's drafts passed every review check. Double-check facts and steps that matter.</div>
+    </div>
+    <div>
+      <span class="cap">Did not finish</span>
+      <div class="who"><span class="eb">Keating</span><span class="t">12:15</span></div>
+      <div class="fail"><b>This response did not finish</b><span>Retry the same prompt without rewriting it.</span><div class="row"><button class="b sm pri">{{i:refresh:s}}Retry response</button><button class="b sm ln">Choose model</button></div></div>
+      <span class="mono faint" style="font-size:10px">One notice per turn. Sign-in, credit and model recovery reuse this card.</span>
+    </div>
+    <div>
+      <span class="cap">Scrolled up mid-reply</span>
+      <div class="prose" style="color:var(--ink-faint)"><p>&hellip;the most recent one finishes first, so the <code>after</code> lines unwind in reverse.</p></div>
+      <div class="quick m2-study"><span class="chip">Explain another way</span><span class="chip">Quiz me</span><span class="chip">Make flashcards</span><button type="button" class="b sm ln m2-jump" aria-label="Jump to latest">{{i:down:s}}<span>Jump to latest</span></button></div><div class="quick m2-study"><span class="chip">Explain another way</span><span class="chip">Quiz me</span><span class="chip">Make flashcards</span><button type="button" class="b sm ln m2-jump" aria-label="New reply below">{{i:down:s}}<span>New reply below</span></button></div>
+      <span class="mono faint" style="font-size:10px">When you scroll away, the trailing study chip returns you to the latest message.</span>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>Draft review can report progress while Keating works.</li>
+    <li>An interrupted reply offers recovery actions beside the error.</li>
+    <li>The jump chip shares the row immediately above the composer.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ C4 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">C4</span><h2>On a phone</h2><p>The same three decisions at phone width: reading first, one primary, sessions one tap away.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt phones m2-phones" data-enter="phones">
+    <div class="ph-w"><span class="cap">Session</span><div class="ph chat">
+      <header class="top"><button class="ib">{{i:menu:l}}</button><div class="ttl"><b>Recursion: pause and resume&hellip;</b><span>Sonnet 5.5 &middot; Socratic</span></div><span class="sp"></span><button class="ib" aria-label="Materials">{{i:layers}}</button><button class="ib">{{i:more}}</button></header>
+      <main class="thread">
+        <div class="scroll"><div class="col">
+          <div class="me"><div class="m2-response"><b>Your response</b><p>before 2, before 1, after 1, after 2</p></div></div>
+          <article class="tu">
+            <div class="who"><i class="bot"></i><span class="eb">Keating</span><span class="t">12:11</span></div>
+            <div class="prose"><p>Exactly. You just described the <b>call stack</b> without being told the term. Each paused call sits on a stack, and the most recent one finishes first.</p><p>Now the question you actually asked, turned around: would you walk a folder tree with a loop or with recursion, and what decides it?</p></div>
+            <div class="acts"><button class="ib">{{i:copy}}</button><button class="ib">{{i:quote}}</button><button class="ib">{{i:up}}</button><button class="ib">{{i:dn}}</button><button class="ib">{{i:fork}}</button></div>
+          </article>
+        </div></div>
+        <div class="dock">
+          <div class="quick m2-study"><i class="bot" aria-hidden="true"></i><span class="chip">Explain another way</span><span class="chip">Quiz me</span><span class="chip">Make flashcards</span><button type="button" class="b sm ln m2-jump" aria-label="New reply below">{{i:down:s}}</button></div>
+          <div class="comp"><div class="ta">Message Keating</div><div class="cbar"><button class="ib">{{i:clip}}</button><button class="ib">{{i:mic}}</button><button class="ib">{{i:wave}}</button><span class="sp"></span><button class="b sm gh" title="Reasoning level">{{i:bulb:s}}Medium</button><button class="send" aria-label="Send message">{{i:send}}</button></div></div>
+        </div>
+      </main>
+    </div></div>
+    <div class="ph-w"><span class="cap">Sessions</span><div class="ph chat">
+      <header class="top"><b style="font:600 15px var(--ui)">Sessions</b><span class="sp"></span><button type="button" class="ib sm" aria-label="Close sessions" title="Close sessions" >{{i:x:s}}</button></header>
+      <div class="rail" style="width:auto;flex:1;border:0;background:var(--paper)">
+        <div class="m2-session-tools"><button type="button" class="b sm pri" aria-label="New session">{{i:plus:s}}</button><label class="find">{{i:search:s}}<input aria-label="Find a session" placeholder="Find a session"></label></div>
+        <div class="chips"><span class="chip on">All <b>12</b></span><span class="chip"><i class="d" style="--c:#7c5cff"></i>CS <b>5</b></span><span class="chip"><i class="d" style="--c:#2f6fed"></i>Math <b>4</b></span><span class="chip"><i class="d" style="--c:#e8a33d"></i>Language <b>3</b></span></div>
+        <a class="ses on"><b>Recursion: pause and resume, not replace</b><span><i class="d" style="--c:#7c5cff"></i>CS &middot; 12:47 &middot; 8 messages</span></a>
+        <a class="ses"><b>SQL joins by example</b><span><i class="d" style="--c:#7c5cff"></i>CS &middot; 14 messages &middot; {{i:fork:s}}2</span></a>
+        <a class="ses"><b>Bayes' theorem with a medical test</b><span><i class="d" style="--c:#2f6fed"></i>Math &middot; 6 messages</span></a>
+        <a class="ses"><b>Why a derivative is a slope</b><span><i class="d" style="--c:#2f6fed"></i>Math &middot; 22 messages &middot; study plan</span></a>
+        <a class="ses"><b>Pass&eacute; compos&eacute; vs imparfait</b><span><i class="d" style="--c:#e8a33d"></i>Language &middot; 9 messages</span></a>
+        <a class="ses"><b>Light reactions in photosynthesis</b><span><i class="d" style="--c:#1e9b50"></i>Biology &middot; 11 messages</span></a>
+        <a class="ses"><b>Reading a nutrition label</b><span><i class="d" style="--c:#1e9b50"></i>Biology &middot; 4 messages</span></a>
+      </div>
+    </div></div>
+    <div class="ph-w"><span class="cap">New session</span><div class="ph chat">
+      <header class="top"><button class="ib">{{i:menu:l}}</button><div class="ttl"><b>New session</b><span>Sonnet 5.5 &middot; Socratic</span></div><span class="sp"></span><button class="ib">{{i:more}}</button></header>
+      <main class="thread">
+        <div class="hero" style="justify-content:flex-start;padding:26px 14px 0;gap:10px">
+          <i class="bot" style="width:44px;height:44px"></i>
+          <h1 style="font-size:20px">What do you want to understand?</h1>
+          <p style="font-size:12.5px">Ask in your own words or choose a starting point.</p>
+          <div class="starts" style="grid-template-columns:1fr;width:100%;margin-top:6px">
+            <div class="st-c"><span class="eb">Learn</span><span>How do vaccines train the immune system?</span></div>
+            <div class="st-c"><span class="eb">Plan</span><span>Plan a 4-week machine-learning course</span></div>
+            <div class="st-c"><span class="eb">Assess</span><span>Test my async/await knowledge</span></div>
+            <div class="st-c"><span class="eb">Create</span><span>Flashcards for Japanese particles</span></div>
+          </div>
+        </div>
+        <div class="dock"><div class="comp"><div class="ta">Message Keating</div><div class="cbar"><button class="ib">{{i:clip}}</button><button class="ib">{{i:mic}}</button><button class="ib">{{i:wave}}</button><span class="sp"></span><button class="b sm gh" title="Reasoning level">{{i:bulb:s}}Medium</button><button class="send" aria-label="Send message">{{i:send}}</button></div></div></div>
+      </main>
+    </div></div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The phone header shows the session title and actions in one row.</li>
+    <li>The dock keeps reasoning beside Send. The assistant text keeps its reading face.</li>
+    <li>The session sheet uses the desktop rail’s title and metadata, with a leading green bar on the open session.</li>
+  </ol>
+</section>
+
+<section class="board">
+  <div class="board-h"><span class="n">C5</span><h2>Share session</h2><p>Public sharing asks for consent each time.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-overlay"><div class="m1-demo m1-sheet" role="dialog" aria-label="Share session">
+  <header class="row m1-halftone"><h3>Share session</h3><span class="sp"></span><button class="ib" aria-label="Close share sheet">{{i:x}}</button></header>
+  <p>Portable link</p>
+  <details open><summary>What the link includes</summary><dl class="m1-def">
+    <dt>Included</dt><dd>The visible conversation, safe session artifacts, and any finalized review feedback.</dd>
+    <dt>Not included</dt><dd>Drafts, hidden tool traffic, and unsupported or oversized artifacts.</dd>
+    <dt>Who can read it</dt><dd>Anyone with the link can read it.</dd>
+  </dl></details>
+  <label class="row"><input type="checkbox"> I understand anyone with the link can read this</label>
+  <footer class="row"><button class="b ln">Cancel</button><span class="sp"></span><button class="b pri" disabled>Share publicly</button></footer>
+</div></div></div></div></div>
+  <ol class="pts">
+    <li>The public action stays disabled until you check the box.</li>
+    <li>Local links are readable only in this browser and use the action “Create local link”.</li>
+  </ol>
+</section>
+
+</div>

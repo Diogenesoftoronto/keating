@@ -10,22 +10,22 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/current-onboarding-desktop.png",
-            "alt": "Welcome to Keating onboarding at desktop width.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). The first visit begins with Welcome to Keating.",
+            "alt": "The Question step on desktop with a sample recursion goal.",
+            "caption": "On desktop, start with a learning goal and choose how to set up your profile.",
             "width": 1280,
-            "height": 900
+            "height": 800
           },
           {
             "src": "/assets/screenshots/current-onboarding-mobile.png",
-            "alt": "Welcome to Keating onboarding at narrow browser width.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). Onboarding adapts to a narrow browser width.",
+            "alt": "The Question step in the narrow web layout.",
+            "caption": "On a phone, enter a learning goal and choose how to set up your profile.",
             "width": 390,
             "height": 844
           }
         ],
         "paragraphs": [
           "Open https://chat.keating.help/ in your browser. You can begin on a phone, tablet, or computer without installing an app. Use the browser profile where you want to keep your lessons: conversations and settings are saved locally.",
-          "On your first visit, Welcome to Keating walks you through model access and a starting point. Choose Next to continue. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings."
+          "On your first visit, Welcome to Keating walks you through model access and a starting point. Choose Continue to advance. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings."
         ],
         "links": [
           {
@@ -35,6 +35,19 @@
           {
             "label": "Find your way around the interface",
             "href": "/visual-guide/"
+          },
+          {
+            "label": "Walkthrough chapters · Choose a model",
+            "href": "https://keating.help/landing/walkthroughs/first-run.html#first-run-step-model"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/first-run.mp4",
+            "poster": "/assets/tapes/posters/first-run.jpg",
+            "captions": "/assets/tapes/captions/first-run.vtt",
+            "title": "Start a first lesson",
+            "caption": "Alex sets a learning goal and sends a first question to a scripted local tutor."
           }
         ]
       },
@@ -45,7 +58,7 @@
         ],
         "bullets": [
           "Use Keating selects Inkling Small. Choose Connect or create an account, then Sign up / Sign in to connect through Not Organic. Hosted responses depend on account access and available credit; completing sign-in alone does not confirm either.",
-          "Bring your own key lets you use a model provider without a Not Organic account. Choose Choose a model and provider. Add the provider's API key in Settings → Models & Providers → Cloud Providers, or use Save key when API key required appears. The provider bills this usage separately.",
+          "Bring your own key lets you use a model provider without a Not Organic account. Choose Choose a model and provider. Add the provider's API key in Settings → Models and connections → Providers and keys, or use Save key when API key required appears. The provider bills this usage separately.",
           "For a model that runs on your device, follow the offline tutor guide. Browser models need a compatible browser and a substantial initial download. Use an offline tutor appears in supported desktop builds."
         ],
         "links": [
@@ -61,10 +74,10 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/current-model-access.png",
-            "alt": "Onboarding model access choices.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). Choose how to connect a tutor during onboarding.",
+            "alt": "The Model step with Use Keating and Bring your own key.",
+            "caption": "Choose model access before continuing to the profile step.",
             "width": 1280,
-            "height": 900
+            "height": 800
           }
         ]
       },
@@ -93,7 +106,7 @@
       {
         "heading": "5. Return to a lesson or begin another",
         "paragraphs": [
-          "Use the sessions panel to reopen a previous conversation. On a narrow screen, Open sessions panel reveals it. Choose New session when you want to start a separate topic."
+          "Use the sessions panel to reopen a previous conversation. On a narrow screen, Open sessions panel reveals it. Choose New in the sessions panel to start a separate topic."
         ],
         "links": [
           {
@@ -110,7 +123,7 @@
         "heading": "6. Keep a copy of your work",
         "paragraphs": [
           "Your browser's saved lessons are not an account backup. Another browser or device can have a different session library even when you connect the same Not Organic account.",
-          "Open Learning usage, find Portable data, and choose Export portable JSON to download a copy. Do this before clearing site data, moving browsers, or removing an app. The privacy and data guide explains what the export includes and how to restore it."
+          "Open Settings → Data and support → Your data. Choose Export next to Everything on this device, then confirm Export to download a copy. Do this before clearing site data, moving browsers, or removing an app. The privacy and data guide explains what the export includes and how to restore it."
         ],
         "links": [
           {
@@ -135,20 +148,28 @@
         "heading": "Chat and messages",
         "paragraphs": [
           "The conversation fills the main area. Write your question or answer in the message box at the bottom and send it. Continue in the same conversation when you want Keating to use the earlier discussion.",
-          "The chat header shows the selected model. The sessions panel sits beside the conversation on wide screens; on a narrow screen, use Open sessions panel to reveal it. Some controls use icons when space is limited."
+          "The chat header shows the selected model. The sessions panel sits beside the conversation on wide screens; on a narrow screen, use Open sessions panel to reveal it. Some controls use icons when space is limited.",
+          "Hover or focus an earlier reply to show its actions. The latest reply keeps its actions visible. If a response arrives while you are reading an earlier turn, use Jump to latest or New reply below at the end of the study prompts above the composer."
         ],
         "screenshots": [
           {
             "src": "/assets/screenshots/current-classroom-desktop.png",
-            "alt": "Keating classroom with a populated local demonstration conversation.",
-            "caption": "Current application capture with a restored authored lesson fixture (2026-10-01). A populated lesson in the desktop web layout.",
+            "alt": "A tutor reply and an inline recursion quick check in the desktop Chat workspace.",
+            "caption": "A sample desktop lesson with the session rail, quick check and composer.",
             "width": 1280,
-            "height": 900
+            "height": 800
           },
           {
             "src": "/assets/screenshots/current-classroom-mobile.png",
-            "alt": "Keating classroom with a demonstration conversation at a narrow browser width.",
-            "caption": "Current application capture with a restored authored lesson fixture (2026-10-01). The same lesson in the narrow web layout.",
+            "alt": "The inline recursion quick check above the composer on a phone.",
+            "caption": "A sample lesson in the narrow web layout. Open the sessions panel from the header.",
+            "width": 390,
+            "height": 844
+          },
+          {
+            "src": "/assets/screenshots/current-phone-sessions.png",
+            "alt": "Phone Sessions sheet with search, subject filters, an active session and its fork.",
+            "caption": "Open sessions from the chat header to find a conversation, or use the plus button to start a new one.",
             "width": 390,
             "height": 844
           }
@@ -158,13 +179,29 @@
             "label": "Start your first lesson",
             "href": "/start-here/"
           }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/companion.mp4",
+            "poster": "/assets/tapes/posters/companion.jpg",
+            "captions": "/assets/tapes/captions/companion.vtt",
+            "title": "Quote a passage with Keating",
+            "caption": "Drag Keating to a reply, attach that passage to a draft, and choose how much the companion moves."
+          },
+          {
+            "src": "/assets/tapes/phone-tour.mp4",
+            "poster": "/assets/tapes/posters/phone-tour.jpg",
+            "captions": "/assets/tapes/captions/phone-tour.vtt",
+            "title": "Tour the phone web layout",
+            "caption": "Find a session, make a flashcard with a scripted tutor, open Materials, and switch between Notes and Rubric on the narrow web layout."
+          }
         ]
       },
       {
         "heading": "Models and connections",
         "paragraphs": [
           "Select the model name in the chat header to open Find a model. Search for a model, open Model details to inspect it, then select the model you want to use.",
-          "Open Settings → Models & Providers to connect a provider, enter its key, or manage models that run on your device. A saved connection and a selected model are separate choices."
+          "Open Settings → Models and connections → Providers and keys to connect a provider or enter its key. Use Models for each job to choose what handles Chat and other tasks. A saved connection and a selected model are separate choices."
         ],
         "links": [
           {
@@ -201,9 +238,9 @@
       {
         "heading": "Sessions and settings",
         "paragraphs": [
-          "Open the sessions panel to find an earlier conversation. Choose a saved session to continue it, or New session to begin another topic.",
-          "Open Settings to change app and learning preferences. Models & Providers contains connections and model choices, Learning contains teaching preferences, and App contains interface and privacy controls.",
-          "Learning usage contains Portable data, where you can export and import saved learning data. Signing in to a hosted account does not restore another browser's lesson library."
+          "Open the sessions panel to find an earlier conversation. Choose a saved session to continue it, or choose New to begin another topic.",
+          "Open Settings to change app and learning preferences. Interface covers display, motion and chat layout. Learning contains your profile and teaching preferences. Models and connections contains model choices and provider keys. Data and support contains privacy and export controls.",
+          "Under Data and support, open Your data to export or import saved learning data. Signing in to a hosted account does not restore another browser's lesson library."
         ],
         "links": [
           {
@@ -213,6 +250,22 @@
           {
             "label": "Save and move your learning data",
             "href": "/privacy-and-data/"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/settings.mp4",
+            "poster": "/assets/tapes/posters/settings.jpg",
+            "captions": "/assets/tapes/captions/settings.vtt",
+            "title": "Find a setting",
+            "caption": "Find providers and visual effects, switch themes, and check Live setup before starting a call."
+          },
+          {
+            "src": "/assets/tapes/design-system.mp4",
+            "poster": "/assets/tapes/posters/design-system.jpg",
+            "captions": "/assets/tapes/captions/design-system.vtt",
+            "title": "Keating design boards",
+            "caption": "See the design-board glyphs, shaders and sample charts in both themes."
           }
         ]
       },
@@ -301,10 +354,10 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/current-model-picker.png",
-            "alt": "Current model picker with available model choices.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). Find a model shows the available choices in this fixture.",
+            "alt": "The model picker with the local sample tutor selected and filters for Provider and Use it for.",
+            "caption": "Use Find a model, Provider and Use it for to narrow your choices.",
             "width": 1280,
-            "height": 900
+            "height": 800
           },
           {
             "src": "/assets/screenshots/current-tui-model-picker.png",
@@ -316,14 +369,14 @@
         ],
         "paragraphs": [
           "Select the current model's name in the chat header to open Find a model. Search by name, narrow the list with Provider, or use Use it for to find models for Step-by-step reasoning or Understanding images.",
-          "Open Model details to inspect a choice. Select a model to use it in the conversation. Wait for the current response to finish before changing models."
+          "Open Model details to inspect a choice. Select a model to use it in the conversation. The picker closes when you make your choice. Wait for the current response to finish before changing models."
         ]
       },
       {
         "heading": "Use your own provider key",
         "paragraphs": [
           "Bring your own key means your provider account supplies model access. You do not need a Not Organic account for this route. Create an API key with your chosen provider and check that the provider account has access to the model you select.",
-          "Open Settings → Models & Providers → Cloud Providers. For a provider with an API Key field, paste the key there and click outside the field to save it. If Keating instead opens API key required when you use a model, paste the key into that dialog and choose Save key.",
+          "Open Settings → Models and connections → Providers and keys. For a provider with an API Key field, paste the key there and click outside the field to save it. If Keating instead opens API key required when you use a model, paste the key into that dialog and choose Save key.",
           "Keys entered in the browser are stored in that browser's local settings. Enter keys in credential fields, not in the lesson conversation. Provider usage and charges remain with your provider account. Some provider entries offer their own sign-in flow; follow the controls shown for that provider."
         ]
       },
@@ -368,7 +421,7 @@
       {
         "heading": "If a model is missing or will not respond",
         "bullets": [
-          "Clear the search and reset Provider and Use it for. Check model and provider visibility in Settings → Models & Providers if a choice is still missing.",
+          "Clear the search and reset Provider and Use it for. Check model and provider visibility in Settings → Models and connections if a choice is still missing.",
           "For a key error, check the selected provider and replace its saved key if needed. A key for one provider does not connect every model in the picker.",
           "For a hosted credit error, use the account recovery controls or Choose another model to use a provider you have connected.",
           "For a browser loading error, read Models that run on this device in the picker. If the device is incompatible or cannot fit the model, choose another available model."
@@ -399,7 +452,7 @@
         "heading": "Connect or reconnect your account",
         "paragraphs": [
           "In onboarding, choose Use Keating, then Connect or create an account. Choose Sign up / Sign in in the account dialog and complete the Not Organic sign-in or account-creation steps it opens.",
-          "From chat, you can also open Settings → Models & Providers → Cloud Providers and choose Connect Not Organic under Not Organic Hosted. Once connected, this area can show your account and available balance, with Refresh account and Sign out controls.",
+          "From chat, you can also open Settings → Models and connections → Providers and keys and choose Connect Not Organic under Not Organic Hosted. Once connected, this area can show your account and available balance, with Refresh account and Sign out controls.",
           "If Keating asks you to connect again, return to this flow. Sign-in can expire. A connected account does not by itself guarantee that hosted inference or purchases are available."
         ]
       },
@@ -570,7 +623,7 @@
         "heading": "Check which version you are using",
         "paragraphs": [
           "Supported native builds offer MiniCPM5 2B (Offline), a text tutor that runs on your device without provider credentials. Its optional model download is about 1.55 GB and is kept across app updates.",
-          "In the desktop app, look for Offline tutor in Settings → Models & Providers. If the panel is absent or says Offline runtime unavailable in this build, check the download page for a package that supports your device. If none is offered, use the browser app and check whether a browser model is available."
+          "In the desktop app, look for Offline tutor in Settings → Models and connections. If the panel is absent or says Offline runtime unavailable in this build, check the download page for a package that supports your device. If none is offered, use the browser app and check whether a browser model is available."
         ],
         "links": [
           {
@@ -582,7 +635,7 @@
       {
         "heading": "Download and select the desktop tutor",
         "bullets": [
-          "Connect to the internet and open Settings → Models & Providers → Offline tutor. Allow room for the approximately 1.55 GB download as well as your app and learning data.",
+          "Connect to the internet and open Settings → Models and connections → Offline tutor. Allow room for the approximately 1.55 GB download as well as your app and learning data.",
           "Choose Download offline tutor · 1.55 GB. Keep the app open while it downloads.",
           "Wait for Ready offline. A completed download is checked before the model becomes available.",
           "Open the model selector and choose MiniCPM5 2B (Offline). Send a short text question to check that it responds on your device."
@@ -671,7 +724,7 @@
       {
         "heading": "Add the provider in Settings",
         "bullets": [
-          "Open Settings → Models & Providers → Custom Providers and choose Add Provider.",
+          "Open Settings → Models and connections → Providers and keys → Custom providers and choose Add Provider.",
           "Choose the provider type, enter a Provider Name you will recognize, and check Base URL. For LiteLLM, choose AI Gateway as the provider type and LiteLLM as Gateway Kind.",
           "Use API Key (Optional) if your server or gateway requires a key. For a shared gateway, use the access key its administrator gives you.",
           "Choose Save provider. Keating attempts to discover models. Close Settings, open Find a model from the chat header, and select a model under your provider's name."
@@ -769,7 +822,7 @@
       {
         "heading": "What the judgement model does",
         "paragraphs": [
-          "The judgement model reviews your work separately from the tutor. Changing your chat model does not change the reviewer. Find it in Settings, Models & Providers, Judgement."
+          "The judgement model reviews your work separately from the tutor. Changing your chat model does not change the reviewer. Find it in Settings → Models and connections → Checking replies."
         ]
       },
       {

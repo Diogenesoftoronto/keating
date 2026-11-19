@@ -1,9 +1,9 @@
 import { useStorage } from "nitro/storage";
 import type { Storage } from "unstorage";
 import { attachmentStore, type StoredAttachment } from "./submission-attachments";
+import { connectedCourseAccounts } from "./course-realtime";
 import { z } from "zod";
 import {
-  allCourseLessons,
   courseCreateInputSchema,
   courseInviteSchema,
   courseSchema,
@@ -208,13 +208,29 @@ function listItem(course: Course, accountId: string): CourseListItem {
     (candidate) => candidate.accountId === accountId,
   );
   if (!member) throw new Error("Course account index is inconsistent.");
+  const outline = course.modules.flatMap(module =>
+    module.lessons.map(lesson => ({ id: lesson.id, title: lesson.title, moduleTitle: module.title })),
+  );
+  const completed = new Set(member.progress.completedLessonIds);
+  const index = outline.findIndex(lesson => !completed.has(lesson.id));
+  const next = outline[index];
+  const connected = connectedCourseAccounts(course.id);
+  let pendingSubmissions: number | undefined;
+  if (permissionsFor(course, accountId).canReview) {
+    const visible = projectCourseForViewer(course, accountId).course;
+    pendingSubmissions = visible.submissions.filter(s => s.review?.status !== "reviewed").length
+      + visible.assignmentSubmissions.filter(s => s.status === "submitted" && s.review?.status !== "reviewed").length;
+  }
   return {
     id: course.id,
     title: course.title,
     description: course.description,
     role: member.role,
     memberCount: course.members.length,
-    lessonCount: allCourseLessons(course).length,
+    lessonCount: outline.length,
+    ...(next && { nextLesson: { ...next, position: index + 1, total: outline.length } }),
+    ...(pendingSubmissions !== undefined && { pendingSubmissions }),
+    ...(connected && { presentCount: course.members.filter(m => connected.has(m.accountId)).length }),
     completedLessons: member.progress.completedLessonIds.length,
     updatedAt: course.updatedAt,
   };

@@ -1,0 +1,71 @@
+{
+  "title": "Phone tour",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review",
+    "course"
+  ],
+  "transcript": "phone-tour",
+  "capturedAt": "2026-11-19T17:09:23.060Z",
+  "viewerNote": "This is the responsive web app with a scripted local tutor.",
+  "duration": 37.43135984802246,
+  "bytes": 783514,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "sessions",
+      "title": "Open the sessions sheet",
+      "start": 0.0019998550415039062,
+      "explanation": "Open Sessions on your phone.",
+      "alt": "Open the sessions sheet",
+      "still": "sessions"
+    },
+    {
+      "id": "search",
+      "title": "Reopen a lesson",
+      "start": 3.7809998989105225,
+      "explanation": "Find an earlier lesson.",
+      "alt": "Reopen a lesson",
+      "still": "search"
+    },
+    {
+      "id": "make",
+      "title": "Make flashcards",
+      "start": 8.151000022888184,
+      "explanation": "Make flashcards from your lesson.",
+      "alt": "Make flashcards",
+      "still": "make"
+    },
+    {
+      "id": "materials",
+      "title": "Open Materials",
+      "start": 17.13599991798401,
+      "explanation": "Open the same materials alongside Chat.",
+      "alt": "Open Materials",
+      "still": "materials"
+    },
+    {
+      "id": "review",
+      "title": "Switch review panels",
+      "start": 20.983999967575073,
+      "explanation": "Move between transcript notes and the rubric.",
+      "alt": "Switch review panels",
+      "still": "review"
+    },
+    {
+      "id": "settings",
+      "title": "Find Interface settings",
+      "start": 29.484999895095825,
+      "explanation": "Find appearance controls in phone Settings.",
+      "alt": "Find Interface settings",
+      "still": "settings"
+    }
+  ]
+}

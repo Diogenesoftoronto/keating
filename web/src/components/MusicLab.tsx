@@ -1,15 +1,25 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { AudioLines } from "lucide-react";
+import { LessonFrame } from "./lesson/LessonFrame";
+import "./specialist-lessons.css";
+import { useEffect, useRef, useState } from "react";
+import { ChartFrame } from "../design-system/charts";
+import { browserThemeSource, watchAppContext } from "../keating/interactive-page/theme";
 import type { UiMusicLabNode } from "@keating/learner-contracts";
 import { MarkdownBlock } from "./MarkdownBlock";
 import { buildMusicDocument } from "./labs/music-document";
 import "./labs/learning-labs.css";
 
 export function MusicLab({ node, disabled = false }: { node: UiMusicLabNode; disabled?: boolean }) {
-	const id = useId();
 	const frame = useRef<HTMLIFrameElement>(null);
-	const [document, setDocument] = useState<string>();
+	const [frameDocument, setDocument] = useState<string>();
 	const [height, setHeight] = useState(540);
+	function syncAppearance() {
+		const root = browserThemeSource();
+		if (!root || !frame.current?.contentWindow) return;
+		const tokens = ["--series-1", "--ink", "--ink-soft", "--line", "--paper", "--paper-deep", "--accent-green"];
+		const palette = Object.fromEntries(tokens.map(token => [token, root.readVariable(token).trim()]));
+		frame.current.contentWindow.postMessage({ type: "keating-music-appearance", palette, reducedMotion: root.reducedMotion() }, "*");
+	}
+	useEffect(() => watchAppContext(syncAppearance), []);
 	useEffect(() => {
 		if (!window.location?.origin) return;
 		setDocument(buildMusicDocument(node.code, window.location.origin, { controls: node.controls, visualization: node.visualization }));
@@ -27,10 +37,9 @@ export function MusicLab({ node, disabled = false }: { node: UiMusicLabNode; dis
 		if (disabled) player?.postMessage({ type: "keating-music-stop" }, "*");
 		return () => player?.postMessage({ type: "keating-music-stop" }, "*");
 	}, [disabled, node.id]);
-	return <section className="learning-lab music-lab" data-music-lab={node.id} aria-labelledby={`${id}-title`}>
-		<header className="learning-lab__header"><h4 id={`${id}-title`}><AudioLines size={18} aria-hidden="true" />{node.title}</h4><span className="learning-lab__language">Strudel</span></header>
+	return <LessonFrame glyph="wave" title={node.title} kind="Music lab" tools={<span className="learning-lab__language">Strudel</span>} className="learning-lab music-lab" data-music-lab={node.id} aria-label={node.title}>
 		{node.brief ? <div className="learning-lab__brief"><MarkdownBlock content={node.brief} /></div> : null}
-		{disabled ? <pre>{node.code}</pre> : <iframe key={node.id} ref={frame} className="music-lab__frame" style={{ height }} title={`${node.title}: Strudel instrument, visualization and playback`} sandbox="allow-scripts" allow="autoplay" referrerPolicy="no-referrer" srcDoc={document} />}
-		<div className="music-lab__credit"><span>Sound starts when you press Play.</span><a href="https://strudel.cc/technical-manual/project-start/" target="_blank" rel="noreferrer">Powered by Strudel</a></div>
-	</section>;
+		{disabled ? <pre>{node.code}</pre> : <ChartFrame title={node.visualization === "scope" ? "Waveform" : "Pattern"} reading="Sound starts when you press Play."><iframe key={node.id} ref={frame} className="music-lab__frame" style={{ height }} title={`${node.title}: Strudel instrument, visualization and playback`} sandbox="allow-scripts" allow="autoplay" referrerPolicy="no-referrer" onLoad={syncAppearance} srcDoc={frameDocument} /></ChartFrame>}
+		<div className="music-lab__credit">{disabled && <span>Sound starts when you press Play.</span>}<a href="https://strudel.cc/technical-manual/project-start/" target="_blank" rel="noreferrer">Powered by Strudel</a></div>
+	</LessonFrame>;
 }

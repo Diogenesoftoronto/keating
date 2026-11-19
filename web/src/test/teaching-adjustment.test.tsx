@@ -3,8 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { turnAnalysisQuestions, type JudgementResponse, type JudgementOutcome } from "@keating/learner-contracts";
 import { createTeachingAdjustmentController, withTeachingAdjustment } from "../keating/judgement/teaching-adjustment";
 import { createReplyJudgementObserver } from "../keating/judgement/reply-review";
-import { configureJudgementDiagnostics } from "../keating/judgement/diagnostics";
-import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
+import { beginDiagnosticReply, beginJudgementDiagnostic, configureJudgementDiagnostics, endDiagnosticReply } from "../keating/judgement/diagnostics";
+import { JudgementDiagnostics, MessageDiagnostics } from "../components/JudgementDiagnostics";
 import { FlueConversation } from "../keating/flue/conversation";
 import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
 
@@ -111,14 +111,27 @@ test("only successful final observer results become proposals; late cancelled re
   expect(f.controller.getSnapshot().status).toBe("empty"); observer.dispose(); f.controller.dispose();
 });
 
-test("Chat inspector alone offers accept/dismiss and names uncertainty and raw distributions", () => {
+test("only the originating Chat reply offers accept/dismiss, uncertainty and raw distributions", () => {
   configureJudgementDiagnostics({ enabled: true, reviewReplies: true });
-  const f = fixture(); f.offer();
-  const html = renderToStaticMarkup(<JudgementDiagnostics sessionId="s" teachingAdjustment={f.controller} />);
+  const f = fixture();
+  const captureReply = (timestamp: number) => {
+    const id = beginDiagnosticReply("s")!;
+    endDiagnosticReply(id, false, timestamp);
+    beginJudgementDiagnostic({ state: {}, questions: turnAnalysisQuestions() }, { origin: "completed-reply-review", sessionId: "s", replyId: id });
+    return id;
+  };
+  captureReply(1);
+  const replyId = captureReply(2);
+  f.controller.offer(review(), f.live.messages, replyId);
+  const renderReply = (timestamp: number, sessionId = "s") => renderToStaticMarkup(
+    <MessageDiagnostics role="tutor" sessionId={sessionId} timestamps={[timestamp]} teachingAdjustment={f.controller} />,
+  );
+  const html = renderReply(2);
   expect(html).toContain("Apply to next reply"); expect(html).toContain("Uncalibrated suggestion"); expect(html).toContain("0.9000");
-  expect(renderToStaticMarkup(<JudgementDiagnostics controls sessionId="s" teachingAdjustment={f.controller} />)).not.toContain("Apply to next reply");
-  expect(renderToStaticMarkup(<JudgementDiagnostics sessionId="other" teachingAdjustment={f.controller} />)).not.toContain("Apply to next reply");
-  f.controller.accept("reply-1"); expect(renderToStaticMarkup(<JudgementDiagnostics sessionId="s" teachingAdjustment={f.controller} />)).toContain("Queued for your next message");
+  expect(renderToStaticMarkup(<JudgementDiagnostics controls sessionId="s" />)).not.toContain("Apply to next reply");
+  expect(renderReply(1)).not.toContain("Apply to next reply");
+  expect(renderReply(2, "other")).not.toContain("Apply to next reply");
+  f.controller.accept(replyId); expect(renderReply(2)).toContain("Queued for your next message");
   f.controller.dispose();
 });
 

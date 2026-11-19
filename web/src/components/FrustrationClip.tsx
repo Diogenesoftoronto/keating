@@ -1,5 +1,6 @@
+import { PlaybackPosition } from "./PlaybackPosition";
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, SkipForward } from "lucide-react";
+import { IconButton } from "../design-system/kit";
 import "./frustration-clip.css";
 
 const CLIPS = [
@@ -17,19 +18,21 @@ export function FrustrationClip() {
   const [reduced, setReduced] = useState(true);
   const [playback, setPlayback] = useState<"auto" | "play" | "pause">("auto");
   const [failed, setFailed] = useState(false);
+  const [position,setPosition] = useState(0);
+  const [duration,setDuration] = useState(0);
   const clip = CLIPS[index];
   const wantsPlay = playback === "play" || (playback === "auto" && !reduced);
   const playing = wantsPlay && visible && pageVisible && !failed;
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncMotion = () => { const next = preference.matches || document.documentElement.dataset.motion === "reduce"; setReduced(next); if (next) setPlayback("auto"); };
+    const syncMotion = () => { const next = preference.matches || (document.documentElement.dataset.motion === "reduce" || document.documentElement.dataset.reduceMotion === "true"); setReduced(next); if (next) setPlayback("auto"); };
     const syncVisibility = () => setPageVisible(document.visibilityState !== "hidden");
     syncMotion(); syncVisibility();
     preference.addEventListener("change", syncMotion);
     document.addEventListener("visibilitychange", syncVisibility);
     const motionObserver = new MutationObserver(syncMotion);
-    motionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
+    motionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion","data-reduce-motion"] });
     const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(entries => setVisible(entries.some(entry => entry.isIntersecting)), { threshold: .1 });
     if (host.current && observer) observer.observe(host.current); else setVisible(true);
     return () => { preference.removeEventListener("change", syncMotion); document.removeEventListener("visibilitychange", syncVisibility); motionObserver.disconnect(); observer?.disconnect(); };
@@ -44,15 +47,16 @@ export function FrustrationClip() {
     return () => { cancelled = true; video.pause(); };
   }, [playing, index, wantsPlay]);
 
-  function next() { setFailed(false); setIndex(previous => (previous + 1) % CLIPS.length); }
-  return <div className="frustration-clip" ref={host}>
-    <div className="frustration-clip__screen">
-      {wantsPlay && !failed ? <video key={clip.video} ref={player} src={clip.video} poster={clip.poster} muted playsInline preload="none" aria-label={clip.description} onEnded={next} onError={() => { setFailed(true); setPlayback("pause"); }} /> : <img src={clip.poster} alt={clip.description} width={480} height={292} loading="lazy" />}
+  function next() { setPosition(0); setDuration(0); setFailed(false); setIndex(previous => (previous + 1) % CLIPS.length); }
+  return <div className="specialist-frame frustration-clip" ref={host}>
+    <div className="frustration-clip__screen k-grid">
+      {(wantsPlay || duration > 0) && !failed ? <video key={clip.video} ref={player} src={clip.video} poster={clip.poster} muted playsInline preload="none" aria-label={clip.description} onTimeUpdate={e=>setPosition(e.currentTarget.currentTime)} onLoadedMetadata={e=>setDuration(Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0)} onEnded={next} onError={() => { setFailed(true); setPlayback("pause"); }} /> : <img src={clip.poster} alt={clip.description} width={480} height={292} loading="lazy" />}
     </div>
+    {duration > 0 && !failed && <PlaybackPosition label="Clip position" max={duration} value={position} onSeek={t=>{if(player.current) player.current.currentTime=t;setPosition(t);}} />}
     <div className="frustration-clip__controls">
       <span>{failed ? "Animation unavailable" : "...still not clicking."}</span>
-      <button type="button" aria-label={wantsPlay ? "Pause animation" : "Play animation"} onClick={() => { setFailed(false); setPlayback(wantsPlay ? "pause" : "play"); }}>{wantsPlay ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}</button>
-      <button type="button" aria-label="Show next reaction" onClick={next}><SkipForward size={15} aria-hidden="true" /></button>
+      <IconButton glyph={wantsPlay ? "pause" : "play"} label={wantsPlay ? "Pause animation" : "Play animation"} onClick={() => { setFailed(false); setPlayback(wantsPlay ? "pause" : "play"); }} />
+      <IconButton glyph="skip" label="Show next reaction" onClick={next} />
     </div>
   </div>;
 }

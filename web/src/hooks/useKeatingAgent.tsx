@@ -72,6 +72,8 @@ export interface UseKeatingAgentReturn {
   openModelSelector: () => void;
   chooseKeatingModel: () => Promise<void>;
   openSessions: () => void;
+  /** Switch to a saved session by id, as choosing it in the session list does. */
+  openSession: (sessionId: string) => Promise<void>;
   newSession: () => void;
   shareSession: () => Promise<SharedSessionUrlResult>;
   setThinkingLevel: (level: ThinkingLevel) => void;
@@ -329,6 +331,12 @@ export function useKeatingAgent(
     setSidebarCollapsed(false);
   }, [mobileSidebarOpen, setSidebarCollapsed, toggleMobileSidebar]);
 
+  const openSession = useCallback((sessionId: string) => {
+    const request = refs.sessionSwitchRequestsRef.current.begin();
+    closeMobileSidebar();
+    return loadSessionById(sessionId, request);
+  }, [closeMobileSidebar, loadSessionById, refs]);
+
   const sessionSidebarElement = (
     <SessionBrowser
       activeSessionId={store.activeSessionId}
@@ -412,6 +420,7 @@ export function useKeatingAgent(
     openModelSelector: modelSelectorDialog.onOpen,
     chooseKeatingModel,
     openSessions,
+    openSession,
     newSession,
     shareSession,
     setThinkingLevel,

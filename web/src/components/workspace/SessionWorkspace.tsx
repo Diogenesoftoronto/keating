@@ -36,7 +36,7 @@ function browserStorage() {
 type PlanMaterial = Extract<WorkspaceMaterial, { kind: "plan" }>;
 
 /** The interactive plan through the production renderer, sharing the chat card's journal. */
-function WorkspacePlan({ material, sessionId, unsaved }: { material: PlanMaterial; sessionId: string; unsaved: boolean }) {
+export function WorkspacePlan({ material, sessionId, unsaved }: { material: PlanMaterial; sessionId: string; unsaved: boolean }) {
 	// The presented snapshot keeps the renderer mounted across ticks (focus stays put);
 	// an unsaved change is only in memory, so show that document instead.
 	const document = unsaved ? material.current : material.presented;

@@ -1,15 +1,7 @@
+import { Avatar, Button, Card, Eyebrow, EmptyState, Field, IconButton, Kbd, Note, Prose, SearchField, Segmented, TextArea } from "../../design-system/kit";
 import { Select } from "../Select";
 import { useEffect, useMemo, useState } from "react";
-import {
-  CornerDownRight,
-  MessageSquareText,
-  Pencil,
-  Search,
-  Send,
-  Trash2,
-  X,
-} from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
+import "../../pages/course-workspace/course-tabs.css";
 import { newCourseOperationId, type applyCourseOperation } from "../../courses/client";
 import {
   buildCommentThreads,
@@ -21,15 +13,7 @@ import type {
   CourseViewerSnapshot,
 } from "../../courses/contracts";
 import { CourseReactionBar } from "./CourseReactionBar";
-import {
-  courseAvatarColor,
-  courseButtonClass,
-  courseEmptyClass,
-  courseInputClass,
-  courseLabelClass,
-  coursePrimaryButtonClass,
-  formatCourseRelative,
-} from "./course-ui";
+import { formatCourseRelative } from "./course-ui";
 
 type Mutate = (
   operation: Parameters<typeof applyCourseOperation>[0],
@@ -41,28 +25,6 @@ export const ALL_CHANNEL = "__all__";
 
 function newCommentId(): string {
   return `comment_${crypto.randomUUID().replaceAll("-", "")}`;
-}
-
-function Avatar({ name, role }: { name: string; role: string }) {
-  return (
-    <span
-      aria-hidden
-      className={css({
-        display: "grid",
-        h: "1.7rem",
-        w: "1.7rem",
-        flexShrink: 0,
-        placeItems: "center",
-        borderRadius: "50%",
-        fontSize: "0.8rem",
-        fontWeight: 800,
-        color: "white",
-      })}
-      style={{ background: courseAvatarColor(role) }}
-    >
-      {name.charAt(0).toUpperCase()}
-    </span>
-  );
 }
 
 function CommentCard({
@@ -102,81 +64,71 @@ function CommentCard({
   });
 
   return (
-    <article
-      className={css({
-        borderLeft: "3px solid var(--peer-blue, #3468b3)",
-        bg: "var(--paper)",
-        px: "0.75rem",
-        py: "0.6rem",
-      })}
-      style={isReply ? { borderLeftColor: "color-mix(in srgb, var(--ink) 35%, transparent)" } : undefined}
-    >
-      <div
-        className={css({
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        })}
-      >
-        <Avatar
-          name={author?.displayName ?? "?"}
-          role={author?.role ?? "peer"}
-        />
-        <span className={css({ minW: 0, flex: 1 })}>
-          <strong className={css({ fontSize: "0.8rem" })}>
-            {mine ? "You" : (author?.displayName ?? "Course member")}
-          </strong>
-          <small
-            className={css({
-              ml: "0.4rem",
-              fontSize: "0.68rem",
-              color: "var(--ink-soft)",
-            })}
-          >
-            {formatCourseRelative(comment.createdAt)}
-            {comment.editedAt ? " · edited" : ""}
-          </small>
+    <Card as="article" className="ct-comment">
+      <header className="ct-row">
+        <Avatar name={author?.displayName ?? "Course member"} size="sm" aria-hidden />
+        <div className="ct-byline">
+          <strong>{mine ? "You" : (author?.displayName ?? "Course member")}</strong>
+          <small>{formatCourseRelative(comment.createdAt)}{comment.editedAt ? " · edited" : ""}</small>
+        </div>
+        {lessonTitle && onOpenLesson && <Button size="sm" variant="line" onClick={onOpenLesson}>{lessonTitle}</Button>}
+        <span className="ct-actions">
+          {onReply && canPost ? (
+            <Button glyph="reply" size="sm" variant="ghost" onClick={onReply}>Reply</Button>
+          ) : null}
+          {mine && !editing ? (
+            <IconButton glyph="edit"
+              type="button"
+              size="sm"
+              label="Edit comment"
+              onClick={() => setEditing(true)} />
+          ) : null}
+          {canDelete ? (
+            <IconButton glyph="trash"
+              type="button"
+              className="ct-danger"
+              label="Delete comment"
+              disabled={saving === `comment-delete-${comment.id}`}
+              onClick={() => {
+                if (
+                  typeof window !== "undefined" &&
+                  !window.confirm(
+                    isReply
+                      ? "Remove this reply?"
+                      : "Remove this comment and its replies?",
+                  )
+                )
+                  return;
+                void mutate(
+                  { ...base(), type: "comment.delete", commentId: comment.id },
+                  `comment-delete-${comment.id}`,
+                );
+              }} />
+          ) : null}
         </span>
-        {lessonTitle && onOpenLesson ? (
-          <button
-            type="button"
-            onClick={onOpenLesson}
-            className={css({
-              border: "1px solid color-mix(in srgb, var(--ink) 30%, transparent)",
-              px: "0.35rem",
-              fontSize: "0.63rem",
-              color: "var(--ink-soft)",
-              cursor: "pointer",
-              _hover: { color: "var(--ink)" },
-            })}
-          >
-            {lessonTitle}
-          </button>
-        ) : null}
-      </div>
+      </header>
       {editing ? (
-        <div className={css({ mt: "0.5rem", display: "grid", gap: "0.4rem" })}>
-          <textarea
+        <div className="ct-stack">
+          <TextArea
             value={draft}
             rows={3}
             onChange={(event) => setDraft(event.target.value)}
-            className={courseInputClass}
             aria-label="Edit comment"
           />
-          <div className={css({ display: "flex", gap: "0.35rem", justifyContent: "flex-end" })}>
-            <button
+          <div className="ct-footer">
+            <Button
               type="button"
-              className={courseButtonClass}
+              variant="line"
               onClick={() => {
                 setDraft(comment.body);
                 setEditing(false);
               }}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={cx(courseButtonClass, coursePrimaryButtonClass)}
+              variant="primary"
               disabled={!draft.trim() || saving === `comment-edit-${comment.id}`}
               onClick={() =>
                 void mutate(
@@ -191,31 +143,13 @@ function CommentCard({
               }
             >
               Save
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <p
-          className={css({
-            mt: "0.4rem",
-            whiteSpace: "pre-wrap",
-            fontSize: "0.88rem",
-            lineHeight: 1.55,
-          })}
-        >
-          {comment.body}
-        </p>
+        <Prose className="ct-text">{comment.body}</Prose>
       )}
-      <div
-        className={css({
-          mt: "0.5rem",
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "0.5rem",
-        })}
-      >
+      <div>
         <CourseReactionBar
           reactions={snapshot.course.reactions}
           members={snapshot.course.members}
@@ -236,50 +170,8 @@ function CommentCard({
             )
           }
         />
-        <span className={css({ display: "flex", gap: "0.25rem" })}>
-          {onReply && canPost ? (
-            <button type="button" className={courseButtonClass} onClick={onReply}>
-              <CornerDownRight size={12} /> Reply
-            </button>
-          ) : null}
-          {mine && !editing ? (
-            <button
-              type="button"
-              className={courseButtonClass}
-              aria-label="Edit comment"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil size={12} />
-            </button>
-          ) : null}
-          {canDelete ? (
-            <button
-              type="button"
-              className={cx(courseButtonClass, css({ color: "var(--destructive)" }))}
-              aria-label="Delete comment"
-              disabled={saving === `comment-delete-${comment.id}`}
-              onClick={() => {
-                if (
-                  typeof window !== "undefined" &&
-                  !window.confirm(
-                    isReply
-                      ? "Remove this reply?"
-                      : "Remove this comment and its replies?",
-                  )
-                )
-                  return;
-                void mutate(
-                  { ...base(), type: "comment.delete", commentId: comment.id },
-                  `comment-delete-${comment.id}`,
-                );
-              }}
-            >
-              <Trash2 size={12} />
-            </button>
-          ) : null}
-        </span>
       </div>
-    </article>
+    </Card>
   );
 }
 
@@ -337,7 +229,7 @@ export function CourseDiscussion({
   });
 
   const post = () => {
-    if (!draft.trim() || !postable) return;
+    if (!draft.trim() || !postable || saving === "comment-add") return;
     void mutate(
       {
         ...base(),
@@ -351,7 +243,7 @@ export function CourseDiscussion({
   };
 
   const postReply = (parentId: string) => {
-    if (!replyDraft.trim()) return;
+    if (!replyDraft.trim() || saving === `comment-reply-${parentId}`) return;
     void mutate(
       {
         ...base(),
@@ -367,111 +259,44 @@ export function CourseDiscussion({
     });
   };
 
+  const channels = [
+    { value: COURSE_CHANNEL, label: `Course-wide thread (${counts.course ?? 0})` },
+    ...lessons.map(lesson => ({ value: lesson.id, label: `${lesson.title} (${counts[lesson.id] ?? 0})` })),
+    { value: ALL_CHANNEL, label: `Everything (${snapshot.course.comments.length})` },
+  ];
+  function selectChannel(next: string) {
+    setReplyTo(null);
+    if (next === COURSE_CHANNEL || next === ALL_CHANNEL) onChannelChange(next);
+    else onSelectLesson(next);
+  }
+
   return (
-    <div className={css({ mx: "auto", maxW: "48rem" })}>
-      <div
-        className={css({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "end",
-          justifyContent: "space-between",
-          gap: "0.75rem",
-        })}
-      >
-        <div>
-          <p className={courseLabelClass}>Discussion</p>
-          <h2
-            className={css({
-              mt: "0.3rem",
-              fontFamily: "Georgia, serif",
-              fontSize: { base: "1.9rem", md: "2.4rem" },
-              lineHeight: 1.05,
-            })}
-          >
-            Think where others can answer.
-          </h2>
+    <div className="ct-tab">
+      <header className="k-halftone">
+        <Eyebrow>Discussion</Eyebrow>
+        <h2>Think where others can answer.</h2>
+      </header>
+      <div className="ct-tools">
+        {channels.length <= 4 ? (
+          <div className="ct-stack">
+            <Eyebrow>Channel</Eyebrow>
+            <Segmented size="sm" label="Channel" options={channels} value={channel} onChange={selectChannel}/>
+          </div>
+        ) : (
+          <Field label="Channel">
+            <Select value={channel} onValueChange={selectChannel} className="k-input">
+              {channels.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </Select>
+          </Field>
+        )}
+        <div className="ct-stack">
+          <Eyebrow>Find in discussion</Eyebrow>
+          <SearchField data-glyph-host label="Search threads" placeholder="Search threads…" value={filter} onChange={setFilter}/>
         </div>
-        <MessageSquareText size={22} />
       </div>
-
-      <div
-        className={css({
-          mt: "1.1rem",
-          display: "grid",
-          gap: "0.45rem",
-          sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)" },
-        })}
-      >
-        <label>
-          <span className={cx(courseLabelClass, css({ display: "block", mb: "0.2rem" }))}>
-            Channel
-          </span>
-          <Select
-            value={channel}
-            onValueChange={(value) => {
-              const next = value;
-              setReplyTo(null);
-              if (next !== COURSE_CHANNEL && next !== ALL_CHANNEL)
-                onSelectLesson(next);
-              else onChannelChange(next);
-            }}
-            className={courseInputClass}
-          >
-            <option value={COURSE_CHANNEL}>
-              Course-wide thread ({counts.course ?? 0})
-            </option>
-            {lessons.map((lesson) => (
-              <option key={lesson.id} value={lesson.id}>
-                {lesson.title} ({counts[lesson.id] ?? 0})
-              </option>
-            ))}
-            <option value={ALL_CHANNEL}>
-              Everything ({snapshot.course.comments.length})
-            </option>
-          </Select>
-        </label>
-        <label>
-          <span className={cx(courseLabelClass, css({ display: "block", mb: "0.2rem" }))}>
-            Find in discussion
-          </span>
-          <span
-            className={css({
-              display: "flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              border: "1px solid var(--ink)",
-              bg: "var(--paper)",
-              px: "0.55rem",
-            })}
-          >
-            <Search size={14} />
-            <input
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              placeholder="Search threads…"
-              aria-label="Search threads"
-              className={css({
-                w: "100%",
-                bg: "transparent",
-                py: "0.5rem",
-                fontSize: "0.82rem",
-                outline: 0,
-              })}
-            />
-          </span>
-        </label>
-      </div>
-
       {postable ? (
-        <div
-          className={css({
-            mt: "0.85rem",
-            display: "flex",
-            alignItems: "stretch",
-            gap: "0.45rem",
-          })}
-        >
-          <textarea
+        <Card tone="hard" className="ct-composer">
+          <TextArea
             value={draft}
             rows={2}
             onChange={(event) => setDraft(event.target.value)}
@@ -479,7 +304,6 @@ export function CourseDiscussion({
               if ((event.metaKey || event.ctrlKey) && event.key === "Enter")
                 post();
             }}
-            className={cx(courseInputClass, css({ resize: "vertical" }))}
             placeholder={
               channel === COURSE_CHANNEL
                 ? "Ask the whole course…"
@@ -487,26 +311,20 @@ export function CourseDiscussion({
             }
             aria-label="Write a comment"
           />
-          <button
-            type="button"
-            className={cx(courseButtonClass, coursePrimaryButtonClass)}
-            disabled={!draft.trim() || saving === "comment-add"}
-            onClick={post}
-            aria-label="Post comment"
-            title="Post · ⌘↵"
-          >
-            <Send size={15} />
-          </button>
-        </div>
+          <div className="ct-footer">
+            <Kbd>⌘ / Ctrl + Enter</Kbd>
+            <Button glyph="send" variant="primary" disabled={!draft.trim()} busy={saving === "comment-add"} onClick={post}>Post comment</Button>
+          </div>
+        </Card>
       ) : (
-        <p className={cx(courseEmptyClass, css({ mt: "0.85rem" }))}>
+        <Note>
           {canPost
             ? "Pick a channel to post in. “Everything” is read-only."
             : "Peer comments are turned off for this course."}
-        </p>
+        </Note>
       )}
 
-      <div className={css({ mt: "1.1rem", display: "grid", gap: "0.7rem" })}>
+      <div className="ct-stack">
         {threads.length ? (
           threads.map((thread) => (
             <section key={thread.comment.id}>
@@ -535,14 +353,7 @@ export function CourseDiscussion({
                 }}
               />
               {thread.replies.length ? (
-                <div
-                  className={css({
-                    ml: { base: "0.6rem", sm: "1.6rem" },
-                    mt: "0.4rem",
-                    display: "grid",
-                    gap: "0.4rem",
-                  })}
-                >
+                <div className="ct-replies">
                   {thread.replies.map((reply) => (
                     <CommentCard
                       key={reply.id}
@@ -557,16 +368,8 @@ export function CourseDiscussion({
                 </div>
               ) : null}
               {replyTo === thread.comment.id ? (
-                <div
-                  className={css({
-                    ml: { base: "0.6rem", sm: "1.6rem" },
-                    mt: "0.4rem",
-                    display: "flex",
-                    alignItems: "stretch",
-                    gap: "0.4rem",
-                  })}
-                >
-                  <textarea
+                <Card className="ct-composer ct-replies">
+                  <TextArea
                     value={replyDraft}
                     rows={2}
                     onChange={(event) => setReplyDraft(event.target.value)}
@@ -577,40 +380,22 @@ export function CourseDiscussion({
                       )
                         postReply(thread.comment.id);
                     }}
-                    className={cx(courseInputClass, css({ resize: "vertical" }))}
                     placeholder="Reply…"
                     aria-label="Write a reply"
                   />
-                  <button
-                    type="button"
-                    className={cx(courseButtonClass, coursePrimaryButtonClass)}
-                    disabled={
-                      !replyDraft.trim() ||
-                      saving === `comment-reply-${thread.comment.id}`
-                    }
-                    onClick={() => postReply(thread.comment.id)}
-                    aria-label="Post reply"
-                  >
-                    <Send size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className={courseButtonClass}
-                    aria-label="Cancel reply"
-                    onClick={() => setReplyTo(null)}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
+                  <div className="ct-footer">
+                    <Button size="sm" variant="ghost" onClick={() => setReplyTo(null)}>Cancel reply</Button>
+                    <Button size="sm" glyph="send" variant="primary" disabled={!replyDraft.trim()}
+                      busy={saving === `comment-reply-${thread.comment.id}`} onClick={() => postReply(thread.comment.id)}>Post reply</Button>
+                  </div>
+                </Card>
               ) : null}
             </section>
           ))
         ) : (
-          <p className={courseEmptyClass}>
-            {filter.trim()
+          <EmptyState glyph="message" heading={filter.trim()
               ? "No thread matches that search."
-              : "No thread yet. Leave the first useful question."}
-          </p>
+              : "No thread yet. Leave the first useful question."} />
         )}
       </div>
     </div>

@@ -1,53 +1,25 @@
-import { CircleAlert } from "lucide-react";
-import { css } from "../../styled-system/css";
+import { Button } from "../design-system/kit";
 import { RetryResponseButton } from "./RetryResponseButton";
 import { ErrorDiagnosticsActions } from "./ErrorDiagnosticsActions";
 
 interface FailedResponseRecoveryProps {
-	recovery?: string;
-	onRetry: () => void | Promise<void>;
-	/**
-	 * Set for failures the learner cannot fix by retrying. Renders the
-	 * diagnostics/email escape hatch under the retry control.
-	 */
-	diagnosticsSummary?: string;
+  recovery?: string;
+  onRetry?: () => void | Promise<void>;
+  onModelSelect?: () => void;
+  preferModel?: boolean;
+  diagnosticsSummary?: string;
 }
 
-export function FailedResponseRecovery({ recovery, onRetry, diagnosticsSummary }: FailedResponseRecoveryProps) {
-	return (
-		<div
-			role="alert"
-			className={css({
-				marginTop: "0.625rem",
-				display: "flex",
-				flexWrap: "wrap",
-				alignItems: "flex-start",
-				gap: "0.75rem",
-				borderRadius: "0.625rem",
-				backgroundColor: "color-mix(in srgb, var(--destructive) 9%, var(--background))",
-				padding: "0.75rem",
-			})}
-		>
-			<CircleAlert
-				aria-hidden="true"
-				size={17}
-				className={css({ flexShrink: 0, color: "var(--destructive)" })}
-			/>
-			<div className={css({ minWidth: 0, flex: 1, sm: { minWidth: "12rem" } })}>
-				<p className={css({ fontSize: "0.8125rem", fontWeight: 650 })}>
-					This response did not finish
-				</p>
-				<p className={css({ marginTop: "0.125rem", fontSize: "0.75rem", lineHeight: 1.45, color: "var(--muted-foreground)" })}>
-					{recovery || "Retry the same prompt without rewriting it."}
-				</p>
-			</div>
-			<RetryResponseButton
-				onRetry={onRetry}
-				label="Retry response"
-				variant="primary"
-				className={css({ width: "100%", sm: { width: "auto" } })}
-			/>
-			{diagnosticsSummary && <ErrorDiagnosticsActions summary={diagnosticsSummary} />}
-		</div>
-	);
+export function FailedResponseRecovery({ recovery, onRetry, onModelSelect, preferModel, diagnosticsSummary }: FailedResponseRecoveryProps) {
+  const modelFirst = onModelSelect && (preferModel || !onRetry);
+  return <section data-chat-recovery="" role="alert" className="turn-failure">
+    <strong>This response did not finish</strong>
+    <p>{recovery || (onRetry ? "Retry the same prompt without rewriting it." : "This request could not finish. Please try again.")}</p>
+    <div className="turn-failure__actions">
+      {onModelSelect && !modelFirst && <Button size="sm" onClick={onModelSelect}>Choose model</Button>}
+      {onRetry && <RetryResponseButton onRetry={onRetry} variant={modelFirst ? "quiet" : "primary"} />}
+      {modelFirst && <Button size="sm" variant="primary" onClick={onModelSelect}>Choose model</Button>}
+    </div>
+    {diagnosticsSummary && <ErrorDiagnosticsActions summary={diagnosticsSummary} />}
+  </section>;
 }

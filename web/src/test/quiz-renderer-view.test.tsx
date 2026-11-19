@@ -25,15 +25,15 @@ describe("QuestionCard", () => {
 		expect(html).not.toContain("Correct");
 	});
 
-	test("revealed wrong answer shows Incorrect, no partial credit for all-or-nothing types", () => {
+	test("revealed wrong answer shows Not quite, no partial credit for all-or-nothing types", () => {
 		const html = card(base({}), "A", true);
-		expect(html).toContain("Incorrect");
+		expect(html).toContain("Not quite");
 		expect(html).not.toContain("Partial credit");
 	});
 
 	test("revealed multi-select with a partial score shows the partial credit badge", () => {
 		const q = base({ type: "multi_select", correctAnswers: ["A", "B"], options: ["A", "B", "C", "D"], correctAnswer: "A,B" });
-		expect(card(q, "A", true)).toContain("Partial credit: 50%");
+		expect(card(q, "A", true)).toContain("Partly · 50%");
 	});
 
 	test("revealed short answer shows the key, the pending-review note and the rubric", () => {

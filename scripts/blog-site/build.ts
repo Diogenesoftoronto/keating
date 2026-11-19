@@ -15,6 +15,10 @@ await cp(join(root, "assets"), join(out, "assets"), { recursive: true });
 for (const name of ["logo-lockup-compact.avif", "mascot-head-v2.png"]) {
   await cp(join(root, "../../web/public/brand", name), join(out, "assets", name));
 }
+for (const name of ["keating-doodles.webp", "keating-paper.webp"]) {
+  await cp(join(root, "../../web/public/textures", name), join(out, "assets", name));
+}
+await cp(join(root, "../../web/public/brand/stop-motion-v1/keatingbot-body-writing.avif"), join(out, "assets/keatingbot-body-writing.avif"));
 const katex = dirname(Bun.resolveSync("katex/package.json", root));
 await cp(join(katex, "dist"), join(out, "assets/katex"), { recursive: true, filter: source => !source.endsWith(".js") && !source.endsWith(".mjs") });
 for (const name of ["railpack.json", "railway.toml"]) await cp(join(root, name), join(out, name));

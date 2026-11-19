@@ -1,0 +1,328 @@
+{
+  "phone-tour": {
+    "sessionId": "11111111-2222-4333-8444-555555555555",
+    "at": 1795103847571,
+    "rows": [
+      {
+        "key": "node:openui-uuod8x-phone-recursion-cards:phone-recursion-cards",
+        "label": "Recursion cards\nFlashcards · just now\n1 card"
+      },
+      {
+        "key": "node:openui-1g757br-phone-recursion-cards:phone-recursion-cards",
+        "label": "Recursion cards\nFlashcards · just now\n1 card"
+      }
+    ],
+    "presentations": [
+      {
+        "id": "openui-1g757br-phone-recursion-cards:phone-recursion-cards",
+        "documentId": "openui-1g757br-phone-recursion-cards",
+        "nodeId": "phone-recursion-cards",
+        "createdAt": 1795103839401
+      },
+      {
+        "id": "openui-1wr1ov5-sample-recursion-assignment-document:sample-recursion-assignment",
+        "documentId": "openui-1wr1ov5-sample-recursion-assignment-document",
+        "nodeId": "sample-recursion-assignment",
+        "createdAt": 1795096728096
+      },
+      {
+        "id": "openui-gregpr-sample-stored-recursion-path:sample-recursion-path",
+        "documentId": "openui-gregpr-sample-stored-recursion-path",
+        "nodeId": "sample-recursion-path",
+        "createdAt": 1795096704096
+      },
+      {
+        "id": "openui-uuod8x-phone-recursion-cards:phone-recursion-cards",
+        "documentId": "openui-uuod8x-phone-recursion-cards",
+        "nodeId": "phone-recursion-cards",
+        "createdAt": 1795103839973
+      }
+    ],
+    "messages": [
+      {
+        "id": null,
+        "timestamp": 1795096620096,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096632096,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096644096,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096656096,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096668096,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096680096,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096692096,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096704096,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096716096,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096728096,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795103834608,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795103837333,
+        "role": "assistant"
+      }
+    ],
+    "transcriptIds": [
+      "user-0-1795096620096",
+      "assistant-1-1795096632096",
+      "user-2-1795096644096",
+      "assistant-3-1795096656096",
+      "user-4-1795096668096",
+      "assistant-5-1795096680096",
+      "user-6-1795096692096",
+      "assistant-7-1795096704096",
+      "user-8-1795096716096",
+      "assistant-9-1795096728096",
+      "user-10-1795103834608",
+      "assistant-11-1795103837333"
+    ],
+    "steps": [
+      {
+        "action": "Make flashcards",
+        "at": 1795103834172
+      },
+      {
+        "action": "Send message",
+        "at": 1795103834734
+      },
+      {
+        "action": "Reveal answer",
+        "at": 1795103840624
+      },
+      {
+        "action": "Open materials",
+        "at": 1795103844239
+      },
+      {
+        "action": "Inspect Materials",
+        "at": 1795103847566,
+        "sessionId": "11111111-2222-4333-8444-555555555555",
+        "count": 2
+      }
+    ],
+    "still": "phone-tour-w3-duplicate-decks.jpg",
+    "chapters": [
+      {
+        "id": "sessions",
+        "startSeconds": 0.003999948501586914
+      },
+      {
+        "id": "search",
+        "startSeconds": 3.7100000381469727
+      },
+      {
+        "id": "make",
+        "startSeconds": 8.080000162124634
+      },
+      {
+        "id": "materials",
+        "startSeconds": 18.11400008201599
+      }
+    ]
+  },
+  "sessions-and-materials": {
+    "sessionId": "11111111-2222-4333-8444-555555555555",
+    "at": 1795103993709,
+    "rows": [
+      {
+        "key": "node:openui-1lez879-phone-recursion-cards:phone-recursion-cards",
+        "label": "Recursion cards\nFlashcards · just now\n1 card"
+      },
+      {
+        "key": "node:openui-1lanwhi-phone-recursion-cards:phone-recursion-cards",
+        "label": "Recursion cards\nFlashcards · just now\n1 card"
+      }
+    ],
+    "presentations": [
+      {
+        "id": "openui-1069eft-sample-recursion-assignment-document:sample-recursion-assignment",
+        "documentId": "openui-1069eft-sample-recursion-assignment-document",
+        "nodeId": "sample-recursion-assignment",
+        "createdAt": 1795096860710
+      },
+      {
+        "id": "openui-1gbw49g-sample-stored-recursion-path:sample-recursion-path",
+        "documentId": "openui-1gbw49g-sample-stored-recursion-path",
+        "nodeId": "sample-recursion-path",
+        "createdAt": 1795096836710
+      },
+      {
+        "id": "openui-1lanwhi-phone-recursion-cards:phone-recursion-cards",
+        "documentId": "openui-1lanwhi-phone-recursion-cards",
+        "nodeId": "phone-recursion-cards",
+        "createdAt": 1795103985472
+      },
+      {
+        "id": "openui-1lez879-phone-recursion-cards:phone-recursion-cards",
+        "documentId": "openui-1lez879-phone-recursion-cards",
+        "nodeId": "phone-recursion-cards",
+        "createdAt": 1795103985908
+      }
+    ],
+    "messages": [
+      {
+        "id": null,
+        "timestamp": 1795096752710,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096764710,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096776710,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096788710,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096800710,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096812710,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096824710,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096836710,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096848710,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795096860710,
+        "role": "assistant"
+      },
+      {
+        "id": null,
+        "timestamp": 1795103980746,
+        "role": "user"
+      },
+      {
+        "id": null,
+        "timestamp": 1795103983581,
+        "role": "assistant"
+      }
+    ],
+    "transcriptIds": [
+      "user-0-1795096752710",
+      "assistant-1-1795096764710",
+      "user-2-1795096776710",
+      "assistant-3-1795096788710",
+      "user-4-1795096800710",
+      "assistant-5-1795096812710",
+      "user-6-1795096824710",
+      "assistant-7-1795096836710",
+      "user-8-1795096848710",
+      "assistant-9-1795096860710",
+      "user-10-1795103980746",
+      "assistant-11-1795103983581"
+    ],
+    "steps": [
+      {
+        "action": "Make flashcards",
+        "at": 1795103980294
+      },
+      {
+        "action": "Send message",
+        "at": 1795103981001
+      },
+      {
+        "action": "Reveal answer",
+        "at": 1795103986769
+      },
+      {
+        "action": "Choose All in Materials",
+        "at": 1795103990485
+      },
+      {
+        "action": "Inspect Materials",
+        "at": 1795103993705,
+        "sessionId": "11111111-2222-4333-8444-555555555555",
+        "count": 2
+      }
+    ],
+    "still": "sessions-and-materials-w3-duplicate-decks.jpg",
+    "chapters": [
+      {
+        "id": "library",
+        "startSeconds": 0.003999948501586914
+      },
+      {
+        "id": "search",
+        "startSeconds": 3.2119998931884766
+      },
+      {
+        "id": "subject",
+        "startSeconds": 7.293999910354614
+      },
+      {
+        "id": "pin",
+        "startSeconds": 11.060999870300293
+      },
+      {
+        "id": "fork",
+        "startSeconds": 15.793999910354614
+      },
+      {
+        "id": "materials",
+        "startSeconds": 20.955999851226807
+      }
+    ]
+  }
+}

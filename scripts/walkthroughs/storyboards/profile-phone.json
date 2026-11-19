@@ -1,0 +1,212 @@
+{
+  "slug": "profile-phone",
+  "title": "Your profile",
+  "viewport": "phone",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile"
+  ],
+  "ready": [
+    {
+      "label": "More menu"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat"
+    },
+    {
+      "kind": "chapter",
+      "id": "profile",
+      "title": "Open the learner profile",
+      "explanation": "Open the profile Keating uses to teach you.",
+      "alt": "Open the learner profile"
+    },
+    {
+      "kind": "caption",
+      "text": "Open the profile Keating uses to teach you."
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Settings"
+    },
+    {
+      "kind": "click",
+      "label": "Learning",
+      "contains": true
+    },
+    {
+      "kind": "goto",
+      "path": "/chat?settings=learning.profile",
+      "ready": [
+        {
+          "selector": ".st-main[data-section=\"profile\"]"
+        }
+      ]
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "profile"
+    },
+    {
+      "kind": "chapter",
+      "id": "teaching",
+      "title": "Set a hint preference",
+      "explanation": "Say what helps when you get stuck.",
+      "alt": "Set a hint preference"
+    },
+    {
+      "kind": "caption",
+      "text": "Say what helps when you get stuck."
+    },
+    {
+      "kind": "click",
+      "label": "Teaching",
+      "contains": true,
+      "within": ".pf-outline"
+    },
+    {
+      "kind": "click",
+      "label": "Clear hint",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "teaching"
+    },
+    {
+      "kind": "chapter",
+      "id": "context",
+      "title": "Read the tutor context",
+      "explanation": "Check what Keating will be told.",
+      "alt": "Read the tutor context"
+    },
+    {
+      "kind": "caption",
+      "text": "Check what Keating will be told."
+    },
+    {
+      "kind": "click",
+      "label": "What Keating is told"
+    },
+    {
+      "kind": "pause",
+      "ms": 2400
+    },
+    {
+      "kind": "click",
+      "label": "Save profile"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "context"
+    },
+    {
+      "kind": "chapter",
+      "id": "public",
+      "title": "Open the public profile draft",
+      "explanation": "Open the separate public learning profile editor.",
+      "alt": "Open the public profile draft"
+    },
+    {
+      "kind": "caption",
+      "text": "Open the separate public learning profile editor."
+    },
+    {
+      "kind": "goto",
+      "path": "/chat?settings=models.account",
+      "ready": [
+        {
+          "selector": ".st-main[data-section=\"account\"]"
+        }
+      ]
+    },
+    {
+      "kind": "goto",
+      "path": "/review/learning-profile",
+      "ready": [
+        {
+          "selector": "#pf-body-about input[placeholder^=\"For example: Working through\"]"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Headline",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "public"
+    },
+    {
+      "kind": "chapter",
+      "id": "draft",
+      "title": "Edit the draft",
+      "explanation": "Choose what visitors could see.",
+      "alt": "Edit the draft"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose what visitors could see."
+    },
+    {
+      "kind": "type",
+      "selector": "#pf-body-about input:not([type=file]):not([placeholder])",
+      "text": "Alex Rivera"
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder^=\"For example: Working through\"]",
+      "text": "Learning recursion one call at a time",
+      "delay": 27
+    },
+    {
+      "kind": "type",
+      "selector": ".profile-editor__field textarea",
+      "text": "I study by tracing small examples.",
+      "delay": 27
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "draft"
+    },
+    {
+      "kind": "chapter",
+      "id": "preview",
+      "title": "Preview the draft",
+      "explanation": "Preview the draft before publishing.",
+      "alt": "Preview the draft"
+    },
+    {
+      "kind": "caption",
+      "text": "Preview the draft before publishing."
+    },
+    {
+      "kind": "click",
+      "label": "Preview"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Sign in before you leave to keep them.",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "preview"
+    }
+  ],
+  "viewerNote": "Alex Rivera is a sample learner. You can preview the public profile without signing in. Sign in before leaving the editor to keep your changes."
+}

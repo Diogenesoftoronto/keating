@@ -1,4 +1,4 @@
-import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, isOpenUiDiagnosticGateIssue, type PlanReview, type ResourceReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { recordDiagnostic } from "../../lib/diagnostics";
 import { recordedCodePracticeLanguage } from "../editable-code-language";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
@@ -74,6 +74,12 @@ function projectPlanReview(review: PlanReview | undefined): { planReview?: PlanR
   return review && planTriggers.has(review.trigger) && planActions.has(review.action) ? { planReview: { trigger: review.trigger, action: review.action } } : {};
 }
 
+const resourceGaps = new Set<string>(["plan", "retrieval", "map", "away-work"]);
+const resourceTriggers = new Set<string>(["goal-requested", "session-length"]);
+function projectResourceReview(review: ResourceReview | undefined): { resourceReview?: ResourceReview } {
+  return review && resourceGaps.has(review.gap) && resourceTriggers.has(review.trigger) ? { resourceReview: { gap: review.gap, trigger: review.trigger } } : {};
+}
+
 const nonnegative = (value: number): number => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 const phases = new Set<string>(["planning", "drafting", "checking", "revising", "selecting", "released", "withheld", "cancelled"]);
 const safePhase = (phase: TeachingDraftPhase): TeachingDraftPhase => phases.has(phase) ? phase : "withheld";
@@ -124,6 +130,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(activityLearning ? { activityLearning } : {}),
     ...(backgroundActivity ? { backgroundActivity } : {}),
     ...projectPlanReview(snapshot.planReview),
+    ...projectResourceReview(snapshot.resourceReview),
     ...(snapshot.state ? { state: projectState(snapshot.state) } : {}),
     ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({ phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs), turnsDropped: nonnegative(slide.turnsDropped), before: projectState(slide.before), after: slide.after ? projectState(slide.after) : null })) } : {}),
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),

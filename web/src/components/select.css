@@ -5,25 +5,25 @@ body button.keating-select.keating-select {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  min-height: 44px;
+  min-height: 1.4904rem;
   height: auto;
   margin: 0;
   align-items: center;
   justify-content: space-between;
-  gap: .625rem;
-  border: 1px solid var(--border);
-  border-radius: .5rem;
-  padding: .55rem .75rem;
-  background: var(--background);
-  color: var(--foreground);
+  gap: .4rem;
+  border: 1px solid var(--k-strong-line, var(--ink, var(--foreground)));
+  border-radius: .1923rem;
+  padding: .28rem .45rem;
+  background: var(--paper, var(--background));
+  color: var(--ink, var(--foreground));
   font-family: inherit;
-  font-size: .8125rem;
+  font-size: .625rem;
   font-weight: 450;
-  line-height: 1.35;
+  line-height: 1.4;
   letter-spacing: normal;
   text-align: start;
   text-transform: none;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent);
+  box-shadow: none;
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
 }
@@ -35,7 +35,7 @@ body button.keating-select.keating-select[data-placeholder] { color: var(--muted
 .keating-select__value { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .keating-select__icon { display: inline-flex; flex: 0 0 auto; color: var(--muted-foreground); transition: transform 140ms ease; }
 .keating-select[data-state="open"] .keating-select__icon { transform: rotate(180deg); }
-body button.keating-select.keating-select svg { width: 17px; height: 17px; flex: 0 0 17px; }
+body button.keating-select.keating-select svg { width: .625rem; height: .625rem; flex: 0 0 .625rem; }
 body .keating-select-menu {
   box-sizing: border-box;
   z-index: 1000;
@@ -43,39 +43,39 @@ body .keating-select-menu {
   max-width: min(var(--radix-select-content-available-width), calc(100vw - 16px));
   max-height: min(var(--radix-select-content-available-height), 22rem);
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: .625rem;
-  background: var(--background);
-  color: var(--foreground);
-  box-shadow: var(--shadow-lg, 0 12px 32px #0002), 0 2px 6px #0000000a;
+  border: 1px solid var(--k-strong-line, var(--ink, var(--foreground)));
+  border-radius: .1923rem;
+  background: var(--card, var(--background));
+  color: var(--ink, var(--foreground));
+  box-shadow: var(--k-hard-shadow, 3px 3px 0 var(--ink, #1c211b));
   transform-origin: var(--radix-select-content-transform-origin);
   animation: keating-select-arrive 120ms ease-out;
   font-family: inherit;
-  font-size: .8125rem;
-  line-height: 1.35;
+  font-size: .625rem;
+  line-height: 1.4;
 }
 .keating-select-viewport { padding: .25rem; scroll-padding-block: .25rem; }
 body .keating-select-option {
   position: relative;
   display: flex;
   box-sizing: border-box;
-  min-height: 44px;
+  min-height: 1.5rem;
   align-items: center;
   justify-content: space-between;
-  gap: .75rem;
-  border-radius: .375rem;
-  padding: .6rem 2rem .6rem .625rem;
+  gap: .5rem;
+  border-radius: .0962rem;
+  padding: .3rem 1.6rem .3rem .45rem;
   outline: none;
   overflow-wrap: anywhere;
   user-select: none;
   cursor: pointer;
 }
-.keating-select-option[data-state="checked"] { color: var(--primary); font-weight: 600; }
-.keating-select-option[data-highlighted] { background: var(--accent); color: var(--accent-foreground, var(--foreground)); }
+.keating-select-option[data-state="checked"] { color: var(--ink, var(--foreground)); font-weight: 700; }
+.keating-select-option[data-highlighted] { background: var(--k-wash, var(--accent)); color: var(--ink, var(--accent-foreground, var(--foreground))); }
 .keating-select-option[data-disabled] { opacity: .4; cursor: not-allowed; }
 .keating-select-option__check { position: absolute; right: .625rem; display: inline-flex; }
-.keating-select-option__check svg { width: 17px; height: 17px; }
-.keating-select-group { padding: .625rem .625rem .25rem; color: var(--muted-foreground); font-size: .7rem; font-weight: 600; }
+.keating-select-option__check svg { width: .625rem; height: .625rem; }
+.keating-select-group { padding: .45rem .45rem .2rem; color: var(--k-ink-faint, var(--muted-foreground)); font: 600 .48rem/1.4 var(--mono-body, inherit); letter-spacing: .1em; text-transform: uppercase; }
 .keating-select-group:not(:first-child) { border-top: 1px solid var(--border); }
 .keating-select-scroll { display: flex; min-height: 30px; align-items: center; justify-content: center; color: var(--muted-foreground); background: var(--background); }
 body select.keating-select-native.keating-select-native {
@@ -97,3 +97,8 @@ body select.keating-select-native.keating-select-native {
 }
 @keyframes keating-select-arrive { from { opacity: 0; transform: translateY(-3px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { body button.keating-select.keating-select, .keating-select__icon { transition: none; } body .keating-select-menu { animation: none; } }
+/* Touch: keep full-size targets for the trigger and each option. */
+@media (pointer: coarse) {
+  body button.keating-select.keating-select { min-height: 44px; }
+  body .keating-select-option { min-height: 44px; }
+}

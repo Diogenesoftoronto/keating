@@ -794,6 +794,9 @@ export default defineConfig({
           inkSoft: { value: { base: "#4a5247", _dark: "#9dbfa8" } },
           accent: { value: { base: "#1e9b50", _dark: "#1e9b50" } },
           accentDim: { value: { base: "#14743c", _dark: "#4be388" } },
+          series1: { value: { base: "#14743c", _dark: "#25a05a" } },
+          series2: { value: { base: "#2f6fed", _dark: "#4f8fe6" } },
+          series3: { value: { base: "#c2610c", _dark: "#cf7d24" } },
           line: { value: { base: "rgba(28, 33, 27, 0.22)", _dark: "rgba(75, 227, 136, 0.28)" } },
           lineSoft: { value: { base: "rgba(28, 33, 27, 0.12)", _dark: "rgba(75, 227, 136, 0.14)" } },
           background: { value: { base: "#f1ece0", _dark: "#0c1510" } },
@@ -1333,6 +1336,9 @@ export default defineConfig({
       "--line-soft": "{colors.lineSoft}",
       "--accent-green": "{colors.accent}",
       "--accent-dim": "{colors.accentDim}",
+      "--series-1": "{colors.series1}",
+      "--series-2": "{colors.series2}",
+      "--series-3": "{colors.series3}",
       "--terminal": "{colors.terminal}",
       "--terminal-edge": "{colors.terminalEdge}",
       "--shadow-card": "{shadows.card}",
@@ -1583,11 +1589,11 @@ export default defineConfig({
     },
     ".chat-page-shell .chat-header": {
       background: "var(--chat-paper)",
-      borderBottom: "2px solid var(--chat-ink)"
+      borderBottom: "1.5px solid var(--chat-ink)"
     },
     ".dark .chat-page-shell .chat-header": {
       background: "var(--chat-paper)",
-      borderBottom: "2px solid var(--chat-ink)"
+      borderBottom: "1.5px solid var(--chat-ink)"
     },
     ".chat-page-shell .composer-root": {
       background: "var(--chat-paper)",
@@ -1768,12 +1774,12 @@ export default defineConfig({
     ".chat-page-shell .you-bubble": {
       background: "var(--card)",
       border: "1.5px solid var(--chat-ink)",
-      boxShadow: "3px 3px 0 var(--chat-ink)",
+      boxShadow: "none",
       padding: "10px 14px"
     },
     ".dark .chat-page-shell .you-bubble": {
       borderColor: "rgba(75, 227, 136, 0.3)",
-      boxShadow: "3px 3px 0 rgba(75, 227, 136, 0.15)"
+      boxShadow: "none"
     },
     ".chat-page-shell .chat-mode-badge": {
       fontFamily: "var(--mono-body)",

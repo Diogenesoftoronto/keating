@@ -1,0 +1,17 @@
+.rv-export-actions { display: flex; width: 100%; justify-content: space-between; gap: .5rem; }
+
+.rv-export-sheet.k-sheet { border: 1px solid var(--line); box-shadow: none; }
+.rv-export-sheet.k-sheet h2 { flex: 1; font: 600 .77rem/1.3 var(--font-ui); }
+.rv-export-sheet .rv-sheet-title { display: block; padding-block: .18rem; }
+.rv-export-sheet .k-dlist { row-gap: .4rem; }
+.rv-export-sheet .k-dlist dd { min-width: 0; overflow-wrap: anywhere; }
+.rv-export-sheet .k-note { border: 0; border-inline-start: 2px solid var(--line); }
+.rv-export-sheet .k-sheet-body { display: grid; gap: .55rem; }
+.rv-export-actions { align-items: center; flex-wrap: wrap; }
+.rv-export-actions > :last-child:not(:first-child) { margin-inline-start: auto; }
+@media (max-width: 40em) {
+  dialog.rv-export-sheet { inset: auto 0 0; width: 100%; margin: 0; max-width: none; padding-bottom: max(.6rem, env(safe-area-inset-bottom)); }
+}
+
+.rv-export-sheet .rv-export-actions > .k-button { flex: 0 1 auto; width: auto; }
+.rv-export-actions .k-outline { border-color: var(--line); }

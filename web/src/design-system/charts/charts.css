@@ -1,0 +1,104 @@
+/* Geometry uses the application's 20.8px design rem. */
+.kc-plot,.kc-frame,.kc-stat,.kc-meter-row,.kc-legend,.kc-table {
+  min-width:0; max-width:100%; color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.kc-plot,.kc-stat,.kc-frame {display:grid;gap:.38rem}
+.kc-plot,.kc-meter-row,.kc-legend,.kc-table {font: .57rem/1.4 var(--font-mono,monospace);font-variant-numeric:tabular-nums}
+.kc-plot small,.kc-frame p,.kc-stat small {color:var(--ink-soft)}
+.kc-label {display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kc-plot button,.kc-legend button {font:inherit;color:inherit;border:0;padding:0;border-radius:0;background:none;text-align:start;cursor:pointer}
+.kc-plot :focus-visible,.kc-legend button:focus-visible {outline:.0962rem solid var(--ink);outline-offset:.0962rem;z-index:2}
+.kc-plot [aria-pressed=true],.kc-legend [aria-pressed=true] {outline:.0962rem solid var(--ink)}
+.kc-meter,.kc-track,.kc-steps i {display:block;background:var(--paper-deep);height:.2885rem;position:relative}
+.kc-meter {flex:1;overflow:hidden;min-width:0;--kc-fill:var(--series-1)}
+.kc-meter[data-size=sm] {height:.1923rem}
+.kc-meter[data-size=lg],.kc-stack[data-size=lg] {height:.6731rem}
+.kc-meter.k-series2 {--kc-fill:var(--series-2)}
+.kc-meter.k-series3 {--kc-fill:var(--series-3)}
+.kc-meter.k-ink {--kc-fill:var(--ink)}
+.kc-meter.k-ok {--kc-fill:var(--accent-green)}
+.kc-meter.k-warn {--kc-fill:var(--amber)}
+.kc-meter.k-bad {--kc-fill:var(--destructive)}
+.kc-meter.k-meter span.kc-fill {background:transparent;display:block;height:100%;transform-origin:left}
+.kc-fill i {display:block;height:100%;background-color:var(--kc-fill)}
+.kc-fill .kc-pending {width:30%}
+.kc-tick {position:absolute;top:0;bottom:0;width:1px;background:var(--ink);transform:translateX(-50%);left:clamp(1px,50%,100%)}
+.kc-meter-row,.kc-steps,.kc-stack,.kc-ramp {display:flex;align-items:center;gap:.35rem}
+.kc-meter-row>span {overflow-wrap:anywhere}
+.kc-meter-row svg {display:inline-block;vertical-align:middle;margin-inline-end:.15rem}
+.kc-meter-row small,.kc-stat small {display:block}
+.kc-steps,.kc-stack {gap:.0962rem}.kc-steps {flex:1}.kc-steps i {flex:1}
+.kc-steps [data-step=done] {background:var(--ink)}
+.kc-steps [data-step=current] {outline:.0962rem solid var(--series-1);outline-offset:-.0962rem}
+.kc-row,.kc-lane {display:grid;align-items:center;grid-template-columns:minmax(0,1fr) minmax(0,2fr) minmax(2.2em,auto);gap:.38rem;min-width:0}
+.kc-row b {text-align:end}
+.kc-track i,.kc-stack>* {display:block;height:100%;min-width:0;background:var(--series-1)}
+.kc-stack {height:.2885rem;align-items:stretch;background:var(--card)}
+.kc-hatch {background-image:repeating-linear-gradient(135deg,transparent 0 .14rem,var(--card) .14rem .20rem)!important}
+.kc-legend,.kc-legend>*,.kc-ramp {display:flex;align-items:center;gap:.24rem}
+.kc-legend {flex-wrap:wrap;gap:.28rem .67rem}
+.kc-legend>* {max-width:100%;min-width:0}
+.kc-legend i,.kc-ramp i {width:.4327rem;height:.4327rem;flex:none}
+.kc-axis {position:relative;height:1.0577rem;background:linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/50% 100%,linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat;border-right:1px solid var(--line)}
+.kc-axis>i {position:absolute}
+.kc-band {inset-block:0;background:color-mix(in srgb,var(--series-1) 11%,transparent)}
+.kc-range {height:.1923rem;top:calc(50% - .0962rem);background:color-mix(in srgb,var(--series-1) 45%,transparent)}
+.kc-point,.kc-sample {width:.4808rem;height:.4808rem;top:50%;transform:translate(-50%,-50%);background:var(--series-1);outline:.0962rem solid var(--card)}
+.kc-point[data-sparse=true] {background:var(--card);border:.0962rem solid var(--k-ink-faint)}
+.kc-axis-labels,.kc-xlabels {display:flex;justify-content:space-between;color:var(--ink-soft)}
+.kc-line-layout {--kc-line-height:4.6154rem;display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:.48rem;margin:.48rem .2rem}
+.kc-line,.kc-ends {position:relative;height:var(--kc-line-height)}
+.kc-line svg {width:100%;height:100%;overflow:visible}
+.kc-line line,.kc-line polyline {vector-effect:non-scaling-stroke;fill:none}
+.kc-line line {stroke:var(--line);stroke-width:1}
+.kc-line polyline {stroke-width:2}
+.kc-sample {position:absolute;width:.3846rem;height:.3846rem}
+.kc-sample[data-end=false]:not(:hover):not(:focus) {background:transparent!important;outline:none}
+.kc-ends>span {position:absolute;max-width:100%;transform:translateY(-50%)}
+.kc-cross {position:absolute;left:50%;height:var(--kc-line-height);border-left:1px dashed var(--ink);pointer-events:none}
+.kc-xlabels {width:72%}
+.kc-grid {display:grid;gap:.1442rem}
+.kc-grid .kc-cell {aspect-ratio:1;display:grid;place-items:center;min-width:0;border:0;background-color:var(--paper-deep)}
+.kc-cell svg {max-width:90%;max-height:90%}
+.kc-grid [data-selected=true] {outline:.0962rem solid var(--ink)}
+.kc-ramp {color:var(--ink-soft)}
+.kc-grid .kc-level-1,.kc-level-1 {background-color:color-mix(in srgb,var(--series-1) 28%,var(--paper-deep))}
+.kc-grid .kc-level-2,.kc-level-2 {background-color:color-mix(in srgb,var(--series-1) 52%,var(--paper-deep))}
+.kc-grid .kc-level-3,.kc-level-3 {background-color:color-mix(in srgb,var(--series-1) 76%,var(--paper-deep))}
+.kc-grid .kc-level-4,.kc-level-4 {background-color:var(--series-1)}
+.kc-grid .kc-state-ok,.kc-state-ok {color:var(--accent-green)}
+.kc-grid .kc-state-warn,.kc-state-warn {color:var(--amber)}
+.kc-grid .kc-state-bad,.kc-state-bad {color:var(--destructive)}
+.kc-lane {grid-template-columns:minmax(0,1fr) minmax(0,3fr)}
+.kc-lane i {position:absolute;border-inline-end:.0962rem solid var(--card);box-sizing:border-box}
+.kc-stat {gap:.05rem}.kc-stat>.kc-label {font:.4808rem var(--font-mono,monospace);color:var(--k-ink-faint,var(--ink-soft))}
+.kc-stat b {font:700 1.1538rem/1.15 var(--mono-display,var(--font-mono,monospace));font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kc-stat small,.kc-tooltip {font-size:.5288rem}
+.kc-tooltip {position:fixed;z-index:1000;pointer-events:none;box-sizing:border-box;max-width:min(12.5rem,calc(100vw - 16px));padding:.24rem .38rem;background:var(--ink);color:var(--card);overflow-wrap:anywhere;font-family:var(--font-mono,monospace)}
+.kc-table {overflow:auto}.kc-table table {border-collapse:collapse;width:100%}.kc-table th,.kc-table td {padding:.2rem;text-align:start;overflow-wrap:anywhere;border-bottom:1px solid var(--line)}.kc-table summary {cursor:pointer}
+.kc-frame {margin:0}.kc-frame figcaption {overflow-wrap:anywhere}.kc-frame figcaption small {margin-inline-start:.4rem;padding:.1rem .25rem;background:var(--paper-deep)}
+.kc-frame p {margin:.2rem 0;font-size:.6rem}
+[data-kc-enter=grow] {transform-origin:left}
+@media (forced-colors:active) {
+  .kc-stack>*,.kc-cell,.kc-legend i,.kc-track i,.kc-fill i,.kc-point,.kc-sample {outline:1px solid currentColor}
+  .kc-hatch {border-block:1px dashed currentColor!important}
+}
+@media (prefers-reduced-motion:reduce) {
+  .kc-plot button,.kc-legend button,[data-kc-enter] {transition:none!important}
+}
+html[data-reduce-motion="true"] :is(.kc-plot button,.kc-legend button,[data-kc-enter]) {transition:none!important}
+/* The unfilled remainder of a whole: the track itself, outlined in the legend so it is not mistaken for a series. */
+.kc-legend i.kc-rest {box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 30%,transparent)}
+/* Live fills: light streaks step through the filled part of a meter, and the current step of a stepped bar ticks.
+   Pure CSS, so the chart kit depends on nothing outside itself. Both are decoration; they stand still for reduced
+   motion and effects off, and disappear in forced colours. */
+.kc-meter .kc-live {position:absolute;inset:0 auto 0 0;display:block;overflow:hidden;pointer-events:none;mix-blend-mode:overlay;opacity:.85;
+  background:repeating-linear-gradient(115deg,transparent 0 .34rem,color-mix(in srgb,var(--card) 60%,transparent) .34rem .46rem,transparent .46rem .9rem) 0 0/1.8rem 100%}
+.kc-meter.k-meter span.kc-live {transform:none}
+@keyframes kc-live-flow {to {background-position:1.8rem 0}}
+@keyframes kc-step-tick {50% {background:var(--series-1)}}
+@media (prefers-reduced-motion:no-preference) {
+  :root:not([data-reduce-motion="true"]):not([data-fx="off"]) .kc-meter .kc-live {animation:kc-live-flow 1.2s steps(12) infinite}
+  :root:not([data-reduce-motion="true"]) .kc-steps[data-live] [data-step=current] {animation:kc-step-tick 1s steps(2,jump-none) infinite}
+}
+@media (forced-colors:active) {.kc-meter .kc-live {display:none}}

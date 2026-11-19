@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "../keating/app-storage";
-import { KeyRound, X } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { KeatingBot } from "./KeatingBot";
 import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
@@ -134,7 +134,7 @@ export function KeatingApiKeyPromptDialog() {
 			<div className={css({ width: "100%", maxWidth: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", boxShadow: "var(--shadow-xl)" })}>
 				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.75rem" })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-						<KeyRound size={16} className={css({ color: "var(--primary)" })} />
+						<KeatingGlyph name="key" size={16} className={css({ color: "var(--primary)" })} />
 						<h2 className={css({ fontSize: "0.875rem", fontWeight: 600 })}>API key required</h2>
 					</div>
 					<button
@@ -143,7 +143,7 @@ export function KeatingApiKeyPromptDialog() {
 						onClick={() => closePrompt(false)}
 						aria-label="Close"
 					>
-						<X size={16} />
+						<KeatingGlyph name="x" size={16} />
 					</button>
 				</div>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>

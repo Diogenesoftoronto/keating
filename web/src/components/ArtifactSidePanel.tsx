@@ -82,12 +82,14 @@ export function ArtifactSidePanel(props: ArtifactBrowserSurfaceProps) {
 
 	return (
 		<aside
-			aria-label="Session workspace"
+			aria-label="Materials"
 			className={css({
 				position: "relative",
 				display: "flex",
 				height: "100%",
 				flexDirection: "column",
+				maxWidth: "100%",
+				minWidth: "288px",
 				background: "var(--background)",
 			})}
 			style={{ width: `${width}px` }}
@@ -109,7 +111,7 @@ export function ArtifactSidePanel(props: ArtifactBrowserSurfaceProps) {
 				}))}
 				role="separator"
 				aria-orientation="vertical"
-				aria-label="Resize workspace panel"
+				aria-label="Resize materials panel"
 				aria-valuemin={MIN_WIDTH}
 				aria-valuemax={MAX_WIDTH}
 				aria-valuenow={width}

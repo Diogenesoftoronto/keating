@@ -1,5 +1,5 @@
 /** Back / next / finish controls under the live quiz question. */
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { finishButtonLabel } from "./quiz-session";
 import { quizStyles, sm } from "./quiz-styles";
@@ -35,7 +35,7 @@ export function QuizNavigation({
 				disabled={isPending || isFirst}
 				className={cx(quizStyles.buttonSecondary, "activity-back-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
 			>
-				<ChevronLeft size={14} /> Back
+				<KeatingGlyph name="chevl" size={14} /> Back
 			</button>
 			{!isLast ? (
 				<button
@@ -44,7 +44,7 @@ export function QuizNavigation({
 					disabled={isPending}
 					className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
 				>
-					{currentAnswered ? "Lock in & next" : "Skip for now"} <ChevronRight size={16} />
+					{currentAnswered ? "Lock in & next" : "Skip for now"} <KeatingGlyph name="chevr" size={14} />
 				</button>
 			) : (
 				<button
@@ -54,7 +54,7 @@ export function QuizNavigation({
 					title={allAnswered ? undefined : `${unansweredCount} unanswered`}
 					className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", gap: "0.5rem", [sm]: { flex: "0 0 auto" } }))}
 				>
-					<Send size={14} /> {finishButtonLabel(allAnswered, unansweredCount)}
+					<KeatingGlyph name="send" size={14} /> {finishButtonLabel(allAnswered, unansweredCount)}
 				</button>
 			)}
 		</nav>

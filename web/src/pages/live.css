@@ -1,0 +1,122 @@
+.lv-page, .lv-session {color:var(--ink);background:var(--paper);font-size:.625rem;line-height:1.5;font-family:var(--font-ui)}
+.lv-page {min-height:100dvh}
+.lv-setup,.lv-call {max-width:34rem;margin-inline:auto;padding:clamp(.72rem,3vw,1.5rem);display:grid;gap:.77rem}
+.lv-setup {padding-top:clamp(1.25rem,6vh,3rem)}
+.lv-intro,.lv-row,.lv-footer,.lv-header,.lv-controls,.lv-clock,.lv-recover,.lv-image {display:flex;align-items:center;gap:.58rem}
+.lv-intro {margin-bottom:.3rem;padding-block:.38rem}
+.lv-intro>div,.lv-header>b {background:var(--paper)}
+.lv-intro h1 {font-size:1rem;font-weight:600;line-height:1.15;letter-spacing:-.025em}
+.lv-intro p,.lv-choice p,.lv-failure p,.lv-lines>p {color:var(--ink-soft)}
+.lv-intro p,.lv-choice p {margin-top:.24rem}
+.lv-choices {border:1px solid var(--line);border-radius:.1923rem;background:var(--card)}
+.lv-choice {padding:.65rem .77rem}
+.lv-choice+.lv-choice {border-top:1px solid var(--line-soft)}
+.lv-choice .k-select-field,.lv-row,.lv-footer {width:100%;justify-content:space-between}
+.lv-choice label,.lv-choice b {font-weight:650;flex-shrink:0}
+.lv-choice .keating-select,.lv-header .keating-select {width:auto;max-width:75%;min-width:0}
+.lv-choice .k-seg button {gap:.23rem}
+.lv-setup .k-note {align-items:flex-start}
+.lv-setup .k-note p {margin-top:.18rem}
+.lv-failure {padding:.58rem .72rem;border-inline-start:3px solid var(--destructive);background:color-mix(in srgb,var(--destructive) 6%,var(--paper));overflow-wrap:anywhere}
+.lv-failure .k-button,.lv-recover,.lv-failure details {margin-top:.35rem}
+.lv-failure details {font-family:var(--mono-body);font-size:.55rem}
+.lv-recover {flex-wrap:wrap}
+.lv-footer {gap:.4rem}
+.lv-overlay {position:fixed;inset:0;z-index:60;background:var(--paper)}
+.lv-session {height:100%;min-height:0;overflow:auto;overscroll-behavior:contain}
+.lv-header {padding:.45rem .8rem;border-bottom:1px solid var(--line);background:var(--card)}
+.lv-header>b {margin-right:auto}
+.lv-header .k-select-field {min-width:0}
+.lv-call {max-width:42rem;gap:0;padding-bottom:calc(1rem + env(safe-area-inset-bottom))}
+.lv-stage,.lv-hosted,.lv-visualizer {display:grid;place-items:center;position:relative}
+.lv-stage {height:clamp(12rem,40vh,19rem);background:var(--crt);color:var(--phosphor-dim);overflow:hidden;border:1px solid var(--line)}
+.lv-stage .kc-frame {margin:0;padding:0;border:0;background:transparent}
+.lv-stage figcaption {position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+.lv-canvas,.lv-hosted,.lv-remote {position:absolute;inset:0}
+.lv-canvas {color:var(--phosphor)}
+.lv-remote {width:100%;height:100%}
+.lv-speaker,.lv-inset,.lv-tool,.lv-host-status {background:var(--crt);color:var(--phosphor-dim);font: .5rem/1.4 var(--mono-body)}
+.lv-speaker,.lv-tool {position:absolute;left:.5rem;padding:.15rem .28rem}
+.lv-speaker {top:.42rem;letter-spacing:.065em;text-transform:uppercase}
+.lv-tool {bottom:.42rem;max-width:55%}
+.lv-inset {position:absolute;right:.48rem;bottom:.48rem;width:clamp(4.2rem,20%,7rem);min-height:2.75rem;border:1px solid var(--line);display:grid;place-items:center;text-align:center}
+.lv-inset video {width:100%;max-height:4rem;object-fit:contain}
+.lv-inset span,.lv-host-status {background:var(--crt);padding:.18rem .28rem}
+.lv-host-status {position:relative}
+.lv-controls {position:relative;padding:.45rem 0;gap:.0962rem;border-bottom:1px solid var(--line-soft)}
+.lv-clock {margin-right:auto;gap:.35rem;font: .55rem var(--mono-body);font-variant-numeric:tabular-nums}
+.lv-clock time {white-space:nowrap}
+.lv-controls .lv-end {color:var(--destructive-foreground);background:var(--destructive);border-color:var(--destructive)}
+.lv-controls .lv-more {display:none}
+.lv-said {padding:.68rem 0}
+.lv-lines {max-height:32vh;overflow:auto}
+.lv-utterance {margin-bottom:.5rem}
+.lv-utterance p {margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.lv-utterance .k-prose {font-size:.7rem}
+.lv-said .lv-footer {padding-top:.4rem;align-items:center}
+.lv-said .lv-footer>span {display:flex;align-items:center;gap:.24rem;font:.5rem/1.45 var(--mono-body);color:var(--ink-soft)}
+.lv-said .lv-footer .k-button {border:0;text-decoration:underline}
+.lv-call>.lv-failure,.lv-image {margin-top:.6rem}
+.lv-image img {height:3rem;width:3rem;object-fit:cover}
+.lv-image figcaption {overflow-wrap:anywhere}
+@media(max-width:600px) {
+	.lv-setup .lv-footer,.lv-choice .k-select-field,.lv-choice .lv-row {align-items:stretch;flex-direction:column}
+	.lv-choice .keating-select {max-width:100%;width:100%}
+	.lv-setup .lv-footer>.k-button {min-height:44px}
+	.lv-stage {height:clamp(11rem,34vh,15rem)}
+	.lv-controls .lv-extra {display:none}
+	.lv-controls .lv-more {display:block}
+	.lv-controls .k-icon,.lv-controls .k-button,.lv-header .k-icon {min-width:44px;min-height:44px}
+	.lv-clock {flex-wrap:wrap;row-gap:0}
+	.lv-header {gap:.24rem}
+	.lv-header .k-select-field {max-width:50%}
+	.lv-header .k-select-field label {position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
+	.lv-header .keating-select {max-width:100%}
+}
+@media(pointer:coarse) {
+	.lv-page :is(button,a.k-button),.lv-session :is(button,summary) {min-height:44px}
+	.lv-session .k-icon {min-width:44px}
+}
+@media(prefers-reduced-motion:no-preference) {
+	html:not([data-reduce-motion="true"]) :is(.lv-setup,.lv-call) {animation:lv-arrive .25s cubic-bezier(.2,.8,.2,1)}
+}
+@keyframes lv-arrive {from {transform:translateY(4px)} to {transform:translateY(0)}}
+
+.lv-state {display:inline-flex;align-items:center;gap:.35rem;font-weight:650}
+.lv-setup,.lv-call,.lv-intro :is(h1,p),.lv-choice p,.lv-utterance>p {font-family:var(--font-ui)}
+.lv-utterance .k-prose p {font-family:var(--k-reading)}
+.lv-setup .k-note {padding:.58rem .7rem;border:0;border-inline-start:3px solid var(--green-deep);background:var(--k-wash);margin:0}
+.lv-header .k-select-field label {white-space:nowrap}
+body :is(.lv-header,.lv-choice) button.keating-select.keating-select {background:transparent;color:var(--ink);border:0;border-radius:.1923rem;font: .6rem/1.4 var(--font-ui);box-shadow:none}
+@media(max-width:360px) {
+	.lv-clock {display:grid;grid-template-columns:auto auto;column-gap:.2rem}
+	.lv-clock time {grid-column:2}
+	.lv-controls {gap:.18rem}
+}
+html:has(.lv-page), html:has(.lv-overlay) {overflow-x:clip}
+.lv-choice .k-seg {border-color:var(--line)}
+.lv-header > b {background:var(--card)}
+.lv-lines .k-empty {min-height:3.46rem;padding:.58rem}
+.lv-image {width:fit-content}
+.lv-image figcaption {background:var(--paper)}
+.lv-said .lv-footer button {white-space:nowrap}
+.lv-inset.k-grid {--line-soft:color-mix(in srgb,var(--phosphor-dim) 16%,transparent)}
+.lv-choice .keating-select:focus-visible,.lv-header .keating-select:focus-visible {outline:2px solid var(--green-deep);outline-offset:-2px}
+@media (max-width:600px) {
+  .lv-setup {padding-top:.77rem}
+  .lv-setup .lv-footer {flex-direction:row;flex-wrap:wrap;align-items:center}
+  .lv-setup .lv-footer > :last-child {margin-inline-start:auto}
+}
+@media (forced-colors:active) {
+  .lv-inset.k-grid {background-image:none}
+}
+html[data-fx=off] :is(.lv-inset,.lv-image).k-grid {background-image:none}
+html[data-fx=off] :is(.lv-intro,.lv-header).k-halftone::after {display:none}
+
+.lv-footer button .k-busy-inline, .lv-footer button .k-busy-label {
+  min-height: 0; padding: 0; border: 0; background: transparent; color: inherit;
+}
+@media (forced-colors:active), (prefers-reduced-motion:reduce) {
+  :is(.lv-intro,.lv-header).k-halftone::after {display:none}
+  :is(.lv-image,.lv-inset).k-grid {background-image:none}
+}

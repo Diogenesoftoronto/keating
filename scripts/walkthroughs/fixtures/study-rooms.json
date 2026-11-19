@@ -1,0 +1,8 @@
+{
+  "turns": [
+    {
+      "match": "which call returns first?",
+      "reply": "Alex, which call can finish without asking another call to do work? Find that call first, then trace the rest of the returns."
+    }
+  ]
+}

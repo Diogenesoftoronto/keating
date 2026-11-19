@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, LoaderCircle } from "lucide-react";
+import { Loading } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 import { TrajectoryReviewWorkspace } from "../components/trajectory/TrajectoryReviewWorkspace";
 import type {
@@ -170,7 +171,7 @@ function pageError(message: string) {
 	return (
 		<main className={css({ minHeight: "100dvh", display: "grid", placeItems: "center", padding: "1.5rem", background: "var(--background)", color: "var(--foreground)" })}>
 			<div className={css({ maxWidth: "32rem" })}>
-				<Link to="/review" className={css({ display: "inline-flex", alignItems: "center", gap: "0.4rem", minHeight: "2.5rem", color: "var(--muted-foreground)", fontSize: "0.8125rem", _hover: { color: "var(--foreground)" } })}><ArrowLeft size={15} /> Reviews</Link>
+				<Link to="/review" className={css({ display: "inline-flex", alignItems: "center", gap: "0.4rem", minHeight: "2.5rem", color: "var(--muted-foreground)", fontSize: "0.8125rem", _hover: { color: "var(--foreground)" } })}><KeatingGlyph name="left" size={15} /> Reviews</Link>
 				<h1 className={css({ marginTop: "0.75rem", fontFamily: "serif", fontSize: "1.5rem", fontWeight: 650 })}>Review unavailable</h1>
 				<p role="alert" className={css({ marginTop: "0.5rem", color: "var(--muted-foreground)", fontSize: "0.875rem", lineHeight: 1.6 })}>{message}</p>
 			</div>
@@ -305,8 +306,8 @@ export function TrajectoryReview() {
 	if (!sessionId) return pageError("No session was selected.");
 	if (reviewState.loading) {
 		return (
-			<main className={css({ minHeight: "100dvh", display: "grid", placeItems: "center", background: "var(--background)", color: "var(--muted-foreground)" })}>
-				<p role="status" className={css({ display: "inline-flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" })}><LoaderCircle size={17} className={css({ animation: "spin 1s linear infinite" })} /> Loading review workspace…</p>
+			<main>
+				<Loading size="page" label="Loading review workspace…" />
 			</main>
 		);
 	}
@@ -432,17 +433,17 @@ export function TrajectoryReview() {
 				if (isCurrent()) dispatchUi({ type: "review-saved", review: saved, submittedRevision });
 			});
 		},
-		onExport: () => {
+		onExport: async () => {
+			const origin = sessionId;
 			const submittedDraft = ui.reviewDraft;
 			const submittedRevision = ui.reviewDraftRevision;
 			const saveBeforeExport = ui.reviewDirty && submittedDraft;
-			run(async (isCurrent) => {
-				if (saveBeforeExport) {
-					const saved = await reviewState.saveReview(submittedDraft);
-					if (isCurrent()) dispatchUi({ type: "review-saved", review: saved, submittedRevision });
-				}
-				await reviewState.exportArchive();
-			});
+			if (saveBeforeExport) {
+				const saved = await reviewState.saveReview(submittedDraft);
+				if (currentSessionId.current !== origin) return;
+				dispatchUi({ type: "review-saved", review: saved, submittedRevision });
+			}
+			await reviewState.exportArchive();
 		},
 	};
 
@@ -555,7 +556,7 @@ export function TrajectoryReview() {
 
 	return (
 		<JudgementReviewContext.Provider value={judgementReview.context}>
-			<TrajectoryReviewWorkspace
+			<TrajectoryReviewWorkspace key={reviewState.session.id}
 				data={{
 					session: {
 						id: reviewState.session.id,

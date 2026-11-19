@@ -7,11 +7,6 @@
 import type { Api, Model } from "@earendil-works/pi-ai";
 import type { MutableRefObject } from "react";
 import { SettingsDialog } from "../../components/SettingsDialog";
-import { StartTab } from "../../components/settings/StartTab";
-import { KeatingUiSettingsTab } from "../../components/KeatingUiSettingsTab";
-import { DiagnosticsTab } from "../../components/settings/DiagnosticsTab";
-import { LearningTab } from "../../components/settings/LearningTab";
-import { ModelsProvidersTab } from "../../components/settings/ModelsProvidersTab";
 import { KnowledgeToolReview } from "../../components/settings/KnowledgeSources";
 import {
   ImageGenerationModelSelectorDialog,
@@ -50,57 +45,8 @@ export function renderAgentDialogs({
     <SettingsDialog
       open={settingsDialog.open}
       onClose={settingsDialog.onClose}
-      defaultTabId={settingsDeepLinkRef.current?.tabId}
-      tabs={[
-        {
-          id: "start",
-          label: "Get started",
-          group: "Basics",
-          description: "The few things worth doing first.",
-          docsPath: "start-here/",
-          component: <StartTab />,
-        },
-        {
-          id: "models",
-          label: "Models & Providers",
-          group: "Connect",
-          description: "API keys, local models, web search and proxy.",
-          docsPath: "choose-a-model/",
-          component: <ModelsProvidersTab />,
-        },
-        {
-          id: "learning",
-          label: "Learning",
-          group: "Personalize",
-          description: "Your profile, the teacher's persona, and voice.",
-          docsPath: "learning-with-keating/",
-          component: (
-            <LearningTab
-              onStartTour={() => {
-                // Settings sits above the chat, so close it before the tour
-                // starts pointing at elements underneath.
-                settingsDialog.onClose();
-                requestInterfaceTour();
-              }}
-            />
-          ),
-        },
-        {
-          id: "app",
-          label: "Appearance & Privacy",
-          group: "Personalize",
-          description: "Chat display, sharing, images and analytics.",
-          component: <KeatingUiSettingsTab />,
-        },
-        {
-          id: "diagnostics",
-          label: "Diagnostics",
-          group: "Support",
-          description: "Troubleshoot problems and report issues.",
-          docsPath: "troubleshooting/",
-          component: <DiagnosticsTab />,
-        },
-      ]}
+      defaultTabId={settingsDeepLinkRef.current?.sectionId ? settingsDeepLinkRef.current.tabId+"."+settingsDeepLinkRef.current.sectionId : settingsDeepLinkRef.current?.tabId}
+      onTour={requestInterfaceTour}
     />
   );
 
@@ -109,7 +55,9 @@ export function renderAgentDialogs({
       open={modelSelectorDialog.open}
       currentModel={currentModel}
       onClose={modelSelectorDialog.onClose}
-      onSelect={onSelectModel}
+      // The picker only calls this once the model is usable (connected, downloaded), so the choice is made:
+      // close it instead of leaving it over the screen the learner came from.
+      onSelect={(model) => { onSelectModel(model); modelSelectorDialog.onClose(); }}
     />
   );
 

@@ -1,0 +1,75 @@
+{
+  "title": "First run",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "first-run"
+  ],
+  "transcript": "first-run",
+  "capturedAt": "2026-11-19T15:46:30.200Z",
+  "viewerNote": "The sample learner is Alex. Keating replies through a scripted local tutor.",
+  "duration": 40.40589984321594,
+  "bytes": 848360,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "question",
+      "title": "Enter a learning goal",
+      "start": 0.003000020980834961,
+      "explanation": "Give Keating something you want to learn.",
+      "alt": "Enter a learning goal",
+      "still": "question"
+    },
+    {
+      "id": "choices",
+      "title": "Choose quick profile setup",
+      "start": 6.33299994468689,
+      "explanation": "Choose how to tell Keating about yourself.",
+      "alt": "Choose quick profile setup",
+      "still": "choices"
+    },
+    {
+      "id": "model",
+      "title": "Choose a model",
+      "start": 10.370999813079834,
+      "explanation": "This walkthrough uses a local demo tutor.",
+      "alt": "Choose a model",
+      "still": "model"
+    },
+    {
+      "id": "you",
+      "title": "Set your name and preference",
+      "start": 18.126999855041504,
+      "explanation": "Choose what helps you learn.",
+      "alt": "Set your name and preference",
+      "still": "you"
+    },
+    {
+      "id": "ready",
+      "title": "Check your first message",
+      "start": 23.65499997138977,
+      "explanation": "Your question is waiting in the composer.",
+      "alt": "Check your first message",
+      "still": "ready"
+    },
+    {
+      "id": "start",
+      "title": "Open Chat",
+      "start": 27.40499997138977,
+      "explanation": "Open Chat with your first message ready.",
+      "alt": "Open Chat",
+      "still": "start"
+    },
+    {
+      "id": "send",
+      "title": "Send your first question",
+      "start": 31.342999935150146,
+      "explanation": "Give Keating a starting point.",
+      "alt": "Send your first question",
+      "still": "send"
+    }
+  ]
+}

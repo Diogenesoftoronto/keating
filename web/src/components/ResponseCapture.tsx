@@ -1,7 +1,8 @@
+import { Loading } from "../design-system/kit";
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import type { UiResponseCapture, UiSubmissionAttachment } from "@keating/learner-contracts";
 import { SubmissionUploadContext } from "./SubmissionAttachments";
-import { Mic, Video, Square, RotateCcw, Paperclip } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import "./response-capture.css";
 
 export const MAX_RECORDING_BYTES = 25 * 1024 * 1024;
@@ -123,19 +124,19 @@ export function ResponseCapture({ capture, disabled, onAttach, onBusyChange }: {
   }
   const busy = phase === "opening" || phase === "recording" || phase === "saving";
   return <section className="response-capture" aria-label={`${capture.kind === "audio" ? "Audio" : "Video"} response`}>
-    <div className="response-capture__heading"><span>{capture.kind === "audio" ? <Mic aria-hidden="true" /> : <Video aria-hidden="true" />} Your attempt</span><span>{attempt ? `Take ${attempt.number}` : "Ready when you are"}</span></div>
+    <div className="response-capture__heading"><span>{capture.kind === "audio" ? <KeatingGlyph name="mic" /> : <KeatingGlyph name="video" />} Your attempt</span><span>{attempt ? `Take ${attempt.number}` : "Ready when you are"}</span></div>
     {capture.timeLimitSeconds ? <label className="response-capture__option"><input type="checkbox" checked={timed} disabled={disabled || busy} onChange={event => setTimed(event.target.checked)} />Timed practice · {capture.timeLimitSeconds}s <small>Turn off to practise at your own pace.</small></label> : null}
     {capture.kind === "video" ? <label className="response-capture__option"><input type="checkbox" checked={withAudio} disabled={disabled || busy} onChange={event => setWithAudio(event.target.checked)} />Include microphone</label> : null}
-    <div className="response-capture__stage" data-recording={phase === "recording" || undefined}>
+    <div className="response-capture__stage k-grid" data-recording={phase === "recording" || undefined}>
       {capture.kind === "video" && phase === "recording" ? <video ref={live} autoPlay muted playsInline aria-label="Live camera preview" /> : null}
       <div className="response-capture__clock" aria-hidden="true">{timed && capture.timeLimitSeconds ? remainingSeconds(phase === "recording" || phase === "ready" ? elapsed : 0, capture.timeLimitSeconds) : (elapsed / 1000).toFixed(1)}<small>{timed && capture.timeLimitSeconds ? "seconds remaining" : "seconds"}</small></div>
-      <p role="status">{phase === "recording" ? "Recording — stop whenever you are ready." : phase === "opening" ? "Waiting for device permission…" : phase === "saving" ? "Attaching on this device…" : attached ? "Recording attached. Add your reflection below." : attempt ? "Replay your attempt. What would you change?" : "One attempt, then a moment to reflect."}</p>
+      {phase === "opening" || phase === "saving" ? <Loading size="inline" label={phase === "opening" ? "Waiting for device permission…" : "Attaching on this device…"} /> : <p role="status">{phase === "recording" ? "Recording — stop whenever you are ready." : attached ? "Recording attached. Add your reflection below." : attempt ? "Replay your attempt. What would you change?" : "One attempt, then a moment to reflect."}</p>}
     </div>
     {attempt && !active.current ? <div className="response-capture__replay"><label htmlFor={`${id}-replay`}>Replay take {attempt.number} · {(attempt.elapsedMs / 1000).toFixed(1)}s · {attempt.timed ? "timed" : "untimed"}</label>{capture.kind === "audio" ? <audio id={`${id}-replay`} controls src={attempt.url} /> : <video id={`${id}-replay`} controls playsInline src={attempt.url} />}</div> : null}
     <div className="response-capture__controls">
-      {phase === "recording" ? <button type="button" onClick={stop}><Square aria-hidden="true" />Stop recording</button> : <button type="button" disabled={disabled || busy} onClick={() => void start()}>{attempt ? <RotateCcw aria-hidden="true" /> : capture.kind === "audio" ? <Mic aria-hidden="true" /> : <Video aria-hidden="true" />}{attempt ? "Try again" : "Start recording"}</button>}
+      {phase === "recording" ? <button type="button" className="k-lift" onClick={stop}><KeatingGlyph name="stop" />Stop recording</button> : <button type="button" className="k-lift" disabled={disabled || busy} onClick={() => void start()}>{attempt ? <KeatingGlyph name="refresh" /> : capture.kind === "audio" ? <KeatingGlyph name="mic" /> : <KeatingGlyph name="video" />}{attempt ? "Try again" : "Start recording"}</button>}
       {phase === "opening" ? <button type="button" onClick={() => { sequence.current++; active.current = false; release(); setPhase(attempt ? "ready" : "idle"); busyCallback.current?.(false); }}>Cancel</button> : null}
-      {attempt ? <button type="button" disabled={disabled || busy || attached} onClick={() => void attach()}><Paperclip aria-hidden="true" />{attached ? "Attached" : "Use this attempt"}</button> : null}
+      {attempt ? <button type="button" disabled={disabled || busy || attached} onClick={() => void attach()}><KeatingGlyph name="clip" />{attached ? "Attached" : "Use this attempt"}</button> : null}
     </div>
     <p className="response-capture__note">Recordings stay on this device until you submit through the activity. You can also attach a file below. Untimed takes stop after three minutes.</p>
     {error ? <p role="alert" className="response-capture__error">{error}</p> : null}

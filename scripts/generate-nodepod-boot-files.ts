@@ -105,6 +105,14 @@ const EXCLUDE_PATTERNS = [
   /^web\/src\/keating\/flue\//,
   /^src\/core\/(?:teaching-(?:evolution(?:-store)?|episode-runner)|learning-checks)\.ts$/,
   /^web\/src\/keating\/teaching-(?:evolution(?:-store)?|episode-runner)\.ts$/,
+  // Read model for the materials panel. Nothing in the sandbox edits or requires it,
+  // and this bundle sits within a few kilobytes of the 6 MiB offline-cache budget.
+  /^web\/src\/keating\/session-materials\.ts$/,
+  // Public profile publishing runs in the page: it signs in to the learner's
+  // PDS and crops a photo with the page's canvas. Only the profile pages import
+  // these modules, the sandbox never publishes a profile, and the bundle has to
+  // stay inside the same 6 MiB offline-cache budget.
+  /^web\/src\/keating\/(?:public-profile-(?:contract|draft|image)|public-learning-profile|learning-profile-oauth)\.ts$/,
 ];
 
 async function* walkDir(dir: string): AsyncGenerator<string> {

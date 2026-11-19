@@ -1,6 +1,8 @@
+import { Button, Loading } from "../../design-system/kit";
+import "../specialist-lessons.css";
 import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
 import { isolateForModal } from "../../lib/motion";
-import { CircleAlert, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { buildInteractivePageDocument, type InteractivePageRejection } from "../../keating/interactive-page/document";
 import { createContextSync, createGestureGate, createInteractivePageHost, randomChannelId } from "../../keating/interactive-page/host";
@@ -73,12 +75,12 @@ export function InteractivePageFallback({ status, title, description, message, o
 	const alert = status !== "loading";
 	return (
 		<div role={alert ? "alert" : "status"} className={fallbackClass} data-interactive-status={status}>
-			<p className={fallbackHeadlineClass}>
-				{alert ? <CircleAlert size={14} aria-hidden="true" className={css({ flexShrink: 0, marginTop: "0.2rem" })} /> : null}
+			{status === "loading" ? <Loading label={FALLBACK_HEADLINES.loading} /> : <p className={fallbackHeadlineClass}>
+				<KeatingGlyph name="alert" size={14} className={css({ flexShrink: 0, marginTop: "0.2rem" })} />
 				<span>{FALLBACK_HEADLINES[status]}{message ? ` ${message}` : ""}</span>
-			</p>
+			</p>}
 			<p className={fallbackDescriptionClass}><span className={css({ fontWeight: 600 })}>{title}: </span>{description}</p>
-			<button type="button" className={controlClass} onClick={onReload}><RotateCcw size={14} aria-hidden="true" />Reload</button>
+			<Button variant="ghost" type="button" aria-label="Reload" onClick={onReload}><KeatingGlyph name="refresh" size={14} />Reload</Button>
 		</div>
 	);
 }
@@ -229,21 +231,21 @@ export function InteractivePage({ pageId, title, html, description, libraries, d
 	const frameHeight = Math.min(INTERACTIVE_PAGE_LIMITS.maxInlineHeight, Math.max(INTERACTIVE_PAGE_LIMITS.minHeight, Math.ceil(contentHeight)));
 
 	return (
-		<section ref={rootRef} role={fullscreen ? "dialog" : undefined} aria-modal={fullscreen ? true : undefined} aria-labelledby={titleId} className={cx(rootClass, fullscreen && fullscreenClass, className)} data-interactive-page={pageId} data-native-page-status={status}>
+		<section ref={rootRef} role={fullscreen ? "dialog" : undefined} aria-modal={fullscreen ? true : undefined} aria-labelledby={titleId} className={cx(!fullscreen && "specialist-frame", rootClass, fullscreen && fullscreenClass, className)} data-interactive-page={pageId} data-native-page-status={status}>
 			<header className={headerClass}>
-				<span id={titleId} className={titleClass}>{title}</span>
+				<KeatingGlyph name="doc" size={16} /><span className="specialist-caption">Interactive page</span><span id={titleId} className={titleClass}>{title}</span>
 				<span className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-					{status === "ready" ? <button ref={fullscreenToggleRef} type="button" className={controlClass} aria-pressed={fullscreen} onClick={() => setFullscreen((value) => !value)}>
-						{fullscreen ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
+					{status === "ready" ? <Button variant="ghost" ref={fullscreenToggleRef} type="button" aria-pressed={fullscreen} onClick={() => setFullscreen((value) => !value)}>
+						{fullscreen ? <KeatingGlyph name="collapse" size={14} /> : <KeatingGlyph name="expand" size={14} />}
 						{fullscreen ? "Exit full screen" : "Open full screen"}
-					</button> : null}
-					{status === "ready" ? <button type="button" className={controlClass} onClick={reload}><RotateCcw size={14} aria-hidden="true" />Reload</button> : null}
+					</Button> : null}
+					{status === "ready" ? <Button variant="ghost" onClick={reload}><KeatingGlyph name="refresh" size={14} />Reload</Button> : null}
 				</span>
 			</header>
 			<span id={descriptionId} className={srOnlyClass}>{description}</span>
 			{status !== "ready" ? <InteractivePageFallback status={status} title={title} description={description} message={message} onReload={reload} /> : null}
 			{frameMounted ? (
-				<div className={cx(frameWrapClass, status === "loading" && loadingFrameClass)}>
+				<div className={cx(frameWrapClass, "k-grid", status === "loading" && loadingFrameClass)}>
 					<iframe
 						key={src}
 						ref={frameRef}
@@ -273,7 +275,7 @@ export function InteractivePage({ pageId, title, html, description, libraries, d
 	);
 }
 
-const focusRing = { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" };
+
 
 const rootClass = css({ display: "grid", gap: "0.5rem", minWidth: 0, width: "100%", maxWidth: "100%" });
 const fullscreenClass = css({
@@ -289,28 +291,8 @@ const headerClass = css({ display: "flex", flexWrap: "wrap", alignItems: "center
 const titleClass = css({ fontSize: "0.875rem", fontWeight: 650, color: "var(--foreground)", minWidth: 0, overflowWrap: "anywhere" });
 const frameWrapClass = css({ position: "relative", minWidth: 0, minHeight: 0, height: "100%" });
 const loadingFrameClass = css({ position: "absolute", insetInline: 0, top: 0, opacity: 0, pointerEvents: "none" });
-const frameClass = css({ display: "block", width: "100%", height: "100%", minHeight: "80px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--background)" });
-const controlClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.375rem",
-	minHeight: "2.75rem",
-	paddingInline: "0.75rem",
-	border: "1.5px solid var(--line)",
-	borderRadius: "{radii.keating}",
-	transitionProperty: "background-color, color, border-color",
-	transitionDuration: "{durations.fast}",
-	transitionTimingFunction: "{easings.standard}",
-	_active: { borderColor: "var(--ink)" },
-	background: "var(--card)",
-	color: "var(--foreground)",
-	fontSize: "0.8125rem",
-	fontWeight: 600,
-	cursor: "pointer",
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-	_focusVisible: focusRing,
-});
-const fallbackClass = css({ display: "grid", gap: "0.5rem", justifyItems: "start", padding: "0.875rem", border: "1px dashed var(--border)", borderRadius: "var(--radius)", background: "var(--card)", color: "var(--foreground)", fontSize: "0.8125rem" });
+const frameClass = css({ display: "block", width: "100%", height: "100%", minHeight: "80px", border: 0, borderRadius: "var(--radius)", background: "var(--background)" });
+const fallbackClass = css({ display: "grid", gap: "0.5rem", justifyItems: "start", padding: "0.875rem", borderRadius: "var(--radius)", background: "var(--card)", color: "var(--foreground)", fontSize: "0.8125rem" });
 const fallbackHeadlineClass = css({ display: "flex", gap: "0.5rem", alignItems: "flex-start", margin: 0, fontWeight: 600 });
 const fallbackDescriptionClass = css({ margin: 0, color: "var(--muted-foreground)", overflowWrap: "anywhere" });
 const noticeClass = css({ margin: 0, minHeight: "1rem", fontSize: "0.75rem", color: "var(--muted-foreground)", _empty: { display: "none" } });

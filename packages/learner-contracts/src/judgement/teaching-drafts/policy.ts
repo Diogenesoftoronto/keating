@@ -9,6 +9,7 @@ import { buildCompactTeachingPrompt, isVisibleQuestionFeedback } from "../teachi
 import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_RULES, TEACHING_POLICY_THRESHOLDS } from "../teaching-policy-catalog.js";
 
 import { interactionDirectives } from "../interaction-affordances.js";
+import { resourceReviewDirectives } from "../resource-review.js";
 import { debuggingRepairDirections, isUncertainDebugFinding } from "../debugging-exercise.js";
 
 import { estimatedRequestTokens, estimatedStateQuestionTokens } from "../state-metrics.js";
@@ -21,11 +22,19 @@ export const standardInstructions: Record<TeachingDraftStandard, string> = {
 };
 export const PROSE_DIRECTIVE = "Answer without a new OpenUI activity this turn.";
 
+/** Every invitation to add something this turn: the offered activity and any missing session resource. */
+function offeredDirectives(plan: TeachingPolicyPlan): Set<string> {
+  return new Set([...interactionDirectives(plan.interaction), ...resourceReviewDirectives(plan.resourceReview)]);
+}
+
 export function variantPrompt(plan: TeachingPolicyPlan, variant: TeachingDraftVariant): string {
   if (variant === "default" || plan.interaction.continueInteraction?.typedAttempt) return buildCompactTeachingPrompt(plan);
-  const offered = new Set(interactionDirectives(plan.interaction));
+  const offered = offeredDirectives(plan);
   const base = plan.directives.filter((directive) => !offered.has(directive));
-  const extra = variant === "interactive" ? interactionDirectives(plan.interaction, "require") : [PROSE_DIRECTIVE];
+  // A paired turn has no default draft. The interactive draft keeps its one required activity;
+  // the other draft carries the session resource when one is due, and is plain prose otherwise.
+  const resource = resourceReviewDirectives(plan.resourceReview);
+  const extra = variant === "interactive" ? interactionDirectives(plan.interaction, "require") : resource.length ? resource : [PROSE_DIRECTIVE];
   return buildCompactTeachingPrompt({ ...plan, directives: [...base, ...extra] });
 }
 
@@ -129,7 +138,7 @@ export function pairedCandidatePrompt(plan: TeachingPolicyPlan, variant: Teachin
   if (scope.feedbackOnly) {
     // These two alternatives intentionally do not carry an invitation to create a new activity
     // solely because a property of the subject matched an interaction family.
-    const offered = new Set(interactionDirectives(plan.interaction));
+    const offered = offeredDirectives(plan);
     const base = buildCompactTeachingPrompt({ ...plan, directives: plan.directives.filter(line => !offered.has(line)) });
     return base + "\n\n" + (attempt === 1 ? directFeedback : reasoningFeedback);
   }

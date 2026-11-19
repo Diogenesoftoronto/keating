@@ -24,6 +24,7 @@ import { workspaceStyles as s } from "./styles";
 import type { WorkspaceActions } from "./workspace-actions";
 
 export interface WorkspaceMainProps {
+  nextAction?: { label: string; run(): void };
   snapshot: CourseViewerSnapshot;
   state: CourseWorkspaceState;
   lesson: LessonContext;
@@ -43,9 +44,10 @@ export function WorkspaceMain(props: WorkspaceMainProps) {
   const { activeLesson } = lesson;
   const { permissions } = snapshot;
   return (
-    <main className={s.center}>
+    <main className={s.center} role="tabpanel" id={view} aria-labelledby={view + "-tab"}>
       {view === "read" ? (
         <DeskView
+          {...(props.nextAction ? { nextAction: props.nextAction } : {})}
           snapshot={snapshot}
           {...(activeLesson ? { lesson: activeLesson } : {})}
           moduleTitle={lesson.activeModule?.title ?? "Course"}

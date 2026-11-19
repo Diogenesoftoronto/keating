@@ -1,3 +1,4 @@
+import { Button, ConfirmDialog, Loading, TextInput } from "../../design-system/kit";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getModels } from "@earendil-works/pi-ai/compat";
 import { testProviderKey } from "../../lib/provider-key-test";
@@ -114,34 +115,44 @@ const TEST_LABELS: Record<string, string> = {
 	unsupported: "Not verified",
 };
 
-/** API-key input that saves on blur and verifies the key automatically while you type or paste. */
-function ApiKeyField({ provider, savedValue, error, onSave }: {
+type ReportKey = (provider: string, status: string | undefined) => void;
+function ApiKeyField({ provider, savedValue, hydrated, error, onSave, reportKey }: {
 	provider: string;
 	savedValue: string;
+	hydrated:boolean;
 	error?: string;
-	onSave: (value: string) => Promise<void>;
+	onSave: (value: string) => Promise<boolean>;
+	reportKey?: ReportKey;
 }) {
 	// A pending storage read may finish after the user has pasted or cleared a key.
 	const [editedValue, setEditedValue] = useState<string | null>(null);
 	const value = editedValue ?? savedValue;
 	const [result, setResult] = useState<{ status: string; detail?: string } | null>(null);
-	const lastTested = useRef("");
+	const [confirmRemove,setConfirmRemove] = useState(false);
+	const [saving,setSaving] = useState(false);
+	const [notice,setNotice] = useState("");
+	const persist = async (key: string) => {
+		setConfirmRemove(false); setSaving(true); setNotice("");
+		try {
+			if (await onSave(key)) {setEditedValue(null); setNotice(key ? "API key saved." : "API key removed.");}
+		} finally {setSaving(false);}
+	};
 
 	useEffect(() => {
 		const key = value.trim();
-		if (!key) { setResult(null); lastTested.current = ""; return; }
-		if (key === lastTested.current) return;
+		setResult(null);
+		if (!key) return;
 		const model = getModels(provider as never)[0] as { api: string; baseUrl: string } | undefined;
 		const target = model ? { provider, api: model.api, baseUrl: model.baseUrl } : { provider, api: "", baseUrl: "" };
 		const controller = new AbortController();
 		const timer = setTimeout(() => {
-			lastTested.current = key;
+			
 			setResult({ status: "checking" });
 			testProviderKey(target, key, { signal: controller.signal })
 				.then((r) => {
 					if (controller.signal.aborted) return;
 					setResult(r);
-					if (r.status === "ok" && editedValue !== null) void onSave(key);
+					
 				})
 				.catch(() => {});
 		}, 700);
@@ -149,7 +160,10 @@ function ApiKeyField({ provider, savedValue, error, onSave }: {
 	}, [provider, value]);
 
 	const status = result?.status;
-	const tone = status === "ok" ? "var(--success, #16a34a)" : status === "invalid" ? "var(--destructive)" : "var(--muted-foreground)";
+	useEffect(() => {
+		if (value.trim() === savedValue.trim()) reportKey?.(provider, status);
+	},[provider,value,savedValue,status,reportKey]);
+	const tone = status === "ok" ? "var(--accent-green)" : status === "invalid" ? "var(--destructive)" : "var(--muted-foreground)";
 	return (
 		<div className={providerStackClass}>
 			<div className={labelRowClass}>
@@ -164,7 +178,8 @@ function ApiKeyField({ provider, savedValue, error, onSave }: {
 					Get a key
 				</a>
 			</div>
-			<input
+			<TextInput
+				disabled={saving}
 				id={`key-${provider}`}
 				type="password"
 				autoComplete="off"
@@ -172,25 +187,30 @@ function ApiKeyField({ provider, savedValue, error, onSave }: {
 				className={inputClass}
 				placeholder={`Paste your ${provider} API key`}
 				value={value}
-				onChange={(e) => setEditedValue(e.target.value)}
-				onBlur={(e) => { if (editedValue !== null) void onSave(e.target.value); }}
+				onChange={(e) => {setEditedValue(e.target.value); setNotice("");}}
+				
 			/>
-			{status && (
+			<div className="s2-key-actions"><Button disabled={!hydrated || saving || !value.trim() || value.trim() === savedValue} onClick={() => void persist(value.trim())}>Save key</Button>
+			{savedValue && <Button variant="ghost" disabled={saving} onClick={() => setConfirmRemove(true)}>Remove key</Button>}</div>
+			{notice && <p role="status">{notice}</p>}
+			<ConfirmDialog open={confirmRemove} title={"Remove the " + provider + " key?"} description="Models using this provider key will need another credential." confirmLabel="Remove key" onCancel={() => setConfirmRemove(false)} onConfirm={() => void persist("")}/>
+			{status === "checking" ? <Loading label="Checking key…" size="inline"/> : status && (
 				<p role="status" className={css({ fontSize: "0.75rem" })} style={{ color: tone }}>
 					{TEST_LABELS[status]}{result?.detail ? ` — ${result.detail}` : ""}
 				</p>
 			)}
 			{error && (
 				<p role="alert" className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>
-					{error} Your entered key remains in this field; restore OS credential storage and blur the field to retry.
+					{error} Your entered key remains in this field; restore OS credential storage and choose Save key to retry.
 				</p>
 			)}
 		</div>
 	);
 }
 
-function OAuthProviderKeys({ providers }: { providers: string[] }) {
+function OAuthProviderKeys({ providers, reportKey }: { providers: string[]; reportKey?: ReportKey }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
+	const [signOutWithKey,setSignOutWithKey] = useState("");
 	const [keyErrors, setKeyErrors] = useState<Record<string, string>>({});
 	const [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
@@ -345,15 +365,18 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			} else {
 				await storage.providerKeys.delete(provider);
 			}
+			setKeys(prev => ({...prev, [provider]:value.trim()}));
 			notifyProviderCredentialsChanged(provider);
 			setKeyErrors((prev) => ({ ...prev, [provider]: "" }));
 			recordDiagnostic("info", "auth", value.trim() ? "Provider API key saved" : "Provider API key removed", { provider, method: "api-key" });
+			return true;
 		} catch (error) {
 			recordDiagnostic("error", "auth", "Provider API key storage failed", { provider, method: "api-key" });
 			setKeyErrors((prev) => ({
 				...prev,
 				[provider]: error instanceof Error ? error.message : "Secure credential storage is unavailable.",
 			}));
+			return false;
 		}
 	};
 
@@ -505,6 +528,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 	return (
 		<>
+			{signOutWithKey && <ConfirmDialog open title={"Sign out of "+signOutWithKey+"?"} description="Signing out removes the saved subscription credential and this provider’s saved API key." confirmLabel="Sign out and remove key" onCancel={()=>setSignOutWithKey("")} onConfirm={()=>{void handleSignOut(signOutWithKey);setSignOutWithKey("");}}/>}
 			{providers.map((provider) => {
 				const oauthId = providerToOAuthId(provider);
 				if (provider === NOTORGANIC_PROVIDER_ID) {
@@ -533,7 +557,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 										disabled={loading}
 										onClick={() => handleSignIn(provider)}
 									>
-										{loading ? "Checking session…" : hasSession ? "Refresh account" : "Connect Not Organic"}
+										{loading ? "Checking session…" : hasSession ? "Refresh account" : "Connect"}
 									</button>
 									{hasSession && (
 										<button className={smallButtonClass} type="button" onClick={() => void handleSignOut(provider)}>
@@ -573,7 +597,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									<span className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>Signed in</span>
 									<button
 										className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", textDecoration: "underline", textUnderlineOffset: "2px", _hover: { color: "var(--foreground)" } })}
-										onClick={() => handleSignOut(provider)}
+										onClick={() => keys[provider] ? setSignOutWithKey(provider) : void handleSignOut(provider)}
 									>
 										Sign out
 									</button>
@@ -666,8 +690,10 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 					<ApiKeyField
 						key={provider}
 						provider={provider}
+						hydrated={Object.hasOwn(keys,provider)}
 						savedValue={keys[provider] ?? ""}
 						error={keyErrors[provider]}
+						reportKey={reportKey}
 						onSave={(value) => save(provider, value)}
 					/>
 				);
@@ -692,6 +718,6 @@ function setProviderAliases<T>(prev: Record<string, T>, providers: string[] | st
 }
 
 /** Sign-in / API-key form for a single provider, without the section chrome. */
-export function ProviderCredentialForm({ provider }: { provider: string }) {
-	return <OAuthProviderKeys providers={[provider]} />;
+export function ProviderCredentialForm({ provider, reportKey }: { provider: string; reportKey?: ReportKey }) {
+	return <OAuthProviderKeys providers={[provider]} reportKey={reportKey} />;
 }

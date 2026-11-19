@@ -1,3 +1,5 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { Button, Card, Eyebrow, TextArea } from "../../design-system/kit";
 /**
  * Cards rendered inside the reading desk: a course source (document/link/note),
  * an assignment with its submission form and delivery status, and an artifact
@@ -5,7 +7,6 @@
  * through the page's `mutate`/`onToggleReaction` callbacks.
  */
 import { useEffect, useState } from "react";
-import { ExternalLink, FileText, Send } from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
 import { CourseArtifactCard } from "../../components/courses/CourseArtifactCard";
 import { CourseReactionBar } from "../../components/courses/CourseReactionBar";
@@ -114,9 +115,9 @@ export function CourseSourceCard({
           })}
         >
           {material.kind === "link" ? (
-            <ExternalLink size={15} />
+            <KeatingGlyph name="link" size={15} />
           ) : (
-            <FileText size={15} />
+            <KeatingGlyph name="doc" size={15} />
           )}
           <span>
             <strong className={css({ display: "block", fontSize: "0.8rem" })}>
@@ -127,7 +128,7 @@ export function CourseSourceCard({
             </small>
           </span>
         </span>
-        <ExternalLink size={14} />
+        <KeatingGlyph name="ext" size={15} />
       </a>
       <div
         className={css({
@@ -203,14 +204,7 @@ export function AssignmentSubmissionCard({
     finally { setLocalSaving(false); }
   };
   return (
-    <section
-      className={css({
-        mt: "1.5rem",
-        border: "2px solid var(--ink)",
-        bg: "var(--paper)",
-        boxShadow: `5px 5px 0 ${courseWide ? "var(--peer-blue, #3468b3)" : "var(--amber, #e8a33d)"}`,
-      })}
-    >
+    <Card as="section">
       <header
         className={css({
           borderBottom: "1px solid var(--ink)",
@@ -219,15 +213,15 @@ export function AssignmentSubmissionCard({
           py: "0.75rem",
         })}
       >
-        <p className={s.sectionLabel}>
+        <Eyebrow>
           {courseWide ? "Course assignment" : "Long-range assignment"}
           {submission ? ` · ${submission.status}` : ""}
-        </p>
+        </Eyebrow>
         <h3
           className={css({
             mt: "0.2rem",
-            fontFamily: "Georgia, serif",
-            fontSize: "1.45rem",
+            fontFamily: "var(--font-ui)",
+            fontSize: ".82rem",
           })}
         >
           {assignment.title}
@@ -261,7 +255,7 @@ export function AssignmentSubmissionCard({
         {localError ? <p role="alert">{localError}</p> : null}
         <SubmissionAttachments value={attachments} onChange={setAttachments} disabled={!restored || localSaving} onBusyChange={setUploading} />
         <AttachmentLinks attachments={attachments} courseId={snapshot.course.id} />
-        <textarea
+        <TextArea
           disabled={!restored || localSaving}
           value={answer}
           onChange={(event) => setAnswer(event.target.value)}
@@ -298,24 +292,24 @@ export function AssignmentSubmissionCard({
             Share submission with peers
           </label>
           <div className={css({ display: "flex", gap: "0.4rem" })}>
-            <button
+            <Button
               type="button"
-              className={s.button}
+              variant="line"
               disabled={!restored || uploading || localSaving}
               onClick={() => void save("draft")}
             >
               Save draft
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={cx(s.button, s.primaryButton)}
+              variant="primary"
               disabled={
                 !restored || uploading || localSaving || notYetOpen || (!answer.trim() && !attachments.length)
               }
               onClick={() => void save("submitted")}
             >
-              <Send size={13} /> Submit
-            </button>
+              <KeatingGlyph name="checklist" size={13} /> Submit
+            </Button>
           </div>
         </div>
         <div className={css({ mt: "0.7rem" })}>
@@ -355,7 +349,7 @@ export function AssignmentSubmissionCard({
           </div>
         ) : null}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -371,7 +365,7 @@ export function ArtifactWithReactions({
   courseWide?: boolean;
 }) {
   return (
-    <div>
+    <Card as="section">
       <CourseArtifactCard artifact={artifact} courseWide={courseWide} />
       <div className={css({ mt: "0.35rem" })}>
         <CourseReactionBar
@@ -384,6 +378,6 @@ export function ArtifactWithReactions({
           onToggle={(emoji) => onToggleReaction("artifact", artifact.id, emoji)}
         />
       </div>
-    </div>
+    </Card>
   );
 }

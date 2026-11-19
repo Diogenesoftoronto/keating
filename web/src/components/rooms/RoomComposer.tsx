@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { Lock, Send, X } from "lucide-react";
+import { Segmented, IconButton, Kbd, Loading } from "../../design-system/kit";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import {
   ROOM_MESSAGE_MAX_CHARS,
@@ -19,7 +20,7 @@ export type ComposerMode = "room" | "guidance";
 /** Why this viewer cannot post, or null when they can. */
 export function composerBlockedReason(snapshot: RoomViewerSnapshot): string | null {
   const { room, viewer, permissions } = snapshot;
-  if (room.status === "ended") return "This room has ended. The transcript stays readable.";
+  if (room.status === "ended") return permissions.canOversee ? "This room has ended. The transcript stays readable; reopen it from Settings to continue." : "This room has ended. The transcript stays readable.";
   if (viewer.role === "observer") return "You are observing. Observers read the conversation without posting.";
   if (viewer.muted) return "A teacher muted you in this room. You can still read along.";
   if (!permissions.canPost) return "You cannot post in this room right now.";
@@ -121,7 +122,7 @@ export function RoomComposer({
 
   if (blocked) {
     return (
-      <div className={css({ borderTop: "2px solid var(--ink)", px: "1rem", py: "0.9rem", display: "grid", gap: "0.45rem" })}>
+      <div className="rm-compose-blocked">
         {notice ? <p role="status" className={s.notice}>{notice}</p> : null}
         <p role="status" className={css({ fontSize: "0.82rem", color: "var(--ink-soft)" })}>{blocked}</p>
       </div>
@@ -167,39 +168,27 @@ export function RoomComposer({
   return (
     <form
       onSubmit={(event) => void submit(event)}
-      className={css({ borderTop: "2px solid var(--ink)", bg: guidance ? "color-mix(in srgb, var(--ink) 6%, var(--card))" : "var(--card)", px: "0.75rem", py: "0.65rem", display: "grid", gap: "0.45rem" })}
+      className="rm-compose" data-private={guidance}
     >
       {canGuide ? (
-        <div role="radiogroup" aria-label="Who sees this message" className={css({ display: "flex", flexWrap: "wrap", gap: "0.3rem" })}>
-          {(["room", "guidance"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="radio"
-              aria-checked={mode === option}
-              className={s.button}
-              style={mode === option ? { background: "var(--ink)", color: "var(--paper)" } : undefined}
-              onClick={() => {
-                if (option !== mode) pendingRef.current = null;
-                setMode(option);
-              }}
-            >
-              {option === "guidance" ? <><Lock size={12} aria-hidden="true" /> Private guidance for Keating</> : "Message the room"}
-            </button>
-          ))}
-        </div>
+        <Segmented<ComposerMode> size="sm" label="Who sees this message" value={mode}
+          options={[{ value: "room", label: "Message the room" }, { value: "guidance", label: <><KeatingGlyph name="lock" size={12} /> Private guidance for Keating</> }]}
+          onChange={option => {
+            if (option !== mode) pendingRef.current = null;
+            setMode(option);
+          }} />
       ) : null}
       {guidance ? (
-        <p className={s.help}>Only teachers and the host see this guidance. Turn on teacher review to check Keating’s replies before they are shared.</p>
+        <p className="rm-guidance-help">Only teachers and the host see this guidance. Turn on teacher review to check Keating’s replies before they are shared.</p>
       ) : replyTo ? (
         <div className={css({ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.74rem", color: "var(--ink-soft)" })}>
           <span className={css({ minW: 0, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
             Replying to <strong>{replyTo.authorName}</strong>: {excerpt(replyTo.body, 80)}
           </span>
-          <button type="button" className={s.quiet} onClick={onClearReply} aria-label="Cancel reply"><X size={13} aria-hidden="true" /></button>
+          <IconButton glyph="x" type="button" onClick={onClearReply} label="Cancel reply" />
         </div>
       ) : null}
-      <div className={css({ display: "flex", alignItems: "flex-end", gap: "0.5rem" })}>
+      <div className="rm-compose-input">
         <label htmlFor={`${id}-body`} className={css({ srOnly: true })}>
           {guidance ? "Private guidance for Keating" : `Message as ${snapshot.viewer.displayName}`}
         </label>
@@ -216,7 +205,7 @@ export function RoomComposer({
             : onRequest
               ? `Message as ${snapshot.viewer.displayName} · mention @Keating to ask it in`
               : `Message as ${snapshot.viewer.displayName}`}
-          className={`${s.input} ${css({ resize: "vertical", minH: "2.75rem", maxH: "12rem" })}`}
+          className="rm-textarea"
           onChange={(event) => {
             setBody(event.target.value);
             pendingRef.current = null;
@@ -230,10 +219,11 @@ export function RoomComposer({
           }}
           onKeyDown={onKeyDown}
         />
-        <button type="submit" className={s.primary} disabled={sending || !body.trim()} aria-label={guidance ? "Send private guidance" : "Send message"}>
-          <Send size={15} aria-hidden="true" />
-          <span className={css({ display: { base: "none", sm: "inline" } })}>{sending ? "Sending…" : "Send"}</span>
-        </button>
+      </div>
+      {sending && <Loading size="inline" label="Sending…" />}
+      <div className="rm-compose-footer">
+        <span><Kbd>Enter</Kbd> to send · <Kbd>Shift + Enter</Kbd> for a new line</span>
+        <IconButton type="submit" glyph="send" className="rm-send k-lift" disabled={sending || !body.trim()} label={sending ? "Sending…" : guidance ? "Send private guidance" : "Send message"} />
       </div>
       {notice ? <p role="status" className={s.notice}>{notice}</p> : null}
       {error ? <p id={`${id}-error`} role="alert" className={s.error}>{error} Your text is still here; try again.</p> : null}

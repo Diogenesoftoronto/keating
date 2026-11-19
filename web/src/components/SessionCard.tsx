@@ -1,13 +1,7 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
-import { ArrowUpRight } from "reicon-react/icons/ArrowUpRight";
-import { Check } from "reicon-react/icons/Check";
-import { BranchUp as GitBranch } from "reicon-react/icons/BranchUp";
-import { More as MoreHorizontal } from "reicon-react/icons/More";
-import { PenLine as Pencil } from "reicon-react/icons/PenLine";
-import { Feather as Sparkles } from "reicon-react/icons/Feather";
-import { Trash2 } from "reicon-react/icons/Trash2";
-import { Xmark as X } from "reicon-react/icons/Xmark";
+import { KeatingGlyph } from "../design-system/glyphs";
 import type { SessionMetadata } from "../types/session";
+import { shortSubject } from "./SessionLibraryTools";
 import { type ArtifactHero, categorize } from "./session-card-visuals";
 import { formatRelativeSessionDate } from "../lib/session-date";
 import { Spinner } from "./Spinner";
@@ -39,6 +33,16 @@ export interface SessionCardProps {
     aiGeneratedTitle?: boolean,
   ) => void | Promise<void>;
   onDelete: (sessionId: string) => void | Promise<void>;
+  /** Shown in the Pinned section; adds a pin mark. */
+  pinned?: boolean;
+  /** Lives in the collapsed Earlier group; flips the move action's wording. */
+  inEarlier?: boolean;
+  /** Pin or unpin. Omit to hide placement actions (e.g. forks, which follow their root). */
+  onTogglePin?: (sessionId: string) => void;
+  /** Move to Earlier, or back to Recent when `inEarlier`. */
+  onMoveSection?: (sessionId: string) => void;
+  /** Also offer pin/move as hover- and focus-revealed buttons on the row (desktop). */
+  quickActions?: boolean;
 }
 
 export const SessionCard = memo(function SessionCard({
@@ -55,6 +59,11 @@ export const SessionCard = memo(function SessionCard({
   onSuggestTitle,
   onRename,
   onDelete,
+  pinned = false,
+  inEarlier = false,
+  onTogglePin,
+  onMoveSection,
+  quickActions = false,
 }: SessionCardProps) {
   const category = categorize(session.title);
   const [panel, setPanel] = useState<"actions" | "rename" | "delete" | null>(
@@ -101,6 +110,10 @@ export const SessionCard = memo(function SessionCard({
         : onRename(session.id, title, title === suggestedTitle),
     );
   };
+  const title = session.title || "Untitled session";
+  const pinLabel = pinned ? "Unpin" : "Pin";
+  const moveLabel = inEarlier ? "Move back to Recent" : "Move to Earlier";
+  const moveGlyph = inEarlier ? "rise" : "down";
 
   return (
     <article
@@ -108,6 +121,7 @@ export const SessionCard = memo(function SessionCard({
       data-active={active || undefined}
       data-arriving={justForked || undefined}
       data-context={contextOnly || undefined}
+      data-pinned={pinned || undefined}
     >
       <div className="session-entry__row">
         <button
@@ -118,71 +132,92 @@ export const SessionCard = memo(function SessionCard({
           disabled={busy}
           onClick={() => void run(() => onLoad(session.id), false)}
         >
-          <span className="session-entry__eyeline">
-            <span className="session-entry__category">
-              <span
-                className="session-entry__category-dot"
-                style={{ background: category.accent }}
-                aria-hidden="true"
-              />
-              {category.label}
-            </span>
-            {active ? (
-              <span className="session-entry__current">Current</span>
-            ) : contextOnly ? (
-              <span className="session-entry__context">Origin</span>
-            ) : null}
-          </span>
-          <span className="session-entry__title">
-            {session.title || "Untitled session"}
-          </span>
-          {parentTitle || session.parentSessionId ? (
-            <span className="session-entry__parent">
-              <GitBranch size={12} aria-hidden="true" />
-              <span>
-                {parentTitle ? `From ${parentTitle}` : "Forked session"}
+          <span className="session-entry__title">{title}</span>
+          <span className="session-entry__meta">
+            <span className="session-entry__eyeline">
+              <span className="session-entry__category" title={category.label}>
+                <span
+                  className="session-entry__category-dot"
+                  style={{ background: category.accent }}
+                  aria-hidden="true"
+                />
+                {shortSubject(category)}
+              </span>
+              {active ? (
+                <span className="session-entry__current">Current</span>
+              ) : contextOnly ? (
+                <span className="session-entry__context">Origin</span>
+              ) : null}
+              {pinned ? (
+                <span className="session-entry__pinned" title="Pinned">
+                  <KeatingGlyph name="bookmark" size={12} />
+                  <span className="session-entry__sr">Pinned</span>
+                </span>
+              ) : null}
+              <span className="session-entry__time">
+                {formatRelativeSessionDate(session.lastModified, {
+                  today: "time",
+                })}
               </span>
             </span>
-          ) : null}
-          {session.preview ? (
-            <span className="session-entry__description">
-              {session.preview}
-            </span>
-          ) : (
-            <span className="session-entry__description">
-              {session.messageCount === 0
-                ? "Ready for your first question."
-                : "Open to pick up the conversation."}
-            </span>
-          )}
-          <span className="session-entry__meta">
-            <span>
-              {formatRelativeSessionDate(session.lastModified, {
-                today: "time",
-              })}
-            </span>
+
             <span>
               {session.messageCount}{" "}
               {session.messageCount === 1 ? "message" : "messages"}
             </span>
+            {childCount > 0 ? (
+              <span>
+                {childCount} {childCount === 1 ? "fork" : "forks"}
+              </span>
+            ) : null}
             {hero ? (
               <span className="session-entry__artifact">
                 {ARTIFACT_LABELS[hero.type]}
               </span>
             ) : null}
-            {childCount > 0 ? (
-              <span>
-                <GitBranch size={12} aria-hidden="true" />
-                {childCount} {childCount === 1 ? "fork" : "forks"}
+            {parentTitle || session.parentSessionId ? (
+              <span className="session-entry__parent">
+                <KeatingGlyph name="fork" size={12} />
+                <span>
+                  {parentTitle ? `From ${parentTitle}` : "Forked session"}
+                </span>
               </span>
             ) : null}
           </span>
         </button>
+        {quickActions && (onTogglePin || onMoveSection) ? (
+          <div className="session-entry__quick">
+            {onTogglePin ? (
+              <button
+                type="button"
+                className="session-library__icon-button k-bloom"
+                aria-label={`${pinLabel} ${title}`}
+                title={pinLabel}
+                disabled={busy}
+                onClick={() => onTogglePin(session.id)}
+              >
+                <KeatingGlyph name="bookmark" size={16} />
+              </button>
+            ) : null}
+            {onMoveSection ? (
+              <button
+                type="button"
+                className="session-library__icon-button k-bloom"
+                aria-label={`${moveLabel}: ${title}`}
+                title={moveLabel}
+                disabled={busy}
+                onClick={() => onMoveSection(session.id)}
+              >
+                <KeatingGlyph name={moveGlyph} size={16} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div className="session-entry__side">
           <button
             ref={actionsRef}
             type="button"
-            className="session-library__icon-button"
+            className="session-library__icon-button k-bloom"
             aria-label={`Actions for ${session.title}`}
             title="More actions"
             aria-expanded={panel !== null}
@@ -193,20 +228,15 @@ export const SessionCard = memo(function SessionCard({
               setPanel(panel ? null : "actions");
             }}
           >
-            <Spinner size={18} loading={busy}>
-              {panel ? <X size={18} /> : <MoreHorizontal size={20} />}
+            <Spinner size={16} loading={busy}>
+              {panel ? <KeatingGlyph name="x" size={16} /> : <KeatingGlyph name="more" size={16} />}
             </Spinner>
           </button>
-          <ArrowUpRight
-            size={17}
-            className="session-entry__open-mark"
-            aria-hidden="true"
-          />
         </div>
       </div>
       {justForked ? (
         <p className="session-entry__notice" role="status">
-          <Check size={14} />
+          <KeatingGlyph name="check" size={14} />
           Fork created
         </p>
       ) : null}
@@ -232,7 +262,7 @@ export const SessionCard = memo(function SessionCard({
                 onClick={() => void run(() => onFork(session.id))}
               >
                 <Spinner size={16} loading={forking}>
-                  <GitBranch size={16} />
+                  <KeatingGlyph name="fork" size={16} />
                 </Spinner>
               </button>
               <button
@@ -246,7 +276,7 @@ export const SessionCard = memo(function SessionCard({
                   setPanel("rename");
                 }}
               >
-                <Pencil size={16} />
+                <KeatingGlyph name="edit" size={16} />
               </button>
               {onSuggestTitle ? (
                 <button
@@ -263,7 +293,35 @@ export const SessionCard = memo(function SessionCard({
                     }, false)
                   }
                 >
-                  <Sparkles size={16} />
+                  <KeatingGlyph name="spark" size={16} />
+                </button>
+              ) : null}
+              {onTogglePin ? (
+                <button
+                  type="button"
+                  title={pinLabel}
+                  aria-label={pinLabel}
+                  disabled={busy}
+                  onClick={() => {
+                    closePanel();
+                    onTogglePin(session.id);
+                  }}
+                >
+                  <KeatingGlyph name="bookmark" size={16} />
+                </button>
+              ) : null}
+              {onMoveSection ? (
+                <button
+                  type="button"
+                  title={moveLabel}
+                  aria-label={moveLabel}
+                  disabled={busy}
+                  onClick={() => {
+                    closePanel();
+                    onMoveSection(session.id);
+                  }}
+                >
+                  <KeatingGlyph name={moveGlyph} size={16} />
                 </button>
               ) : null}
               <button
@@ -274,7 +332,7 @@ export const SessionCard = memo(function SessionCard({
                 disabled={busy}
                 onClick={() => setPanel("delete")}
               >
-                <Trash2 size={16} />
+                <KeatingGlyph name="trash" size={16} />
               </button>
             </div>
           ) : null}
@@ -303,7 +361,7 @@ export const SessionCard = memo(function SessionCard({
                   className="session-library__primary"
                   disabled={busy || !draft.trim()}
                 >
-                  <Check size={16} />
+                  <KeatingGlyph name="check" size={16} />
                   Save title
                 </button>
               </div>
@@ -322,7 +380,7 @@ export const SessionCard = memo(function SessionCard({
                   disabled={busy}
                   onClick={() => void run(() => onDelete(session.id))}
                 >
-                  <Trash2 size={16} />
+                  <KeatingGlyph name="trash" size={16} />
                   Delete session
                 </button>
               </div>

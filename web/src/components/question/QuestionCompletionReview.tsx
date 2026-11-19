@@ -2,7 +2,7 @@
  * Post-submit review of a question round: a completion mark plus a collapsible
  * list of the learner's answers, with red/green rows for keyed matching questions.
  */
-import { MessageSquare } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { CompletionMark } from "../quiz/ActivityGame";
 import type { QuestionField } from "../QuestionRenderer";
@@ -24,7 +24,7 @@ export function QuestionCompletionReview({ questions, answers: states }: Questio
 		<div className={cx(questionStyles.submittedShell, "activity-game")}>
 			<CompletionMark detail="Your answers are ready for review.">Round complete</CompletionMark>
 			<details className="activity-review">
-				<summary>Review answers</summary>
+				<summary>Review answers<KeatingGlyph name="plus" size={24} /><KeatingGlyph name="minus" size={24} /></summary>
 				<div className={questionStyles.rowStart}>
 				<div className={cx(questionStyles.minFlex, questionStyles.stack2)}>
 
@@ -35,7 +35,7 @@ export function QuestionCompletionReview({ questions, answers: states }: Questio
 								return (
 									<div key={index} className={questionStyles.stack2}>
 										<div className={questionStyles.rowStart}>
-											<MessageSquare size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
+											<KeatingGlyph name="message" size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
 											<span className={cx(questionStyles.minFlex, questionStyles.breakWords)}>
 												{q.header ? `${q.header}: ` : ""}
 												<strong>{q.question}</strong>
@@ -82,7 +82,7 @@ export function QuestionCompletionReview({ questions, answers: states }: Questio
 							}
 							return (
 								<div key={index} className={questionStyles.rowStart}>
-									<MessageSquare size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
+									<KeatingGlyph name="message" size={14} className={css({ marginTop: "0.25rem", flexShrink: 0 })} />
 									<span className={css({ minWidth: 0, whiteSpace: "pre-line", overflowWrap: "break-word" })}>
 										{q.header ? `${q.header}: ` : ""}
 										<strong>{serializeQuestionAnswer(q, state)}</strong>

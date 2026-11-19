@@ -1,8 +1,9 @@
+import { LessonScore } from "../lesson/LessonFrame";
 /**
  * Revealed quiz: completion summary and meta chips, collapsible review of every
  * question (remediation, benchmark, answers) and the retake button.
  */
-import { RotateCcw } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import type { Quiz, QuizQuestion } from "../../keating/core";
 import type { TopicStats } from "../QuizRenderer";
@@ -10,7 +11,7 @@ import { CompletionMark } from "./ActivityGame";
 import { formatQuizDuration } from "./game";
 import { BenchmarkComparison, RemediationDashboard } from "./QuizFeedbackPanels";
 import { QuestionCard } from "./QuestionCard";
-import { completionSummary } from "./quiz-scoring";
+import { completionSummary, isOpenEnded, isCorrect, questionCredit } from "./quiz-scoring";
 import { quizStyles } from "./quiz-styles";
 
 export function QuizResultsView({
@@ -54,11 +55,13 @@ export function QuizResultsView({
 	onRequestRemediation: (level: string) => void;
 	onRetake: () => void;
 }) {
+	const partly = visibleQuestions.filter(q => !isOpenEnded(q) && !isCorrect(q, answers[q.id] ?? "") && questionCredit(q, answers[q.id] ?? "") > 0).length;
 	const summary = completionSummary({ totalScored, rawScore, pendingReviewCount });
 	return (
 		<>
 			<div className={cx(quizStyles.resultIntro, "quiz-result-arrive")}>
 				<CompletionMark detail={summary.detail}>{summary.title}</CompletionMark>
+				<LessonScore score={totalScored ? `${rawScore} of ${totalScored}` : "Pending review"} percent={totalScored ? percent : undefined} time={finalTotalMs !== undefined ? formatQuizDuration(finalTotalMs) : undefined} correct={rawScore} partly={partly} missed={Math.max(0,totalScored-rawScore-partly)}/>
 				<div className={quizStyles.resultMeta}>
 					{finalTotalMs !== undefined ? <span aria-label={`Total quiz time: ${finalTotalMs} milliseconds`}>{formatQuizDuration(finalTotalMs)} total</span> : null}
 					{timedOutIds.size ? <span>{timedOutIds.size} timed out</span> : null}
@@ -69,7 +72,7 @@ export function QuizResultsView({
 				</div>
 			</div>
 
-			<details className="activity-review"><summary>Review answers & next steps</summary>
+			<details className="activity-review"><summary>All answers<KeatingGlyph name="plus" size={24} /><KeatingGlyph name="minus" size={24} /></summary>
 			<RemediationDashboard quiz={normalizedQuiz} answers={answers} onRequestRemediation={onRequestRemediation} />
 			<BenchmarkComparison score={rawScore} partialCreditPoints={partialCreditPoints} total={totalScored} stats={fetchedStats} />
 
@@ -92,8 +95,8 @@ export function QuizResultsView({
 				))}
 			</div>
 			</details>
-			<button type="button" onClick={onRetake} className={cx(quizStyles.buttonSecondary, "activity-back-action", css({ width: "100%", justifyContent: "center", gap: "0.5rem" }))}>
-				<RotateCcw size={14} /> Retake
+			<button type="button" onClick={onRetake} className={cx(quizStyles.buttonSecondary, "lesson-primary", css({ width: "100%", justifyContent: "center", gap: "0.5rem" }))}>
+				<KeatingGlyph name="refresh" size={14} /> Retake
 			</button>
 		</>
 	);

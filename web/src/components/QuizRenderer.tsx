@@ -4,6 +4,7 @@
  * navigation decisions in ./quiz/quiz-session, and the header, question card,
  * navigation and results are components under ./quiz/.
  */
+import { EmptyState } from "../design-system/kit";
 import { useCallback } from "react";
 import type { Quiz } from "../keating/core";
 import { cx } from "../../styled-system/css";
@@ -132,7 +133,7 @@ export function QuizRenderer(props: QuizRendererProps) {
 		return (
 			<section className={cx(quizStyles.shell, "activity-game activity-quiz")} aria-label={`Quiz: ${quiz.topic}`}>
 				{header}
-				<div className={quizStyles.empty} role="status">No quiz questions yet.</div>
+				<EmptyState glyph="quiz" role="status" heading="No quiz questions yet." />
 			</section>
 		);
 	}

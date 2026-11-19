@@ -68,3 +68,11 @@ export const WithMapHero: Story = {
 export const Active: Story = {
 	args: { active: true, childCount: 3 },
 };
+
+export const Pinned: Story = {
+	args: { pinned: true, onTogglePin: () => {}, onMoveSection: () => {}, quickActions: true },
+};
+
+export const InEarlier: Story = {
+	args: { inEarlier: true, onTogglePin: () => {}, onMoveSection: () => {}, quickActions: true },
+};

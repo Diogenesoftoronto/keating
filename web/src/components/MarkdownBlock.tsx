@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { createContext, useContext, lazy, Suspense, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
@@ -203,10 +203,12 @@ function remarkSpoiler() {
 	return (tree: MdastNode) => transform(tree);
 }
 
+const focusRevealedText = (node: HTMLSpanElement | null) => { node?.focus(); };
+
 function Spoiler({ children }: { children: ReactNode }) {
 	const [revealed, setRevealed] = useState(false);
 	if (revealed) {
-		return <span className={css({ borderRadius: "0.25rem", backgroundColor: "var(--muted)", paddingInline: "0.25rem", color: "var(--foreground)" })}>{children}</span>;
+		return <span tabIndex={-1} ref={focusRevealedText} className={css({ borderRadius: "0.25rem", backgroundColor: "var(--muted)", paddingInline: "0.25rem", color: "var(--foreground)" })}>{children}</span>;
 	}
 	return (
 		<button
@@ -227,9 +229,7 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 
 	if (displayLang.toLowerCase() === "mermaid") {
 		return (
-			<div className={css({ marginBlock: "0.75rem", overflow: "auto", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)", padding: "1rem" })}>
-				<MermaidRenderer content={children} />
-			</div>
+			<MermaidRenderer content={children} />
 		);
 	}
 
@@ -259,7 +259,44 @@ function CodeBlock({ lang, children }: { lang: string; children: string }) {
 	);
 }
 
+const HighlightHandlers = createContext<Pick<MarkdownBlockProps,
+	"onHighlightReveal" | "onHighlightConceal" | "onHighlightOpen">>({});
+
+// Keep the mark component mounted when a hovercard or the active turn changes.
 const COMPONENTS: Components = {
+	mark: function ReviewMark({ children, ...props }) {
+		const { onHighlightReveal, onHighlightConceal, onHighlightOpen } = useContext(HighlightHandlers);
+		const attributes = props as Record<string, unknown>;
+		if (attributes["data-review-highlight"] !== "true") return <mark {...props}>{children}</mark>;
+		const ids = String(attributes["data-highlight-ids"] ?? "").split(",").filter(Boolean);
+		const color = String(attributes["data-highlight-color"] ?? "var(--accent)");
+		const active = attributes["data-highlight-active"] === "true";
+		const dashed = attributes["data-highlight-dashed"] === "true";
+		return (
+			<mark
+				{...props}
+				tabIndex={0}
+				role="button"
+				className={cx(reviewMarkClass, dashed ? reviewMarkDashedClass : reviewMarkSolidClass)}
+				style={{ borderBottomColor: color, background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent" }}
+				onMouseEnter={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
+				onFocus={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
+				onMouseLeave={onHighlightConceal}
+				onBlur={onHighlightConceal}
+				onClick={(event) => {
+					if (event.detail > 0 && window.getSelection()?.isCollapsed === false) return;
+					onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect());
+				}}
+				onKeyDown={(event) => {
+					if (event.key !== "Enter" && event.key !== " ") return;
+					event.preventDefault();
+					onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect());
+				}}
+			>
+				{children}
+			</mark>
+		);
+	},
 	span({ className, children, ...props }) {
 		if (typeof className === "string" && className.includes("keating-spoiler")) {
 			return <Spoiler>{children}</Spoiler>;
@@ -357,38 +394,6 @@ export function MarkdownBlock({ content, streaming = false, sourceMapped = false
 		() => ({ remark: [remarkGfm, remarkMath, ...(sourceMapped ? [remarkSourceMap(highlights)] : []), remarkSpoiler], rehype: [rehypeKatex] }),
 		[highlights, sourceMapped],
 	);
-	const components = useMemo<Components>(() => ({
-		...COMPONENTS,
-		mark({ children, ...props }) {
-			const attributes = props as Record<string, unknown>;
-			if (attributes["data-review-highlight"] !== "true") return <mark {...props}>{children}</mark>;
-			const ids = String(attributes["data-highlight-ids"] ?? "").split(",").filter(Boolean);
-			const color = String(attributes["data-highlight-color"] ?? "var(--accent)");
-			const active = attributes["data-highlight-active"] === "true";
-			const dashed = attributes["data-highlight-dashed"] === "true";
-			return (
-				<mark
-					{...props}
-					tabIndex={0}
-					role="button"
-					className={cx(reviewMarkClass, dashed ? reviewMarkDashedClass : reviewMarkSolidClass)}
-					style={{ borderBottomColor: color, background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent" }}
-					onMouseEnter={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
-					onFocus={(event) => onHighlightReveal?.(ids, event.currentTarget.getBoundingClientRect())}
-					onMouseLeave={onHighlightConceal}
-					onBlur={onHighlightConceal}
-					onClick={(event) => onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect())}
-					onKeyDown={(event) => {
-						if (event.key !== "Enter" && event.key !== " ") return;
-						event.preventDefault();
-						onHighlightOpen?.(ids, event.currentTarget.getBoundingClientRect());
-					}}
-				>
-					{children}
-				</mark>
-			);
-		},
-	}), [onHighlightConceal, onHighlightOpen, onHighlightReveal]);
 
 	// Only an unterminated fence is still being written; a closed one is done
 	// even if the message itself keeps streaming prose after it.
@@ -399,9 +404,11 @@ export function MarkdownBlock({ content, streaming = false, sourceMapped = false
 
 	return (
 		<StreamingCodeContext.Provider value={openFenceCode}>
-			<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={components}>
-				{normalizedContent}
-			</ReactMarkdown>
+			<HighlightHandlers.Provider value={{ onHighlightReveal, onHighlightConceal, onHighlightOpen }}>
+				<ReactMarkdown remarkPlugins={plugins.remark} rehypePlugins={plugins.rehype} components={COMPONENTS}>
+					{normalizedContent}
+				</ReactMarkdown>
+			</HighlightHandlers.Provider>
 		</StreamingCodeContext.Provider>
 	);
 }

@@ -7,8 +7,7 @@ import {
 	type TrajectoryAnnotation,
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
+import { reviewIcon, ReviewIcon } from "./review-icons";
 import { metaTextClass } from "./styles";
 import { TrajectoryCanvas, type TrajectoryCanvasMode } from "./TrajectoryCanvas";
 import type {
@@ -174,7 +173,7 @@ export function SharedTrajectoryWorkspace({ data, renderArtifact, className, chr
 				<div className={css({ minWidth: 0 })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 						<h1 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "serif", fontSize: { base: "1rem", md: "1.125rem" }, fontWeight: 700, color: "var(--foreground)" })}>{data.session.title}</h1>
-						<span className={css({ display: "inline-flex", flex: "0 0 auto", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.5625rem", fontWeight: 750, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--muted-foreground)" })}><KeatingIcon icon={reviewIcon.inspect} size={10} /> Read only</span>
+						<span className={css({ display: "inline-flex", flex: "0 0 auto", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.5625rem", fontWeight: 750, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--muted-foreground)" })}><ReviewIcon icon={reviewIcon.inspect} size={10} /> Read only</span>
 					</div>
 					<div className={cx(metaTextClass, css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.35rem", marginTop: "0.125rem" }))}>
 						<span>Shared session</span>
@@ -183,8 +182,8 @@ export function SharedTrajectoryWorkspace({ data, renderArtifact, className, chr
 					</div>
 				</div>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
-					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><KeatingIcon icon={reviewIcon.message} size={12} /> {data.messages.length} turns</span>
-					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><KeatingIcon icon={reviewIcon.page} size={12} /> {data.artifacts.length} artifacts</span>
+					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><ReviewIcon icon={reviewIcon.message} size={12} /> {data.messages.length} turns</span>
+					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><ReviewIcon icon="shapes" size={12} /> {data.artifacts.length} artifacts</span>
 				</div>
 			</header> : null}
 

@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarClock, CheckCircle2, ClipboardList, MessageSquareText } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import {
 	ASSIGNMENT_STATUS_LABEL,
@@ -63,11 +63,11 @@ function AssignmentRow({ entry, now, onOpen }: { entry: AssignmentEntry; now: nu
 		{entry.ask ? <p className={styles.ask}>{entry.ask}</p> : null}
 		<ul className={styles.facts}>
 			<li className={entry.overdue ? styles.overdue : undefined}>
-				<CalendarClock size={13} aria-hidden="true" />
+				<KeatingGlyph name="calendar" size={13} />
 				{entry.overdue ? `${due}. You can still hand it in.` : due}
 			</li>
 			{entry.notYetOpen && entry.availableFrom !== null ? <li>Opens {new Date(entry.availableFrom).toLocaleString(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}</li> : null}
-			<li>{entry.status === "feedback_received" ? <MessageSquareText size={13} aria-hidden="true" /> : entry.status === "done" ? <CheckCircle2 size={13} aria-hidden="true" /> : <ClipboardList size={13} aria-hidden="true" />}{ASSIGNMENT_STATUS_LABEL[entry.status]}</li>
+			<li>{entry.status === "feedback_received" ? <KeatingGlyph name="message" size={13} /> : entry.status === "done" ? <KeatingGlyph name="check" size={13} /> : <KeatingGlyph name="checklist" size={13} />}{ASSIGNMENT_STATUS_LABEL[entry.status]}</li>
 			{entry.items.total > 0 ? <li>{entry.items.done} of {entry.items.total} {ITEM_NOUN[entry.kind]} done</li> : null}
 			{entry.hasDraft ? <li>Draft saved on this device</li> : null}
 			{entry.round > 1 ? <li>Round {entry.round}</li> : null}
@@ -76,7 +76,7 @@ function AssignmentRow({ entry, now, onOpen }: { entry: AssignmentEntry; now: nu
 		</ul>
 		<div className={styles.actions}>
 			<button type="button" className={styles.primary} onClick={() => onOpen(entry)} aria-label={`${nextStepLabel(entry)}: ${entry.title}`}>
-				{nextStepLabel(entry)}<ArrowRight size={15} aria-hidden="true" />
+				{nextStepLabel(entry)}<KeatingGlyph name="right" size={15} />
 			</button>
 			<PrintAssignmentButton node={entry.node} answers={answers} sessionTitle={entry.sessionTitle} />
 		</div>
@@ -98,7 +98,7 @@ export function OpenAssignmentsSection({ open, handedIn = [], now, onOpen, statu
 }) {
 	return <section className={styles.section} aria-labelledby="coming-up-assignments" data-open-assignments>
 		<div className={styles.head}>
-			<h2 id="coming-up-assignments" className={styles.title}><ClipboardList size={18} aria-hidden="true" />Open assignments</h2>
+			<h2 id="coming-up-assignments" className={styles.title}><KeatingGlyph name="checklist" size={18} />Open assignments</h2>
 			<p className={styles.copy}>Homework your tutor gave you in a session. Pick it up here, print it to work on paper, and hand it in from the task.</p>
 		</div>
 		{open.length ? <ul className={styles.list} aria-label="Open assignments">

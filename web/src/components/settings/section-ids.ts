@@ -30,5 +30,5 @@ export const MODELS_TAB_ALL_SECTION_IDS = [
 	...MODELS_TAB_EXTRA_SECTION_IDS,
 ] as const;
 
-/** Top-level settings dialog tab ids, used for `?settings=<id>` deep links. */
+/** Legacy top-level URL prefixes. The new group and section definitions live in groups.tsx. */
 export const SETTINGS_DIALOG_TAB_IDS = ["start", "models", "learning", "app", "diagnostics"] as const;

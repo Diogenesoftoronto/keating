@@ -43,8 +43,9 @@
 .activity-hint p { max-width: 65ch; padding-bottom: .5rem; }
 .activity-review { border-top: 1px solid var(--border); padding-top: .5rem; }
 .activity-review > summary { min-height: 2.75rem; cursor: pointer; font-size: .875rem; display: flex; align-items: center; gap: .5rem; font-weight: 600; }
-.activity-review > summary::after { content: "+"; margin-left: auto; font-size: 1.25rem; }
-.activity-review[open] > summary::after { content: "−"; }
+.activity-review > summary > [data-glyph] { margin-left: auto; }
+.activity-review:not([open]) > summary > [data-glyph="minus"],
+.activity-review[open] > summary > [data-glyph="plus"] { display: none; }
 .activity-sr-only { position: absolute; height: 1px; width: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .activity-quiz { min-width: 0; border: 1px solid var(--border); border-radius: 16px; padding: 1rem; gap: 1.25rem; background: color-mix(in srgb, var(--muted) 18%, var(--background)); }
 .activity-quiz > *, .activity-game > * { min-width: 0; }

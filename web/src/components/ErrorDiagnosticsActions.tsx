@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { css } from "../../styled-system/css";
 import { buildDiagnosticReport, diagnosticReportMailto, sendDiagnosticReport, type DiagnosticDelivery } from "../lib/diagnostics";
-import { loadKeatingUiSettings, saveKeatingUiSettings } from "../keating/ui-settings";
+import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 
 interface ErrorDiagnosticsActionsProps {
 	/** Short, sanitized description of the failure, used as the report subject. */
@@ -43,13 +43,12 @@ const noteClass = css({
  * Consent is asked once, here, and can be revoked from the same control.
  */
 export function ErrorDiagnosticsActions({ summary }: ErrorDiagnosticsActionsProps) {
-	const [reporting, setReporting] = useState(() => loadKeatingUiSettings().diagnosticsReporting);
+	const [{ diagnosticsReporting: reporting }, updateSettings] = useKeatingUiSettings();
 	const [state, setState] = useState<SendState>("idle");
 	const [delivery, setDelivery] = useState<DiagnosticDelivery | null>(null);
 
 	const setReportingConsent = (enabled: boolean) => {
-		saveKeatingUiSettings({ ...loadKeatingUiSettings(), diagnosticsReporting: enabled });
-		setReporting(enabled);
+		updateSettings({ diagnosticsReporting: enabled });
 	};
 
 	const send = async () => {

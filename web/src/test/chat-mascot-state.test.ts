@@ -17,6 +17,12 @@ describe("chat companion", () => {
     ["maths", "Help with calculus"],
     ["coding", "Debugging Python"],
     ["reading", "Discuss this novel"],
+    ["history", "European history"],
+    ["language", "Italian grammar"],
+    ["geography", "Learn geography"],
+    ["art", "Study sculpture"],
+    ["economics", "What causes inflation?"],
+    ["philosophy", "Teach epistemology"],
   ] as const)("uses %s study animation", (expected, text) => expect(state(text)).toBe(expected));
   test("does not match fragments or cling to an earlier topic", () => {
     expect(state("My cellphone is broken")).toBe("idle");

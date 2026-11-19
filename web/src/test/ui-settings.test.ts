@@ -54,7 +54,12 @@ describe("Keating UI Settings", () => {
 		it("returns defaults when localStorage is empty", () => {
 			const settings = loadKeatingUiSettings();
 			expect(settings.showToolUi).toBe(DEFAULT_UI_SETTINGS.showToolUi);
-			expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
+			expect(settings.replyTypeface).toBe("serif");
+            saveKeatingUiSettings({ ...settings, replyTypeface: "mono" });
+            expect(loadKeatingUiSettings().replyTypeface).toBe("mono");
+            saveKeatingUiSettings({ ...settings, replyTypeface: "sans" });
+            expect(loadKeatingUiSettings().replyTypeface).toBe("sans");
+            expect(settings.fontFamily).toBe(DEFAULT_UI_SETTINGS.fontFamily);
 			expect(settings.shareLinkMode).toBe("portable-short");
 			expect(settings.animationRenderer).toBe("hyperframes");
 			expect(settings.alternativeResponseChance).toBe(0.01);

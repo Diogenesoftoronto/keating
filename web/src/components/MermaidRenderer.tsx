@@ -1,6 +1,7 @@
+import { DiagramViewport } from "./DiagramViewport";
+import { IconButton, Loading } from "../design-system/kit";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Maximize2, X } from "lucide-react";
 import { detectSupportedMermaidGrammar } from "@keating/learner-contracts";
 import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
@@ -8,22 +9,17 @@ import { decodeSystemDesignSvgLabels } from "../lib/system-design-svg";
 
 const errorContainerClass = css({
 	padding: "1rem",
-	backgroundColor: "color-mix(in srgb, #ef4444 10%, transparent)",
-	border: "1px solid color-mix(in srgb, #ef4444 30%, transparent)",
+	backgroundColor: "var(--card)",
+	border: "1px solid var(--destructive)",
 	borderRadius: "0.5rem",
 });
-const errorTitleClass = css({ color: "#f87171", fontSize: "0.875rem" });
+const errorTitleClass = css({ color: "var(--destructive)", fontSize: "0.875rem" });
 const errorPreClass = css({
 	marginTop: "0.5rem",
 	fontSize: "0.75rem",
 	color: "var(--muted-foreground)",
 	overflow: "auto",
 });
-const containerClass = css({
-	backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
-	borderRadius: "0.5rem",
-});
-const loadingClass = css({ padding: "2rem", textAlign: "center", color: "var(--muted-foreground)" });
 const wrapperClass = css({ marginBlock: "1rem", overflow: "auto" });
 const rendererClass = css({ position: "relative" });
 const cardClass = css({
@@ -41,28 +37,6 @@ const diagramClass = css({
 		marginInline: "auto",
 	},
 });
-const expandButtonClass = cx(
-	"dialog-icon-button",
-	css({
-		position: "absolute",
-		top: "0.5rem",
-		right: "0.5rem",
-		display: "inline-flex",
-		width: "2rem",
-		height: "2rem",
-		alignItems: "center",
-		justifyContent: "center",
-		border: "1px solid var(--border)",
-		borderRadius: "0.5rem",
-		backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)",
-		color: "var(--foreground)",
-		boxShadow: "0 2px 6px rgb(0 0 0 / 0.16)",
-		backdropFilter: "blur(4px)",
-		transition: "background-color 160ms ease-out, color 160ms ease-out",
-		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-		_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
-	}),
-);
 const expandedBackdropClass = css({
 	position: "fixed",
 	inset: 0,
@@ -100,21 +74,6 @@ const expandedTitleClass = css({
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
 });
-const closeButtonClass = cx(
-	"dialog-icon-button",
-	css({
-		display: "inline-flex",
-		width: "2rem",
-		height: "2rem",
-		flexShrink: 0,
-		alignItems: "center",
-		justifyContent: "center",
-		borderRadius: "0.5rem",
-		color: "var(--muted-foreground)",
-		_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-		_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
-	}),
-);
 const expandedViewportClass = css({
 	minHeight: 0,
 	flex: 1,
@@ -153,7 +112,7 @@ const mermaidFencePattern = /```mermaid[^\n]*\n([\s\S]*?)```/i;
 type MermaidTheme = "default" | "dark";
 
 export function currentMermaidTheme(documentElement = typeof document === "undefined" ? null : document.documentElement): MermaidTheme {
-	return documentElement?.classList.contains("dark") ? "dark" : "default";
+	return (documentElement?.classList.contains("dark") || documentElement?.getAttribute?.("data-theme") === "dark") ? "dark" : "default";
 }
 
 /** A lossless tuple key prevents same-prefix diagrams from sharing SVG output. */
@@ -172,7 +131,7 @@ function useMermaidTheme(): MermaidTheme {
 		if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
 		const root = document.documentElement;
 		const observer = new MutationObserver(() => setTheme(currentMermaidTheme(root)));
-		observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+		observer.observe(root, { attributes: true, attributeFilter: ["class","data-theme"] });
 		setTheme(currentMermaidTheme(root));
 		return () => observer.disconnect();
 	}, []);
@@ -238,9 +197,18 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 				const mermaid = await import("mermaid");
 
 				// Initialize mermaid with theme
+				const styles = getComputedStyle(document.documentElement);
+				const token = (name: string) => styles.getPropertyValue(name).trim();
 				mermaid.default.initialize({
 					startOnLoad: false,
-					theme,
+					theme: "base",
+					themeVariables: {
+						darkMode: theme === "dark", fontFamily: token("--font-ui") || "system-ui, sans-serif",
+						primaryColor: token("--card"), primaryTextColor: token("--ink"),
+						lineColor: token("--ink"), primaryBorderColor: token("--ink"),
+						secondaryColor: token("--paper-deep"), tertiaryColor: token("--paper"),
+						cScale0: token("--series-1"), cScale1: token("--series-2"), cScale2: token("--series-3"),
+					},
 					securityLevel: "strict",
 					htmlLabels,
 					flowchart: {
@@ -338,7 +306,7 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 
 	if (error) {
 		return (
-			<div className={cx(errorContainerClass, className)}>
+			<div className={cx("specialist-frame", errorContainerClass, className)}>
 				<p className={errorTitleClass}>Failed to render diagram: {error}</p>
 				<pre className={errorPreClass}>{content}</pre>
 			</div>
@@ -348,24 +316,15 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 	return (
 		<div
 			ref={containerRef}
-			className={cx("mermaid-container", rendererClass, className, loading && containerClass)}
+			className={cx("specialist-frame mermaid-container", rendererClass, className)}
 		>
 			{loading ? (
-				<div className={loadingClass}>Rendering diagram...</div>
+				<Loading label="Rendering diagram..." />
 			) : svg ? (
 				<>
-					<div className={diagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
-					<button
-						ref={expandButtonRef}
-						type="button"
-						className={expandButtonClass}
-						aria-label="Expand diagram"
-						aria-expanded={expanded}
-						title="Expand diagram"
-						onClick={() => setExpanded(true)}
-					>
-						<Maximize2 aria-hidden="true" size={16} />
-					</button>
+					<DiagramViewport caption="Mermaid diagram" tools={<IconButton ref={expandButtonRef} glyph="expand" label="Expand diagram" aria-expanded={expanded} onClick={() => setExpanded(true)} />}>
+						<div className={diagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
+					</DiagramViewport>
 					{expanded && typeof document !== "undefined"
 						? createPortal(
 								<div
@@ -382,18 +341,9 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 									>
 										<header className={expandedToolbarClass}>
 											<h2 className={expandedTitleClass}>Expanded diagram</h2>
-											<button
-												ref={closeButtonRef}
-												type="button"
-												className={closeButtonClass}
-												aria-label="Close expanded diagram"
-												title="Close expanded diagram"
-												onClick={() => setExpanded(false)}
-											>
-												<X aria-hidden="true" size={18} />
-											</button>
+											<IconButton ref={closeButtonRef} glyph="x" label="Close expanded diagram" onClick={() => setExpanded(false)} />
 										</header>
-										<div className={expandedViewportClass}>
+										<div className={cx(expandedViewportClass, "k-grid")}>
 											<div className={expandedDiagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
 										</div>
 									</section>

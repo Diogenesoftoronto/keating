@@ -12,6 +12,12 @@ const TOPICS: readonly [KeatingBotState, RegExp][] = [
   ["maths", /\b(maths?|mathematics|algebra|geometry|calculus|equations?|statistics|trigonometry)\b/i],
   ["coding", /\b(coding|programming|typescript|javascript|python|rust|algorithms?|debugging|software)\b/i],
   ["music", /\b(music|melod\w*|rhythm|chords?|harmony|instruments?|songs?|piano|guitar)\b/i],
+  ["history", /\b(history|historical|historiography)\b/i],
+  ["language", /\b(language|linguistics|grammar|vocabulary)\b/i],
+  ["geography", /\b(geography|geographical|cartography)\b/i],
+  ["art", /\b(art|painting|sculpture|drawing)\b/i],
+  ["economics", /\b(economics|inflation|macroeconomics|microeconomics)\b/i],
+  ["philosophy", /\b(philosophy|epistemology|metaphysics)\b/i],
   ["reading", /\b(reading|books?|literature|poetry|novels?|linguistics|history|philosophy)\b/i],
   ["science", /\b(science|scientific|experiments?|hypothes[ie]s)\b/i],
 ];

@@ -7,6 +7,8 @@ import rehypeKatex from "rehype-katex";
 import { blueskyPostUrl, type AtprotoBlogFeed, type AtprotoBlogPost } from "../../web/src/keating/standard-site";
 import { APP_ORIGIN, WEBSITE_ORIGIN, hostedNavigationHref } from "../../web/src/lib/hosted-navigation";
 
+import { BlogGlyph } from "./glyph";
+
 export { APP_ORIGIN };
 
 export const BLOG_ORIGIN = "https://blog.keating.help";
@@ -49,12 +51,12 @@ function Layout({ title, description, canonical, feed, post, children }: {
     <a className="skip" href="#main">Skip to content</a>
     <header className="site-header"><nav aria-label="Main navigation">
       <a className="brand" href={WEBSITE_ORIGIN}><img src="/assets/logo-lockup-compact.avif" alt="Keating" width="144" height="30" /></a>
-      <div className="nav-links"><a href="/" aria-current="page">[BLOG]</a><a href="https://docs.keating.help">[DOCS]</a><a href="https://dev.keating.help">[DEVELOPERS]</a><a className="open-app" href={`${APP_ORIGIN}/`}>OPEN KEATING ↗</a>
-        <button type="button" className="theme-toggle" aria-label="Switch color theme" hidden>◐</button>
+      <div className="nav-links"><div className="nav-section-links"><a href="/" aria-current={feed && !post ? "page" : undefined}>Blog</a><a href="https://docs.keating.help">Docs</a><a href="https://dev.keating.help">Developers</a></div><a className="open-app" href={`${APP_ORIGIN}/`}>Open Keating <BlogGlyph name="ext" /></a>
+        <button type="button" className="theme-toggle" aria-label="Switch color theme" hidden><BlogGlyph name="sun" /><BlogGlyph name="moon" /></button>
       </div>
     </nav></header>
     <main id="main" tabIndex={-1}>{children}</main>
-    <footer className="site-footer"><a href={WEBSITE_ORIGIN}>Keating</a><span>Carpe diem.</span><a href="https://github.com/Diogenesoftoronto/keating">GitHub ↗</a></footer>
+    <footer className="site-footer"><a href={WEBSITE_ORIGIN}>Keating</a><span>Carpe diem.</span><a href="https://github.com/Diogenesoftoronto/keating">GitHub <BlogGlyph name="ext" /></a></footer>
   </body></html>;
 }
 
@@ -71,14 +73,46 @@ export function renderIndex(feed: AtprotoBlogFeed, query = "", selectedTag = "")
   const description = feed.publication.description ?? "Release notes, engineering essays, and field notes from a tutor built to make learning inspectable.";
   const tagUrl = (tag: string) => `/?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(tag ? { tag } : {}) })}`;
   return "<!doctype html>" + renderToStaticMarkup(<Layout title={`${feed.publication.name} · Keating`} description={description} canonical={indexUrl(feed)} feed={feed}>
-    <div className="index"><header className="hero"><div className="hero-top"><div><h1>{feed.publication.name}</h1><p className="intro">{description}</p></div><span className="count">{feed.posts.length} {feed.posts.length === 1 ? "post" : "posts"}</span></div>
-      <p className="protocol"><a href="https://standard.site" className="protocol-mark">▤ STANDARD.SITE</a><span>Published from {feed.source.repo}</span></p>
-    </header>
-    {feed.posts.length > 0 && <div className="filters"><form action="/" role="search"><label htmlFor="search">Search posts</label><div className="search-row"><input id="search" name="q" type="search" defaultValue={query} placeholder="Search titles, descriptions, and tags…" />{selectedTag && <input type="hidden" name="tag" value={selectedTag} />}<button type="submit">Search</button></div></form>
-      <nav className="tags" aria-label="Filter by tag"><a className={`tag-filter ${!selectedTag ? "active" : ""}`} aria-current={!selectedTag ? "true" : undefined} href={tagUrl("")}>All posts</a>{tags.map(tag => <a className={`tag-filter ${selectedTag === tag ? "active" : ""}`} aria-current={selectedTag === tag ? "true" : undefined} href={tagUrl(tag)} key={tag}>{tag}</a>)}</nav>
-    </div>}
-    {posts.length ? <div className="post-list">{posts.map(post => <a className="post-link" href={post.path} key={post.uri}><time dateTime={post.publishedAt}>{date(post.publishedAt)}</time><div><h2>{post.title}</h2>{post.description && <p className="description">{post.description}</p>}<Tags tags={post.tags.slice(0, 4)} /></div><span className="arrow" aria-hidden="true">↗</span></a>)}</div>
-      : <section className="state"><h2>{feed.posts.length ? "No matching posts" : "No posts published yet"}</h2><p>{feed.posts.length ? "Try a different search or choose another tag." : "New posts from this publication will appear here."}</p>{feed.posts.length > 0 && <a href="/">Show all posts</a>}</section>}
+    <div className="index">
+      <header className="hero">
+        <div className="masthead">
+          <h1>{feed.publication.name}</h1>
+          <p className="intro">{description}</p>
+        </div>
+        <div className="archive-cover" aria-hidden="true"><div className="writing-bot" /></div>
+      </header>
+      <p className="protocol">
+        <a href="https://standard.site" className="protocol-mark"><BlogGlyph name="book" />Standard.site</a>
+        <span>Published from {feed.source.repo}</span>
+      </p>
+      <div className={feed.posts.length ? "archive-grid" : undefined}>
+        {feed.posts.length > 0 && <aside className="filters">
+          <form action="/" role="search">
+            <label htmlFor="search">Search posts</label>
+            <div className="search-row">
+              <input id="search" name="q" type="search" defaultValue={query} placeholder="Title, description or tag" />
+              {selectedTag && <input type="hidden" name="tag" value={selectedTag} />}
+              <button type="submit" aria-label="Search"><BlogGlyph name="search" size={19} /></button>
+            </div>
+          </form>
+          <nav className="tags" aria-label="Filter by tag">
+            <a className={`tag-filter ${!selectedTag ? "active" : ""}`} aria-current={!selectedTag ? "true" : undefined} href={tagUrl("")}>All posts</a>
+            {tags.map(tag => <a className={`tag-filter ${selectedTag === tag ? "active" : ""}`} aria-current={selectedTag === tag ? "true" : undefined} href={tagUrl(tag)} key={tag}>{tag}</a>)}
+          </nav>
+        </aside>}
+        {posts.length ? <section className="post-list" aria-label="Posts">
+          <p className="count">{posts.length} {posts.length === 1 ? "post" : "posts"}{posts.length !== feed.posts.length && ` of ${feed.posts.length}`}</p>
+          {posts.map(post => <a className="post-link" href={post.path} key={post.uri}>
+            <time dateTime={post.publishedAt}>{date(post.publishedAt)}</time>
+            <div><h2>{post.title}</h2>{post.description && <p className="description">{post.description}</p>}<Tags tags={post.tags.slice(0, 4)} /></div>
+            <BlogGlyph name="right" size={21} />
+          </a>)}
+        </section> : <section className="state">
+          <h2>{feed.posts.length ? "No matching posts" : "No posts published yet"}</h2>
+          <p>{feed.posts.length ? "Try a different search or choose another tag." : "New posts from this publication will appear here."}</p>
+          {feed.posts.length > 0 && <a href="/">Show all posts</a>}
+        </section>}
+      </div>
     </div>
   </Layout>);
 }
@@ -103,18 +137,34 @@ export function contentUrl(value: string, key: string, post: AtprotoBlogPost): s
 export function renderPost(feed: AtprotoBlogFeed, post: AtprotoBlogPost): string {
   const discussion = blueskyPostUrl(post.bskyPostUri);
   return "<!doctype html>" + renderToStaticMarkup(<Layout title={`${post.title} · Keating`} description={post.description} canonical={documentUrl(feed, post)} feed={feed} post={post}>
-    <div className="article-wrap"><a className="back" href="/">← All posts</a><header className="article-header">
-      <div className="article-meta"><time dateTime={post.publishedAt}>{date(post.publishedAt)}</time><span aria-hidden="true">/</span><span className="protocol-mark">STANDARD.SITE</span>{post.updatedAt && <span>Updated {date(post.updatedAt)}</span>}</div>
-      <h1>{post.title}</h1>{post.description && <p className="intro">{post.description}</p>}<Tags tags={post.tags} />
-    </header>{post.coverImageUrl && <img className="cover" src={post.coverImageUrl} alt="" />}
-    <article className="article"><div className="prose">{post.bodyFormat === "plaintext" ? <div className="plaintext">{post.body}</div> : <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} urlTransform={(url, key) => contentUrl(url, key, post)}>{post.body}</ReactMarkdown>}</div>
-      <footer className="article-footer"><span className="record">Source: {post.uri}</span>{discussion && <a href={discussion} rel="noreferrer" className="discuss">Discuss on Bluesky ↗</a>}</footer>
-    </article></div>
+    <div className="article-wrap">
+      <div className="article-running-head"><a className="back" href="/"><BlogGlyph name="left" />All posts</a><span>{feed.publication.name}</span></div>
+      <header className="article-header">
+        <div className="article-meta"><time dateTime={post.publishedAt}>{date(post.publishedAt)}</time>
+          <span className="protocol-mark"><BlogGlyph name="book" />Standard.site</span>
+          {post.updatedAt && <span>Updated {date(post.updatedAt)}</span>}
+        </div>
+        <h1>{post.title}</h1>
+        {post.description && <p className="intro">{post.description}</p>}
+        <Tags tags={post.tags} />
+      </header>
+      {post.coverImageUrl && <img className="cover" src={post.coverImageUrl} alt="" />}
+      <div className="article-layout">
+        <details className="article-outline" hidden>
+          <summary><BlogGlyph name="layers" size={18} />In this article</summary>
+          <nav aria-label="In this article"></nav>
+        </details>
+        <article className="article">
+          <div className="prose">{post.bodyFormat === "plaintext" ? <div className="plaintext">{post.body}</div> : <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} urlTransform={(url, key) => contentUrl(url, key, post)}>{post.body}</ReactMarkdown>}</div>
+          <footer className="article-footer"><span className="record">Source: {post.uri}</span>{discussion && <a href={discussion} rel="noreferrer" className="discuss">Discuss on Bluesky <BlogGlyph name="ext" /></a>}</footer>
+        </article>
+      </div>
+    </div>
   </Layout>);
 }
 
 export function renderError(status: number): string {
   const missing = status === 404;
   const title = missing ? "Post not found" : "Posts are not available";
-  return "<!doctype html>" + renderToStaticMarkup(<Layout title={`${title} · Keating`} description={title}><div className="article-wrap"><a className="back" href="/">← All posts</a><section className="state" role="alert"><h1>{title}</h1><p>{missing ? "This document is not present in Keating’s Standard.site publication." : "The blog source is unavailable. Please try again shortly."}</p>{!missing && <a href="" className="retry">Retry loading posts</a>}</section></div></Layout>);
+  return "<!doctype html>" + renderToStaticMarkup(<Layout title={`${title} · Keating`} description={title}><div className="article-wrap"><a className="back" href="/"><BlogGlyph name="left" />All posts</a><section className="state" role="alert"><h1>{title}</h1><p>{missing ? "This document is not present in Keating’s Standard.site publication." : "The blog source is unavailable. Please try again shortly."}</p>{!missing && <a href="" className="retry"><BlogGlyph name="refresh" />Retry loading posts</a>}</section></div></Layout>);
 }

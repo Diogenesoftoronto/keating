@@ -1,421 +1,443 @@
-import { Fragment, useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { BookOpen, Brain, Bug, Cpu, ExternalLink, Rocket, Settings2, X } from "lucide-react";
+import {
+	Fragment,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { Button, ConfirmDialog, IconButton } from "../design-system/kit";
+import { motionAllowed } from "../design-system/motion";
 import { DOCUMENTATION_URL } from "../lib/tutorial-links";
-import { css, cx } from "../../styled-system/css";
+import { eventDestination } from "../hooks/agent/settings-deep-link";
+import { groups, resolveDestination } from "./settings/groups";
+import { LearningTab } from "./settings/LearningTab";
+import {
+	SettingsSearchField,
+	SettingsSearchResults,
+} from "./settings/search/Search";
+import { searchSettings } from "./settings/search";
+import {
+	SettingsStatusContext,
+	useSectionStatus,
+	type SectionStatus,
+} from "./settings/ui";
 
 export interface SettingsTabDef {
 	id: string;
 	label: string;
-	/** Sidebar group heading; consecutive tabs sharing a group are listed together. */
 	group?: string;
-	/** One-line summary shown under the title so a newcomer knows what the tab is for. */
 	description?: string;
-	/** Docs page (relative to the docs site) for this tab. */
 	docsPath?: string;
-	component: React.ReactNode;
+	component: ReactNode;
 }
-
-interface SettingsDialogProps {
+interface Props {
 	open: boolean;
-	tabs: SettingsTabDef[];
-	onClose: () => void;
+	onClose(): void;
+	onTour?(): void;
 	defaultTabId?: string;
+	tabs?: SettingsTabDef[];
+}
+export function SettingsDialog(props: Props) {
+	return props.open ? <OpenSettings {...props} /> : null;
 }
 
-const overlayClass = css({
-	position: "fixed",
-	inset: 0,
-	zIndex: 1000,
-	display: "flex",
-	alignItems: "stretch",
-	justifyContent: "center",
-	backgroundColor: "rgba(0, 0, 0, 0.5)",
-	backdropFilter: "blur(4px)",
-	padding: 0,
-	md: {
-		alignItems: "center",
-		padding: "1.5rem",
-	},
-});
-const panelClass = css({
-	display: "flex",
-	height: "100dvh",
-	width: "100%",
-	maxWidth: "64rem",
-	maxHeight: "100dvh",
-	overflow: "hidden",
-	borderRadius: 0,
-	border: 0,
-	backgroundColor: "var(--background)",
-	boxShadow: "var(--shadow-lg)",
-	md: {
-		height: "min(52rem, calc(100dvh - 3rem))",
-		maxHeight: "calc(100dvh - 3rem)",
-		borderRadius: "0.5rem",
-		border: "2px solid var(--border)",
-	},
-});
-const sidebarClass = css({
-	display: "none",
-	width: "14rem",
-	flexDirection: "column",
-	borderRight: "1px solid var(--border)",
-	backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
-	flexShrink: 0,
-	lg: { display: "flex" },
-});
-const sidebarHeaderClass = css({
-	paddingInline: "1rem",
-	paddingBlock: "0.75rem",
-	borderBottom: "1px solid var(--border)",
-});
-const sidebarTitleClass = css({
-	fontSize: "0.875rem",
-	fontWeight: 600,
-	color: "var(--foreground)",
-});
-const sidebarListClass = css({
-	display: "flex",
-	flexDirection: "column",
-	padding: "0.5rem",
-	gap: "0.25rem",
-	overflowY: "auto",
-});
-const sidebarGroupClass = css({
-	paddingInline: "0.75rem",
-	paddingTop: "0.75rem",
-	paddingBottom: "0.25rem",
-	fontSize: "0.6875rem",
-	fontWeight: 600,
-	letterSpacing: "0.06em",
-	textTransform: "uppercase",
-	color: "var(--muted-foreground)",
-});
-const sidebarFooterClass = css({
-	marginTop: "auto",
-	padding: "0.75rem",
-	borderTop: "1px solid var(--border)",
-});
-const docsLinkClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.5rem",
-	fontSize: "0.8125rem",
-	color: "var(--muted-foreground)",
-	_hover: { color: "var(--foreground)" },
-});
-const titleBlockClass = css({
-	display: "none",
-	minWidth: 0,
-	flexDirection: "column",
-	lg: { display: "flex" },
-});
-const titleDescriptionClass = css({
-	fontSize: "0.75rem",
-	color: "var(--muted-foreground)",
-});
-const sidebarTabBaseClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.5rem",
-	textAlign: "left",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.5rem",
-	borderRadius: "0.375rem",
-	fontSize: "0.875rem",
-	transitionProperty: "color, background-color",
-	transitionDuration: "150ms",
-});
-const sidebarTabActiveClass = css({
-	backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
-	color: "var(--primary)",
-	fontWeight: 500,
-});
-const sidebarTabIdleClass = css({
-	color: "var(--muted-foreground)",
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-});
-const contentColumnClass = css({
-	display: "flex",
-	flexDirection: "column",
-	flex: 1,
-	minWidth: 0,
-	minHeight: 0,
-});
-const headerClass = css({
-	display: "flex",
-	minHeight: "3.5rem",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: "0.75rem",
-	paddingInline: "1rem",
-	paddingBlock: "0.5rem",
-	borderBottom: "1px solid var(--border)",
-});
-const mobileTablistClass = css({
-	display: "flex",
-	minWidth: 0,
-	flex: 1,
-	gap: "0.375rem",
-	overflowX: "auto",
-	lg: { display: "none" },
-});
-const mobileTabBaseClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	justifyContent: "center",
-	whiteSpace: "nowrap",
-	borderRadius: "0.375rem",
-	paddingInline: "0.625rem",
-	paddingBlock: "0.375rem",
-	fontSize: "0.875rem",
-	minHeight: "2.25rem",
-	transitionProperty: "color, background-color",
-	transitionDuration: "150ms",
-	md: { paddingInline: "0.75rem" },
-});
-const mobileTabLabelClass = css({
-	display: "none",
-	md: { display: "inline" },
-});
-const mobileTabActiveClass = css({
-	backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
-	color: "var(--primary)",
-	fontWeight: 500,
-});
-const mobileTabIdleClass = css({
-	color: "var(--muted-foreground)",
-	border: "1px solid var(--border)",
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-});
-const desktopTitleClass = css({
-	fontSize: "0.875rem",
-	fontWeight: 500,
-	display: "none",
-	lg: { display: "block" },
-});
-const closeButtonClass = css({
-	display: "inline-flex",
-	height: "2.25rem",
-	width: "2.25rem",
-	flexShrink: 0,
-	alignItems: "center",
-	justifyContent: "center",
-	borderRadius: "0.375rem",
-	color: "var(--muted-foreground)",
-	transitionProperty: "color, background-color",
-	transitionDuration: "150ms",
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-});
-const tabpanelClass = css({
-	flex: 1,
-	minWidth: 0,
-	overflowY: "auto",
-	overflowX: "hidden",
-	padding: "1rem",
-	sm: { padding: "1.25rem" },
-});
-
-export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDialogProps) {
-	const [activeTab, setActiveTab] = useState(0);
-	const [isTabPending, startTabTransition] = useTransition();
-	const dialogRef = useRef<HTMLDivElement>(null);
-	const mobileTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-	const previousRequest = useRef({ open: false, defaultTabId });
-	useEffect(() => {
-		const previous = previousRequest.current;
-		previousRequest.current = { open, defaultTabId };
-		if (!open || (previous.open && (defaultTabId === undefined || previous.defaultTabId === defaultTabId))) return;
-		// A new tabs array from the chat parent is not a navigation request.
-		const idx = defaultTabId
-			? tabs.findIndex((t) => t.id === defaultTabId)
-			: activeTab < tabs.length
-				? activeTab
-				: 0;
-		setActiveTab(idx >= 0 ? idx : 0);
-	}, [open, defaultTabId, tabs]);
-
-	// Lets in-panel content (e.g. the Get started checklist) jump to another tab.
-	useEffect(() => {
-		if (!open) return;
-		const onNavigate = (e: Event) => {
-			const idx = tabs.findIndex((t) => t.id === (e as CustomEvent<string>).detail);
-			if (idx >= 0) setActiveTab(idx);
-		};
-		window.addEventListener("keating:settings-tab", onNavigate);
-		return () => window.removeEventListener("keating:settings-tab", onNavigate);
-	}, [open, tabs]);
-
-	useEffect(() => {
-		if (!open) return;
-		const handleEscape = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", handleEscape);
+// Temporary adapter until the Learning lane adopts useSectionStatus. The two
+// editors already expose their authoritative save eligibility and actions.
+function legacyDrafts(root: HTMLElement | null) {
+	if (!root) return [];
+	const persona =
+		root.querySelector("#teacher-persona")?.parentElement?.parentElement;
+	const profile = root.querySelector(".pf-savebar");
+	const saves = [
+		profile?.querySelector<HTMLButtonElement>("button:last-of-type"),
+		persona?.querySelector<HTMLButtonElement>("button"),
+	];
+	return saves.flatMap((button, index) =>
+		button && !button.disabled
+			? [
+					{
+						save: () => button.click(),
+						count:
+							index === 0
+								? Number(
+										profile
+											?.querySelector("span")
+											?.textContent?.match(/^\d+/)?.[0] ?? 1,
+									)
+								: 1,
+					},
+				]
+			: [],
+	);
+}
+function RegistryStatus({
+	id,
+	useStatus,
+}: {
+	id: string;
+	useStatus: () => string;
+}) {
+	useSectionStatus(id, { text: useStatus() });
+	return null;
+}
+function OpenSettings({ onClose, onTour, defaultTabId, tabs }: Props) {
+	const [location, setLocation] = useState({
+		raw: defaultTabId ?? "interface",
+		row: "",
+	});
+	const { group, section, anchor } = resolveDestination(location.raw);
+	const [visitedLearning, setVisitedLearning] = useState(
+		group.id === "learning",
+	);
+	const [phoneList, setPhoneList] = useState(!defaultTabId);
+	const [query, setQuery] = useState("");
+	const [index, setIndex] = useState(0);
+	const [confirm, setConfirm] = useState(false);
+	const tour = useRef(false);
+	const dialog = useRef<HTMLDialogElement>(null);
+	const main = useRef<HTMLElement>(null);
+	const input = useRef<HTMLInputElement>(null);
+	const [statuses, setStatuses] = useState<Record<string, SectionStatus>>({});
+	const [legacyCount, setLegacyCount] = useState(0);
+	const report = useCallback(
+		(id: string, status?: SectionStatus) =>
+			setStatuses((old) => {
+				const next = { ...old };
+				if (status) next[id] = status;
+				else delete next[id];
+				return next;
+			}),
+		[],
+	);
+	const navigate = useCallback((raw: string, row = "") => {
+		if (resolveDestination(raw).group.id === "learning")
+			setVisitedLearning(true);
+		setLocation({ raw, row });
+		setQuery("");
+		setPhoneList(false);
+	}, []);
+	const count = Object.values(statuses).reduce(
+		(n, s) => n + (s.count ?? 0),
+		legacyCount,
+	);
+	function finish() {
+		onClose();
+		if (tour.current) onTour?.();
+	}
+	function close() {
+		if (count || legacyDrafts(main.current).length) setConfirm(true);
+		else finish();
+	}
+	useLayoutEffect(() => {
+		const node = dialog.current!;
+		const previous = document.activeElement as HTMLElement | null;
+		const overflow = document.body.style.overflow;
+		node.showModal();
 		document.body.style.overflow = "hidden";
 		return () => {
-			document.removeEventListener("keydown", handleEscape);
-			document.body.style.overflow = "";
+			node.close();
+			document.body.style.overflow = overflow;
+			requestAnimationFrame(() => {
+				if (document.querySelector("dialog:modal")) return;
+				const launcher =
+					previous?.isConnected &&
+					previous !== document.body &&
+					previous.getClientRects().length
+						? previous
+						: document.querySelector<HTMLElement>('[aria-label="More menu"]');
+				launcher?.focus({ preventScroll: true });
+			});
 		};
-	}, [open, onClose]);
-
-	const handleBackdropClick = useCallback((e: React.MouseEvent) => {
-		if (e.target === dialogRef.current) onClose();
-	}, [onClose]);
-
-	const focusMobileTab = useCallback((idx: number) => {
-		requestAnimationFrame(() => mobileTabRefs.current[idx]?.focus());
 	}, []);
-
-	const selectTab = useCallback((idx: number) => {
-		startTabTransition(() => setActiveTab(idx));
-	}, []);
-
-	const moveMobileTab = useCallback((idx: number) => {
-		if (tabs.length === 0) return;
-		const next = (idx + tabs.length) % tabs.length;
-		selectTab(next);
-		focusMobileTab(next);
-	}, [focusMobileTab, selectTab, tabs.length]);
-
-	if (!open) return null;
-
-	const iconForTab = (id: string) => {
-		if (id === "start") return <Rocket size={15} />;
-		if (id === "models") return <Cpu size={15} />;
-		if (id === "learning") return <Brain size={15} />;
-		if (id === "app") return <Settings2 size={15} />;
-		if (id === "diagnostics") return <Bug size={15} />;
-		return <BookOpen size={15} />;
+	useEffect(() => {
+		const node = main.current;
+		if (!node || !visitedLearning) return;
+		const sync = () =>
+			setLegacyCount(legacyDrafts(node).reduce((n, d) => n + d.count, 0));
+		sync();
+		const observer = new MutationObserver(sync);
+		observer.observe(node, {
+			subtree: true,
+			childList: true,
+			characterData: true,
+			attributes: true,
+			attributeFilter: ["disabled"],
+		});
+		return () => observer.disconnect();
+	}, [visitedLearning]);
+	useEffect(() => {
+		function route(e: Event) {
+			const detail = (e as CustomEvent).detail;
+			// ModelRolesPanel's legacy Voice settings link requests the Learning tab.
+			navigate(
+				detail === "learning" &&
+					(document.activeElement?.textContent?.trim() === "Voice settings" ||
+						(group.id === "models" &&
+							document.activeElement?.closest("#settings-section-model-roles")))
+					? "voice"
+					: eventDestination(detail),
+			);
+		}
+		window.addEventListener("keating:settings-tab", route);
+		return () => window.removeEventListener("keating:settings-tab", route);
+	}, [navigate, group.id]);
+	useEffect(() => {
+		function replay() {
+			tour.current = true;
+			close();
+		}
+		window.addEventListener("keating:settings-tour", replay);
+		return () => window.removeEventListener("keating:settings-tour", replay);
+	});
+	useLayoutEffect(() => {
+		if (phoneList && window.matchMedia("(max-width: 700px)").matches) {
+			dialog.current?.querySelector<HTMLElement>(".st-group")?.focus();
+			return;
+		}
+		const heading = main.current?.querySelector<HTMLElement>("#st-heading");
+		const target =
+			document.getElementById(location.row) ||
+			document.getElementById(anchor ?? "") ||
+			document.getElementById(section.anchor ?? "");
+		if (target && main.current?.contains(target)) {
+			const focus = location.row
+				? target
+				: target.matches("h2,h3,h4")
+					? target
+					: (target.querySelector<HTMLElement>("h2,h3,h4") ?? target);
+			focus.tabIndex = -1;
+			focus.focus({ preventScroll: true });
+			const container = main.current;
+			container.scrollTo({
+				top:
+					container.scrollTop +
+					target.getBoundingClientRect().top -
+					container.getBoundingClientRect().top -
+					8,
+				behavior: motionAllowed() ? "smooth" : "instant",
+			});
+		} else {
+			main.current?.scrollTo(0, 0);
+			heading?.focus({ preventScroll: true });
+		}
+	}, [location, phoneList, anchor, section]);
+	const results = query.trim() ? searchSettings(query) : [];
+	function selectResult(i: number) {
+		const e = results[i];
+		if (e) navigate(e.section, e.id === "st-heading" ? "" : e.id);
+	}
+	const searchProps = { query, index, results, selectResult };
+	const Pane = section.component,
+		Aside = section.aside,
+		Supplement = section.supplement;
+	const custom = tabs?.find((t) => t.id === location.raw);
+	const statusFor = (id: string) => {
+		const entries = groups
+			.find((g) => g.id === id)!
+			.sections.map((s) => statuses[s.id])
+			.filter(Boolean);
+		const n = entries.reduce(
+			(total, s) => total + (s.count ?? 0),
+			id === "learning" ? legacyCount : 0,
+		);
+		return n ? n + " unsaved" : entries.find((s) => s.text)?.text;
 	};
-
 	return (
-		<div
-			ref={dialogRef}
-			className={overlayClass}
-			onClick={handleBackdropClick}
-		>
-			<div
+		<SettingsStatusContext.Provider value={report}>
+			<dialog
+				className="st-dialog"
+				ref={dialog}
 				role="dialog"
 				aria-modal="true"
-				className={panelClass}
-				onClick={(e) => e.stopPropagation()}
+				aria-labelledby="st-title"
+				onCancel={(e) => {
+					// A picker or confirmation opened inside Settings handles its own Escape.
+					if (e.target !== e.currentTarget) return;
+					e.preventDefault();
+					close();
+				}}
+				onClick={(e) => {
+					if (e.target === dialog.current) {
+						const r = dialog.current.getBoundingClientRect();
+						if (
+							e.clientX < r.left ||
+							e.clientX > r.right ||
+							e.clientY < r.top ||
+							e.clientY > r.bottom
+						)
+							close();
+					}
+				}}
+				onKeyDown={(e) => {
+					if (
+						e.target instanceof HTMLElement &&
+						e.target.closest("dialog") !== dialog.current
+					)
+						return;
+					if (
+						e.key === "/" &&
+						!(e.target as HTMLElement).closest(
+							"input,textarea,[contenteditable=true]",
+						)
+					) {
+						e.preventDefault();
+						input.current?.focus();
+					}
+					if (e.key === "Tab") {
+						const nodes = Array.from(
+							dialog.current!.querySelectorAll<HTMLElement>(
+								'button:not([disabled]),a[href],input:not([disabled]),select,textarea,[tabindex="0"]',
+							),
+						).filter(
+							(n) =>
+								n.tabIndex >= 0 &&
+								n.getClientRects().length &&
+								n.closest("dialog") === dialog.current,
+						);
+						if (e.shiftKey && e.target === nodes[0]) {
+							e.preventDefault();
+							nodes.at(-1)?.focus();
+						} else if (!e.shiftKey && e.target === nodes.at(-1)) {
+							e.preventDefault();
+							nodes[0]?.focus();
+						}
+					}
+				}}
 			>
-				{/* Sidebar */}
-				<aside className={sidebarClass}>
-					<div className={sidebarHeaderClass}>
-						<span className={sidebarTitleClass}>Settings</span>
-					</div>
-					<div className={sidebarListClass}>
-						{tabs.map((tab, i) => (
-							<Fragment key={tab.id}>
-								{tab.group && tab.group !== tabs[i - 1]?.group && (
-									<div className={sidebarGroupClass}>{tab.group}</div>
-								)}
+				{groups.flatMap((g) =>
+					g.sections.map((s) =>
+						s.useStatus ? (
+							<RegistryStatus key={s.id} id={s.id} useStatus={s.useStatus} />
+						) : null,
+					),
+				)}
+				<header className="st-top">
+					<h2 id="st-title">Settings</h2>
+					<SettingsSearchField
+						{...searchProps}
+						ref={input}
+						setQuery={setQuery}
+						setIndex={setIndex}
+					/>
+					<a
+						className="st-docs"
+						href={DOCUMENTATION_URL + group.docsPath}
+						target="_blank"
+						rel="noreferrer"
+					>
+						<KeatingGlyph name="book" /> Documentation
+					</a>
+					<IconButton label="Close settings" glyph="x" onClick={close} />
+				</header>
+				<div className="st-body" data-list={phoneList} hidden={!!query.trim()}>
+					<nav className="st-outline" aria-label="Settings outline">
+						{groups.map((g) => (
+							<Fragment key={g.id}>
 								<button
-									onClick={() => selectTab(i)}
-									aria-current={i === activeTab ? "page" : undefined}
-									className={cx(sidebarTabBaseClass, i === activeTab ? sidebarTabActiveClass : sidebarTabIdleClass)}
+									className="st-group"
+									data-group={g.id}
+									aria-expanded={g === group}
+									onClick={() => navigate(g.id)}
 								>
-									{iconForTab(tab.id)}
-									<span>{tab.label}</span>
+									<KeatingGlyph name={g.glyph} />
+									<span>
+										{g.title}
+										<small className="st-summary">
+											{statusFor(g.id) ?? g.currentSummary()}
+										</small>
+									</span>
+									<small className="st-badge">{statusFor(g.id)}</small>
 								</button>
+								{g === group &&
+									g.sections
+										.filter((s) => !s.available || s.available())
+										.map((s) => (
+											<button
+												key={s.id}
+												className="st-sub"
+												aria-current={s === section ? "page" : undefined}
+												onClick={() => navigate(s.id)}
+											>
+												{s.title}
+											</button>
+										))}
 							</Fragment>
 						))}
-					</div>
-					<div className={sidebarFooterClass}>
-						<a href={DOCUMENTATION_URL} target="_blank" rel="noreferrer" className={docsLinkClass}>
-							<BookOpen size={14} />
-							Documentation
-							<ExternalLink size={12} />
-						</a>
-					</div>
-				</aside>
-
-				{/* Content */}
-				<div className={contentColumnClass}>
-					<div className={headerClass}>
-						<div
-							className={mobileTablistClass}
-							role="tablist"
-							aria-label="Settings tab"
-						>
-							{tabs.map((tab, i) => (
-								<button
-									key={tab.id}
-									ref={(node) => {
-										mobileTabRefs.current[i] = node;
-									}}
-									type="button"
-									role="tab"
-									aria-selected={i === activeTab}
-									aria-controls="settings-tabpanel"
-									aria-label={tab.label}
-									title={tab.label}
-									tabIndex={i === activeTab ? 0 : -1}
-									onClick={() => selectTab(i)}
-									onKeyDown={(event) => {
-										if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-											event.preventDefault();
-											moveMobileTab(i + 1);
-										} else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-											event.preventDefault();
-											moveMobileTab(i - 1);
-										} else if (event.key === "Home") {
-											event.preventDefault();
-											selectTab(0);
-											focusMobileTab(0);
-										} else if (event.key === "End") {
-											event.preventDefault();
-											const last = tabs.length - 1;
-											selectTab(last);
-											focusMobileTab(last);
-										}
-									}}
-									className={cx(mobileTabBaseClass, i === activeTab ? mobileTabActiveClass : mobileTabIdleClass)}
+					</nav>
+					<div className="st-page">
+						<div className="st-mobilebar">
+							<Button onClick={() => setPhoneList(true)}>All settings</Button>
+							<label>
+								{group.title}
+								<select
+									aria-label="Section"
+									value={section.id}
+									onChange={(e) => navigate(e.target.value)}
 								>
-									{iconForTab(tab.id)}
-									<span className={mobileTabLabelClass}>{tab.label}</span>
-								</button>
-							))}
+									{group.sections
+										.filter((s) => !s.available || s.available())
+										.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.title}
+											</option>
+										))}
+								</select>
+							</label>
 						</div>
-						<div className={titleBlockClass}>
-							<span className={desktopTitleClass} style={{ display: "block" }}>{tabs[activeTab]?.label}</span>
-							{tabs[activeTab]?.description && (
-								<span className={titleDescriptionClass}>
-									{tabs[activeTab]?.description}
-									{tabs[activeTab]?.docsPath && (
-										<>
-											{" "}
-											<a href={`${DOCUMENTATION_URL}${tabs[activeTab]?.docsPath}`} target="_blank" rel="noreferrer" className={css({ textDecoration: "underline" })}>
-												Learn more
-											</a>
-										</>
-									)}
-								</span>
+						<div className="st-columns">
+							<main ref={main} className="st-main" data-section={section.id}>
+								<h3 id="st-heading" tabIndex={-1}>
+									{section.title}
+								</h3>
+								{Supplement && <Supplement />}
+								{visitedLearning && (
+									<div hidden={Pane !== LearningTab || !!custom}>
+										<LearningTab />
+									</div>
+								)}
+								{custom ? (
+									custom.component
+								) : Pane !== LearningTab ? (
+									<Pane />
+								) : null}
+							</main>
+							{Aside && (
+								<aside className="st-aside">
+									<Aside />
+								</aside>
 							)}
 						</div>
-						<button
-							onClick={onClose}
-							className={closeButtonClass}
-							aria-label="Close"
-						>
-							<X size={16} />
-						</button>
-					</div>
-					<div
-						id="settings-tabpanel"
-						role="tabpanel"
-						aria-busy={isTabPending}
-						aria-label={tabs[activeTab]?.label ?? "Settings"}
-						className={tabpanelClass}
-						style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}
-					>
-						{tabs[activeTab]?.component}
 					</div>
 				</div>
-			</div>
-		</div>
+				<SettingsSearchResults {...searchProps} />
+				<ConfirmDialog
+					open={confirm}
+					title="Unsaved changes"
+					description="Discarding loses the changes you made to these settings."
+					cancelLabel="Keep editing"
+					onCancel={() => {
+						setConfirm(false);
+						tour.current = false;
+					}}
+					confirmLabel="Discard"
+					onConfirm={finish}
+				>
+					<Button
+						onClick={() => {
+							legacyDrafts(main.current).forEach((d) => d.save());
+							Object.values(statuses).forEach((s) => {
+								if (s.count) s.save?.();
+							});
+							finish();
+						}}
+					>
+						Save
+					</Button>
+				</ConfirmDialog>
+			</dialog>
+		</SettingsStatusContext.Provider>
 	);
 }

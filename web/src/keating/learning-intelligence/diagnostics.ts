@@ -9,7 +9,7 @@ export interface LearningDiagnosticForecast {
 export interface LearningDiagnosticInput {
   kind: "extraction" | "forecast" | "memory";
   status: "completed" | "unavailable" | "failed" | "abstained";
-  sessionId: string; model?: string; elapsedMs?: number; reasons: readonly string[];
+  sessionId: string; messageId?: string; model?: string; elapsedMs?: number; reasons: readonly string[];
   evidence?: readonly LearningEvidenceAnchor[]; forecast?: readonly LearningDiagnosticForecast[];
 }
 export interface LearningDiagnostic extends LearningDiagnosticInput { id: string; createdAt: number }
@@ -48,6 +48,7 @@ export function recordLearningDiagnostic(input: LearningDiagnosticInput): void {
   publish([...events, {
     id: `learning-${++sequence}`, createdAt: Date.now(), kind: input.kind, status: input.status,
     sessionId: identifier(input.sessionId), ...(input.model ? { model: safe(input.model) } : {}),
+    ...(input.messageId && identifier(input.messageId) === input.messageId ? { messageId: input.messageId } : {}),
     ...(Number.isFinite(input.elapsedMs) ? { elapsedMs: Math.max(0, input.elapsedMs!) } : {}),
     reasons: input.reasons.slice(0, 12).map(reason => safe(reason, 240)),
     ...(forecast ? { forecast } : {}),

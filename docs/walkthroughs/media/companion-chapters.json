@@ -1,0 +1,68 @@
+{
+  "title": "Keating the companion",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T17:02:46.044Z",
+  "duration": 33.7189998626709,
+  "bytes": 1415137,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "drop",
+      "title": "Drop Keating onto a reply",
+      "start": 0.004999876022338867,
+      "explanation": "Drop Keating onto a passage.",
+      "alt": "Drop Keating onto a reply",
+      "still": "drop"
+    },
+    {
+      "id": "quote",
+      "title": "Add the quote",
+      "start": 7.240000009536743,
+      "explanation": "Choose a suggestion to quote the passage.",
+      "alt": "Add the quote",
+      "still": "quote"
+    },
+    {
+      "id": "throw",
+      "title": "Release Keating in the margin",
+      "start": 11.035000085830688,
+      "explanation": "Try a quick release in the margin.",
+      "alt": "Release Keating in the margin",
+      "still": "throw"
+    },
+    {
+      "id": "settings",
+      "title": "Find companion settings",
+      "start": 15.333999872207642,
+      "explanation": "Find Keating’s companion setting.",
+      "alt": "Find companion settings",
+      "still": "settings"
+    },
+    {
+      "id": "calm",
+      "title": "Choose Calm",
+      "start": 20.753000020980835,
+      "explanation": "Calm keeps Keating in place.",
+      "alt": "Choose Calm",
+      "still": "calm"
+    },
+    {
+      "id": "off",
+      "title": "Choose Off",
+      "start": 26.203999996185303,
+      "explanation": "Choose Off to turn the companion off.",
+      "alt": "Choose Off",
+      "still": "off"
+    }
+  ]
+}

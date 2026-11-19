@@ -1,0 +1,85 @@
+{
+  "title": "Sessions and materials",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T17:08:21.378Z",
+  "viewerNote": "The sessions, plans and deck contain sample data stored in this browser.",
+  "duration": 37.42900013923645,
+  "bytes": 754106,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "library",
+      "title": "Open Sessions",
+      "start": 0.002000093460083008,
+      "explanation": "Open your session library.",
+      "alt": "Open Sessions",
+      "still": "library"
+    },
+    {
+      "id": "search",
+      "title": "Find a session",
+      "start": 3.5450000762939453,
+      "explanation": "Search your sessions for recursion.",
+      "alt": "Find a session",
+      "still": "search"
+    },
+    {
+      "id": "subject",
+      "title": "Filter by subject",
+      "start": 7.461000204086304,
+      "explanation": "Narrow the library by subject.",
+      "alt": "Filter by subject",
+      "still": "subject"
+    },
+    {
+      "id": "pin",
+      "title": "Pin the lesson",
+      "start": 11.027000188827515,
+      "explanation": "Pin a session you expect to revisit.",
+      "alt": "Pin the lesson",
+      "still": "pin"
+    },
+    {
+      "id": "fork",
+      "title": "Fork a reply",
+      "start": 15.398000001907349,
+      "explanation": "Fork a turn and keep the original conversation.",
+      "alt": "Fork a reply",
+      "still": "fork"
+    },
+    {
+      "id": "materials",
+      "title": "Open session materials",
+      "start": 20.813000202178955,
+      "explanation": "Find the materials made in this session.",
+      "alt": "Open session materials",
+      "still": "materials"
+    },
+    {
+      "id": "flashcards",
+      "title": "Open the deck",
+      "start": 25.29700016975403,
+      "explanation": "Open your flashcards from the workspace.",
+      "alt": "Open the deck",
+      "still": "flashcards"
+    },
+    {
+      "id": "share",
+      "title": "Read the sharing sheet",
+      "start": 30.558000087738037,
+      "explanation": "Read the sharing disclosure before sharing.",
+      "alt": "Read the sharing sheet",
+      "still": "share"
+    }
+  ]
+}

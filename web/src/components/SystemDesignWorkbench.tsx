@@ -1,3 +1,5 @@
+import { EmptyState, Loading } from "../design-system/kit";
+import "./specialist-lessons.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DIAGRAM_LIMITS, addDiagramComponent, connectDiagramComponents, copyDiagramGraph, diagramDraftKey, disconnectDiagramConnection,
@@ -157,7 +159,7 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
     }
   };
 
-  return <section className="system-design-workbench" aria-label={node.title} data-task={node.id}>
+  return <section className="specialist-frame system-design-workbench" aria-label={node.title} data-task={node.id}>
     <header className="sd-brief">
       <div className="sd-heading"><span className="sd-kicker">Diagram</span>{node.estimatedMinutes ? <span className="sd-muted">~{node.estimatedMinutes} min</span> : null}</div>
       <h3>{node.title}</h3>
@@ -165,7 +167,7 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
     </header>
 
     <div className="sd-diagram" aria-label="Your diagram">
-      {mermaid ? <MermaidRenderer content={mermaid} htmlLabels={false} decodeEntityLabels /> : <p className="sd-empty">Add a component to begin your diagram.</p>}
+      {mermaid ? <MermaidRenderer content={mermaid} htmlLabels={false} decodeEntityLabels /> : <EmptyState heading="Add a component to begin your diagram." />}
     </div>
 
     <fieldset disabled={!editable} className="sd-editor">
@@ -207,9 +209,9 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
     <label className="sd-explanation">Explain your diagram<textarea disabled={!editable} maxLength={MAX_EXPLANATION} rows={5} value={explanation} placeholder="Explain what the components and connections mean, and any assumptions or decisions behind them." onChange={event => { setExplanation(event.currentTarget.value); setPending(undefined); setDeliveryError(""); setSaveStatus(""); }} /></label>
     <div className="sd-footer">
       {received || recorded ? <p role="status">Submission recorded for review.</p> : <>
-        <button type="button" className="sd-submit" disabled={!editable || !validGraph || !graph.components.length || !explanation.trim()} onClick={submit}>{deliveryError ? "Retry submission" : "Submit diagram"}</button>
+        <button type="button" className="sd-submit k-lift" disabled={!editable || !validGraph || !graph.components.length || !explanation.trim()} onClick={submit}>{deliveryError ? "Retry submission" : "Submit diagram"}</button>
         <button type="button" disabled={!editable || !validGraph} onClick={() => void saveDraft()}>Save draft</button>
-        <p className="sd-muted">{!restored ? "Restoring local draft…" : !validGraph ? "Name every component before saving or submitting." : !graph.components.length || !explanation.trim() ? "Add a component and an explanation to submit." : saveStatus}</p>
+        {!restored ? <Loading size="inline" label="Restoring local draft…" /> : <p className="sd-muted">{!validGraph ? "Name every component before saving or submitting." : !graph.components.length || !explanation.trim() ? "Add a component and an explanation to submit." : saveStatus}</p>}
       </>}
     </div>
     {storageError ? <p role="alert" className="sd-error">{storageError}</p> : null}

@@ -1,3 +1,5 @@
+import { Button, ConfirmDialog, Loading } from "../design-system/kit";
+import { Meter } from "../design-system/charts";
 import { useEffect, useState } from "react";
 import { css } from "../../styled-system/css";
 import { getBrowserModel, localModel } from "../stores/local-model";
@@ -30,34 +32,6 @@ const inlineButtonStyle = css({
 	cursor: "pointer",
 	whiteSpace: "nowrap",
 	_hover: { color: "var(--foreground)", borderColor: "var(--muted-foreground)" },
-});
-
-const trackStyle = css({
-	position: "relative",
-	height: "0.375rem",
-	width: "100%",
-	overflow: "hidden",
-	borderRadius: "9999px",
-	background: "color-mix(in srgb, var(--muted-foreground) 22%, transparent)",
-});
-
-const fillStyle = css({
-	height: "100%",
-	borderRadius: "9999px",
-	background: "var(--primary)",
-	transition: "width 220ms ease-out",
-	_motionReduce: { transition: "none" },
-});
-
-const sweepStyle = css({
-	position: "absolute",
-	inset: 0,
-	width: "35%",
-	borderRadius: "9999px",
-	background: "var(--primary)",
-	opacity: 0.75,
-	animation: "model-download-sweep 1.4s ease-in-out infinite",
-	_motionReduce: { animation: "none", width: "100%", opacity: 0.35 },
 });
 
 const headlineStyle = css({
@@ -122,23 +96,8 @@ export function ModelDownloadBar({
 					)}
 				</span>
 			</div>
-			<div
-				className={trackStyle}
-				role="progressbar"
-				aria-label={describePhase(progress, modelName)}
-				aria-valuemin={0}
-				aria-valuemax={100}
-				// Omitted while indeterminate so assistive tech announces "busy"
-				// rather than a percentage we cannot honestly report.
-				aria-valuenow={determinate ? Math.floor(percent) : undefined}
-				aria-valuetext={determinate ? `${Math.floor(percent)}%, ${detail}` : undefined}
-			>
-				{determinate ? (
-					<div className={fillStyle} style={{ width: `${percent}%` }} />
-				) : (
-					<div className={sweepStyle} />
-				)}
-			</div>
+			<Meter progress max={100} value={Math.floor(percent)} indeterminate={!determinate} label={describePhase(progress, modelName)}
+				aria-valuetext={determinate ? `${Math.floor(percent)}%, ${detail}` : undefined}/>
 			{detail && <div className={detailStyle}>{detail}</div>}
 		</div>
 	);
@@ -199,7 +158,7 @@ interface ModelCacheControlsProps {
 
 /**
  * Shows what a cached browser model costs on disk and offers to delete it.
- * Deleting is confirmed inline: these downloads take a long time to replace.
+ * Deletion requires confirmation: these downloads take a long time to replace.
  */
 export function ModelCacheControls({ cachedBytes, loaded, onRemove }: ModelCacheControlsProps) {
 	const [confirming, setConfirming] = useState(false);
@@ -227,62 +186,12 @@ export function ModelCacheControls({ cachedBytes, loaded, onRemove }: ModelCache
 			<span className={css({ fontVariantNumeric: "tabular-nums" })}>
 				{formatBytes(cachedBytes)} stored in this browser
 			</span>
-			{confirming ? (
-				<>
-					<span className={css({ color: "var(--destructive)" })}>
-						{loaded ? "Unload and delete?" : "Delete these files?"}
-					</span>
-					<button
-						type="button"
-						disabled={removing}
-						className={css({
-							borderRadius: "0.375rem",
-							border: "1px solid var(--destructive)",
-							background: "transparent",
-							paddingInline: "0.5rem",
-							paddingBlock: "0.125rem",
-							fontSize: "0.6875rem",
-							fontWeight: 600,
-							color: "var(--destructive)",
-							cursor: "pointer",
-							_disabled: { opacity: 0.6, cursor: "progress" },
-						})}
-						onClick={async (event) => {
-							stop(event);
-							setRemoving(true);
-							try {
-								await onRemove();
-							} finally {
-								setRemoving(false);
-								setConfirming(false);
-							}
-						}}
-					>
-						{removing ? "Deleting…" : "Delete"}
-					</button>
-					<button
-						type="button"
-						className={inlineButtonStyle}
-						onClick={(event) => {
-							stop(event);
-							setConfirming(false);
-						}}
-					>
-						Keep
-					</button>
-				</>
-			) : (
-				<button
-					type="button"
-					className={inlineButtonStyle}
-					onClick={(event) => {
-						stop(event);
-						setConfirming(true);
-					}}
-				>
-					Delete download
-				</button>
-			)}
+			<Button variant="ghost" disabled={removing} onClick={event => {stop(event);setConfirming(true);}}>Delete download</Button>
+			{removing && <Loading size="inline" label="Deleting…"/>}
+			{confirming && <ConfirmDialog open title={loaded ? "Unload and delete?" : "Delete these files?"} description="Removes this model’s downloaded files from this browser. Using it again requires another download." cancelLabel="Keep" confirmLabel="Delete" onCancel={()=>setConfirming(false)} onConfirm={async ()=>{
+				setConfirming(false);setRemoving(true);
+				try {await onRemove();} finally {setRemoving(false);}
+			}}/>}
 		</div>
 	);
 }

@@ -1,0 +1,33 @@
+.keating-fx-surface, .keating-fx-overlay, .keating-fx-canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.keating-fx-surface { z-index: 0; overflow: hidden; }
+.keating-fx-overlay { display: contents; }
+.keating-fx-overlay > canvas { position: fixed; z-index: 9; }
+html:not(.dark) .keating-fx-overlay:not([data-power]) > canvas { mix-blend-mode: multiply; }
+/* The lamp blends with the page independently of the paper grain. */
+.keating-fx-overlay .keating-fx-lamp {
+  position: fixed;
+  z-index: 8;
+  top: -190px;
+  left: -190px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255,251,238,.62), transparent);
+  mix-blend-mode: soft-light;
+  transition: opacity .5s ease, transform .18s ease-out;
+}
+.keating-fx-lamp.warm { background: radial-gradient(closest-side, rgba(255,206,138,.6), transparent); }
+html.dark .keating-fx-lamp, [data-power] .keating-fx-lamp, :not([data-fx-ready]) > .keating-fx-lamp,
+html[data-reduce-motion="true"] .keating-fx-lamp,
+html[data-fx="off"] :is(.keating-fx-surface, .keating-fx-overlay) { display: none; }
+@media (prefers-reduced-motion: reduce) { .keating-fx-lamp { display: none; } }

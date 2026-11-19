@@ -1,17 +1,8 @@
+import { ChatStorageLine } from "../components/chat/storage-line";
 import { APP_ORIGIN } from "../lib/hosted-navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  LibraryBig,
-  Map as MapIcon,
-  Play,
-  Sparkles,
-  Wrench,
-  X,
-} from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
@@ -23,7 +14,6 @@ import {
   PersistentStorageBanner,
   ShareStatusBanner,
 } from "./chat/ChatBanners";
-import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
 import { TourSpotlight } from "../components/tour/TourSpotlight";
@@ -37,6 +27,8 @@ import { isCanvasFeatureEnabled } from "../lib/feature-flags";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
 import type { ArtifactSurfaceView } from "../components/artifact-browser-shared";
+import { MATERIALS_LIST_KEY } from "../components/workspace/SessionMaterialsPanel";
+import { useSessionMaterials } from "../components/workspace/useSessionMaterials";
 import {
   loadSessionWorkspacePrefs,
   onRevealQuoteSource,
@@ -123,15 +115,15 @@ const ARTIFACT_TYPE_META: Record<
   InlineArtifact["type"],
   { label: string; icon: React.ReactNode }
 > = {
-  plan: { label: "Lesson Plan", icon: <BookOpen size={14} /> },
-  map: { label: "Concept Map", icon: <MapIcon size={14} /> },
-  animation: { label: "Animation", icon: <Play size={14} /> },
-  deck: { label: "Flashcards", icon: <LibraryBig size={14} /> },
-  verification: { label: "Verification", icon: <ChevronRight size={14} /> },
-  benchmark: { label: "Benchmark", icon: <Sparkles size={14} /> },
-  evolution: { label: "Evolution", icon: <Sparkles size={14} /> },
-  "prompt-evolution": { label: "Prompt Evo", icon: <Sparkles size={14} /> },
-  improvement: { label: "Improvement", icon: <Wrench size={14} /> },
+  plan: { label: "Lesson Plan", icon: <KeatingGlyph name="book" size={14} /> },
+  map: { label: "Concept Map", icon: <KeatingGlyph name="route" size={14} /> },
+  animation: { label: "Animation", icon: <KeatingGlyph name="play" size={14} /> },
+  deck: { label: "Flashcards", icon: <KeatingGlyph name="book" size={14} /> },
+  verification: { label: "Verification", icon: <KeatingGlyph name="checklist" size={14} /> },
+  benchmark: { label: "Benchmark", icon: <KeatingGlyph name="spark" size={14} /> },
+  evolution: { label: "Evolution", icon: <KeatingGlyph name="spark" size={14} /> },
+  "prompt-evolution": { label: "Prompt Evo", icon: <KeatingGlyph name="spark" size={14} /> },
+  improvement: { label: "Improvement", icon: <KeatingGlyph name="tool" size={14} /> },
 };
 
 // The mermaid fence may carry extra metadata after the opening backticks
@@ -288,7 +280,7 @@ function InlineArtifactCard({
           aria-label={expanded ? "Collapse artifact" : "Expand artifact"}
           aria-expanded={expanded}
         >
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {expanded ? <KeatingGlyph name="chev" size={14} /> : <KeatingGlyph name="chevr" size={14} />}
         </button>
         <div className={css({ minWidth: 0, flex: 1 })}>
           <div
@@ -370,7 +362,7 @@ function InlineArtifactCard({
             aria-label="Dismiss artifact"
             title="Dismiss"
           >
-            <X size={14} />
+            <KeatingGlyph name="x" size={14} />
           </button>
         </div>
       </header>
@@ -758,10 +750,13 @@ function useChatArtifacts({
   canvasEnabled,
   activeSessionId,
   uiSettings,
+  isWideViewport,
 }: {
   canvasEnabled: boolean;
   activeSessionId: string;
   uiSettings: Pick<KeatingUiSettings, "autoOpenArtifacts" | "limitInlineArtifactPreviews">;
+  /** Auto-open only beside the chat; on narrow screens the panel is a modal overlay and would cover the reply. */
+  isWideViewport: boolean;
 }) {
   const posthog = usePostHog();
   const [workspace, setWorkspace] = useState(() => restoreChatWorkspace(activeSessionId));
@@ -779,6 +774,32 @@ function useChatArtifacts({
   }, [activeSessionId]);
   const setArtifactBrowserOpen = useCallback((open: boolean) => update({ open }), [update]);
   const setArtifactTarget = useCallback((artifactTarget: string | undefined) => update({ artifactTarget, ...(artifactTarget ? { view: "library" as const } : {}) }), [update]);
+  // One load of this session's materials serves the header badge, auto-open and the panel.
+  const materials = useSessionMaterials(canvasEnabled ? activeSessionId : "");
+  const materialCount = materials.load.status === "ready" ? materials.load.materials.length : 0;
+  /**
+   * Open on a new material without moving focus (the panel counts as restored).
+   * Already open: switch to it only from the list, never away from something
+   * the learner is reading.
+   */
+  const autoOpen = useCallback((selectedMaterial?: string) => {
+    if (!canvasEnabled || !uiSettings.autoOpenArtifacts || !isWideViewport) return;
+    setWorkspace((prev) => {
+      const base = prev.sessionId === activeSessionId ? prev : restoreChatWorkspace(activeSessionId);
+      if (base.open) {
+        const onList = base.view === "workspace" && (base.selectedMaterial === null || base.selectedMaterial === MATERIALS_LIST_KEY);
+        return selectedMaterial && onList ? { ...base, selectedMaterial } : base;
+      }
+      return { ...base, open: true, restored: true, view: "workspace", artifactTarget: undefined, ...(selectedMaterial ? { selectedMaterial } : {}) };
+    });
+  }, [activeSessionId, canvasEnabled, isWideViewport, uiSettings.autoOpenArtifacts]);
+  const handledArrival = useRef(0);
+  useEffect(() => {
+    const arrival = materials.arrival;
+    if (!arrival || arrival.seq === handledArrival.current) return;
+    handledArrival.current = arrival.seq;
+    autoOpen(arrival.key);
+  }, [autoOpen, materials.arrival]);
 
   useEffect(() => {
     if (!current.sessionId) return;
@@ -806,9 +827,7 @@ function useChatArtifacts({
       setInlineArtifacts([]);
       return;
     }
-    const openArtifacts = () => {
-      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
-    };
+    const openArtifacts = () => autoOpen();
     const openArtifactTarget = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.id) update({ open: true, view: "library", artifactTarget: detail.id });
@@ -827,7 +846,7 @@ function useChatArtifacts({
         if (uiSettings.limitInlineArtifactPreviews) return [next];
         return [...prev, next];
       });
-      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
+      autoOpen();
     };
     window.addEventListener("keating:artifact-created", openArtifacts);
     window.addEventListener("keating:artifact-created", captureInlineArtifact);
@@ -841,7 +860,7 @@ function useChatArtifacts({
       );
       window.removeEventListener("keating:open-artifact", openArtifactTarget);
     };
-  }, [canvasEnabled, setArtifactBrowserOpen, update, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
+  }, [autoOpen, canvasEnabled, update, uiSettings.limitInlineArtifactPreviews]);
 
   const closeWorkspace = useCallback(() => update({ open: false, artifactTarget: undefined }), [update]);
   const surfaceProps = {
@@ -855,6 +874,7 @@ function useChatArtifacts({
     reveal,
     onRevealHandled: () => setReveal(null),
     focusOnOpen: !current.restored,
+    materials,
   };
 
   return {
@@ -866,6 +886,7 @@ function useChatArtifacts({
     inlineArtifacts,
     setInlineArtifacts,
     toggleArtifactBrowser,
+    materialCount,
   };
 }
 
@@ -925,6 +946,7 @@ function ChatContent() {
     modelLabel,
     openModelSelector,
     chooseKeatingModel,
+    openSession,
     newSession,
     shareSession,
     chatPanelRef,
@@ -940,6 +962,7 @@ function ChatContent() {
     forkInfo,
     openOriginalSession,
     mobileSidebarOpen,
+    sessionSidebarCollapsed, toggleSessionSidebar,
     toggleMobileSidebar,
     activeSessionId,
     teachingAdjustment,
@@ -961,6 +984,7 @@ function ChatContent() {
   useChatActivationTracking(activeSessionId);
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+  useEffect(() => { document.documentElement.dataset.replyTypeface = uiSettings.replyTypeface; }, [uiSettings.replyTypeface]);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -976,11 +1000,34 @@ function ChatContent() {
     inlineArtifacts,
     setInlineArtifacts,
     toggleArtifactBrowser,
-  } = useChatArtifacts({ canvasEnabled, activeSessionId, uiSettings });
+    materialCount,
+  } = useChatArtifacts({ canvasEnabled, activeSessionId, uiSettings, isWideViewport });
 
+  // From the all-conversations view: switch session and land on its materials list, panel still open.
+  const openSessionMaterials = useCallback((sessionId: string) => {
+    saveSessionWorkspacePrefs(sessionId, { open: true, selectedKey: MATERIALS_LIST_KEY });
+    void openSession(sessionId);
+  }, [openSession]);
+
+  const [headerMeta, setHeaderMeta] = useState<Awaited<ReturnType<typeof sessions.getMetadata>>>(null);
+  useEffect(() => {
+    let revision = 0;
+    const refresh = () => {
+      const current = ++revision;
+      if (activeSessionId) void getInitPromise().then(() => sessions.getMetadata(activeSessionId)).then(meta => {
+        if (current === revision) setHeaderMeta(meta);
+      }).catch(() => {});
+    };
+    refresh();
+    window.addEventListener("keating:sessions-changed", refresh);
+    return () => { revision++; window.removeEventListener("keating:sessions-changed", refresh); };
+  }, [activeSessionId]);
+  const meta = headerMeta?.id === activeSessionId ? headerMeta : null;
   const showPersistenceBanner =
     persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
+  const storageLine = showPersistenceBanner ? <PersistentStorageBanner onRetry={retryPersistentStorage} onDismiss={dismissPersistentBanner} /> : null;
+  const panelExpanded = isWideViewport && !sessionSidebarCollapsed;
   return (
     <div
       className={cx(
@@ -997,16 +1044,18 @@ function ChatContent() {
       )}
     >
       {/* Header */}
-      <ChatHeader
+      {!showOnboarding && <ChatHeader
         isPending={isPending}
         modelLabel={modelLabel}
         activeSessionId={activeSessionId}
-        mobileSidebarOpen={mobileSidebarOpen}
+        sessionTitle={meta?.title} messageCount={meta?.messageCount}
+        mobileSidebarOpen={isWideViewport ? !sessionSidebarCollapsed : mobileSidebarOpen}
         speechEnabled={speechEnabled}
         canvasEnabled={canvasEnabled}
         artifactBrowserOpen={artifactBrowserOpen}
+        materialCount={materialCount}
         shareState={shareState}
-        toggleMobileSidebar={toggleMobileSidebar}
+        toggleMobileSidebar={isWideViewport ? toggleSessionSidebar : toggleMobileSidebar}
         openModelSelector={openModelSelector}
         openSettings={openSettings}
         toggleArtifactBrowser={toggleArtifactBrowser}
@@ -1014,28 +1063,15 @@ function ChatContent() {
         handleShare={handleShare}
         confirmShare={confirmShare}
         toggleSpeech={toggleSpeech}
+        onOpenOriginal={courseContext && forkInfo ? openOriginalSession : undefined}
         onOpenNodePod={() => setNodePodOpen(true)}
-      />
+      />}
 
-      {courseContext && (
-        <CourseContextBanner courseContext={courseContext} />
-      )}
+      {(courseContext || forkInfo) && <div className="ch-banner">
+        {courseContext ? <CourseContextBanner courseContext={courseContext} /> :
+          forkInfo && <ForkBanner parentTitle={forkInfo.parentTitle} onOpenOriginal={openOriginalSession} />}
+      </div>}
 
-      {forkInfo && (
-        <ForkBanner
-          parentTitle={forkInfo.parentTitle}
-          onOpenOriginal={openOriginalSession}
-        />
-      )}
-
-      {showPersistenceBanner && (
-        <PersistentStorageBanner
-          onRetry={retryPersistentStorage}
-          onDismiss={dismissPersistentBanner}
-        />
-      )}
-
-      <JudgementDiagnostics sessionId={activeSessionId} teachingAdjustment={teachingAdjustment} />
       {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
         <ChatOnboarding
           onUseKeating={chooseKeatingModel}
@@ -1056,10 +1092,11 @@ function ChatContent() {
         })}
         style={showOnboarding ? { display: "none" } : undefined}
       >
-        {sessionSidebar}
-        <AssistantChatPanel
+        <ChatStorageLine.Provider value={panelExpanded ? storageLine : null}>{sessionSidebar}</ChatStorageLine.Provider>
+        <ChatStorageLine.Provider value={panelExpanded ? null : storageLine}><AssistantChatPanel
           ref={chatPanelRef}
-          className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }))}
+          teachingAdjustment={teachingAdjustment}
+          className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }), canvasEnabled && isWideViewport && artifactBrowserOpen ? css({ minWidth: "22rem" }) : "")}
           speechEnabled={speechEnabled}
           initialPrompts={coursePrompts}
           {...(pendingPrompt ? { pendingPrompt } : {})}
@@ -1084,16 +1121,20 @@ function ChatContent() {
             ) : null
           }
         />
+        </ChatStorageLine.Provider>
         {canvasEnabled && isWideViewport && artifactBrowserOpen && (
           <div
             className={cx("artifact-side-panel", css({
               height: "100%",
-              flexShrink: 0,
+              // Gives way (down to its 288px minimum) before the chat gets too narrow to read.
+              flexShrink: 1,
+              minWidth: "288px",
               borderLeft: "1px solid var(--border)",
             }))}
           >
             <ArtifactSidePanel
               {...surfaceProps}
+              onOpenSession={openSessionMaterials}
               open={artifactBrowserOpen}
             />
           </div>
@@ -1134,6 +1175,7 @@ function ChatContent() {
 
       <ArtifactBrowserOverlay
         {...surfaceProps}
+        onOpenSession={openSessionMaterials}
         open={canvasEnabled && artifactBrowserOpen && !isWideViewport}
       />
       <SandboxView open={nodePodOpen} onClose={() => setNodePodOpen(false)} />

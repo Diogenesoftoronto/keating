@@ -1,25 +1,17 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-	AlertTriangle,
-	ArrowRight,
-	Brain,
-	CheckCircle2,
-	Clock3,
-	Download,
-	GripVertical,
-	Layers3,
-	Play,
-	RefreshCw,
-	Upload,
-} from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 
-import { css, cx } from "../../styled-system/css";
+import { Stat } from "../design-system/charts";
+import { Button, Card, EmptyState, Loading, Segmented } from "../design-system/kit";
+import { ExportSheet } from "../components/export/ExportSheet";
+import { KeatingBot } from "../components/KeatingBot";
+import "./coming-up.css";
+import { cx } from "../../styled-system/css";
 import { FlashcardRenderer } from "../components/FlashcardRenderer";
 import { ComingUpReadiness } from "../components/ComingUpReadiness";
 import { LearningOutlook } from "../components/LearningOutlook";
-import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
-import { Nav } from "../components/Nav";
+import { LearningShell } from "../components/LearningInsightsHeader";
 import { Select } from "../components/Select";
 import { getInitPromise, keatingStorage } from "../hooks/keating-storage";
 import { useSeo } from "../hooks/useSeo";
@@ -47,83 +39,26 @@ const PRIORITIES: Array<{ id: StudyPriority; label: string; note: string }> = [
 	{ id: "low", label: "Low priority", note: "Keep visible, spend less time" },
 ];
 
-const styles = {
-	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
-	main: css({ mx: "auto", maxW: "72rem", px: "1rem", py: "1.5rem" }),
-	metrics: css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
-	reviewStrip: css({
-		mt: "1.25rem", display: "flex", flexDir: "column", gap: "1rem", border: "2px solid var(--ink)",
-		bg: "color-mix(in srgb, var(--accent-dim) 12%, var(--card))", p: "1rem",
-		md: { flexDir: "row", alignItems: "center", justifyContent: "space-between", px: "1.25rem" },
-	}),
-	stripTitle: css({ display: "flex", alignItems: "center", gap: "0.625rem", fontFamily: "var(--mono-display)", fontSize: "1rem", fontWeight: 700 }),
-	stripCopy: css({ mt: "0.25rem", fontSize: "0.75rem", lineHeight: "1.2rem", color: "var(--ink-soft)" }),
-	button: css({
-		display: "inline-flex", minH: "2.75rem", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-		border: "2px solid var(--ink)", borderRadius: "0.25rem", px: "0.875rem", fontFamily: "var(--mono-body)",
-		fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", transition: "transform 120ms, box-shadow 120ms, background-color 120ms",
-		_hover: { transform: "translate(-1px, -1px)", boxShadow: "3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent)" },
-		_active: { transform: "translate(0, 0)", boxShadow: "none" },
-		_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-		_disabled: { cursor: "not-allowed", opacity: 0.5, transform: "none", boxShadow: "none" },
-	}),
-	primaryButton: css({ bg: "var(--ink)", color: "var(--paper)", _hover: { bg: "var(--accent-dim)", color: "white" } }),
-	accentButton: css({ bg: "var(--accent-dim)", color: "white", _hover: { bg: "var(--ink)" } }),
-	quietButton: css({ bg: "var(--card)", color: "var(--ink)" }),
-	workspace: css({ mt: "1.25rem", border: "2px solid var(--ink)", bg: "var(--card)", boxShadow: "4px 4px 0 color-mix(in srgb, var(--ink) 18%, transparent)" }),
-	workspaceHead: css({ display: "flex", flexDir: "column", gap: "1rem", borderBottom: "1px solid var(--ink)", p: "1rem", md: { flexDir: "row", alignItems: "center", justifyContent: "space-between", px: "1.25rem" } }),
-	workspaceTitle: css({ fontFamily: "var(--mono-display)", fontSize: "1.125rem", fontWeight: 700 }),
-	workspaceCopy: css({ mt: "0.25rem", maxW: "66ch", fontSize: "0.75rem", lineHeight: "1.2rem", color: "var(--ink-soft)" }),
-	toolbar: css({
-		display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem",
-		"& > *": { w: "100%" },
-		"& > :first-child": { gridColumn: "1 / -1" },
-		md: { display: "flex", flexWrap: "wrap", "& > *": { w: "auto" }, "& > :first-child": { gridColumn: "auto" } },
-	}),
-	fileInput: css({ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap" }),
-	mobileTabs: css({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderBottom: "1px solid var(--ink)", md: { display: "none" } }),
-	mobileTab: css({
-		minH: "2.75rem", borderRight: "1px solid var(--ink)", bg: "var(--paper)", px: "0.25rem",
-		fontSize: "0.625rem", fontWeight: 700, lineHeight: "1rem", overflowWrap: "anywhere",
-		"&[data-active=true]": { bg: "var(--ink)", color: "var(--paper)" },
-		_last: { borderRight: 0 },
-		_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
-	}),
-	board: css({ display: "grid", gap: 0, md: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
-	lane: css({ minW: 0, bg: "color-mix(in srgb, var(--paper) 72%, var(--card))", md: { borderRight: "1px solid var(--ink)", _last: { borderRight: 0 } } }),
-	laneDragging: css({ bg: "color-mix(in srgb, var(--green-wash) 58%, var(--paper))" }),
-	laneHead: css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--ink)", px: "0.875rem", py: "0.75rem" }),
-	laneTitle: css({ fontFamily: "var(--mono-display)", fontSize: "0.875rem", fontWeight: 700 }),
-	laneNote: css({ mt: "0.125rem", fontSize: "0.625rem", lineHeight: "1rem", color: "var(--ink-soft)" }),
-	count: css({ display: "inline-flex", minW: "1.75rem", height: "1.5rem", alignItems: "center", justifyContent: "center", border: "1px solid var(--ink)", borderRadius: "9999px", bg: "var(--card)", px: "0.4rem", fontSize: "0.6875rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }),
-	laneBody: css({ display: "grid", alignContent: "start", gap: "0.75rem", minH: "18rem", p: "0.75rem" }),
-	emptyLane: css({ border: "1px dashed color-mix(in srgb, var(--ink) 38%, transparent)", p: "1rem", textAlign: "center", fontSize: "0.6875rem", lineHeight: "1.1rem", color: "var(--ink-soft)" }),
-	card: css({ border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--card)", p: "0.75rem", transition: "transform 120ms, box-shadow 120ms, opacity 120ms", _hover: { transform: "translate(-1px, -1px)", boxShadow: "3px 3px 0 color-mix(in srgb, var(--ink) 16%, transparent)" }, _focusWithin: { outline: "2px solid var(--accent)", outlineOffset: "1px" } }),
-	cardDragging: css({ opacity: 0.55, transform: "rotate(1deg)" }),
-	cardHead: css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" }),
-	dragHandle: css({ flexShrink: 0, mt: "0.05rem", color: "var(--ink-soft)", cursor: "grab" }),
-	cardText: css({ minW: 0, flex: 1 }),
-	cardTitle: css({ overflowWrap: "anywhere", fontFamily: "var(--mono-display)", fontSize: "0.8125rem", fontWeight: 700, lineHeight: "1.15rem" }),
-	cardDescription: css({ mt: "0.25rem", overflow: "hidden", lineClamp: 2, fontSize: "0.6875rem", lineHeight: "1.05rem", color: "var(--ink-soft)" }),
-	badges: css({ mt: "0.625rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" }),
-	badge: css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", border: "1px solid color-mix(in srgb, var(--ink) 30%, transparent)", borderRadius: "9999px", bg: "var(--paper)", px: "0.45rem", py: "0.2rem", fontSize: "0.625rem", color: "var(--ink-soft)" }),
-	dueBadge: css({ borderColor: "color-mix(in srgb, var(--accent-dim) 52%, transparent)", bg: "color-mix(in srgb, var(--green-wash) 65%, var(--card))", color: "var(--accent-dim)", fontWeight: 700 }),
-	overdueBadge: css({ borderColor: "color-mix(in srgb, var(--red) 55%, transparent)", bg: "color-mix(in srgb, var(--red) 10%, var(--card))", color: "var(--red)", fontWeight: 700 }),
-	weakList: css({ mt: "0.625rem", borderLeft: "2px solid var(--amber)", pl: "0.5rem", fontSize: "0.625rem", lineHeight: "1rem", color: "var(--ink-soft)" }),
-	cardFooter: css({ mt: "0.75rem", display: "flex", flexDir: "column", gap: "0.5rem", borderTop: "1px solid color-mix(in srgb, var(--ink) 20%, transparent)", pt: "0.625rem" }),
-	selectLabel: css({ display: "grid", gap: "0.25rem", fontSize: "0.625rem", color: "var(--ink-soft)" }),
-	select: css({ minH: "2.75rem", w: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--paper)", px: "0.625rem", color: "var(--ink)", fontSize: "0.6875rem", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } }),
-	cardAction: css({ minH: "2.5rem", width: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--ink)", color: "var(--paper)", fontSize: "0.6875rem", fontWeight: 700, _hover: { bg: "var(--accent-dim)", color: "white" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
-	status: css({ borderTop: "1px solid var(--ink)", bg: "var(--paper)", px: "1rem", py: "0.75rem", fontSize: "0.6875rem", lineHeight: "1.1rem", color: "var(--ink-soft)" }),
-	statusError: css({ color: "var(--red)" }),
-	reviewer: css({ mt: "1.25rem", border: "2px solid var(--ink)", bg: "var(--card)", p: "1rem", boxShadow: "4px 4px 0 color-mix(in srgb, var(--ink) 18%, transparent)" }),
-	reviewerHead: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", borderBottom: "1px solid var(--ink)", pb: "0.75rem" }),
-	reviewerTitle: css({ fontFamily: "var(--mono-display)", fontSize: "1rem", fontWeight: 700 }),
-	loading: css({ display: "flex", minH: "20rem", alignItems: "center", justifyContent: "center", gap: "0.5rem", color: "var(--ink-soft)" }),
-};
-
 function formatNumber(value: number): string {
 	return new Intl.NumberFormat().format(value);
+}
+
+export function DueReviewSummary({queue,deckCount,openChecks,onStart}: {
+    queue:ComingUpQueue; deckCount:number; openChecks:number; onStart:()=>void;
+}) {
+    return <><div className="cu-metrics">
+					<Stat label="Cards due now" value={formatNumber(queue.dueCardCount)} support={queue.overdueCardCount > 0 ? `${formatNumber(queue.overdueCardCount)} overdue by more than a day` : "Nothing overdue by more than a day"} />
+					<Stat label="Review time" value={`~${formatNumber(queue.estimatedMinutes)} min`} support="Estimated from the due cards, not the whole board" />
+					<Stat label="Learning items" value={formatNumber(queue.items.length)} support={`${formatNumber(deckCount)} decks · ${formatNumber(openChecks)} open checks`} />
+				</div>
+
+				<Card as="section" className="cu-reviewStrip k-halftone" aria-labelledby="due-review-title">
+					<div>
+						<h2 id="due-review-title" className="cu-stripTitle">{queue.dueCardCount ? <KeatingGlyph name="check" size={18}/> : <KeatingBot size={36} state={queue.items.length ? "success" : "waving"} label=""/>}{queue.dueCardCount > 0 ? `${formatNumber(queue.dueCardCount)} ${queue.dueCardCount === 1 ? "card is" : "cards are"} ready` : "Review runway is clear"}</h2>
+						<p className="cu-stripCopy">{queue.dueCardCount > 0 ? "Priority chooses the order; recall evidence chooses what is due." : "You can still reorganize priorities or import another deck below."}</p>
+					</div>
+					<Button variant="primary" disabled={queue.dueCardCount === 0} onClick={onStart}><KeatingGlyph name="play" size={15} />Start due review</Button>
+				</Card></>;
 }
 
 function itemDueLabel(item: ComingUpItem, now: number): string {
@@ -172,47 +107,47 @@ function QueueCard({
 				onDragStart();
 			}}
 			onDragEnd={onDragEnd}
-			className={cx(styles.card, dragging ? styles.cardDragging : "")}
+			className={cx("cu-card", dragging ? "cu-cardDragging" : "")}
 		>
-			<div className={styles.cardHead}>
-				<GripVertical size={16} className={styles.dragHandle} aria-hidden="true" />
-				<div className={styles.cardText}>
-					<h3 className={styles.cardTitle}>{item.title}</h3>
-					<p className={styles.cardDescription}>{item.description}</p>
+			<div className="cu-cardHead" data-glyph-host>
+				<KeatingGlyph name="grip" size={16} className="cu-dragHandle" />
+				<div className="cu-cardText">
+					<h3 className="cu-cardTitle">{item.title}</h3>
+					<p className="cu-cardDescription">{item.description}</p>
 				</div>
 			</div>
-			<div className={styles.badges}>
-				{item.targetType === "deck" ? <span className={cx(styles.badge, item.dueCount > 0 ? styles.dueBadge : "")}><Layers3 size={11} />{itemDueLabel(item, now)}</span> : null}
-				{item.overdueCount > 0 ? <span className={cx(styles.badge, styles.overdueBadge)}><AlertTriangle size={11} />{formatNumber(item.overdueCount)} overdue</span> : null}
-				<span className={styles.badge}><Clock3 size={11} />~{item.estimatedMinutes} min</span>
-				{item.prioritySource === "recommended" ? <span className={styles.badge}>Keating suggested</span> : null}
+			<div className="cu-badges" data-glyph-host>
+				{item.targetType === "deck" ? <span className={cx("cu-badge", item.dueCount > 0 ? "cu-dueBadge" : "")}><KeatingGlyph name="layers" size={11} />{itemDueLabel(item, now)}</span> : null}
+				{item.overdueCount > 0 ? <span className={cx("cu-badge", "cu-overdueBadge")}><KeatingGlyph name="alert" size={11} />{formatNumber(item.overdueCount)} overdue</span> : null}
+				<span className="cu-badge"><KeatingGlyph name="clock" size={11} />~{item.estimatedMinutes} min</span>
+				{item.prioritySource === "recommended" ? <span className="cu-badge">Keating suggested</span> : null}
 			</div>
 			{item.weakConcepts.length > 0 ? (
-				<div className={styles.weakList}>Needs attention: {item.weakConcepts.slice(0, 2).join(" · ")}</div>
+				<div className="cu-weakList">Needs attention: {item.weakConcepts.slice(0, 2).join(" · ")}</div>
 			) : null}
-			<div className={styles.cardFooter}>
-				<label className={styles.selectLabel}>
+			<div className="cu-cardFooter">
+				<label className="cu-selectLabel">
 					<span>Learning priority</span>
-					<Select className={styles.select} value={item.priority} onValueChange={(value) => onPriority(value as StudyPriority)}>
+					<Select className="cu-select" value={item.priority} onValueChange={(value) => onPriority(value as StudyPriority)}>
 						{PRIORITIES.map((priority) => <option key={priority.id} value={priority.id}>{priority.label}</option>)}
 					</Select>
 				</label>
-				{item.targetType === "deck" && item.dueCount > 0 ? <button type="button" className={styles.cardAction} onClick={onReview}>Review this deck</button> : null}
+				{item.targetType === "deck" && item.dueCount > 0 ? <button type="button" className="cu-cardAction" onClick={onReview}>Review this deck</button> : null}
 				{item.targetType === "deck" && item.dueCount > 0 ? <>
-					<button type="button" className={cx(styles.button, styles.quietButton)} disabled={estimateBusy} onClick={onEstimate} aria-label={`Estimate study effort for ${item.title}`}>{estimateBusy ? "Estimating…" : "Estimate study effort"}</button>
-					<p className={styles.stripCopy}>Uses your <a href="/chat?settings=judgement" style={{ textDecoration: "underline" }}>judgement settings</a>. Hosted review sends this deck and recent assessed work.</p>
-					{estimateStatus ? <p className={styles.stripCopy} role="status">{estimateStatus}</p> : null}
+					<Button variant="ghost" disabled={estimateBusy} onClick={onEstimate} aria-label={`Estimate study effort for ${item.title}`}>{estimateBusy ? "Estimating…" : "Estimate study effort"}</Button>
+					<p className="cu-stripCopy">Uses your <a href="/chat?settings=judgement" style={{ textDecoration: "underline" }}>judgement settings</a>. Hosted review sends this deck and recent assessed work.</p>
+					{estimateStatus ? <p className="cu-stripCopy" role="status">{estimateStatus}</p> : null}
 					{estimate ? <StudyEstimateDetails receipt={estimate} fronts={estimateFronts} /> : null}
 				</> : null}
-				{item.targetType === "verification" ? <button type="button" className={styles.cardAction} onClick={onCompleteCheck}>Mark checklist complete</button> : null}
-				{item.targetType === "topic" ? <button type="button" className={styles.cardAction} onClick={onOpenTopic}>Practice in chat</button> : null}
+				{item.targetType === "verification" ? <button type="button" className="cu-cardAction" onClick={onCompleteCheck}>Mark checklist complete</button> : null}
+				{item.targetType === "topic" ? <button type="button" className="cu-cardAction" onClick={onOpenTopic}>Practice in chat</button> : null}
 			</div>
 		</article>
 	);
 }
 
 export function StudyEstimateDetails({ receipt, fronts = {} }: { receipt: StudyEstimateReceipt; fronts?: Record<string, string> }) {
-	return <div className={styles.stripCopy} aria-label="Study estimates" aria-live="polite">
+	return <div className="cu-stripCopy" aria-label="Study estimates" aria-live="polite">
 		<strong style={{ color: "var(--ink)" }}>Uncalibrated study estimates</strong>
 		<p>Expected unaided recall: {receipt.expectedCorrect === null ? "unknown" : `${receipt.expectedCorrect.toFixed(1)} of ${receipt.cards.length} cards`}.</p>
 		<p>Readiness: {receipt.readinessProbability === null ? "unknown" : `${Math.round(receipt.readinessProbability * 100)}% model probability`}.</p>
@@ -313,6 +248,7 @@ export function comingUpPageReducer(state: ComingUpPageState, action: ComingUpPa
 }
 
 export function ComingUp() {
+	const [exportFormat, setExportFormat] = useState<"apkg" | "tsv" | null>(null);
 	useSeo({ title: "Coming Up — Keating", description: "Plan spaced-repetition reviews and set your learning priorities.", canonical: "https://keating.help/coming-up" });
 	const navigate = useNavigate();
 	const [pageState, dispatch] = useReducer(comingUpPageReducer, initialComingUpPageState);
@@ -516,11 +452,17 @@ export function ComingUp() {
 		}
 	}, [loadData]);
 
+	const cardCount = decks.reduce((sum, deck) => sum + deck.cards.length, 0);
+	const retryLoad = () => {
+		dispatch({type:"feedback.clear"});
+		void loadData().catch(cause => dispatch({type:"data.failed",error:cause instanceof Error ? cause.message : String(cause)}));
+	};
 	const exportApkg = useCallback(async () => {
 		dispatch({ type: "transfer.started" });
 		try {
 			const bytes = await buildAnkiPackage(decks);
 			downloadFile("keating-review-decks.apkg", bytes, "application/octet-stream");
+			setExportFormat(null);
 			dispatch({ type: "feedback.status", status: `Exported ${formatNumber(decks.reduce((sum, deck) => sum + deck.cards.length, 0))} cards as a native Anki package.` });
 		} catch (cause) {
 			dispatch({ type: "feedback.error", error: cause instanceof Error ? cause.message : String(cause) });
@@ -532,6 +474,7 @@ export function ComingUp() {
 	const exportTsv = useCallback(() => {
 		try {
 			downloadTextFile("keating-review-decks.tsv", buildAnkiTsv(decks), "text/tab-separated-values;charset=utf-8");
+			setExportFormat(null);
 			dispatch({ type: "feedback.status", status: "Exported a tab-separated text fallback for Anki or spreadsheets." });
 		} catch (cause) {
 			dispatch({ type: "feedback.error", error: cause instanceof Error ? cause.message : String(cause) });
@@ -550,41 +493,23 @@ export function ComingUp() {
 	}, [loadData]);
 
 	if (loading) {
-		return <div className={cx("retro-layout", "retro-page", styles.page)}><Nav /><div className={styles.loading}><RefreshCw size={16} />Loading your review queue…</div></div>;
+		return <div className="cu-page"><LearningShell current="coming-up"><Loading size="page" label="Loading your review queue…"/></LearningShell></div>;
 	}
 
 	return (
-		<div className={cx("retro-layout", "retro-page", styles.page)}>
-			<Nav />
-			<LearningInsightsHeader
-				current="coming-up"
-				context="Learning intelligence // Review runway"
-				title="Coming up"
-				description="Set what deserves attention, work the reviews that are actually due, and carry decks between Keating and Anki."
-			/>
-			<main className={styles.main}>
+		<div className="cu-page">
+			<LearningShell current="coming-up">
+			<main className="cu-main">
 				{onlineLearning.enabled && <OnlineLearningStatus state={onlineLearning.state} evidenceAvailable={onlineEvidence !== null} />}
-				<div className={styles.metrics}>
-					<LearningMetric icon={<Brain size={18} />} label="Cards due now" value={formatNumber(queue.dueCardCount)} detail={queue.overdueCardCount > 0 ? `${formatNumber(queue.overdueCardCount)} overdue by more than a day` : "Nothing overdue by more than a day"} />
-					<LearningMetric icon={<Clock3 size={18} />} label="Review time" value={`~${formatNumber(queue.estimatedMinutes)} min`} detail="Estimated from the due cards, not the whole board" />
-					<LearningMetric icon={<Layers3 size={18} />} label="Learning items" value={formatNumber(queue.items.length)} detail={`${formatNumber(decks.length)} decks · ${formatNumber(verifications.filter((item) => !item.completed).length)} open checks`} />
-				</div>
+				<DueReviewSummary queue={queue} deckCount={decks.length} openChecks={verifications.filter(check => !check.completed).length} onStart={() => startReview()}/>
 
-				<section className={styles.reviewStrip} aria-labelledby="due-review-title">
-					<div>
-						<h2 id="due-review-title" className={styles.stripTitle}><CheckCircle2 size={18} />{queue.dueCardCount > 0 ? `${formatNumber(queue.dueCardCount)} cards are ready` : "Review runway is clear"}</h2>
-						<p className={styles.stripCopy}>{queue.dueCardCount > 0 ? "Priority chooses the order; recall evidence chooses what is due." : "You can still reorganize priorities or import another deck below."}</p>
-					</div>
-					<button type="button" className={cx(styles.button, styles.accentButton)} disabled={queue.dueCardCount === 0} onClick={() => startReview()}><Play size={15} />Start due review</button>
-				</section>
-
-				<OpenAssignmentsSection
+				<div className="cu-assignments" data-glyph-host><OpenAssignmentsSection
 					open={assignments.data?.open ?? []}
 					handedIn={assignments.data?.handedIn ?? []}
 					now={now}
 					onOpen={openAssignment}
 					status={assignments.loading ? "Looking for assignments in your sessions…" : assignments.error || (assignments.data?.unrecoverable ? `${assignments.data.unrecoverable} older task${assignments.data.unrecoverable === 1 ? "" : "s"} could not be recovered from this device.` : "")}
-				/>
+				/></div>
 
 				<LearningOutlook history={outlookHistory}
 					onPractice={(question) => navigate({ to: "/chat", search: { ask: `Can we practice this question again? I keep missing it: “${question}”` } })} />
@@ -593,57 +518,35 @@ export function ComingUp() {
 					hasDueDecks={queue.dueDeckIds.length > 0} onStart={(deckId) => startReview([deckId])} />
 
 				{currentReviewDeck ? (
-					<section id="coming-up-review" className={styles.reviewer} aria-labelledby="review-title">
-						<div className={styles.reviewerHead}>
-							<div><h2 id="review-title" className={styles.reviewerTitle}>Reviewing {currentReviewDeck.title}</h2><p className={styles.stripCopy}>Deck {reviewIndex + 1} of {reviewDeckIds.length} · {dueCardIds.length} due</p></div>
-							<button type="button" className={cx(styles.button, styles.quietButton)} onClick={() => dispatch({ type: "review.ended" })}>End review</button>
+					<section id="coming-up-review" className="cu-reviewer" aria-labelledby="review-title">
+						<div className="cu-reviewerHead">
+							<div><h2 id="review-title" className="cu-reviewerTitle">Reviewing {currentReviewDeck.title}</h2><p className="cu-stripCopy">Deck {reviewIndex + 1} of {reviewDeckIds.length} · {dueCardIds.length} due</p></div>
+							<Button variant="line" onClick={() => dispatch({ type: "review.ended" })}>End review</Button>
 						</div>
 						<FlashcardRenderer key={currentReviewDeck.id} deck={currentReviewDeck} restrictToCardIds={dueCardIds} autoFocusKeyboard onComplete={handleReviewComplete} />
 					</section>
 				) : null}
 
-				<section className={styles.workspace} aria-labelledby="priority-board-title">
-					<div className={styles.workspaceHead}>
-						<div><h2 id="priority-board-title" className={styles.workspaceTitle}>Priority board</h2><p className={styles.workspaceCopy}>Drag cards between lanes or use each card’s priority menu. Moving a card changes your intent—not its spaced-repetition date.</p></div>
-						<div className={styles.toolbar}>
-							<label className={cx(styles.button, styles.primaryButton)}>
-								<Upload size={15} />{busy ? "Working…" : "Import Anki"}
-								<input ref={importRef} className={styles.fileInput} type="file" accept=".apkg,.csv,.tsv,.txt,application/octet-stream,text/csv,text/tab-separated-values" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleImport(file); event.currentTarget.value = ""; }} />
-							</label>
-							<button type="button" className={cx(styles.button, styles.quietButton)} disabled={busy || decks.length === 0} onClick={() => void exportApkg()}><Download size={15} />Export .apkg</button>
-							<button type="button" className={cx(styles.button, styles.quietButton)} disabled={busy || decks.length === 0} onClick={exportTsv}>TSV fallback</button>
-						</div>
+				<section className="cu-workspace" aria-labelledby="priority-board-title">
+					<div className="cu-workspaceHead">
+						<div><h2 id="priority-board-title" className="cu-workspaceTitle">Priority board</h2><p className="cu-workspaceCopy">Drag cards between lanes or use each card’s priority menu. Moving a card changes your intent—not its spaced-repetition date.</p></div>
+
 					</div>
-					<div className={styles.mobileTabs} aria-label="Priority lane">
-						{PRIORITIES.map((priority) => {
-							const active = mobileLane === priority.id;
-							return (
-								<button
-									key={priority.id}
-									type="button"
-									data-active={active}
-									className={styles.mobileTab}
-									style={{ padding: "0.25rem", fontSize: "0.6875rem", lineHeight: "1rem", background: active ? "var(--ink)" : "var(--paper)", color: active ? "var(--paper)" : "var(--ink)" }}
-									onClick={() => setMobileLane(priority.id)}
-								>
-									{priority.id === "low" ? "Low" : priority.label} ({queue.lanes[priority.id].length})
-								</button>
-							);
-						})}
-					</div>
-					<div className={styles.board}>
+					<div className="cu-mobileTabs"><Segmented<StudyPriority> label="Priority lane" wide value={mobileLane} onChange={setMobileLane}
+                      options={PRIORITIES.map(lane => ({value:lane.id,label:`${lane.label} (${queue.lanes[lane.id].length})`}))}/></div>
+                    <div className="cu-board">
 						{PRIORITIES.map((priority) => (
 							<section
 								key={priority.id}
 								aria-labelledby={`lane-${priority.id}`}
-								className={cx(styles.lane, dropLane === priority.id ? styles.laneDragging : "", css({ display: { base: mobileLane === priority.id ? "block" : "none", md: "block" } }))}
+								className={cx("cu-lane", dropLane === priority.id ? "cu-laneDragging" : "", mobileLane === priority.id ? "cu-visible" : "")}
 								onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; dispatch({ type: "drag.entered", lane: priority.id }); }}
 								onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) dispatch({ type: "drag.ended" }); }}
 								onDrop={(event) => { event.preventDefault(); const item = queue.items.find((candidate) => candidate.id === (draggedId ?? event.dataTransfer.getData("text/plain"))); dispatch({ type: "drag.ended" }); if (item) void moveItem(item, priority.id); }}
 							>
-								<div className={styles.laneHead}><div><h3 id={`lane-${priority.id}`} className={styles.laneTitle}>{priority.label}</h3><p className={styles.laneNote}>{priority.note}</p></div><span className={styles.count}>{queue.lanes[priority.id].length}</span></div>
-								<div className={styles.laneBody}>
-									{queue.lanes[priority.id].length === 0 ? <div className={styles.emptyLane}>{priority.id === "focus" ? "Drop the work that deserves your attention here." : "Nothing here yet."}</div> : queue.lanes[priority.id].map((item) => (
+								<div className="cu-laneHead k-halftone"><div><h3 id={`lane-${priority.id}`} className="cu-laneTitle">{priority.label}</h3><p className="cu-laneNote">{priority.note}</p></div><span className="cu-count">{queue.lanes[priority.id].length}</span></div>
+								<div className="cu-laneBody">
+									{queue.lanes[priority.id].length === 0 ? <EmptyState className="cu-emptyLane k-grid" heading={priority.id === "focus" ? "Drop the work that deserves your attention here." : "Nothing here yet."}/> : queue.lanes[priority.id].map((item) => (
 										<QueueCard
 											key={item.id}
 											item={item}
@@ -666,10 +569,24 @@ export function ComingUp() {
 							</section>
 						))}
 					</div>
-					{status || error ? <div className={cx(styles.status, error ? styles.statusError : "")} role="status" aria-live="polite">{error || status}</div> : null}
+					{status || error ? <div className={cx("cu-status", error ? "cu-statusError" : "")} role="status" aria-live="polite">{error || status}{error && <Button onClick={retryLoad}>Reload queue</Button>}</div> : null}
 				</section>
-				<p className={css({ mt: "1rem", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.6875rem", color: "var(--ink-soft)" })}><ArrowRight size={13} />Anki imports run locally in this browser. Templates never execute, and media is left out of Keating’s text-first reviews.</p>
+				<footer className="cu-transfer"><strong>Your data</strong><div className="cu-toolbar">
+							<label data-glyph-host className={cx("cu-button", "cu-primaryButton")}>
+								<KeatingGlyph name="import" size={15} />{busy ? "Working…" : "Import Anki"}
+								<input ref={importRef} className="cu-fileInput" type="file" accept=".apkg,.csv,.tsv,.txt,application/octet-stream,text/csv,text/tab-separated-values" disabled={busy} onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleImport(file); event.currentTarget.value = ""; }} />
+							</label>
+							<Button variant="ghost" disabled={busy || decks.length === 0} onClick={() => { dispatch({type:"feedback.clear"}); setExportFormat("apkg"); }}><KeatingGlyph name="export" size={15} />Export .apkg</Button>
+							<Button variant="ghost" disabled={busy || decks.length === 0} onClick={() => { dispatch({type:"feedback.clear"}); setExportFormat("tsv"); }}>TSV fallback</Button>
+						</div><p className="cu-copy" data-glyph-host><KeatingGlyph name="info" size={13} />Anki imports run locally in this browser. Templates never execute, and media is left out of Keating’s text-first reviews.</p></footer>
+                <ExportSheet open={exportFormat !== null} onClose={() => { if (!busy) setExportFormat(null); }}
+                  title="Export review decks" included={`${decks.length} ${decks.length === 1 ? "deck" : "decks"} · ${cardCount} ${cardCount === 1 ? "card" : "cards"}`}
+                  format={exportFormat === "apkg" ? "Native Anki package (.apkg)" : "Tab-separated text (.tsv)"}
+                  destination={`Your browser downloads · keating-review-decks.${exportFormat ?? "apkg"}`}
+                  confirmLabel={exportFormat === "apkg" ? "Export .apkg" : "Export TSV"} busy={busy} error={error || undefined}
+                  onConfirm={() => exportFormat === "apkg" ? exportApkg() : exportTsv()}/>
 			</main>
+			</LearningShell>
 		</div>
 	);
 }

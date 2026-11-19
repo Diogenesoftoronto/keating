@@ -9,11 +9,11 @@ import {
   subscribeModelRequestLog,
   type ModelRequestEntry,
 } from "../../keating/model-request-log";
-import { Toggle } from "../Toggle";
+import { Button, EmptyState, Switch } from "../../design-system/kit";
+import { ConfirmAction } from "./data/ConfirmAction";
 
 const muted = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
 const heading = css({ fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
-const button = css({ padding: ".375rem .625rem", border: "1px solid var(--border)", borderRadius: ".375rem", fontSize: ".75rem", cursor: "pointer" });
 const pre = css({ maxHeight: "24rem", overflow: "auto", padding: ".75rem", borderRadius: ".375rem", background: "var(--muted)",
   fontSize: ".6875rem", whiteSpace: "pre-wrap", wordBreak: "break-word" });
 
@@ -44,15 +44,15 @@ export function ModelRequestLog() {
         <h3 id="model-request-log-heading" className={heading}>Model request log</h3>
         <p className={muted}>Records each private draft (system prompt, messages, tools and provider payload) and each review request, in memory only. Keeps the last 30. Also available in the console as <code>__keatingRequests</code>.</p>
       </div>
-      <Toggle aria-label="Record model requests" checked={enabled} onChange={setModelRequestLogEnabled} />
+      <Switch label="Record model requests" checked={enabled} onChange={setModelRequestLogEnabled} />
     </div>
     {enabled && <>
       <div className={css({ display: "flex", gap: ".5rem" })}>
-        <button type="button" className={button} disabled={!entries.length}
-          onClick={() => downloadTextFile("keating-model-requests.json", JSON.stringify(entries, null, 2))}>Download JSON</button>
-        <button type="button" className={button} disabled={!entries.length} onClick={clearModelRequestLog}>Clear</button>
+        <Button variant="ghost" disabled={!entries.length}
+          onClick={() => downloadTextFile("keating-model-requests.json", JSON.stringify(entries, null, 2))}>Download JSON</Button>
+        <ConfirmAction label="Clear request log" description="Remove the draft and review request payloads kept in this tab’s memory." disabled={!entries.length} onConfirm={clearModelRequestLog}/>
       </div>
-      {!entries.length && <p className={muted}>Send a message to record its requests.</p>}
+      {!entries.length && <EmptyState heading="No requests recorded">Send a message to record its requests.</EmptyState>}
       {[...entries].reverse().map(entry => <details key={entry.id}>
         <summary className={muted}>{summary(entry)}</summary>
         <div className={css({ display: "flex", flexDirection: "column", gap: ".5rem", marginTop: ".5rem", paddingLeft: ".75rem" })}>

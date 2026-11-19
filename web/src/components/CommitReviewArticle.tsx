@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, FileCode2, LockKeyhole, Network, Shield, Sparkles } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { useMemo, useState } from "react";
 import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
@@ -119,7 +119,7 @@ function QuizCard({ prompt, answer }: CommitReviewQuizCard) {
         className={styles.revealButton}
         onClick={() => setRevealed((v) => !v)}
       >
-        <Sparkles size={14} />
+        <KeatingGlyph name="spark" size={14} />
         {revealed ? "Hide answer" : "Reveal answer"}
       </button>
       {revealed && <p className={styles.answer}>{answer}</p>}
@@ -168,18 +168,18 @@ export function CommitReviewArticle({
             <div className={styles.actionRow}>
               <Link to={routePath} className={styles.outlineButton}>
                 Share this route
-                <ArrowRight size={14} />
+                <KeatingGlyph name="right" size={14} />
               </Link>
               <a href="#quiz" className={styles.outlineButton}>
                 Jump to retrieval
-                <ArrowRight size={14} />
+                <KeatingGlyph name="right" size={14} />
               </a>
             </div>
           </section>
 
           <section className={styles.summaryGrid}>
             <div className={styles.card}>
-              <div className={styles.smallHeading}><Network size={16} /> Main idea</div>
+              <div className={styles.smallHeading}><KeatingGlyph name="tree" size={16} /> Main idea</div>
               <ul className={styles.summaryList}>
                 {summary.map((item) => (
                   <li key={item}>• {item}</li>
@@ -187,11 +187,11 @@ export function CommitReviewArticle({
               </ul>
             </div>
             <div className={styles.card}>
-              <div className={styles.smallHeading}><Shield size={16} /> Misconception</div>
+              <div className={styles.smallHeading}><KeatingGlyph name="alert" size={16} /> Misconception</div>
               <p className={styles.mutedSmall}>{misconception}</p>
             </div>
             <div className={styles.card}>
-              <div className={styles.smallHeading}><LockKeyhole size={16} /> Security gate</div>
+              <div className={styles.smallHeading}><KeatingGlyph name="lock" size={16} /> Security gate</div>
               <p className={styles.mutedSmall}>
                 The browser tools are the interface. The true enforcement point is the server route that approves or rejects file access.
               </p>
@@ -219,7 +219,7 @@ export function CommitReviewArticle({
                   <h2 className={styles.h2Tight}>{section.title}</h2>
                 </div>
                 <div className={styles.badge}>
-                  <FileCode2 size={14} /> File-by-file walkthrough
+                  <KeatingGlyph name="code" size={14} /> File-by-file walkthrough
                 </div>
               </div>
               <p className={styles.paragraph}>{section.why}</p>
@@ -256,7 +256,7 @@ export function CommitReviewArticle({
             <ul className={styles.testList}>
               {tests.map((test) => (
                 <li key={test} className={styles.testItem}>
-                  <CheckCircle2 size={16} className={styles.greenIcon} />
+                  <KeatingGlyph name="check" size={16} className={styles.greenIcon} />
                   <span>{test}</span>
                 </li>
               ))}

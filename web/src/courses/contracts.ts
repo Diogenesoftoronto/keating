@@ -577,6 +577,9 @@ export function normalizeCourseViewerSnapshot(
 }
 
 export interface CourseListItem {
+  nextLesson?: { id: string; title: string; moduleTitle: string; position: number; total: number };
+  pendingSubmissions?: number;
+  presentCount?: number;
   id: string;
   title: string;
   description: string;

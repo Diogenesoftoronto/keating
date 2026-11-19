@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { KeyRound, X } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { KeatingBot } from "./KeatingBot";
 import { css, cx } from "../../styled-system/css";
 import { iconButton, primaryButton } from "../../styled-system/recipes";
@@ -149,10 +149,10 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 		className={css({ width: "calc(100% - 2rem)", maxWidth: "28rem", maxHeight: "calc(100dvh - 2rem)", margin: "auto", padding: 0, borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", color: "var(--foreground)", boxShadow: "var(--shadow-xl)", overflowY: "auto", "&::backdrop": { backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", backdropFilter: "blur(4px)" } })}>
 		<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", padding: "1rem", borderBottom: "1px solid var(--border)" })}>
 			<div className={css({ display: "flex", alignItems: "center", gap: "0.625rem" })}>
-				<KeyRound size={20} aria-hidden="true" className={css({ color: "var(--primary)" })} />
+				<KeatingGlyph name="key" size={20} className={css({ color: "var(--primary)" })} />
 				<h2 id={titleId} className={css({ fontSize: "1.125rem", fontWeight: 600 })}>{creditContent ? "Your Keating credits" : pack ? "Add Keating credits" : consent ? "Approve model access" : reconnect ? "Sign in to Not Organic" : "Use Keating’s model"}</h2>
 			</div>
-			<button type="button" onClick={onDismiss} aria-label={consent ? "Close model access" : "Close account sign-in"} className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
+			<button type="button" onClick={onDismiss} aria-label={consent ? "Close model access" : "Close account sign-in"} className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><KeatingGlyph name="x" size={18} /></button>
 		</header>
 		{creditContent ? <div id={descriptionId} className={css({ padding: "0.75rem" })}>{creditContent}</div> : <div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
 			{/* The sign-in ask is the first thing many people ever see of Keating.

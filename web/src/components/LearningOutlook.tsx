@@ -1,20 +1,8 @@
 import { useEffect, useState } from "react";
-import { css } from "../../styled-system/css";
+import { IntervalPlot } from "../design-system/charts";
+import { Button, Card } from "../design-system/kit";
 import { learningHistoryId, type LearningForecastProposal, type LearningHistory } from "../keating/learning-intelligence/forecasts";
 import { LEARNING_OUTLOOK_CHANGED_EVENT, loadLearningOutlook, type LearningOutlook as Outlook } from "../keating/learning-intelligence/outlook";
-
-const styles = {
-	section: css({ mt: "1rem", py: "1rem", borderBottom: "1px solid var(--ink)", color: "var(--ink)" }),
-	title: css({ fontFamily: "var(--mono-display)", fontSize: "0.875rem", fontWeight: 700 }),
-	copy: css({ mt: "0.375rem", maxW: "70ch", fontSize: "0.75rem", lineHeight: "1.3rem", color: "var(--ink-soft)", overflowWrap: "anywhere" }),
-	list: css({ mt: "0.5rem", display: "grid", gap: "0.5rem", paddingLeft: 0, listStyle: "none" }),
-	item: css({ display: "grid", gap: "0.25rem", fontSize: "0.8125rem" }),
-	band: css({ position: "relative", height: "0.5rem", borderRadius: "999px", background: "var(--muted)", maxW: "18rem" }),
-	range: css({ position: "absolute", top: 0, bottom: 0, borderRadius: "999px", background: "color-mix(in srgb, var(--primary) 35%, transparent)" }),
-	median: css({ position: "absolute", top: "-0.125rem", bottom: "-0.125rem", width: "2px", background: "var(--primary)" }),
-	button: css({ minH: "2.75rem", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--card)", color: "var(--ink)", px: "0.875rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", justifySelf: "start",
-		_hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
-};
 
 const RATINGS = ["forgot", "hard", "good", "easy"];
 
@@ -33,40 +21,37 @@ export function LearningOutlookView({ outlook, onPractice }: { outlook: Outlook 
 		&& typeof row.p10 === "number" && typeof row.p90 === "number") ?? [];
 	if (!outlook || (!forecasts.length && !outlook.revisit.length)) return null;
 	return (
-		<section className={styles.section} aria-labelledby="learning-outlook-title">
-			<h2 id="learning-outlook-title" className={styles.title}>Your outlook</h2>
-			<p className={styles.copy}>An estimate from your own saved answers and card ratings. It hasn't been validated, it isn't a grade, and your review dates stay as scheduled.</p>
+		<Card as="section" className="cu-panel" aria-labelledby="learning-outlook-title">
+			<h2 id="learning-outlook-title" className="cu-title">Your outlook</h2>
+			<p className="cu-copy">An estimate from your own saved answers and card ratings. It hasn't been validated, it isn't a grade, and your review dates stay as scheduled.</p>
 			{forecasts.length ? (
-				<ul className={styles.list}>
+				<ul className="cu-list">
 					{forecasts.map(row => (
-						<li key={row.id} className={styles.item}>
+						<li key={row.id} className="cu-item">
 							<strong>{row.label}</strong>
 							<span>{describe(row)}</span>
-							<span className={styles.band} role="img" aria-label={`Likely range ${row.p10} to ${row.p90}, most likely ${row.median}, on a scale up to ${row.maximum}`}>
-								<span className={styles.range} style={{ left: `${(row.p10! / row.maximum) * 100}%`, width: `${Math.max(2, ((row.p90! - row.p10!) / row.maximum) * 100)}%` }} />
-								<span className={styles.median} style={{ left: `${(row.median! / row.maximum) * 100}%` }} />
-							</span>
-							<span className={styles.copy}>Based on {row.observedCount} recorded {row.measure === "self-reported-card-rating" ? "ratings" : "answers"}.</span>
+							<IntervalPlot domain={[0,row.maximum]} label={describe(row)} data={[{label:row.label,value:row.median!,range:[row.p10!,row.p90!]}]}/>
+							<span className="cu-copy">Based on {row.observedCount} recorded {row.measure === "self-reported-card-rating" ? "ratings" : "answers"}.</span>
 						</li>
 					))}
 				</ul>
 			) : null}
 			{outlook.revisit.length ? (
 				<>
-					<h3 className={styles.title} style={{ marginTop: "1rem" }}>Worth another try</h3>
-					<p className={styles.copy}>Questions from your lessons you've missed most often.</p>
-					<ul className={styles.list}>
+					<h3 className="cu-title" style={{ marginTop: "1rem" }}>Worth another try</h3>
+					<p className="cu-copy">Questions from your lessons you've missed most often.</p>
+					<ul className="cu-list">
 						{outlook.revisit.map(item => (
-							<li key={item.question} className={styles.item}>
+							<li key={item.question} className="cu-item">
 								<span>“{item.question}”</span>
-								<span className={styles.copy}>Missed {item.missedCount} of {item.attempts} attempts.</span>
-								<button type="button" className={styles.button} onClick={() => onPractice(item.question)}>Practice this</button>
+								<span className="cu-copy">Missed {item.missedCount} of {item.attempts} attempts.</span>
+								<Button onClick={() => onPractice(item.question)}>Practice this</Button>
 							</li>
 						))}
 					</ul>
 				</>
 			) : null}
-		</section>
+		</Card>
 	);
 }
 

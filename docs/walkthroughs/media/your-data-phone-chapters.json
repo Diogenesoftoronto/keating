@@ -1,0 +1,86 @@
+{
+  "title": "Your data",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T16:07:06.245Z",
+  "viewerNote": "This walkthrough uses sample browser records and leaves optional scoring and sharing off.",
+  "duration": 43.6442180480957,
+  "bytes": 1078917,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "privacy",
+      "title": "Read what leaves this device",
+      "start": 0.003000020980834961,
+      "explanation": "Check what stays here and what may leave.",
+      "alt": "Read what leaves this device",
+      "still": "privacy"
+    },
+    {
+      "id": "source",
+      "title": "Choose conversations",
+      "start": 3.1480000019073486,
+      "explanation": "Choose which conversations go into the dataset.",
+      "alt": "Choose conversations",
+      "still": "source"
+    },
+    {
+      "id": "filters",
+      "title": "Inspect dataset filters",
+      "start": 12.82200002670288,
+      "explanation": "Review the dataset filters and redaction.",
+      "alt": "Inspect dataset filters",
+      "still": "filters"
+    },
+    {
+      "id": "prepare",
+      "title": "Prepare an unscored dataset",
+      "start": 16.38100004196167,
+      "explanation": "Prepare the dataset without scoring.",
+      "alt": "Prepare an unscored dataset",
+      "still": "prepare"
+    },
+    {
+      "id": "manifest",
+      "title": "Read the dataset overview",
+      "start": 20.52500009536743,
+      "explanation": "Read the manifest before opening the download sheet.",
+      "alt": "Read the dataset overview",
+      "still": "manifest"
+    },
+    {
+      "id": "zip",
+      "title": "Read the dataset export sheet",
+      "start": 24.147000074386597,
+      "explanation": "Check what the ZIP will contain.",
+      "alt": "Read the dataset export sheet",
+      "still": "zip"
+    },
+    {
+      "id": "review",
+      "title": "Inspect the review export",
+      "start": 30.63700008392334,
+      "explanation": "An individual review has its own export.",
+      "alt": "Inspect the review export",
+      "still": "review"
+    },
+    {
+      "id": "portable",
+      "title": "Inspect the portable JSON export",
+      "start": 36.66799998283386,
+      "explanation": "Keep a portable copy of this browser’s work.",
+      "alt": "Inspect the portable JSON export",
+      "still": "portable"
+    }
+  ]
+}

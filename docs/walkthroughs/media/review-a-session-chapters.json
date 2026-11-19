@@ -1,0 +1,94 @@
+{
+  "title": "Reviewing a session",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T16:45:56.926Z",
+  "viewerNote": "Rubric ratings and earlier notes are authored sample data. The rewrite editor opens a local draft. The pass menu is shown without running a model pass.",
+  "duration": 61.55200004577637,
+  "bytes": 2583213,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "queue",
+      "title": "Find a session in Reviews",
+      "start": 0.004000186920166016,
+      "explanation": "Find the session in Reviews.",
+      "alt": "Find a session in Reviews",
+      "still": "queue"
+    },
+    {
+      "id": "selection",
+      "title": "Select a passage",
+      "start": 3.239000082015991,
+      "explanation": "Select the part of the reply you want to mark.",
+      "alt": "Select a passage",
+      "still": "selection"
+    },
+    {
+      "id": "problem",
+      "title": "Record a problem",
+      "start": 10.190000057220459,
+      "explanation": "Mark a specific problem.",
+      "alt": "Record a problem",
+      "still": "problem"
+    },
+    {
+      "id": "strength",
+      "title": "Record a strength",
+      "start": 20.353000164031982,
+      "explanation": "Save what the tutor did well.",
+      "alt": "Record a strength",
+      "still": "strength"
+    },
+    {
+      "id": "suggestion",
+      "title": "Record a suggestion",
+      "start": 30.606000185012817,
+      "explanation": "Suggest a concrete next move.",
+      "alt": "Record a suggestion",
+      "still": "suggestion"
+    },
+    {
+      "id": "rewrite",
+      "title": "Open a rewrite draft",
+      "start": 39.896000146865845,
+      "explanation": "Open a proposal for a previously marked passage.",
+      "alt": "The Revise this text editor for the marked passage",
+      "still": "rewrite"
+    },
+    {
+      "id": "rubric",
+      "title": "Inspect a rubric score",
+      "start": 47.765000104904175,
+      "explanation": "Read the rubric alongside the transcript.",
+      "alt": "Inspect a rubric score",
+      "still": "rubric"
+    },
+    {
+      "id": "pass",
+      "title": "Inspect the pass menu",
+      "start": 51.587000131607056,
+      "explanation": "See what a Socratic pass can propose.",
+      "alt": "Inspect the pass menu",
+      "still": "pass"
+    },
+    {
+      "id": "export",
+      "title": "Inspect the export sheet",
+      "start": 57.00500011444092,
+      "explanation": "Check what goes into the review export.",
+      "alt": "Inspect the export sheet",
+      "still": "export"
+    }
+  ]
+}

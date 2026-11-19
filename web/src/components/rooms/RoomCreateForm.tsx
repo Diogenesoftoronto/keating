@@ -1,3 +1,4 @@
+import { Loading, Button, Segmented } from "../../design-system/kit";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { css } from "../../../styled-system/css";
 import type { RoomCreateInput, RoomSettings } from "../../rooms/contracts";
@@ -29,21 +30,7 @@ export function RoomChoice<Value extends string>({
   return (
     <fieldset className={css({ display: "grid", gap: "0.35rem", minW: 0 })} disabled={disabled}>
       <legend className={s.fieldLabel}>{legend}</legend>
-      <div className={s.segment}>
-        {options.map((option) => (
-          <label key={option.value} className={s.segmentOption}>
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              checked={value === option.value}
-              onChange={() => onChange(option.value)}
-            />
-            <strong>{option.label}</strong>
-            {option.hint ? <span className={s.segmentHint}>{option.hint}</span> : null}
-          </label>
-        ))}
-      </div>
+      <Segmented id={name} label={legend} options={options} value={value} onChange={onChange} wide size="sm" />
     </fieldset>
   );
 }
@@ -64,12 +51,14 @@ export const REPLY_REVIEW_OPTIONS = [
  */
 export function RoomCreateForm({
   initial,
+  renderPanel,
   context,
   submitLabel = "Create room",
   onCreate,
   onCancel,
 }: {
   initial?: Partial<RoomCreateDraft>;
+  renderPanel?: (form: ReactNode, busy: boolean) => ReactNode;
   /** Shown above the fields, e.g. the course lesson the room will carry. */
   context?: ReactNode;
   submitLabel?: string;
@@ -108,13 +97,13 @@ export function RoomCreateForm({
     }
   };
 
-  return (
-    <form onSubmit={(event) => void submit(event)} className={css({ display: "grid", gap: "0.9rem" })} aria-busy={busy}>
+  const form = (
+    <form onSubmit={(event) => void submit(event)} className="rm-create-form" aria-busy={busy}>
       {context}
       <label className={s.field}>
         <span className={s.fieldLabel}>Title</span>
         <input
-          className={s.input}
+          className="k-input"
           value={draft.title}
           maxLength={160}
           required
@@ -123,20 +112,19 @@ export function RoomCreateForm({
         />
       </label>
       <label className={s.field}>
-        <span className={s.fieldLabel}>Topic <span className={css({ fontWeight: 400, color: "var(--ink-soft)" })}>(optional)</span></span>
-        <textarea
-          className={s.input}
+        <span className={s.fieldLabel}>Topic <span className={css({ fontWeight: 400, color: "var(--ink-soft)" })}>optional</span></span>
+        <input
+          className="k-input"
           value={draft.topic}
-          rows={2}
           maxLength={2_000}
           placeholder="Induction on the natural numbers"
           onChange={(event) => update({ topic: event.target.value })}
         />
       </label>
       <label className={s.field}>
-        <span className={s.fieldLabel}>Goal for the session <span className={css({ fontWeight: 400, color: "var(--ink-soft)" })}>(optional)</span></span>
+        <span className={s.fieldLabel}>Goal for the session <span className={css({ fontWeight: 400, color: "var(--ink-soft)" })}>optional</span></span>
         <textarea
-          className={s.input}
+          className="k-input"
           value={draft.goal}
           rows={2}
           maxLength={2_000}
@@ -164,12 +152,11 @@ export function RoomCreateForm({
         You can change these choices later.
       </p>
       {error ? <p role="alert" className={s.error}>{error}</p> : null}
-      <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-        <button type="submit" className={s.primary} disabled={busy || !draft.title.trim()}>
-          {busy ? "Creating…" : submitLabel}
-        </button>
-        {onCancel ? <button type="button" className={s.button} onClick={onCancel} disabled={busy}>Cancel</button> : null}
+      <div className="rm-form-actions">
+        {onCancel && <Button variant="line" onClick={onCancel} disabled={busy}>Cancel</Button>}
+        <Button type="submit" variant="primary" disabled={busy || !draft.title.trim()}>{busy ? <Loading size="inline" label="Creating…" /> : submitLabel}</Button>
       </div>
     </form>
   );
+  return renderPanel ? renderPanel(form, busy) : form;
 }

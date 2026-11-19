@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { DECISION_PLANNING_NOTICE, TUTOR_RATE_LIMIT_MESSAGE } from "@keating/learner-contracts";
-import { ShieldAlert, ShieldQuestion } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 import { SAVED_GRADE_EXPLANATION_NOTICE, type ReviewNoticeKind } from "../keating/judgement/review-notice";
 
@@ -22,8 +22,8 @@ const unverifiedBadgeClass = css({
 	position: "relative",
 	display: "inline-flex",
 	marginTop: "0.25rem",
-	color: "var(--muted-foreground)",
-	opacity: 0.7,
+	color: "var(--amber-deep, var(--muted-foreground))",
+	opacity: 1,
 	cursor: "help",
 	_hover: { opacity: 1 },
 	_focusVisible: { opacity: 1 },
@@ -56,7 +56,7 @@ const tipClass = css({
 export function UnverifiedBadge({ tip = UNVERIFIED_TIP }: { tip?: string }) {
 	return (
 		<span role="note" aria-label={tip} tabIndex={0} className={unverifiedBadgeClass}>
-			<ShieldQuestion size={13} aria-hidden />
+			<KeatingGlyph name="shield" size={13} aria-hidden />
 			<span data-tip aria-hidden className={tipClass}>{tip}</span>
 		</span>
 	);
@@ -92,7 +92,7 @@ export function ReviewNoticeCard({ kind, children, reason }: { kind: ReviewNotic
 		: tip === TUTOR_RATE_LIMIT_MESSAGE ? "Reply provider rate limit reached" : "Couldn't produce a reply";
 	return (
 		<span role="alert" aria-label={`${label}. ${tip}`} tabIndex={0} className={withheldBadgeClass}>
-			<ShieldAlert size={14} aria-hidden />
+			<KeatingGlyph name="alert" size={14} aria-hidden />
 			<span aria-hidden>{label}</span>
 			<span data-tip data-below aria-hidden className={tipClass}>{tip}</span>
 		</span>

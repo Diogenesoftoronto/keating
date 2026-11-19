@@ -1,0 +1,22 @@
+svg[data-glyph] {
+  flex: none;
+  vertical-align: middle;
+  overflow: visible;
+}
+:root { --glyph-accent: var(--accent-dim); }
+[data-glyph-surface="inverse"] { --glyph-accent: var(--phosphor); }
+svg[data-glyph] [data-p] { transform-box: fill-box; transform-origin: 50% 50%; }
+svg[data-glyph] :is([data-role="accentFill"], [data-role="fill"]) { fill: currentColor; stroke: none; }
+svg[data-glyph][data-lit] [data-role="accent"] { stroke: var(--glyph-accent); }
+svg[data-glyph][data-lit] [data-role="accentFill"] { fill: var(--glyph-accent); }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-reduce-motion="true"]) svg[data-glyph] :is([data-role="accent"], [data-role="accentFill"]) {
+    transition: stroke 160ms ease, fill 160ms ease;
+  }
+}
+/* "Working": add class k-glyph-working to the spin glyph. It turns in eight steps a revolution,
+   like the stop-motion bot, and stands still for people who asked for less motion. */
+@keyframes k-glyph-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-reduce-motion="true"]) svg[data-glyph].k-glyph-working { animation: k-glyph-turn 0.9s steps(8) infinite; transform-origin: 50% 50%; }
+}

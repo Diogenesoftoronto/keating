@@ -4,15 +4,15 @@ export interface KeatingFeatureEnv {
 }
 
 /**
- * The current artifact canvas is experimental. Production builds keep it out
- * of ordinary navigation unless a deployment deliberately opts its cohort in;
- * local development retains access for redesign and testing.
+ * The session materials panel (beside the chat on wide screens, an overlay on
+ * narrow ones) is on in every build. A deployment can still switch it off
+ * with `VITE_KEATING_CANVAS_ENABLED=off|0|false|no`; any other value, or
+ * none, leaves it on.
  */
 export function resolveCanvasFeatureEnabled(env: KeatingFeatureEnv): boolean {
 	const configured = env.VITE_KEATING_CANVAS_ENABLED?.trim().toLowerCase();
-	if (["1", "true", "yes", "on"].includes(configured ?? "")) return true;
 	if (["0", "false", "no", "off"].includes(configured ?? "")) return false;
-	return env.DEV === true;
+	return true;
 }
 
 export function isCanvasFeatureEnabled(): boolean {

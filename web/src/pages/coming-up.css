@@ -1,0 +1,50 @@
+.cu-main {max-width:58rem;margin:auto;display:grid;gap:.85rem;padding:.8rem clamp(.58rem,3vw,1.6rem) 2rem;color:var(--ink);font:.625rem/1.45 var(--sans, sans-serif)}
+.cu-main > *, .cu-cardText {min-width:0}
+.cu-metrics,.cu-board {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+.cu-metrics > *, .cu-workspace,.cu-reviewer {border:1px solid var(--line);border-radius:.1923rem;background:var(--card);padding:.65rem}
+.cu-reviewStrip,.cu-row,.cu-reviewerHead,.cu-laneHead,.cu-stripTitle,.cu-cardHead,.cu-toolbar,.cu-transfer,.cu-badges,.cu-badge,.cu-button {display:flex;align-items:center;gap:.45rem}
+.cu-reviewStrip,.cu-row,.cu-reviewerHead,.cu-laneHead {justify-content:space-between;flex-wrap:wrap}
+.cu-reviewStrip,.cu-panel,.cu-workspaceHead,.cu-reviewerHead {padding:.8rem}
+.cu-stripTitle,.cu-title,.cu-workspaceTitle,.cu-reviewerTitle {font-size:.8rem;font-weight:650}
+.cu-copy,.cu-stripCopy,.cu-workspaceCopy,.cu-laneNote,.cu-cardDescription,.cu-selectLabel {color:var(--ink-soft);max-width:76ch}
+.cu-copy,.cu-item,.cu-reviewerHead,.cu-cardFooter,.cu-list {margin-block:.4rem}
+.cu-workspace {padding:0}.cu-board {gap:0;border-top:1px solid var(--line)}
+.cu-lane {min-width:0;padding:.55rem}.cu-lane+.cu-lane {border-left:1px solid var(--line)}
+.cu-laneDragging,.cu-dueBadge {background:var(--k-wash)}.cu-cardDragging {opacity:.6}
+.cu-laneHead,.cu-cardFooter,.cu-transfer {border-block-end:1px solid var(--line);padding-block:.45rem}
+.cu-laneBody,.cu-list,.cu-item,.cu-selectLabel,.cu-cardFooter {display:grid;gap:.4rem}.cu-laneBody {padding-block:.55rem}
+.cu-count,.cu-badge,.cu-button {font:.52rem var(--mono-body);padding:.18rem .3rem}
+.cu-cardTitle,.cu-laneTitle {font-size:.7rem;font-weight:650;overflow-wrap:anywhere}
+.cu-item .k-button {justify-self:start}.cu-cardHead {align-items:start}.cu-dragHandle {cursor:grab}
+.cu-emptyLane {min-height:4rem;padding:.55rem}
+.cu-lane:not(:first-child) .cu-emptyLane > .keating-fx-surface {display:none}
+.cu-card + .cu-card {border-top:1px solid var(--line-soft);padding-top:.55rem}
+.cu-mobileTabs {display:none}.cu-badges,.cu-transfer,.cu-toolbar {flex-wrap:wrap}.cu-badges {margin-block:.4rem}
+.cu-status,.cu-transfer {padding:.6rem}.cu-overdueBadge,.cu-statusError {color:var(--destructive)}
+.cu-transfer .cu-copy {flex-basis:100%;max-width:none}.cu-button {position:relative;cursor:pointer;padding:.35rem}
+.cu-fileInput {position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.cu-button:focus-within {outline:2px solid var(--ink)}
+.cu-cardAction {justify-self:start;cursor:pointer;text-decoration:underline;padding:.25rem 0}
+.cu-main h2 {font:650 .8rem/1.3 var(--font-ui)}
+.cu-laneHead > div,.cu-reviewStrip > div {background:var(--card)}
+.cu-badge {padding-inline:0}
+.cu-dueBadge {background:transparent}
+@media(max-width:700px){.cu-mobileTabs {display:block;padding:.45rem}.cu-mobileTabs button {white-space:normal}.cu-board {display:block}.cu-lane {display:none}.cu-lane.cu-visible {display:block;border:0}.cu-main {gap:.55rem}.cu-metrics {gap:.25rem}.cu-metrics > * {padding:.35rem;overflow-wrap:anywhere}}
+@media(pointer:coarse){.cu-main :is(button,select,.cu-button){min-height:44px}}
+
+.cu-page {min-height:100vh;color:var(--ink);background:var(--paper)}
+.cu-main {font-family:var(--font-ui)}.cu-toolbar .cu-button {background:var(--card)}
+.cu-weakList {border-inline-start:2px solid var(--amber);padding-inline-start:.38rem}
+.cu-item {overflow-wrap:anywhere}.cu-select {width:100%}
+
+.cu-reviewStrip.k-card {flex-direction:row;justify-content:space-between;align-items:center}
+.cu-reviewStrip .k-button > span {display:inline-flex;align-items:center;gap:.28rem}
+
+.cu-assignments [data-open-assignments] {margin:0;border:1px solid var(--line);border-radius:var(--k-radius)}
+.cu-assignments [data-open-assignments] > div:first-child {padding:.65rem;border-color:var(--line-soft)}
+.cu-assignments [data-open-assignments-empty] {margin:0;padding:.65rem;border:0;font:.625rem/1.45 var(--font-ui)}
+.cu-assignments #coming-up-assignments {font:650 .8rem/1.3 var(--font-ui)}
+.cu-assignments [data-assignment] {border:0;border-top:1px solid var(--line-soft);border-radius:0}
+.cu-main .k-card .k-button.k-outline {background:transparent;border-color:transparent}
+
+html[data-fx="off"] .cu-page .k-halftone::after {display:none}
+html[data-fx="off"] .cu-emptyLane.k-grid {background-image:none}

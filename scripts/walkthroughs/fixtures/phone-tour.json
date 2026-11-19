@@ -1,0 +1,10 @@
+{
+  "turns": [
+    {
+      "match": "flashcards",
+      "reply": "Try recalling what a waiting call keeps.\n\n```openui lifecycle=resumable id=phone-recursion-cards\nroot = LearningSurface([activity], \"\", \"\", \"resumable\")\nactivity = Flashcards(\"phone-recursion-cards\", \"Recursion\", \"Recursion cards\", [{\"id\": \"pause\", \"front\": \"What keeps its local variables while a second call runs?\", \"back\": \"The first call’s stack frame.\"}], \"resumable\")\n```"
+    }
+  ],
+  "auxiliaryReply": "How recursion returns",
+  "topicCategory": "computing"
+}

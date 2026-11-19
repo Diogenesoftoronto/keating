@@ -6,11 +6,21 @@ import { BLOG_URL } from "../lib/blog-links";
 import { applicationRootHref, hostedNavigationHref } from "../lib/hosted-navigation";
 import { desktopMarketingUrl, isDesktopShell } from "../lib/desktop-navigation";
 import { T, useGT } from "gt-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { ThemeToggle } from "./ThemeToggle";
 import { css, cx } from "../../styled-system/css";
 import { btnRetro } from "../../styled-system/recipes";
 
 const DESKTOP_NAV_MIN_WIDTH = 1152;
+const PUBLIC_NAV_MIN_WIDTH = 960;
+
+export const appNavLinks = {
+  chat: (href: string) => [href, "Chat"] as const,
+  courses: ["/courses", "Courses"],
+  rooms: ["/rooms", "Rooms"],
+  activity: ["/usage", "Usage"],
+  reviews: ["/review", "Session review"],
+} as const;
 
 interface NavMenuState {
   mobileOpen: boolean;
@@ -40,10 +50,11 @@ function navMenuReducer(state: NavMenuState, action: NavMenuAction): NavMenuStat
 }
 
 interface NavProps {
+  publication?: boolean;
   primaryAction?: "chat" | "download";
 }
 
-export function Nav({ primaryAction = "chat" }: NavProps) {
+export function Nav({ primaryAction = "chat", publication = false }: NavProps) {
   const [menus, dispatch] = useReducer(navMenuReducer, { mobileOpen: false, moreOpen: false });
   const navigate = useNavigate();
   const gt = useGT();
@@ -53,11 +64,11 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
   const appNavigation = appOnly || hostname === "chat.keating.help" || isDesktopShell();
   const chatHref = applicationRootHref(hostname, appOnly);
   const primaryLinks = appNavigation
-    ? [[chatHref, "Chat"], ["/courses", "Courses"], ["/rooms", "Rooms"], ["/usage", "Usage"], ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
+    ? [appNavLinks.chat(chatHref), appNavLinks.courses, appNavLinks.rooms, appNavLinks.activity, ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
     : [["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"]].filter(([to]) => primaryAction !== "download" || to !== "/download");
   const secondaryLinks = appNavigation
-    ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/learn", "Self-paced courses"], ["/review", "Session review"], ["/review/learning-profile", "Your public profile"], ["/training-data", "Training data"]]
-    : [["/courses", "Courses"], ["/learn", "Self-paced courses"], ["/rooms", "Rooms"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
+    ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/learn", "Self-paced courses"], appNavLinks.reviews, ["/review/learning-profile", "Your public profile"], ["/training-data", "Training data"]]
+    : [appNavLinks.courses, ["/learn", "Self-paced courses"], appNavLinks.rooms, ["/coming-up", "Coming up"], ["/live", "Live"], appNavLinks.activity, ["/bench", "Bench"], ["/training-data", "Training data"]];
   const openPrimaryAction = () => {
     closeMenus();
     const path = primaryAction === "download" ? "/download" : chatHref;
@@ -72,17 +83,23 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const minDesktopWidth = publication ? PUBLIC_NAV_MIN_WIDTH : DESKTOP_NAV_MIN_WIDTH;
     const handleResize = () => {
-      dispatch({ type: window.innerWidth >= DESKTOP_NAV_MIN_WIDTH ? "close-mobile" : "close-more" });
+      dispatch({ type: window.innerWidth >= minDesktopWidth ? "close-mobile" : "close-more" });
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [publication]);
 
   useEffect(() => {
     if (!menus.mobileOpen && !menus.moreOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dispatch({ type: "close-all" });
+      if (e.key !== "Escape") return;
+      if (publication) {
+        if (menus.mobileOpen) toggleButtonRef.current?.focus();
+        else moreMenuRef.current?.querySelector("button")?.focus();
+      }
+      dispatch({ type: "close-all" });
     };
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -96,7 +113,56 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [menus.mobileOpen, menus.moreOpen]);
+  }, [menus.mobileOpen, menus.moreOpen, publication]);
+
+  if (publication) {
+    const isDownload = primaryAction === "download";
+    const action = <Link className="pub-nav-action" to={isDownload ? "/download" : chatHref} onClick={closeMenus}>
+      {isDownload ? <T>Download alpha</T> : <T>Open Keating</T>}
+      <KeatingGlyph name={isDownload ? "export" : "right"} size={16} />
+    </Link>;
+    const links = (items: ReadonlyArray<readonly string[]>) => items.map(([to, label]) =>
+      <Link key={to} to={to} onClick={closeMenus}>{gt(label)}</Link>
+    );
+    const source = <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer" onClick={closeMenus}>
+      GitHub <KeatingGlyph name="ext" size={13} />
+    </a>;
+    return <nav id="main-nav" className="pub-nav" aria-label={gt("Main navigation")}>
+      <div className="pub-nav-bar">
+        <Link className="pub-brand" to="/" onClick={closeMenus}>
+          <img src="/brand/logo-lockup-compact.avif" alt="Keating" />
+          <span>v{import.meta.env.APP_VERSION}</span>
+        </Link>
+        <div className="pub-nav-wide">
+          {links(primaryLinks)}
+          <div className="pub-more" ref={moreMenuRef}>
+            <button type="button" className="pub-menu-toggle" aria-expanded={menus.moreOpen}
+              aria-controls="publication-more" onClick={() => dispatch({ type: "toggle-more" })}>
+              <T>More</T><KeatingGlyph name="chev" size={13} />
+            </button>
+            {menus.moreOpen && <div id="publication-more" className="pub-nav-sheet">{links(secondaryLinks)}{source}</div>}
+          </div>
+          <ThemeToggle />
+        </div>
+        <div className="pub-nav-end">
+          {action}
+          <button type="button" ref={toggleButtonRef} className="pub-menu-toggle pub-compact-toggle"
+            aria-label={gt(menus.mobileOpen ? "Close navigation menu" : "Open navigation menu")}
+            aria-expanded={menus.mobileOpen} aria-controls="publication-menu"
+            onClick={() => dispatch({ type: "toggle-mobile" })}>
+            <KeatingGlyph name={menus.mobileOpen ? "x" : "menu"} size={20} />
+          </button>
+        </div>
+      </div>
+      {menus.mobileOpen && <div id="publication-menu" className="pub-menu-panel" ref={mobileMenuRef}>
+        <div className="pub-menu-inner">
+          <div className="pub-site-links">{links(primaryLinks)}</div>
+          <div className="pub-tool-links">{links(secondaryLinks)}{source}</div>
+          <ThemeToggle variant="menu" onToggled={closeMenus} />
+        </div>
+      </div>}
+    </nav>;
+  }
 
   return (
     <nav

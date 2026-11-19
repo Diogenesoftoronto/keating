@@ -20,7 +20,7 @@ export function useSurfaceFocus(open: boolean, onClose: () => void, container?: 
 		// The heading renders after the first commit of the surface body.
 		const frame = initial && !focusOnMount ? 0 : requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true }));
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.defaultPrevented) return;
+			if (event.defaultPrevented || document.querySelector("dialog:modal")) return;
 			if (event.key === "Escape") {
 				closeRef.current();
 				return;

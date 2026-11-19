@@ -1,33 +1,18 @@
-import { useState } from "react";
-import { AppLink as Link } from "./AppLink";
 import { usePostHog } from "@posthog/react";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { AppLink } from "./AppLink";
+import { Eyebrow } from "../design-system/kit";
 import { KeatingBot } from "./KeatingBot";
-import "./landing-closing.css";
+import { KeatingGlyph } from "../design-system/glyphs";
 
 export function LandingClosing() {
   const posthog = usePostHog();
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  return (
-    <section className="landing-closing" aria-labelledby="landing-closing-title">
-      <div className="landing-closing__inner">
-        <div className="landing-closing__bot" aria-hidden="true">
-          <KeatingBot variant="body" state={hovered || focused ? "success" : "idle"} size={164} label="" animated={hovered || focused} />
-        </div>
-        <p className="landing-closing__eyebrow">Done offloading?</p>
-        <h2 id="landing-closing-title" data-landing-section="closing">Ready to think<br />for yourself?</h2>
-        <div className="landing-closing__actions" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
-          <Link to="/chat" className="landing-closing__action landing-closing__session" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_closing" })}>
-            <span className="landing-closing__action-note">A question is enough.</span>
-            <span className="landing-closing__action-label">Start a session <ArrowUpRight aria-hidden="true" size={24} /></span>
-          </Link>
-          <Link to="/download" className="landing-closing__action landing-closing__download" onClick={() => posthog?.capture("download_intent", { source: "landing_closing", destination: "download_page" })}>
-            <span className="landing-closing__action-note">Take it with you.</span>
-            <span className="landing-closing__action-label">Download Keating <ArrowDown aria-hidden="true" size={24} /></span>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
+  return <section className="lp-close k-halftone" aria-labelledby="landing-closing-title">
+    <KeatingBot variant="body" state="clapping" size={120} label=""/>
+    <Eyebrow muted>Done offloading?</Eyebrow>
+    <h2 id="landing-closing-title" data-landing-section="closing">Ready to think<br/>for yourself?</h2>
+    <div className="lp-cta">
+      <AppLink to="/chat" className="k-button k-primary" data-glyph-surface="inverse" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_closing" })}>Start a session <KeatingGlyph name="right" size={14}/></AppLink>
+      <AppLink to="/download" className="k-button k-outline" onClick={() => posthog?.capture("download_intent", { source: "landing_closing", destination: "download_page" })}><KeatingGlyph name="export" size={14}/>Download Keating</AppLink>
+    </div>
+  </section>;
 }

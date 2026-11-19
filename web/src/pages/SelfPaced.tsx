@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Download, ExternalLink, Lock, Pause, Play, Plus, RefreshCw, Timer } from "lucide-react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { KeatingBot } from "../components/KeatingBot";
-import { Nav } from "../components/Nav";
-import { Spinner } from "../components/Spinner";
+import { AppBar, Button, ButtonLink, Card, Chip, EmptyState, Loading, ConfirmDialog, Field, IconButton, Kbd, Menu, Note, Prose, TextArea, TextInput } from "../design-system/kit";
+import { Meter, Progress } from "../design-system/charts";
+import { LessonFrame } from "../components/lesson/LessonFrame";
 import { fireCompletionConfetti } from "../components/flashcards/review-feedback";
 import { scrollBehavior } from "../lib/motion";
 import { MarkdownBlock } from "../components/MarkdownBlock";
@@ -13,7 +14,6 @@ import { browserComplete } from "../keating/self-paced/agent";
 import {
 	ACTIVITY_LABELS,
 	COURSE_LIMITS,
-	EVIDENCE_KINDS,
 	EVIDENCE_LABELS,
 	activityFingerprint,
 	completionCondition,
@@ -23,7 +23,6 @@ import {
 	validateCourseSource,
 	type ActivityMaterial,
 	type ActivityProgress,
-	type ActivityState,
 	type CourseEvidence,
 	type SelfPacedCourse,
 } from "../keating/self-paced/contract";
@@ -39,6 +38,7 @@ import {
 } from "../keating/self-paced/controller";
 import { cancelQueuedJobs, describeQueue, enqueueCoursePreparation, retryFailedJobs, runCoursePreparation, type PrepJob } from "../keating/self-paced/jobs";
 import { SELF_PACED_CHANGED_EVENT, selfPacedStore } from "../keating/self-paced/store";
+import { EvidenceCounts, activityGlyph } from "../components/self-paced/progress";
 import "./self-paced.css";
 
 const store = () => selfPacedStore();
@@ -70,12 +70,6 @@ function writeAnswerDraft(courseId: string, questionId: string, value: string): 
 		if (value) sessionStorage.setItem(draftKey(courseId, questionId), value);
 		else sessionStorage.removeItem(draftKey(courseId, questionId));
 	} catch { /* The answer is still on screen. */ }
-}
-
-function StepBar({ states, label, mini = false }: { states: readonly ActivityState[]; label: string; mini?: boolean }) {
-	return <div className={`self-paced__steps${mini ? " self-paced__steps--mini" : ""}`} role="img" aria-label={label}>
-		{states.map((state, index) => <span key={index} data-state={state} />)}
-	</div>;
 }
 
 function errorText(error: unknown, fallback: string): string {
@@ -115,15 +109,16 @@ export function SelfPacedIndex() {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState("");
 	const [showForm, setShowForm] = useState(false);
-	const [steps, setSteps] = useState<Record<string, ActivityState[]>>({});
+	const [steps, setSteps] = useState<Record<string, ReturnType<typeof summarizeCourse>>>({});
 	const abort = useRef<AbortController | null>(null);
 
 	const load = useCallback(() => {
 		store().listCourses().then((list) => {
 			setCourses(list);
+			setLoadError("");
 			// Progress on each row is a nicety: if it cannot be read, the list still shows.
 			void Promise.all(list.filter((course) => course.status !== "draft").map(async (course) =>
-				[course.id, courseProgress(course, await store().listEvidence(course.id), Date.now()).map((item) => item.state)] as const))
+				[course.id, summarizeCourse(courseProgress(course, await store().listEvidence(course.id), Date.now()))] as const))
 				.then((entries) => setSteps(Object.fromEntries(entries))).catch(() => {});
 		}).catch((problem) => { setCourses([]); setLoadError(errorText(problem, "Your courses could not be read from this device.")); });
 	}, []);
@@ -155,84 +150,56 @@ export function SelfPacedIndex() {
 	};
 
 	const hasCourses = (courses?.length ?? 0) > 0;
-	const formSection = (
-			<section id="new-course-form" className={`self-paced__card${hasCourses ? " k-reveal" : ""}`} aria-labelledby="new-course-heading">
+	return <div className="self-paced-page">
+		<AppBar title="Self-paced courses" />
+		<main className="sp-main">
+			<header className="sp-intro k-halftone k-green">
+				<KeatingBot size={40} state="greeting" label="" />
+				<div><h1>Study one thing at your own pace</h1>
+					<p>Bring a paper or name a topic. Keating drafts a plan you approve.</p></div>
+			</header>
+			{hasCourses && <Button glyph="plus" aria-expanded={showForm} aria-controls="new-course-form" onClick={() => setShowForm(!showForm)}>Start another course</Button>}
+			{courses !== null && (!hasCourses || showForm) && <Card as="section" id="new-course-form" aria-labelledby="new-course-heading">
 				<h2 id="new-course-heading">Start a course</h2>
 				<form onSubmit={(event) => { event.preventDefault(); void create(); }}>
-					<label className="self-paced__field"><span>Paper or topic</span>
-						<input type="text" required maxLength={200} value={title} autoFocus={hasCourses} onChange={(event) => setTitle(event.target.value)} placeholder="For example: Attention Is All You Need" />
-					</label>
-					<label className="self-paced__field"><span>Link (optional)</span>
-						<input type="url" inputMode="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://arxiv.org/abs/…" />
-					</label>
-					<label className="self-paced__field"><span>Text to study from (optional)</span>
-						<textarea rows={5} maxLength={COURSE_LIMITS.excerpt} value={excerpt} onChange={(event) => setExcerpt(event.target.value)} placeholder="Paste the abstract and the sections you want to learn." />
-						<span className="self-paced__hint">With pasted text, materials stick to what it says. Without it, Keating works from what the model knows about the source and marks the materials as such. Keating does not open the link.</span>
-					</label>
-					<label className="self-paced__field"><span>What do you want to be able to do?</span>
-						<textarea rows={2} maxLength={600} value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="For example: implement scaled dot-product attention and explain why it is scaled" />
-					</label>
-					<label className="self-paced__field"><span>What do you already know? (optional)</span>
-						<textarea rows={2} maxLength={600} value={background} onChange={(event) => setBackground(event.target.value)} />
-					</label>
-					{error && <p className="self-paced__alert" role="alert">{error}</p>}
-					<div className="self-paced__actions">
-						<button type="submit" className="self-paced__button self-paced__button--primary" disabled={busy || !title.trim()}>{busy ? <><Spinner size={14} /> Drafting your plan…</> : "Draft a plan"}</button>
-						{busy && <button type="button" className="self-paced__button" onClick={() => abort.current?.abort()}>Cancel</button>}
+					<Field label="Paper or topic"><TextInput id="sp-topic" required maxLength={200} autoFocus={hasCourses} value={title} onChange={e => setTitle(e.target.value)} placeholder="For example: Attention Is All You Need" /></Field>
+					<div className="sp-columns">
+						<Field label="Link (optional)"><TextInput type="url" inputMode="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://arxiv.org/abs/…" /></Field>
+						<Field label="What you already know (optional)"><TextArea rows={1} maxLength={600} value={background} onChange={e => setBackground(e.target.value)} /></Field>
 					</div>
-					{busy && <div className="self-paced__drafting k-reveal" role="status">
-						<KeatingBot size={40} state="thinking" label="" />
-						<span>Reading the source and sketching a plan. You will review it before anything else is prepared.</span>
-					</div>}
-					<p className="self-paced__hint">Drafting uses the model you chose in Chat and counts toward this course's limit of {COURSE_LIMITS.defaultTokenBudget.toLocaleString()} tokens. Nothing else is prepared until you approve the plan.</p>
+					<details><summary>Text to study from (optional)</summary>
+						<Field label="Source text" hint="Keating uses the text you paste. Without it, materials draw on the model’s knowledge. Keating does not open the link.">
+							<TextArea rows={4} maxLength={COURSE_LIMITS.excerpt} value={excerpt} onChange={e => setExcerpt(e.target.value)} placeholder="Paste the abstract and sections you want to learn." />
+						</Field>
+					</details>
+					<Field label="What do you want to be able to do?"><TextArea rows={2} maxLength={600} value={goal} onChange={e => setGoal(e.target.value)} placeholder="For example: implement one attention head and explain why it is scaled." /></Field>
+					{error && <Note role="alert" tone="warn">{error}</Note>}
+					<div className="sp-footer">
+						<small>Drafting uses your Chat model and up to 2,400 output tokens. Input and output count toward your {COURSE_LIMITS.defaultTokenBudget.toLocaleString()}-token course limit.</small>
+						{busy && <Button variant="ghost" onClick={() => abort.current?.abort()}>Cancel</Button>}
+						<Button type="submit" variant="primary" glyph={busy ? "spin" : "route"} busy={busy} disabled={!title.trim()}>{busy ? "Drafting your plan…" : "Draft a plan"}</Button>
+					</div>
+					{busy && <Loading label="Reading the source and sketching a plan. You will review it before anything else is prepared." />}
 				</form>
-			</section>
-	);
-	const listSection = (
+			</Card>}
 			<section aria-labelledby="your-courses-heading">
-				<h2 id="your-courses-heading" className="self-paced__section-title">Your courses</h2>
-				{loadError && <p className="self-paced__alert" role="alert">{loadError}</p>}
-				{courses === null ? <p role="status">Loading…</p>
-					: courses.length === 0 ? <div className="self-paced__empty">
-						<KeatingBot size={56} state="greeting" label="" />
-						<div>
-							<p><strong>Nothing on the desk yet.</strong></p>
-							<p className="self-paced__hint">Name a paper or a topic above and Keating will draft a short plan for you to look over. Courses are kept on this device.</p>
-						</div>
-					</div>
-					: <ul className="self-paced__list">
-						{courses.map((course) => <li key={course.id}>
-							<Link to="/learn/$courseId" params={{ courseId: course.id }} className="self-paced__course-link">
-								<span className="self-paced__course-title">{course.title}</span>
-								<span className="self-paced__hint">
-									{course.status === "draft" ? "Plan waiting for your review"
-										: course.status === "completed" ? "Completed"
-										: steps[course.id] ? `${steps[course.id]!.filter((state) => state === "done").length} of ${course.activities.length} done` : "In progress"}
-									{" · "}{course.activities.length} activities · {course.source.title}
-								</span>
-								{steps[course.id] && <StepBar mini states={steps[course.id]!} label={`${steps[course.id]!.filter((state) => state === "done").length} of ${course.activities.length} activities done`} />}
-							</Link>
-						</li>)}
-					</ul>}
+				<h2 id="your-courses-heading">Your courses</h2>
+				{loadError ? <div className="sp-empty"><KeatingBot size={40} state="thinking" label="" /><p role="alert">{loadError}</p><Button onClick={load}>Try again</Button></div>
+					: courses === null ? <div className="sp-empty"><Loading label="Loading your courses…" /><ButtonLink to="/chat" variant="ghost">Back to Chat</ButtonLink></div>
+					: !hasCourses ? <EmptyState heading="Nothing on the desk yet." glyph="book" actions={<Button variant="ghost" onClick={() => document.getElementById("sp-topic")?.focus()}>Start a course</Button>}>Courses you start are kept on this device.</EmptyState>
+					: <ul className="sp-library">{courses.map(course => {
+						const summary = steps[course.id];
+						const draft = course.status === "draft";
+						const complete = course.status === "completed";
+						const action = draft ? "Review plan" : complete ? "Open" : "Continue";
+						return <li key={course.id}>
+							<div><strong>{course.title}</strong><small>{draft ? "Plan drafted · waiting for you to approve" : complete ? "Complete · review your work" : summary?.next ? `In progress · next: ${summary.next.activity.title}` : summary?.nextAvailableAt ? `In progress · next activity opens ${when(summary.nextAvailableAt, Date.now())}` : "In progress"}
+								{" · "}{course.activities.length} activities · {course.source.title}</small></div>
+							<div>{draft ? <Chip>Draft</Chip> : summary && <Progress done={summary.done} total={summary.total} label="Activities completed" />}</div>
+							<ButtonLink to={`/learn/${encodeURIComponent(course.id)}`} variant={draft ? "line" : complete ? "ghost" : "primary"} size="sm" aria-label={`${action}: ${course.title}`}>{action}</ButtonLink>
+						</li>;
+					})}</ul>}
 			</section>
-	);
-
-	return <div className="self-paced-page retro-layout retro-page">
-		<Nav />
-		<main className="self-paced">
-			<header className="self-paced__header">
-				<h1>Self-paced courses</h1>
-				<p>Pick one paper or topic and say what you want to be able to do. Keating drafts a short plan for you to review, prepares each step in the background, and you work through it over several sittings.</p>
-			</header>
-
-			{courses !== null && !hasCourses && formSection}
-			{listSection}
-			{hasCourses && <div className="self-paced__actions">
-				<button type="button" className="self-paced__button" aria-expanded={showForm} aria-controls="new-course-form" onClick={() => setShowForm((open) => !open)}>
-					<Plus size={14} aria-hidden="true" /> Start another course <ChevronDown className="k-chevron" size={14} aria-hidden="true" />
-				</button>
-			</div>}
-			{hasCourses && showForm && formSection}
 		</main>
 	</div>;
 }
@@ -277,16 +244,10 @@ function PreparationPanel({ course, jobs, materials, onChanged }: { course: Self
 	const wanted = course.activities.filter((activity) => !activity.skipped);
 	const total = wanted.length;
 	const ready = wanted.filter((activity) => materials.some((material) => material.activityId === activity.id && material.fingerprint === activityFingerprint(course, activity))).length;
-	if (ready >= total && pending === 0 && !queue.blocked) {
-		return <p className="self-paced__prep-done" role="status">
-			<strong><Check size={14} aria-hidden="true" /> All {total} activities are prepared.</strong>
-			<span>{course.budget.usedTokens.toLocaleString()} of {course.budget.maxTokens.toLocaleString()} tokens used.</span>
-		</p>;
-	}
 	const used = course.budget.usedTokens, max = course.budget.maxTokens;
 
-	return <section className="self-paced__card" aria-labelledby="prep-heading">
-		<h2 id="prep-heading">Preparation</h2>
+	return <Card as="section" className="sp-panel" aria-labelledby="prep-heading">
+		<h2 className="k-halftone" id="prep-heading">Preparation</h2>
 		<p role="status" aria-live="polite">
 			{queue.blocked ? "Preparation is paused because of a problem."
 				: queue.overBudget ? "Preparation is paused: this course reached its limit."
@@ -295,23 +256,22 @@ function PreparationPanel({ course, jobs, materials, onChanged }: { course: Self
 				: paused ? `Paused. ${ready} of ${total} activities prepared.`
 				: `Preparing in the background: ${ready} of ${total} ready. You can start on what is ready, or leave this page; it continues whenever Keating is open.`}
 		</p>
-		<div className="self-paced__meter" role="img" aria-label={`${used.toLocaleString()} of ${max.toLocaleString()} tokens used`}>
-			<span style={{ transform: `scaleX(${Math.min(1, max > 0 ? used / max : 0)})` }} />
-		</div>
-		<p className="self-paced__hint">{used.toLocaleString()} of {max.toLocaleString()} tokens used on this course. Preparation never goes past the limit without asking.</p>
+		<div><small>Activities ready</small><Meter live={running && !paused && ready < total && !queue.blocked && !queue.overBudget} label="Activities ready" value={ready} max={total} valueText={`${ready} of ${total}`} /></div>
+		<div><small>Token budget</small><Meter tone="ink" label="Tokens used" value={used} max={max} valueText={`${used.toLocaleString()} of ${max.toLocaleString()}`} /></div>
+		<p className="self-paced__hint">Preparation never goes past the limit without asking.</p>
 		{queue.blocked && <p className="self-paced__alert" role="alert">{queue.blocked}</p>}
 		{note && <p className="self-paced__hint" role="status">{note}</p>}
 		<div className="self-paced__actions">
-			{queue.blocked && <button type="button" className="self-paced__button self-paced__button--primary" onClick={() => void retryFailedJobs(store(), course.id, Date.now()).then(onChanged)}><RefreshCw size={14} aria-hidden="true" /> Try again</button>}
-			{queue.overBudget && <button type="button" className="self-paced__button self-paced__button--primary" onClick={() => void raiseCourseBudget(store(), course.id, COURSE_LIMITS.defaultTokenBudget).then(onChanged)}>Allow {COURSE_LIMITS.defaultTokenBudget.toLocaleString()} more tokens</button>}
+			{queue.blocked && <Button type="button" variant="primary" onClick={() => void retryFailedJobs(store(), course.id, Date.now()).then(onChanged)}><KeatingGlyph name="refresh" size={14} /> Try again</Button>}
+			{queue.overBudget && <Button type="button" variant="primary" onClick={() => void raiseCourseBudget(store(), course.id, COURSE_LIMITS.defaultTokenBudget).then(onChanged)}>Allow {COURSE_LIMITS.defaultTokenBudget.toLocaleString()} more tokens</Button>}
 			{pending > 0 && !queue.blocked && !queue.overBudget && (paused
-				? <button type="button" className="self-paced__button" onClick={() => setPaused(false)}><Play size={14} aria-hidden="true" /> Resume</button>
-				: <button type="button" className="self-paced__button" onClick={() => { setPaused(true); abort.current?.abort(); }}><Pause size={14} aria-hidden="true" /> Pause</button>)}
-			{pending > 0 && <button type="button" className="self-paced__button" onClick={() => { setPaused(true); abort.current?.abort(); void cancelQueuedJobs(store(), course.id, Date.now()).then(onChanged); }}>Stop preparing</button>}
-			{pending === 0 && ready < total && !queue.blocked && <button type="button" className="self-paced__button self-paced__button--primary" onClick={() => { setPaused(false); void enqueueCoursePreparation(store(), course, Date.now(), { revive: true }).then(onChanged); }}>Prepare the remaining activities</button>}
-			{running && <span className="self-paced__drafting"><Spinner size={14} /> Working…</span>}
+				? <Button type="button" variant="line" onClick={() => setPaused(false)}><KeatingGlyph name="play" size={14} /> Resume</Button>
+				: <Button type="button" variant="line" onClick={() => { setPaused(true); abort.current?.abort(); }}><KeatingGlyph name="pause" size={14} /> Pause</Button>)}
+			{pending > 0 && <Button type="button" variant="line" onClick={() => { setPaused(true); abort.current?.abort(); void cancelQueuedJobs(store(), course.id, Date.now()).then(onChanged); }}>Stop preparing</Button>}
+			{pending === 0 && ready < total && !queue.blocked && <Button type="button" variant="primary" onClick={() => { setPaused(false); void enqueueCoursePreparation(store(), course, Date.now(), { revive: true }).then(onChanged); }}>Prepare the remaining activities</Button>}
+			{running && <Loading size="inline" label="Working…" />}
 		</div>
-	</section>;
+	</Card>;
 }
 
 type AfterActivity = { title: string; go: () => void } | { waiting: string } | undefined;
@@ -320,8 +280,7 @@ function ActivityWork({ course, item, material, evidence, after, onChanged }: { 
 	const { activity } = item;
 	const assessed = activity.kind !== "learn";
 	// Recall and Apply keep the explanation closed until after an answer; opening it makes the answer "with help".
-	const hideFirst = activity.kind === "recall" || activity.kind === "transfer";
-	const [materialOpen, setMaterialOpen] = useState(!hideFirst && activity.kind !== "practice");
+	const [materialOpen, setMaterialOpen] = useState(!assessed);
 	const [hintOpen, setHintOpen] = useState<Record<string, boolean>>({});
 	const [answers, setAnswers] = useState<Record<string, string>>(() => Object.fromEntries((material?.questions ?? []).map((question) => [question.id, readAnswerDraft(course.id, question.id)])));
 	const setAnswer = (questionId: string, value: string) => {
@@ -336,7 +295,7 @@ function ActivityWork({ course, item, material, evidence, after, onChanged }: { 
 	settled.current ??= new Set(own.filter((record) => record.verdict).map((record) => record.id));
 	const condition = completionCondition(activity.kind);
 
-	if (!material) return <p className="self-paced__hint" role="status">This activity is not prepared yet. It appears here as soon as it is ready.</p>;
+	if (!material) return <EmptyState role="status" heading="This activity is not prepared yet.">It appears here as soon as it is ready.</EmptyState>;
 
 	const submit = async (questionId: string) => {
 		setBusy(questionId); setError("");
@@ -358,55 +317,51 @@ function ActivityWork({ course, item, material, evidence, after, onChanged }: { 
 		finally { setBusy(null); onChanged(); }
 	};
 
-	return <div className="self-paced__work k-reveal">
-		<p className="self-paced__hint">Completes when: {condition.description}</p>
-		{material.groundedIn === "model-knowledge" && <p className="self-paced__notice">Prepared from what the model knows about the source, not from text you supplied. Check details against the source.</p>}
-
-		{(activity.kind === "learn" || materialOpen) && <div className="self-paced__material"><MarkdownBlock content={material.explanation} /></div>}
-		{assessed && <button type="button" className="self-paced__button" aria-expanded={materialOpen} onClick={() => setMaterialOpen((open) => !open)}>
-			{materialOpen ? "Hide the notes" : hideFirst ? "Show the notes (answers given after this count as “with help”)" : "Show the refresher (answers given after this count as “with help”)"}
-		</button>}
+	return <LessonFrame className="self-paced__work k-reveal" glyph={assessed ? "edit" : "book"} title={activity.title} kind={ACTIVITY_LABELS[activity.kind]}
+		tools={assessed && <Button size="sm" variant="ghost" aria-expanded={materialOpen} onClick={() => setMaterialOpen(!materialOpen)}>{materialOpen ? "Hide the notes" : "Show the notes"}</Button>}>
+		<p className="self-paced__hint">{condition.description}</p>
+		{material.groundedIn === "model-knowledge" && <Note>Prepared from what the model knows about the source, not from text you supplied. Check details against the source.</Note>}
+		{(activity.kind === "learn" || materialOpen) && <Prose className="self-paced__material"><MarkdownBlock content={material.explanation} /></Prose>}
 
 		{activity.kind === "learn" && item.state !== "done" && <div className="self-paced__actions">
-			<button type="button" className="self-paced__button self-paced__button--primary" onClick={() => void recordRead(store(), course.id, activity.id).then(onChanged).catch((problem) => setError(errorText(problem, "Could not save that. Try again.")))}><Check size={14} aria-hidden="true" /> Mark as read</button>
+			<Button type="button" variant="primary" onClick={() => void recordRead(store(), course.id, activity.id).then(onChanged).catch((problem) => setError(errorText(problem, "Could not save that. Try again.")))}><KeatingGlyph name="check" size={14} /> Mark as read</Button>
 		</div>}
 
 		{material.questions.map((question, index) => {
 			const attempts = own.filter((record) => record.questionId === question.id);
 			return <section key={question.id} className="self-paced__question" aria-label={`Question ${index + 1}`}>
 				<h4>{activity.kind === "learn" ? "Check yourself (optional)" : `Question ${index + 1}`}</h4>
-				<div className="self-paced__prompt"><MarkdownBlock content={question.prompt} /></div>
-				{question.hint && (hintOpen[question.id]
-					? <p className="self-paced__notice"><strong>Hint:</strong> {question.hint}</p>
-					: <button type="button" className="self-paced__button self-paced__button--quiet" onClick={() => setHintOpen((current) => ({ ...current, [question.id]: true }))}>Show a hint{assessed ? " (your answer will count as “with help”)" : ""}</button>)}
-				<label className="self-paced__field"><span>Your answer</span>
-					<textarea rows={4} maxLength={COURSE_LIMITS.answer} value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} onKeyDown={(event) => {
+				<Prose className="self-paced__prompt"><MarkdownBlock content={question.prompt} /></Prose>
+				{hintOpen[question.id] && <Note><strong>Hint</strong> {question.hint}</Note>}
+				<Field label="Your answer" hint={assessed ? "Answers given with the notes or a hint in view count as “with help”." : undefined}>
+					<TextArea rows={3} maxLength={COURSE_LIMITS.answer} value={answers[question.id] ?? ""} onChange={(event) => setAnswer(question.id, event.target.value)} onKeyDown={(event) => {
 						if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && busy === null && (answers[question.id] ?? "").trim()) { event.preventDefault(); void submit(question.id); }
 					}} />
-				</label>
-				<div className="self-paced__actions">
-					<button type="button" className="self-paced__button self-paced__button--primary" disabled={busy !== null || !(answers[question.id] ?? "").trim()} onClick={() => void submit(question.id)}>{busy === question.id ? <><Spinner size={14} /> Marking…</> : "Submit answer"}</button>
-					<span className="self-paced__hint self-paced__kbd-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> also submits</span>
-				</div>
-				{attempts.length > 0 && <ol className="self-paced__attempts" aria-label="Your attempts">
+				</Field>
+				<footer className="lesson-foot sp-footer">
+					{question.hint && !hintOpen[question.id] && <Button glyph="bulb" variant="ghost" onClick={() => setHintOpen(current => ({ ...current, [question.id]: true }))}>Show a hint</Button>}
+					<small className="self-paced__kbd-hint"><Kbd>Ctrl</Kbd> + <Kbd>Enter</Kbd> also submits</small>
+					<Button variant="primary" busy={busy === question.id} disabled={busy !== null || !(answers[question.id] ?? "").trim()} onClick={() => void submit(question.id)}>{busy === question.id ? "Marking…" : "Submit answer"}</Button>
+				</footer>
+				{attempts.length > 0 && <ol className="self-paced__attempts" aria-label="Your attempts" aria-live="polite">
 					{attempts.map((record) => <li key={record.id}>
 						<p className="self-paced__attempt-head">
-							<span className={`self-paced__verdict self-paced__verdict--${record.verdict ?? "pending"}${record.verdict && !settled.current!.has(record.id) ? " k-receipt" : ""}`}>{record.verdict === "met" && <Check size={12} aria-hidden="true" />}{record.verdict === "met" ? "Correct" : record.verdict === "partly" ? "Partly correct" : record.verdict === "not-met" ? "Not yet" : "Not marked"}</span>
+							<span className={`self-paced__verdict self-paced__verdict--${record.verdict ?? "pending"}${record.verdict && !settled.current!.has(record.id) ? " k-receipt" : ""}`}><KeatingGlyph name={record.verdict === "met" ? "check" : record.verdict === "partly" ? "minus" : record.verdict === "not-met" ? "x" : "clock"} size={14} />{record.verdict === "met" ? "Correct" : record.verdict === "partly" ? "Partly" : record.verdict === "not-met" ? "Not quite" : "Not marked"}</span>
 							<span>{EVIDENCE_LABELS[record.kind]}</span>
 							<span>{new Date(record.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
 						</p>
 						<p className="self-paced__answer">{record.answer}</p>
 						{record.feedback && <p className="self-paced__feedback"><strong>Keating’s feedback (AI):</strong> {record.feedback}</p>}
-						{!record.verdict && <button type="button" className="self-paced__button" disabled={busy !== null} onClick={() => void remark(record)}>{busy === record.id ? <><Spinner size={14} /> Marking…</> : "Mark this answer"}</button>}
+						{!record.verdict && <Button type="button" variant="line" disabled={busy !== null} onClick={() => void remark(record)}>{busy === record.id ? <Loading size="inline" label="Marking…" /> : "Mark this answer"}</Button>}
 					</li>)}
 				</ol>}
 			</section>;
 		})}
 		{error && <p className="self-paced__alert" role="alert">{error}</p>}
 		{item.state === "done" && after && ("go" in after
-			? <div className="self-paced__actions k-reveal"><button type="button" className="self-paced__button self-paced__button--primary" onClick={after.go}>Next: {after.title} <ArrowRight size={14} aria-hidden="true" /></button></div>
+			? <div className="self-paced__actions k-reveal"><Button type="button" variant="primary" onClick={after.go}>Next: {after.title} <KeatingGlyph name="right" size={14} /></Button></div>
 			: <p className="self-paced__hint k-reveal">{after.waiting}</p>)}
-	</div>;
+	</LessonFrame>;
 }
 
 export function SelfPacedCourse() {
@@ -415,6 +370,7 @@ export function SelfPacedCourse() {
 	const now = useNow();
 	const [open, setOpen] = useState<string | null>(null);
 	const [actionError, setActionError] = useState("");
+	const [discard, setDiscard] = useState(false);
 	const [editing, setEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState("");
 	const [draftPromise, setDraftPromise] = useState("");
@@ -450,13 +406,14 @@ export function SelfPacedCourse() {
 	}, [progress, course]);
 	const act = (work: Promise<unknown>) => { setActionError(""); void work.then(reload).catch((problem) => setActionError(errorText(problem, "That change could not be saved. Nothing was lost; try again."))); };
 
-	if (!loaded) return <div className="self-paced-page retro-layout retro-page"><Nav /><main className="self-paced"><p role="status">Loading your course…</p></main></div>;
-	if (error || !course) return <div className="self-paced-page retro-layout retro-page"><Nav /><main className="self-paced">
-		<section className="self-paced__card" role="alert">
-			<h1>{error ? "This course could not be opened" : "Course not found"}</h1>
-			<p>{error ?? "This course is not on this device. Courses are stored in the browser where they were created."}</p>
-			<Link to="/learn" className="self-paced__button">All courses</Link>
-		</section>
+	if (!loaded || error || !course) return <div className="self-paced-page"><AppBar title="Self-paced courses" /><main className="sp-main">
+		<Card as="section" className="sp-empty">
+			{loaded ? <><KeatingBot size={40} state="greeting" label="" /><div role="alert">
+				<h1>{error ? "This course could not be opened" : "Course not found"}</h1>
+				<p>{error ?? "This course is not on this device. Courses are stored in the browser where they were created."}</p>
+			</div></> : <Loading label="Loading your course…" size="page" />}
+			<ButtonLink to="/learn">All courses</ButtonLink>
+		</Card>
 	</main></div>;
 
 	const stateLabel = (item: ActivityProgress): string => item.state === "done" ? "Done"
@@ -465,49 +422,52 @@ export function SelfPacedCourse() {
 		: item.state === "locked" ? `After: ${item.blockedBy.join(", ")}`
 		: "Ready";
 
-	return <div className="self-paced-page retro-layout retro-page">
-		<Nav />
-		<main className="self-paced">
-			<p><Link to="/learn" className="self-paced__back"><ArrowLeft size={14} aria-hidden="true" /> All courses</Link></p>
+	return <div className="self-paced-page">
+		<AppBar title="Self-paced courses" back={{label: "All courses", to: "/learn"}} menu={false}>
+			<Menu label="Course actions" trigger={<IconButton label="More" glyph="more" />} items={[
+				{id: "edit", label: "Edit title or goal", glyph: "edit", onSelect: () => { setDraftTitle(course.title); setDraftPromise(course.promise); setEditing(true); }},
+				{id: "download", label: "Download as Markdown", glyph: "export", onSelect: () => downloadTextFile(`${course.title.replace(/[^\w-]+/g, "-").slice(0, 60) || "course"}.md`, exportCourseMarkdown(course, evidence, materials, now))},
+			]} />
+		</AppBar>
+		<main className="sp-main">
 			<header className="self-paced__header">
-				{editing ? <form className="self-paced__card" onSubmit={(event) => { event.preventDefault(); act(editCoursePlan(store(), course.id, { title: draftTitle, promise: draftPromise }, "Edited the title or goal.").then(() => setEditing(false))); }}>
-					<label className="self-paced__field"><span>Title</span><input type="text" required maxLength={COURSE_LIMITS.title} value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></label>
-					<label className="self-paced__field"><span>You will be able to</span><textarea required rows={2} maxLength={COURSE_LIMITS.promise} value={draftPromise} onChange={(event) => setDraftPromise(event.target.value)} /></label>
-					<div className="self-paced__actions"><button type="submit" className="self-paced__button self-paced__button--primary">Save</button><button type="button" className="self-paced__button" onClick={() => setEditing(false)}>Cancel</button></div>
-				</form> : <>
-					<h1>{course.title}</h1>
+				{editing ? <Card as="form" onSubmit={(event) => { event.preventDefault(); act(editCoursePlan(store(), course.id, { title: draftTitle, promise: draftPromise }, "Edited the title or goal.").then(() => setEditing(false))); }}>
+					<Field label="Title"><TextInput autoFocus required maxLength={COURSE_LIMITS.title} value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} /></Field>
+					<Field label="You will be able to"><TextArea required rows={2} maxLength={COURSE_LIMITS.promise} value={draftPromise} onChange={(event) => setDraftPromise(event.target.value)} /></Field>
+					<div className="sp-footer"><Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button><Button type="submit" variant="primary">Save</Button></div>
+				</Card> : <>
+					<h1 className="k-halftone k-green">{course.title}</h1>
 					<p><strong>You will be able to:</strong> {course.promise}</p>
-					<p className="self-paced__hint">Source: {course.source.url ? <a href={course.source.url} target="_blank" rel="noopener noreferrer">{course.source.title}<ExternalLink className="self-paced__ext" size={12} aria-hidden="true" /><span className="public-profile__sr"> (opens in a new tab)</span></a> : course.source.title}{course.source.excerpt ? " · studying from the text you pasted" : " · no text supplied"}</p>
-					{course.prerequisites.length > 0 && <details className="self-paced__details"><summary>Before you start ({course.prerequisites.length})</summary><ul>{course.prerequisites.map((item) => <li key={item}>{item}</li>)}</ul></details>}
-					<div className="self-paced__actions">
-						<button type="button" className="self-paced__button" onClick={() => { setDraftTitle(course.title); setDraftPromise(course.promise); setEditing(true); }}>Edit title or goal</button>
-						<button type="button" className="self-paced__button" onClick={() => downloadTextFile(`${course.title.replace(/[^\w-]+/g, "-").slice(0, 60) || "course"}.md`, exportCourseMarkdown(course, evidence, materials, now))}><Download size={14} aria-hidden="true" /> Download as Markdown</button>
-					</div>
+					<p className="self-paced__hint">Source: {course.source.url ? <a href={course.source.url} target="_blank" rel="noopener noreferrer">{course.source.title} <KeatingGlyph name="ext" size={12} /><span className="k-sr"> (opens in a new tab)</span></a> : course.source.title}{course.source.excerpt ? " · studying from the text you pasted" : " · no text supplied"}</p>
+					{course.prerequisites.length > 0 && <details><summary>Before you start ({course.prerequisites.length})</summary><ul>{course.prerequisites.map((item) => <li key={item}>{item}</li>)}</ul></details>}
 				</>}
 			</header>
 
 			{actionError && <p className="self-paced__alert" role="alert">{actionError}</p>}
 
-			{course.status === "draft" && <section className="self-paced__card self-paced__card--action" aria-labelledby="review-heading">
+			{course.status === "draft" && <Card as="section" aria-labelledby="review-heading">
 				<h2 id="review-heading">Review this plan</h2>
-				<p>Keating drafted this plan. Skip anything you already know, then approve it. Preparing the activities starts only after you approve.</p>
-				<div className="self-paced__actions">
-					<button type="button" className="self-paced__button self-paced__button--primary" onClick={() => act(startCourse(store(), course.id))}>Approve and start preparing</button>
-					<button type="button" className="self-paced__button" onClick={() => { if (window.confirm("Delete this draft plan?")) void store().deleteCourse(course.id).then(() => { window.location.assign("/learn"); }).catch((problem) => setActionError(errorText(problem, "The draft could not be deleted."))); }}>Discard</button>
-				</div>
-			</section>}
+				<p>Skip anything you already know, then approve the plan. Keating starts preparing activities after you approve.</p>
+				<div className="sp-footer"><Button variant="ghost" onClick={() => setDiscard(true)}>Discard</Button><Button variant="primary" onClick={() => act(startCourse(store(), course.id))}>Approve and start preparing</Button></div>
+				<ConfirmDialog open={discard} title="Discard this draft plan?" description="This removes the draft from this device." confirmLabel="Discard" onCancel={() => setDiscard(false)} onConfirm={() => {
+					setDiscard(false);
+					void store().deleteCourse(course.id).then(() => window.location.assign("/learn")).catch(problem => setActionError(errorText(problem, "The draft could not be deleted.")));
+				}} />
+			</Card>}
 
-			{course.status === "completed" && <section className="self-paced__card self-paced__card--done" role="status">
-				<h2>Course complete</h2>
+			{course.status === "completed" && <Card as="section" role="status">
+				<h2 className="k-halftone k-green">Course complete</h2>
 				<div className="self-paced__done-row">
 					<KeatingBot size={56} state="success" label="" />
 					<p>You finished the final task without help. Your materials and answers stay here, and you can download them.</p>
 				</div>
-			</section>}
+			</Card>}
 
-			{course.status !== "draft" && <section className="self-paced__card" aria-labelledby="progress-heading">
-				<h2 id="progress-heading">Where you are</h2>
-				<StepBar states={progress.map((item) => item.state)} label={`${summary.done} of ${summary.total} activities done${summary.skipped ? `, ${summary.skipped} skipped` : ""}`} />
+			{course.status !== "draft" && <div className="sp-columns"><Card as="section" className="sp-panel" aria-labelledby="progress-heading">
+				<h2 className="k-halftone" id="progress-heading">Where you are</h2>
+				{summary.next && <strong>Step {progress.indexOf(summary.next) + 1} of {summary.total}</strong>}
+				<Progress done={summary.done} total={summary.total} label="Activities completed" />
+
 				<p role="status">
 					{summary.complete ? "All done."
 						: summary.next ? <>Next: <strong>{summary.next.activity.title}</strong>.</>
@@ -515,43 +475,36 @@ export function SelfPacedCourse() {
 						: "Waiting for preparation to finish."}
 					{" "}{summary.done} of {summary.total} activities done{summary.skipped ? `, ${summary.skipped} skipped` : ""}.
 				</p>
-				<dl className="self-paced__evidence">
-					{EVIDENCE_KINDS.map((kind) => <div key={kind} data-zero={summary.evidence[kind] === 0 || undefined}><dt>{EVIDENCE_LABELS[kind]}</dt><dd>{summary.evidence[kind]}</dd></div>)}
-				</dl>
-				<p className="self-paced__hint">These are counted separately on purpose: reading something, answering with help, answering alone, recalling it later and applying it somewhere new are different things.</p>
-				{summary.next && open !== summary.next.activity.id && <button type="button" className="self-paced__button self-paced__button--primary" onClick={() => { setOpen(summary.next!.activity.id); setFocusId(summary.next!.activity.id); }}>Continue</button>}
-			</section>}
-
-			<PreparationPanel course={course} jobs={jobs} materials={materials} onChanged={reload} />
+				<div data-glyph-host><EvidenceCounts evidence={summary.evidence} /></div>
+				{summary.next && open !== summary.next.activity.id && <Button type="button" variant="primary" onClick={() => { setOpen(summary.next!.activity.id); setFocusId(summary.next!.activity.id); }}>Continue</Button>}
+			</Card>
+			<PreparationPanel course={course} jobs={jobs} materials={materials} onChanged={reload} /></div>}
 
 			<section aria-labelledby="plan-heading">
-				<h2 id="plan-heading" className="self-paced__section-title">Plan</h2>
+				<h2 id="plan-heading">Plan</h2>
 				<ol className="self-paced__plan">
 					{progress.map((item, index) => {
 						const { activity } = item;
 						const canOpen = course.status !== "draft" && (item.state === "available" || item.state === "done");
 						const isOpen = open === activity.id && canOpen;
+						const current = course.status === "active" && summary.next === item;
+						const glyph = activityGlyph(item.state);
 						const isLast = index === progress.length - 1;
-						return <li key={activity.id} className="self-paced__activity" data-state={item.state}>
-							<span className="self-paced__step" aria-hidden="true">{item.state === "done" ? <Check size={14} /> : index + 1}</span>
+						return <li key={activity.id} className="self-paced__activity" data-glyph-host data-state={item.state} data-current={current || undefined}>
+							<KeatingGlyph name={glyph} size={16} />
 							<div className="self-paced__activity-head">
 								<div>
-									<p className="self-paced__kind">{ACTIVITY_LABELS[activity.kind]}{isLast ? " · final task" : ""}</p>
-									<h3 id={`activity-${activity.id}`} tabIndex={-1}>{activity.title}</h3>
-									<p className={`self-paced__state${fresh === activity.id ? " k-receipt" : ""}`}>
-										{item.state === "done" ? <Check size={14} aria-hidden="true" /> : item.state === "waiting" ? <Timer size={14} aria-hidden="true" /> : item.state === "locked" ? <Lock size={14} aria-hidden="true" /> : null}
-										{stateLabel(item)}
-									</p>
+									<h3 id={`activity-${activity.id}`} tabIndex={-1}>{index + 1} · {activity.title}</h3>
+									<small className={fresh === activity.id ? "k-receipt" : ""}>{ACTIVITY_LABELS[activity.kind]}{isLast ? " · final task" : ""} · {current ? "Now" : stateLabel(item)}</small>
 								</div>
 								<div className="self-paced__actions">
-									{canOpen && <button type="button" className="self-paced__button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : activity.id)}>{isOpen ? "Close" : item.state === "done" ? "Review" : "Open"} <ChevronDown className="k-chevron" size={14} aria-hidden="true" /></button>}
+									{canOpen && <Button type="button" variant="ghost" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : activity.id)}>{isOpen ? "Close" : item.state === "done" ? "Review" : "Open"} <KeatingGlyph name="chev" className="k-chevron" size={14} /></Button>}
 									{!isLast && item.state !== "done" && (activity.skipped
-										? <button type="button" className="self-paced__button self-paced__button--quiet" onClick={() => act(setActivitySkipped(store(), course.id, activity.id, false))}>Bring back</button>
-										: <button type="button" className="self-paced__button self-paced__button--quiet" onClick={() => act(setActivitySkipped(store(), course.id, activity.id, true))}>I already know this</button>)}
+										? <Button type="button" variant="ghost" onClick={() => act(setActivitySkipped(store(), course.id, activity.id, false))}>Bring back</Button>
+										: <Button type="button" variant="ghost" onClick={() => act(setActivitySkipped(store(), course.id, activity.id, true))}>I already know this</Button>)}
 								</div>
 							</div>
-							<p className="self-paced__purpose"><strong>Why:</strong> {activity.purpose}</p>
-							<p className="self-paced__hint">From: {activity.source.label}</p>
+							<details className="sp-why"><summary>Why this activity?</summary><p>{activity.purpose}</p><small>From: {activity.source.label}</small></details>
 							{isOpen && <ActivityWork course={course} item={item} material={materials.find((material) => material.activityId === activity.id)} evidence={evidence} onChanged={reload}
 								after={summary.complete ? undefined
 									: summary.next && summary.next.activity.id !== activity.id ? { title: summary.next.activity.title, go: () => { setOpen(summary.next!.activity.id); setFocusId(summary.next!.activity.id); } }
@@ -562,7 +515,7 @@ export function SelfPacedCourse() {
 				</ol>
 			</section>
 
-			<details className="self-paced__details">
+			<details>
 				<summary>Plan changes ({course.changes.length})</summary>
 				<ol className="self-paced__changes">
 					{[...course.changes].reverse().map((change, index) => <li key={`${change.at}-${index}`}>

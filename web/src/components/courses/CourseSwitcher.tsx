@@ -1,17 +1,10 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  BookOpen,
-  Check,
-  ChevronDown,
-  LibraryBig,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
+import { css } from "../../../styled-system/css";
 import { listCourses } from "../../courses/client";
 import type { CourseListItem } from "../../courses/contracts";
-import { courseLabelClass } from "./course-ui";
+import { Chip, EmptyState, Loading, IconButton } from "../../design-system/kit";
 
 const itemClass = css({
   display: "grid",
@@ -60,7 +53,7 @@ export function CourseSwitcher({
       if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") { setOpen(false); containerRef.current?.querySelector("button")?.focus(); }
     };
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -80,57 +73,19 @@ export function CourseSwitcher({
       ref={containerRef}
       className={css({ position: "relative", minW: 0, maxW: "100%", flex: 1 })}
     >
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className={css({
-          display: "flex",
-          w: "100%",
-          minW: 0,
-          alignItems: "center",
-          gap: "0.5rem",
-          px: "0.35rem",
-          py: "0.15rem",
-          textAlign: "left",
-          cursor: "pointer",
-          _hover: { bg: "var(--course-wash, #ddebdd)" },
-        })}
-      >
-        <span className={css({ minW: 0, flex: 1 })}>
-          <span className={cx(courseLabelClass, css({ display: "block" }))}>
-            Course workspace · {role}
-          </span>
-          <span
-            className={css({
-              display: "block",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              fontFamily: "Georgia, serif",
-              fontSize: "1.1rem",
-              fontWeight: 700,
-              lineHeight: 1.2,
-            })}
-          >
-            {title}
-          </span>
-        </span>
-        <ChevronDown size={16} className={css({ flexShrink: 0 })} />
-      </button>
+      <div className="cw-switcher"><span>{title}</span><IconButton label="Switch course" glyph="chev" size="sm"
+        aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(value => !value)} /><Chip>{role}</Chip></div>
       {open ? (
         <div
-          role="menu"
+          role="dialog" aria-label="Switch course" data-course-switcher
           className={css({
             position: "absolute",
             top: "calc(100% + 0.4rem)",
             left: 0,
             zIndex: 60,
             w: "min(22rem, calc(100vw - 2rem))",
-            border: "2px solid var(--ink)",
+            border: "1px solid var(--line)",
             bg: "var(--card)",
-            boxShadow: "6px 6px 0 color-mix(in srgb, var(--ink) 30%, transparent)",
           })}
         >
           <div
@@ -140,6 +95,7 @@ export function CourseSwitcher({
             })}
           >
             <input
+              autoFocus
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
               placeholder="Find a course…"
@@ -157,19 +113,7 @@ export function CourseSwitcher({
           </div>
           <div className={css({ maxH: "17rem", overflowY: "auto" })}>
             {state === "loading" ? (
-              <p
-                className={css({
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.4rem",
-                  px: "0.7rem",
-                  py: "0.6rem",
-                  fontSize: "0.78rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                <RefreshCw size={13} /> Loading your courses…
-              </p>
+              <Loading label="Loading your courses…" />
             ) : state === "error" ? (
               <p
                 className={css({
@@ -191,20 +135,12 @@ export function CourseSwitcher({
                   onClick={() => setOpen(false)}
                 >
                   {course.id === courseId ? (
-                    <Check size={14} />
+                    <KeatingGlyph name="check" size={14} />
                   ) : (
-                    <BookOpen size={14} />
+                    <KeatingGlyph name="book" size={14} />
                   )}
                   <span className={css({ minW: 0 })}>
-                    <strong
-                      className={css({
-                        display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontSize: "0.83rem",
-                      })}
-                    >
+                    <strong className="cw-switcher-name">
                       {course.title}
                     </strong>
                     <small className={css({ color: "var(--ink-soft)" })}>
@@ -215,16 +151,7 @@ export function CourseSwitcher({
                 </Link>
               ))
             ) : (
-              <p
-                className={css({
-                  px: "0.7rem",
-                  py: "0.6rem",
-                  fontSize: "0.78rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                No other course matches.
-              </p>
+              <EmptyState heading="No other course matches." />
             )}
           </div>
           <div className={css({ borderTop: "1px solid var(--ink)" })}>
@@ -233,7 +160,7 @@ export function CourseSwitcher({
               className={itemClass}
               onClick={() => setOpen(false)}
             >
-              <LibraryBig size={14} />
+              <KeatingGlyph name="book" size={14} />
               <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                 Course library
               </span>
@@ -244,7 +171,7 @@ export function CourseSwitcher({
               className={itemClass}
               onClick={() => setOpen(false)}
             >
-              <Plus size={14} />
+              <KeatingGlyph name="plus" size={14} />
               <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                 Plan a new course with Keating
               </span>

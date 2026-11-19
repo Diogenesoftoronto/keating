@@ -9,7 +9,7 @@ import {
 	type ReactNode,
 } from "react";
 import type { UiAction, UiDocument } from "@keating/learner-contracts";
-import { CircleAlert, Loader2 } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import type { StorageLike as EventStoreStorage } from "../event-store";
 import { type OpenUISourceFailureKind, tryCompileOpenUISourceToSharedDocument } from "./shared-bridge";
@@ -123,7 +123,7 @@ export function KeatingOpenUIRenderer({
 		>
 			{isStreaming ? (
 				<div className={css({ marginBottom: "0.375rem", display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })} role="status">
-					<Loader2 aria-hidden="true" size={12} className={css({ animation: "spin 1s linear infinite", "@media (prefers-reduced-motion: reduce)": { animation: "none" } })} />
+					<KeatingGlyph name="spin" size={12} className="k-glyph-working" />
 					Building interaction
 				</div>
 			) : null}
@@ -344,8 +344,8 @@ function InertOpenUISourceRecovery({
 	>
 		<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", padding: "0.75rem", fontSize: "0.75rem", color: tone })} role={state === "rejected" ? "alert" : "status"}>
 			{state === "rebuilding"
-				? <Loader2 aria-hidden="true" size={15} className={css({ marginTop: "0.0625rem", flexShrink: 0, animation: "spin 1s linear infinite", "@media (prefers-reduced-motion: reduce)": { animation: "none" } })} />
-				: <CircleAlert aria-hidden="true" size={15} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />}
+				? <KeatingGlyph name="spin" size={15} className={`k-glyph-working ${css({ marginTop: "0.0625rem", flexShrink: 0 })}`} />
+				: <KeatingGlyph name="alert" size={15} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />}
 			<div className={css({ display: "grid", gap: "0.5rem" })}>
 				<span>{state === "incomplete"
 					? "This activity is still being prepared. You can keep reading the lesson while it finishes."

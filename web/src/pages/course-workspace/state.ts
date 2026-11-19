@@ -79,10 +79,9 @@ export function courseWorkspaceReducer(
       const first = state.snapshot === null;
       const lessons = allCourseLessons(action.snapshot.course);
       // A course with nothing to read opens on the builder for whoever can fill it.
-      const view =
-        first && !lessons.length && action.snapshot.permissions.canEditCourse
-          ? "build"
-          : state.view;
+      let view = state.view;
+      if (view === "review" && !action.snapshot.permissions.canReview) view = "read";
+      if (first && view === "read" && !lessons.length && action.snapshot.permissions.canEditCourse) view = "build";
       return { ...state, snapshot: action.snapshot, error: "", view };
     }
     case "loading.finished":

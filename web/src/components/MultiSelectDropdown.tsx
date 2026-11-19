@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 
 export interface MultiSelectOption<T extends string> {
@@ -77,7 +77,7 @@ export function MultiSelectDropdown<T extends string>({
 				})}
 			>
 				<span className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{summary}</span>
-				<ChevronDown size={14} aria-hidden="true" className={css({ flexShrink: 0, transition: "transform 150ms", "details[open] &": { transform: "rotate(180deg)" } })} />
+				<KeatingGlyph name="chev" size={14} className={css({ flexShrink: 0, transition: "transform 150ms", "details[open] &": { transform: "rotate(180deg)" } })} />
 			</summary>
 			<div
 				className={css({
@@ -102,7 +102,7 @@ export function MultiSelectDropdown<T extends string>({
 					onClick={() => onChange([])}
 					className={css({ display: "flex", width: "100%", alignItems: "center", gap: "0.5rem", borderRadius: "0.25rem", paddingInline: "0.5rem", paddingBlock: "0.375rem", textAlign: "left", fontSize: "0.75rem", color: "var(--foreground)", _hover: { background: "var(--accent)" } })}
 				>
-					<span className={css({ display: "inline-flex", width: "1rem", justifyContent: "center" })}>{selected.length === 0 && <Check size={13} />}</span>
+					<span className={css({ display: "inline-flex", width: "1rem", justifyContent: "center" })}>{selected.length === 0 && <KeatingGlyph name="check" size={13} />}</span>
 					{allLabel}
 				</button>
 				{options.map((option) => (

@@ -1,0 +1,291 @@
+{
+  "slug": "sessions-and-materials",
+  "title": "Sessions and materials",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study"
+  ],
+  "ready": [
+    {
+      "text": "Can I have one exercise to do later?"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat?session=11111111-2222-4333-8444-555555555555"
+    },
+    {
+      "kind": "chapter",
+      "id": "library",
+      "title": "Open Sessions",
+      "explanation": "Open your session library.",
+      "alt": "Open Sessions"
+    },
+    {
+      "kind": "caption",
+      "text": "Open your session library."
+    },
+    {
+      "kind": "wait-for",
+      "text": "How recursion returns",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "library"
+    },
+    {
+      "kind": "chapter",
+      "id": "search",
+      "title": "Find a session",
+      "explanation": "Search your sessions for recursion.",
+      "alt": "Find a session"
+    },
+    {
+      "kind": "caption",
+      "text": "Search your sessions for recursion."
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder=\"Find a session\"]",
+      "text": "recursion",
+      "delay": 27
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "search"
+    },
+    {
+      "kind": "chapter",
+      "id": "subject",
+      "title": "Filter by subject",
+      "explanation": "Narrow the library by subject.",
+      "alt": "Filter by subject"
+    },
+    {
+      "kind": "caption",
+      "text": "Narrow the library by subject."
+    },
+    {
+      "kind": "press",
+      "key": "a",
+      "ctrl": true
+    },
+    {
+      "kind": "press",
+      "key": "Backspace"
+    },
+    {
+      "kind": "click",
+      "label": "CS",
+      "within": "[aria-label=\"Filter sessions by subject\"]",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "subject"
+    },
+    {
+      "kind": "chapter",
+      "id": "pin",
+      "title": "Pin the lesson",
+      "explanation": "Pin a session you expect to revisit.",
+      "alt": "Pin the lesson"
+    },
+    {
+      "kind": "caption",
+      "text": "Pin a session you expect to revisit."
+    },
+    {
+      "kind": "click",
+      "label": "All",
+      "within": "[aria-label=\"Filter sessions by subject\"]",
+      "contains": true
+    },
+    {
+      "kind": "hover",
+      "label": "Open session How recursion returns"
+    },
+    {
+      "kind": "click",
+      "label": "Pin How recursion returns"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Pinned",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "pin"
+    },
+    {
+      "kind": "chapter",
+      "id": "fork",
+      "title": "Fork a reply",
+      "explanation": "Fork a turn and keep the original conversation.",
+      "alt": "Fork a reply"
+    },
+    {
+      "kind": "caption",
+      "text": "Fork a turn and keep the original conversation."
+    },
+    {
+      "kind": "click",
+      "label": "Open session How recursion returns"
+    },
+    {
+      "kind": "click",
+      "label": "Fork session from here",
+      "nth": 4
+    },
+    {
+      "kind": "hover",
+      "label": "Open session How recursion returns"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "fork"
+    },
+    {
+      "kind": "chapter",
+      "id": "materials",
+      "title": "Open session materials",
+      "explanation": "Make a deck, then find it in Materials alongside your saved work.",
+      "alt": "Open session materials"
+    },
+    {
+      "kind": "caption",
+      "text": "Make a deck and find it in Materials."
+    },
+    {
+      "kind": "click",
+      "label": "Open session How recursion returns"
+    },
+    {
+      "kind": "click",
+      "label": "Make flashcards"
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "click",
+      "label": "Reveal answer"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100
+    },
+    {
+      "kind": "click",
+      "label": "All",
+      "within": ".h1-materials"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Learn recursion",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "materials"
+    },
+    {
+      "kind": "wait-for",
+      "timeout": 7000,
+      "condition": "(async () => {\n  const sessionId = new URL(location.href).searchParams.get(\"session\") ?? \"11111111-2222-4333-8444-555555555555\";\n  const rows = [...document.querySelectorAll(\"[data-material-key]\")].filter(row => row.getClientRects().length && row.querySelector(\".h1-material-name\")?.textContent.trim() === \"Recursion cards\" && /\\b1 card\\b/.test(row.innerText)).map(row => ({ key: row.dataset.materialKey, label: row.innerText }));\n  if (!rows.length) return false;\n  console.log(\"[keating:materials] \" + JSON.stringify({ action: \"Inspect Materials\", count: rows.length }));\n  if (rows.length > 1) {\n    const { sessions, keatingStorage } = await import(\"/src/hooks/keating-storage.ts\");\n    const presentations = (await keatingStorage.getOpenUiPresentations(sessionId)).map(({ id, documentId, nodeId, createdAt }) => ({ id, documentId, nodeId, createdAt }));\n    const stored = await sessions.loadSession(sessionId);\n    const messages = (stored?.messages ?? []).map(({ id, timestamp, role }) => ({ id: id ?? null, timestamp, role }));\n    const transcriptIds = [...document.querySelectorAll(\"[data-learning-message-ids], [data-message-id]\")].map(row => row.dataset.learningMessageIds ?? row.dataset.messageId);\n    const data = JSON.stringify({ sessionId, at: Date.now(), rows, presentations, messages, transcriptIds });\n    const chunks = data.match(/.{1,225}/gs);\n    chunks.forEach((part, index) => console.log(\"[keating:w3-duplicate] \" + JSON.stringify({ index, count: chunks.length, part })));\n    throw new Error(\"Expected one new deck in Materials, saw \" + rows.length);\n  }\n  return true;\n})()"
+    },
+    {
+      "kind": "chapter",
+      "id": "flashcards",
+      "title": "Open the deck",
+      "explanation": "Open your flashcards from the workspace.",
+      "alt": "Open the deck"
+    },
+    {
+      "kind": "caption",
+      "text": "Open your flashcards from the workspace."
+    },
+    {
+      "kind": "click",
+      "label": "All materials"
+    },
+    {
+      "kind": "click",
+      "label": "Flashcards",
+      "contains": true,
+      "within": "[aria-label=\"Material type\"]"
+    },
+    {
+      "kind": "click",
+      "label": "Recursion",
+      "contains": true,
+      "selector": "button.material-library__row"
+    },
+    {
+      "kind": "wait-for",
+      "selector": "dialog.h1-artifact-detail"
+    },
+    {
+      "kind": "pause",
+      "ms": 3200,
+      "still": "flashcards"
+    },
+    {
+      "kind": "click",
+      "label": "Close artifact panel"
+    },
+    {
+      "kind": "chapter",
+      "id": "share",
+      "title": "Read the sharing sheet",
+      "explanation": "Read the sharing disclosure before sharing.",
+      "alt": "Read the sharing sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Read the sharing disclosure before sharing."
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Share session"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Cancel",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 2400,
+      "still": "share"
+    },
+    {
+      "kind": "click",
+      "label": "Cancel"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100
+    }
+  ],
+  "viewerNote": "The sessions contain sample data. The local scripted tutor creates a one-card deck, while the earlier study plan and deck are fixtures.",
+  "transcript": "phone-tour"
+}

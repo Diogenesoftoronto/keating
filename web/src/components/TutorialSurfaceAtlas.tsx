@@ -1,3 +1,4 @@
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import { eyebrow } from "../../styled-system/recipes";
 
@@ -197,7 +198,7 @@ export function TutorialSurfaceAtlas() {
                 {surface.description}
               </p>
               <span className={cx(eyebrow(), css({ marginTop: "auto", paddingTop: "0.35rem", color: "var(--accent)" }))}>
-                Open surface →
+                Open surface <KeatingGlyph name="right" />
               </span>
             </div>
           </a>

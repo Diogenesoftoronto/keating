@@ -42,6 +42,17 @@ describe("PDS publication", () => {
     expect(sent.record.topics).toEqual(["Latin"]); expect(JSON.stringify(sent)).not.toContain("private");
     expect(sent.swapRecord).toBeNull(); expect(calls[1].init?.redirect).toBe("error");
   });
+  test("putRecord omits hidden content and republishes it after unhiding", async () => {
+    const { publisher, calls } = fixture();
+    const draft = { topics: ["Algebra"], about: "Evening classes", consent: true };
+    const appearance = { accent: "ink", layout: "stacked", sections: ["topics"] };
+    await publisher.publishProfile({ ...draft, appearance });
+    const hidden = JSON.parse(calls[1].init?.body as string).record;
+    expect(hidden).not.toHaveProperty("about");
+    expect(hidden.topics).toEqual(["Algebra"]);
+    await publisher.publishProfile({ ...draft, appearance: { ...appearance, sections: ["topics", "about"] } });
+    expect(JSON.parse(calls[3].init?.body as string).record.about).toBe(draft.about);
+  });
   test("fails closed on account mismatch and changes while refreshing OAuth", async () => {
     const f = fixture(); f.session.sub = "did:plc:other";
     await expect(f.publisher.remove()).rejects.toThrow("accounts do not match");

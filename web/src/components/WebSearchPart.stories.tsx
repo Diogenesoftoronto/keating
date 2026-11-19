@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { WebSearchPart } from "./WebSearchPart";
+import { WebSearchActivity, WebSearchPart } from "./WebSearchPart";
 
 const meta = { title: "Chat/Web search", component: WebSearchPart, args: { toolName: "web_search" }, decorators: [(Story) => <div style={{ maxWidth: 620, padding: 16 }}><Story /></div>] } satisfies Meta<typeof WebSearchPart>;
 export default meta;
@@ -14,3 +14,8 @@ export const Sources: Story = { args: { args: { query: "Linear attention archite
 export const Failed: Story = { args: { args: { query: "Linear attention paper" }, isError: true, result: { message: "The search provider rejected the saved credential (401)." } } };
 export const NoSources: Story = { args: { result: { text: "The provider returned an answer without citations." } } };
 export const Narrow: Story = { ...Sources, decorators: [(Story) => <div style={{ width: 290 }}><Story /></div>] };
+export const SeveralQueries: Story = { args: { toolName: "web_search" }, render: () => <WebSearchActivity calls={[
+  { id: "a", query: "linear attention memory complexity", state: "success", text: "", sites: [{ url: "https://arxiv.org/abs/2006.16236", title: "Transformers are RNNs" }] },
+  { id: "b", query: "fast weight programmers linear transformers", state: "success", text: "", sites: [{ url: "https://arxiv.org/abs/2102.11174" }, { url: "https://docs.pytorch.org/" }] },
+  { id: "c", query: "flash linear attention kernels", state: "running", text: "", sites: [] },
+]} /> };

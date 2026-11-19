@@ -1,4 +1,4 @@
-import { FileDown } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 
 /**
  * "Download PDF" for legal pages: opens the browser print dialog, where
@@ -15,7 +15,7 @@ export function DownloadPdfButton({ label }: { label: string }) {
 			onClick={() => window.print()}
 			aria-label={`Download ${label} as PDF`}
 		>
-			<FileDown size={14} aria-hidden="true" />
+			<KeatingGlyph name="export" size={14} />
 			Download PDF
 		</button>
 	);

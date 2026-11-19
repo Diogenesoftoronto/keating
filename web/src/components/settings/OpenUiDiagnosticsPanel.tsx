@@ -1,3 +1,4 @@
+import { SelectField, Button, Loading, EmptyState } from "../../design-system/kit";
 import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
 import {
   OPENUI_DIAGNOSTIC_CUES, parseOpenUiDiagnosticExport, summarizeOpenUiDiagnostics, type OpenUiDiagnosticTurn,
@@ -172,27 +173,24 @@ export function OpenUiDiagnosticsExplorer({ local, recording, reportHref }: {
       {reportHref && <p><a href={reportHref} target="_blank" rel="noopener noreferrer">How Keating chooses a teaching interface</a></p>}
     </header>
     <div className="ou-tools">
-      <label>Data source
-        <select aria-label="Data source" value={source} onChange={event => void choose(event.currentTarget.value as Source)}>
+      <SelectField label="Data source" value={source} onValueChange={value => void choose(value as Source)}>
           {local && <option value="browser">This browser</option>}
           {Object.entries(recordings).map(([value, entry]) => <option value={value} key={value}>{entry.label}</option>)}
           {imported && <option value="file">Imported trace</option>}
-        </select>
-      </label>
-      <button type="button" onClick={() => input.current?.click()}>Import JSON</button>
+      </SelectField>
+      <Button variant="ghost" onClick={() => input.current?.click()}>Import JSON</Button>
       <input hidden ref={input} aria-label="Import diagnostic trace" type="file" accept=".json,application/json" onChange={event => void importTrace(event)} />
-      <button type="button" onClick={() => downloadTextFile("keating-openui-" + source + ".json", JSON.stringify({schemaVersion: 1, turns}))}>Export trace</button>
+      <Button variant="ghost" onClick={() => downloadTextFile("keating-openui-" + source + ".json", JSON.stringify({schemaVersion: 1, turns}))}>Export trace</Button>
     </div>
-    <p className="ou-muted">{descriptions[source]}</p>
-    {(loading || status) && <p role="status">{loading ? "Reading observations…" : status}</p>}
+    <p className="ou-muted">{descriptions[source]} Importing replaces the imported observations in this view only.</p>
+    {loading ? <Loading label="Reading observations" size="inline"/> : status && <p role="status">{status}</p>}
     {turns.length || source !== "browser"
       ? <OpenUiUsageView key={version} turns={turns} initialStage={initialStage}
           initialView={version === 0 ? recording?.initialView : undefined}
           initialCue={version === 0 ? recording?.initialCue : undefined} />
-      : <div className="ou-empty"><strong>No teaching turns recorded on this browser yet.</strong>
-          <p>Send a message in Chat and return here, or inspect a recorded run now.</p>
-          <button type="button" onClick={() => void choose("audit")}>Open recorded audit</button>
-        </div>}
+      : <EmptyState heading="No teaching turns recorded on this browser yet." actions={<Button variant="ghost" onClick={() => void choose("audit")}>Open recorded audit</Button>}>
+          Send a message in Chat and return here, or inspect a recorded run now.
+        </EmptyState>}
     <details className="ou-machine"><summary>Query from a model or the CLI</summary>
       <p>Call <code>keating.openui_diagnostics</code> through Keating’s WebMCP connection to filter counts and inspect dropped interfaces. To query an exported trace, run</p>
       <code>keating openui-diagnostics trace.json --cue implicit-action</code>

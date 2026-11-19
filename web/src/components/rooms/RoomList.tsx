@@ -1,9 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Users } from "lucide-react";
-import { css } from "../../../styled-system/css";
+import { KeatingBot } from "../KeatingBot";
+import { useChartTooltip } from "../../design-system/charts";
+import { motion } from "motion/react";
+import { AvatarStack, Chip, StatusDot } from "../../design-system/kit";
+import { SOFT, useMotionAllowed } from "../../design-system/motion";
 import { formatCourseRelative } from "../courses/course-ui";
 import type { RoomListItem } from "../../rooms/contracts";
-import { ROLE_LABELS, roomStyles as s } from "./room-ui";
+import { ROLE_LABELS } from "./room-ui";
 
 export type RoomFilter = "open" | "hosting" | "course" | "ended" | "all";
 
@@ -31,49 +34,43 @@ export function filterRooms(rooms: readonly RoomListItem[], filter: RoomFilter, 
       Date.parse(right.lastMessageAt ?? right.updatedAt) - Date.parse(left.lastMessageAt ?? left.updatedAt));
 }
 
-const rowClass = css({
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: "0.75rem",
-  borderBottom: "1px solid color-mix(in srgb, var(--ink) 25%, transparent)",
-  px: "0.25rem",
-  py: "0.85rem",
-  color: "inherit",
-  textDecoration: "none",
-  _hover: { bg: "color-mix(in srgb, var(--course-wash, #ddebdd) 60%, transparent)" },
-  _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" },
-});
-
-export function RoomRow({ room }: { room: RoomListItem }) {
+export function RoomRow({ room, index = 0 }: { room: RoomListItem; index?: number }) {
+  const state = room.keating ?? (room.facilitatorName ? "running" : "off");
+  const stateLabel = { running: "Keating is running", off: "Keating is not running", paused: "Keating is paused", ended: "Room ended" }[state];
+  const names = room.present?.map(member => member.displayName) ?? [];
+  const count = room.presentCount;
+  const tip = useChartTooltip();
+  const presence = names.length ? `${count ?? names.length} here: ${names.join(", ")}` : "";
+  const { "aria-label": presenceLabel, ...presenceEvents } = tip.bind(presence);
   const activity = room.lastMessageAt ?? room.updatedAt;
+  const animate = useMotionAllowed();
   return (
-    <Link to="/rooms/$roomId" params={{ roomId: room.id }} className={rowClass}>
-      <span className={css({ minW: 0 })}>
-        <span className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.4rem" })}>
-          <strong className={css({ fontSize: "0.98rem", overflowWrap: "anywhere" })}>{room.title}</strong>
-          <span className={s.chip}>{ROLE_LABELS[room.role]}</span>
-          {room.status === "ended" ? <span className={s.chip}>Ended</span> : null}
+    <motion.div initial={animate ? { y: 8 } : false} animate={{ y: 0 }} transition={{ ...SOFT, delay: Math.min(index, 7) * 0.06 }}>
+      <Link to="/rooms/$roomId" params={{ roomId: room.id }} className="rm-room-row" data-lead={index === 0} {...(presence ? presenceEvents : {})}>
+        <span className="rm-row-title"><strong>{room.title}</strong>
+          {room.topic && <small>{room.topic}</small>}
+          {room.courseTitle && <small>{room.courseTitle}{room.lessonTitle && ` · ${room.lessonTitle}`}</small>}
         </span>
-        {room.topic ? (
-          <span className={css({ mt: "0.2rem", display: "block", fontSize: "0.8rem", color: "var(--ink-soft)", lineClamp: 2 })}>
-            {room.topic}
-          </span>
-        ) : null}
-        <span className={css({ mt: "0.35rem", display: "flex", flexWrap: "wrap", gap: "0.8rem", fontSize: "0.72rem", color: "var(--ink-soft)" })}>
-          <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
-            <Users size={13} aria-hidden="true" /> {room.memberCount} {room.memberCount === 1 ? "member" : "members"}
-          </span>
-          {room.courseTitle ? (
-            <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}>
-              <BookOpen size={13} aria-hidden="true" /> {room.courseTitle}{room.lessonTitle ? ` · ${room.lessonTitle}` : ""}
-            </span>
-          ) : null}
-          <span>{room.facilitatorName ? `Keating running from ${room.facilitatorName}’s browser` : "Keating not running"}</span>
-          <span>Active <time dateTime={activity}>{formatCourseRelative(activity)}</time></span>
+        <span className="rm-faces">
+          {names.length > 0 && <span className="rm-presence" role="img" aria-label={presenceLabel}>
+            <AvatarStack names={names.slice(0, 3)} aria-hidden="true" />
+            {(count ?? names.length) > 3 && <span className="rm-extra" aria-hidden="true">+{(count ?? names.length) - 3}</span>}
+          </span>}
         </span>
-      </span>
-      <ArrowRight size={17} aria-hidden="true" />
-    </Link>
+        <span className="rm-activity">
+          {count !== undefined && <>{count ? `${count} here` : "Nobody here"} · </>}{room.memberCount} {room.memberCount === 1 ? "member" : "members"}
+          <small>Active <time dateTime={activity}>{formatCourseRelative(activity)}</time></small>
+        </span>
+        <span className="rm-run-cell">{state === "running" ? <KeatingBot state="blank-idle" size={22} label="" /> : <StatusDot tone={state === "paused" ? "warn" : "idle"} />}
+          <span>{stateLabel}
+            {state === "running" && room.viewerIsFacilitator && <small>from your browser</small>}
+            {state === "running" && room.facilitatorName && !room.viewerIsFacilitator && <small>from {room.facilitatorName}’s browser</small>}
+            {state === "off" && <small>someone needs to start it</small>}
+          </span>
+        </span>
+        <span className="rm-badges"><Chip>{ROLE_LABELS[room.role]}</Chip>{room.status === "ended" && <Chip>Ended</Chip>}</span>
+      </Link>
+      {tip.tooltip}
+    </motion.div>
   );
 }

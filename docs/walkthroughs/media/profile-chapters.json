@@ -1,0 +1,67 @@
+{
+  "title": "Your profile",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T15:52:55.844Z",
+  "viewerNote": "Alex Rivera is a sample learner. You can preview the public profile without signing in. Sign in before leaving the editor to keep your changes.",
+  "duration": 40.19099998474121,
+  "bytes": 1031206,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "profile",
+      "title": "Open the learner profile",
+      "start": 0.002000093460083008,
+      "explanation": "Open the profile Keating uses to teach you.",
+      "alt": "Open the learner profile",
+      "still": "profile"
+    },
+    {
+      "id": "teaching",
+      "title": "Set a hint preference",
+      "start": 6.174000024795532,
+      "explanation": "Say what helps when you get stuck.",
+      "alt": "Set a hint preference",
+      "still": "teaching"
+    },
+    {
+      "id": "context",
+      "title": "Read the tutor context",
+      "start": 10.300000190734863,
+      "explanation": "Check what Keating will be told.",
+      "alt": "Read the tutor context",
+      "still": "context"
+    },
+    {
+      "id": "public",
+      "title": "Open the public profile draft",
+      "start": 16.728000164031982,
+      "explanation": "Open the separate public learning profile editor.",
+      "alt": "Open the public profile draft",
+      "still": "public"
+    },
+    {
+      "id": "draft",
+      "title": "Edit the draft",
+      "start": 26.97100019454956,
+      "explanation": "Choose what visitors could see.",
+      "alt": "Edit the draft",
+      "still": "draft"
+    },
+    {
+      "id": "preview",
+      "title": "Preview the draft",
+      "start": 36.97100019454956,
+      "explanation": "Preview the draft before publishing.",
+      "alt": "Preview the draft",
+      "still": "preview"
+    }
+  ]
+}

@@ -210,3 +210,8 @@ export const GenericWorkflowHandoff: Story = {
     expect(submission.graph.connections.find((connection: { label?: string }) => connection.label === "Changes requested").from).toBe("approved");
   },
 };
+
+export const NarrowReply: Story = {
+  ...UrlShortener,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

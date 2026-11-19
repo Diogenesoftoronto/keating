@@ -1,10 +1,8 @@
+import { EmptyState, Loading } from "../../design-system/kit";
 /** Snapshots tab of the sandbox runtime dialog: session and saved snapshot lists with create/restore. */
-import Plus from "reicon-react/icons/Plus";
-import RefreshCw from "reicon-react/icons/Refresh";
-import RotateCcw from "reicon-react/icons/RotateLeft";
 import { css } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
-import { RuntimeSpinner, styles } from "./sandbox-shared";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { styles } from "./sandbox-shared";
 import type { SandboxSnapshots } from "./useSandboxSnapshots";
 
 type SnapshotRowData = SandboxSnapshots["snapshots"][number];
@@ -21,7 +19,7 @@ function SnapshotRow({ snap, onRestore }: { snap: SnapshotRowData; onRestore: (d
         onClick={() => onRestore(snap.data)}
         className={css({ marginLeft: "0.5rem", display: "inline-flex", height: "1.75rem", flexShrink: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}
       >
-        <KeatingIcon icon={RotateCcw} size={12} /> Restore
+        <KeatingGlyph name="undo" size={12} /> Restore
       </button>
     </div>
   );
@@ -47,9 +45,7 @@ export function SandboxSnapshotsPanel({
 
   if (!nodePodActive) {
     return (
-      <div className={styles.textXsMuted}>
-        Start NodePod to use snapshots.
-      </div>
+      <EmptyState heading="Start NodePod to use snapshots." />
     );
   }
 
@@ -81,7 +77,7 @@ export function SandboxSnapshotsPanel({
               onClick={refreshDbSnapshots}
               className={styles.outlineButtonSmBg}
             >
-              <KeatingIcon icon={RefreshCw} size={12} /> Refresh
+              <KeatingGlyph name="refresh" size={12} /> Refresh
             </button>
           )}
           <button
@@ -90,14 +86,13 @@ export function SandboxSnapshotsPanel({
             disabled={snapLoading}
             className={styles.primaryButtonSm}
           >
-            {snapLoading ? <RuntimeSpinner size={12} /> : <KeatingIcon icon={Plus} size={12} />}
-            Create
+            {snapLoading ? <Loading size="inline" label="Create" /> : <><KeatingGlyph name="plus" size={12} /> Create</>}
           </button>
         </div>
       </div>
 
       {visible.length === 0 ? (
-        <div className={styles.textXsMuted}>{emptyMessage}</div>
+        <EmptyState heading={emptyMessage} />
       ) : (
         <div className={styles.grid2}>
           {visible.map((snap) => (

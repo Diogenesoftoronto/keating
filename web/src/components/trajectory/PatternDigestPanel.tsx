@@ -1,13 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { css, cx } from "../../../styled-system/css";
-import { eyebrow, marginNote, reviewCard } from "../../../styled-system/recipes";
+import { motion } from "motion/react";
+import { Button, Card, Loading } from "../../design-system/kit";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { SOFT, useMotionAllowed } from "../../design-system/motion";
 import { useReviewPasses } from "../../hooks/use-review-passes";
 import type { DigestSessionInput } from "../../keating/trajectory-passes";
 import type { ReviewModelPool } from "../../keating/trajectory-review";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
 import { RUBRIC_LABELS } from "./review-vocabulary";
-import { compactButtonClass, metaTextClass } from "./styles";
 
 export interface PatternDigestPanelProps {
 	sessions: DigestSessionInput[];
@@ -31,110 +30,37 @@ export function PatternDigestPanel({ sessions, pools, titleForSession, className
 	const ready = sessions.length >= 2 && Boolean(pool);
 	const running = passes.running === "pattern-digest";
 
+	const motionAllowed = useMotionAllowed();
+	const compact = sessions.length < 2 && !running && !passes.error && !passes.digest;
+	const helper = sessions.length < 2
+		? "Finish two reviews and Keating can start naming the habits that recur across them."
+		: `Reads all ${sessions.length} finished reviews and names the teaching habits that keep coming back.`;
+
+	if (compact) return <aside data-glyph-host aria-label="Across your reviews" className="rv-pattern-hint"><KeatingGlyph name="pattern" />{helper}</aside>;
+
 	return (
-		<section
-			aria-labelledby="pattern-digest-heading"
-			className={cx(
-				css({
-					border: "1.5px solid var(--ink)",
-					borderRadius: "{radii.keating}",
-					background: "var(--card)",
-					boxShadow: "3px 3px 0 var(--ink)",
-					padding: "1rem",
-				}),
-				className,
-			)}
-		>
-			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" })}>
-				<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.6rem", minWidth: 0 })}>
-					<KeatingIcon icon={reviewIcon.digest} size={20} className={css({ marginTop: "0.1rem", color: "var(--accent-dim)" })} />
-					<div className={css({ minWidth: 0 })}>
-						<h2 id="pattern-digest-heading" className={css({ fontFamily: "var(--mono-display)", fontSize: "0.95rem", fontWeight: 700, color: "var(--ink)" })}>
-							Across your reviews
-						</h2>
-						<p className={cx(metaTextClass, css({ marginTop: "0.2rem", maxWidth: "44rem" }))}>
-							{sessions.length < 2
-								? "Finish two reviews and Keating can start naming the habits that recur across them."
-								: `Reads all ${sessions.length} finished reviews and names the teaching habits that keep coming back.`}
-						</p>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					className={compactButtonClass}
-					disabled={!ready || running}
-					title={!pool ? "Configure a model pool first." : sessions.length < 2 ? "Two finished reviews are needed." : undefined}
-					onClick={() => (running ? passes.cancel() : pool && void passes.runPatternDigest(pool, sessions))}
-				>
-					<KeatingIcon icon={running ? reviewIcon.retry : reviewIcon.digest} size={13} active={running} />
-					{running ? "Reading…" : passes.digest ? "Read again" : "Find patterns"}
-				</button>
-			</div>
-
-			{passes.error ? (
-				<p role="alert" className={css({ marginTop: "0.75rem", fontSize: "0.75rem", color: "var(--destructive)" })}>{passes.error}</p>
-			) : null}
-
-			{passes.digest && passes.digest.entries.length > 0 ? (
-				<div className={css({ marginTop: "0.9rem" })}>
-					<ul className={css({ display: "grid", gap: "0.5rem" })}>
-						{passes.digest.entries.map((entry) => (
-							<li key={entry.id} className={marginNote({ state: "proposed" })}>
-								<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
-									<strong className={css({ fontSize: "0.82rem", fontWeight: 700, color: "var(--ink)" })}>{entry.pattern}</strong>
-									<span className={cx(eyebrow(), css({ fontSize: "10px" }))}>
-										{entry.rubricKey ? `${RUBRIC_LABELS[entry.rubricKey]} · ` : ""}
-										{entry.occurrences} session{entry.occurrences === 1 ? "" : "s"}
-									</span>
-								</div>
-								<p className={css({ marginTop: "0.25rem", fontSize: "0.75rem", lineHeight: 1.5, color: "var(--ink-soft)" })}>{entry.detail}</p>
-
-								{entry.sessionIds.length > 0 ? (
-									<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.3rem", marginTop: "0.4rem" })}>
-										{entry.sessionIds.map((sessionId) => (
-											<Link
-												key={sessionId}
-												to="/review/sessions/$sessionId"
-												params={{ sessionId }}
-												className={css({
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "0.25rem",
-													borderRadius: "9999px",
-													border: "1px solid var(--line)",
-													paddingInline: "0.45rem",
-													paddingBlock: "0.1rem",
-													fontSize: "0.65rem",
-													color: "var(--ink-soft)",
-													maxWidth: "16rem",
-													overflow: "hidden",
-													textOverflow: "ellipsis",
-													whiteSpace: "nowrap",
-													transitionProperty: "background-color, color, border-color",
-													transitionDuration: "{durations.base}",
-													_hover: { background: "var(--accent)", color: "var(--accent-foreground)", borderColor: "var(--accent-dim)" },
-													_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-												})}
-											>
-												<KeatingIcon icon={reviewIcon.page} size={10} />
-												{titleForSession?.(sessionId) ?? sessionId}
-											</Link>
-										))}
-									</div>
-								) : null}
-							</li>
-						))}
-					</ul>
-
-					{passes.digest.throughLine ? (
-						<p className={cx(reviewCard({ flat: true }), css({ marginTop: "0.6rem", fontSize: "0.8rem", lineHeight: 1.55, color: "var(--ink)" }))}>
-							<span className={cx(eyebrow(), css({ display: "block", fontSize: "10px", marginBottom: "0.2rem" }))}>Work on this next</span>
-							{passes.digest.throughLine}
-						</p>
-					) : null}
-				</div>
-			) : null}
-		</section>
+		<motion.aside aria-labelledby="pattern-digest-heading" className={["rv-index-digest", className].filter(Boolean).join(" ")}
+			initial={motionAllowed ? { y: 8 } : false} animate={{ y: 0 }} transition={motionAllowed ? SOFT : { duration: 0 }}>
+			<Card tone="hard">
+				<h2 className="k-halftone" data-glyph-host id="pattern-digest-heading"><KeatingGlyph name="pattern" size={18}/>Across your reviews</h2>
+				<p className="rv-index-digest-helper">{helper}</p>
+				{passes.error && <p role="alert" className="rv-index-error">{passes.error}</p>}
+				{passes.digest && passes.digest.entries.length > 0 && <>
+					<ul>{passes.digest.entries.map(entry => <li key={entry.id}>
+						<strong>{entry.pattern}</strong>
+						<small>{entry.rubricKey && RUBRIC_LABELS[entry.rubricKey] + " · "}{entry.occurrences} session{entry.occurrences === 1 ? "" : "s"}</small>
+						<p>{entry.detail}</p>
+						{entry.sessionIds.length > 0 && <div className="rv-index-citations">{entry.sessionIds.map(sessionId =>
+							<Link key={sessionId} to="/review/sessions/$sessionId" params={{sessionId}}><KeatingGlyph name="book" size={12}/>{titleForSession?.(sessionId) ?? sessionId}</Link>)}</div>}
+					</li>)}</ul>
+					{passes.digest.throughLine && <div className="rv-index-throughline"><strong>Work on this next</strong><p>{passes.digest.throughLine}</p></div>}
+				</>}
+				<Button size="sm" glyph={passes.digest || running ? "refresh" : "pattern"}
+					disabled={!ready && !running} title={!pool && !running ? "Configure a model pool first." : undefined}
+					onClick={() => { if (running) passes.cancel(); else if (pool) void passes.runPatternDigest(pool, sessions); }}>
+					{running ? <Loading size="inline" label="Reading… Stop" /> : passes.digest ? "Read again" : "Find patterns"}
+				</Button>
+			</Card>
+		</motion.aside>
 	);
 }

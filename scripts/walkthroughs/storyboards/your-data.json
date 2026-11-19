@@ -1,0 +1,283 @@
+{
+  "slug": "your-data",
+  "title": "Your data",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "ready": [
+    {
+      "text": "What leaves this device"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat?settings=data.privacy"
+    },
+    {
+      "kind": "chapter",
+      "id": "privacy",
+      "title": "Read what leaves this device",
+      "explanation": "Check what stays here and what may leave.",
+      "alt": "Read what leaves this device"
+    },
+    {
+      "kind": "caption",
+      "text": "Check what stays here and what may leave."
+    },
+    {
+      "kind": "wait-for",
+      "text": "What leaves this device",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "privacy"
+    },
+    {
+      "kind": "chapter",
+      "id": "source",
+      "title": "Choose conversations",
+      "explanation": "Choose which conversations go into the dataset.",
+      "alt": "Choose conversations"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose which conversations go into the dataset."
+    },
+    {
+      "kind": "click",
+      "label": "Your data",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Prepare",
+      "ready": [
+        {
+          "selector": "[aria-label=\"Dataset steps\"]"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "Choose your data",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "selector": "fieldset:not([hidden]) select",
+      "nth": 0
+    },
+    {
+      "kind": "press",
+      "key": "ArrowDown"
+    },
+    {
+      "kind": "press",
+      "key": "Enter"
+    },
+    {
+      "kind": "wait-for",
+      "condition": "document.querySelector(\"fieldset:not([hidden]) select\")?.value === \"sessions\""
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "source"
+    },
+    {
+      "kind": "chapter",
+      "id": "filters",
+      "title": "Inspect dataset filters",
+      "explanation": "Review the dataset filters and redaction.",
+      "alt": "Inspect dataset filters"
+    },
+    {
+      "kind": "caption",
+      "text": "Review the dataset filters and redaction."
+    },
+    {
+      "kind": "click",
+      "label": "Shape the dataset",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "filters"
+    },
+    {
+      "kind": "chapter",
+      "id": "prepare",
+      "title": "Prepare an unscored dataset",
+      "explanation": "Prepare the dataset without scoring.",
+      "alt": "Prepare an unscored dataset"
+    },
+    {
+      "kind": "caption",
+      "text": "Prepare the dataset without scoring."
+    },
+    {
+      "kind": "click",
+      "label": "Score it",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Prepare dataset"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Prepared snapshot",
+      "timeout": 16000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "prepare"
+    },
+    {
+      "kind": "chapter",
+      "id": "manifest",
+      "title": "Read the dataset overview",
+      "explanation": "Read the manifest before opening the download sheet.",
+      "alt": "Read the dataset overview"
+    },
+    {
+      "kind": "caption",
+      "text": "Read the manifest before opening the download sheet."
+    },
+    {
+      "kind": "click",
+      "label": "Download or share",
+      "contains": true,
+      "within": "[aria-label=\"Dataset steps\"]"
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "[aria-label=\"Dataset overview\"] > header"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "manifest"
+    },
+    {
+      "kind": "chapter",
+      "id": "zip",
+      "title": "Read the dataset export sheet",
+      "explanation": "Check what the ZIP will contain.",
+      "alt": "Read the dataset export sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Check what the ZIP will contain."
+    },
+    {
+      "kind": "click",
+      "label": "Download ZIP"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Cancel",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "zip"
+    },
+    {
+      "kind": "click",
+      "label": "Cancel"
+    },
+    {
+      "kind": "pause",
+      "ms": 1500
+    },
+    {
+      "kind": "chapter",
+      "id": "review",
+      "title": "Inspect the review export",
+      "explanation": "An individual review has its own export.",
+      "alt": "Inspect the review export"
+    },
+    {
+      "kind": "caption",
+      "text": "An individual review has its own export."
+    },
+    {
+      "kind": "goto",
+      "path": "/review/sessions/11111111-2222-4333-8444-555555555555",
+      "ready": [
+        {
+          "label": "Export"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "Export"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Cancel",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "review"
+    },
+    {
+      "kind": "chapter",
+      "id": "portable",
+      "title": "Inspect the portable JSON export",
+      "explanation": "Keep a portable copy of this browser’s work.",
+      "alt": "Inspect the portable JSON export"
+    },
+    {
+      "kind": "caption",
+      "text": "Keep a portable copy of this browser’s work."
+    },
+    {
+      "kind": "goto",
+      "path": "/chat?settings=data.your-data",
+      "ready": [
+        {
+          "text": "Everything on this device"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "Export",
+      "within": "#sd-everything-on-this-device"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Portable Keating JSON",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "portable"
+    },
+    {
+      "kind": "click",
+      "label": "Cancel"
+    }
+  ],
+  "viewerNote": "This walkthrough uses sample browser records and leaves optional scoring and sharing off."
+}

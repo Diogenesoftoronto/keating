@@ -1,3 +1,4 @@
+import { LessonCallout, LessonFrame } from "../../components/lesson/LessonFrame";
 import { SharedUiDocumentRenderer } from "./shared-renderer";
 import { useMemo } from "react";
 import {
@@ -8,7 +9,7 @@ import {
 	useTriggerAction,
 } from "@openuidev/react-lang";
 import { z } from "zod";
-import { CircleAlert, CircleCheck, Info, Lightbulb, NotebookPen } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { MarkdownBlock } from "../../components/MarkdownBlock";
 import { MermaidRenderer } from "../../components/MermaidRenderer";
@@ -68,13 +69,6 @@ export const Explanation = defineComponent({
 	),
 });
 
-const CALLOUT_META = {
-	info: { icon: Info, label: "Note", color: "var(--primary)" },
-	hint: { icon: Lightbulb, label: "Hint", color: "#d97706" },
-	check: { icon: CircleCheck, label: "Check", color: "#059669" },
-	warning: { icon: CircleAlert, label: "Watch for", color: "var(--destructive)" },
-} as const;
-
 export const Callout = defineComponent({
 	name: "Callout",
 	description: "A compact note, hint, correctness check, or misconception warning.",
@@ -83,30 +77,7 @@ export const Callout = defineComponent({
 		tone: z.enum(["info", "hint", "check", "warning"]).default("info"),
 		title: z.string().optional(),
 	}),
-	component: ({ props }) => {
-		const meta = CALLOUT_META[props.tone];
-		const Icon = meta.icon;
-		return (
-			<aside
-				className={css({
-					marginBlock: "0.75rem",
-					display: "flex",
-					gap: "0.75rem",
-					borderRadius: "0.625rem",
-					background: "color-mix(in srgb, var(--muted) 45%, transparent)",
-					padding: "0.875rem",
-				})}
-			>
-				<Icon aria-hidden="true" size={17} className={css({ marginTop: "0.125rem", flexShrink: 0 })} style={{ color: meta.color }} />
-				<div className={css({ minWidth: 0, maxWidth: "72ch" })}>
-					<p className={css({ marginBottom: "0.25rem", fontSize: "0.75rem", fontWeight: 650 })}>
-						{props.title ?? meta.label}
-					</p>
-					<MarkdownBlock content={props.markdown} />
-				</div>
-			</aside>
-		);
-	},
+	component: ({props}) => <LessonCallout tone={props.tone} title={props.title ?? ({info:"Note",hint:"Hint",check:"Check",warning:"Watch for"})[props.tone]}><MarkdownBlock content={props.markdown}/></LessonCallout>,
 });
 
 const questionFieldSchema = z.object({
@@ -439,7 +410,7 @@ function OpenUISharedNotes({ props }: { props: z.infer<typeof sharedNotesPropsSc
 	return (
 		<section className={surfaceClass}>
 			<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--border)", padding: "0.75rem 1rem", fontSize: "0.875rem", fontWeight: 650 })} htmlFor={`openui-notes-${props.id}`}>
-				<NotebookPen aria-hidden="true" size={16} className={css({ color: "var(--primary)" })} />
+				<KeatingGlyph name="note" size={16} className={css({ color: "var(--primary)" })} />
 				{props.title}
 			</label>
 			<textarea
@@ -472,12 +443,7 @@ const taskItemSchema = z.object({
 
 function TaskCard({ badge, title, brief, criteria, items, itemsLabel, footer }: { badge: string; title: string; brief: string; criteria?: string[]; items?: z.infer<typeof taskItemSchema>[]; itemsLabel: string; footer?: string }) {
 	return (
-		<section className={surfaceClass}>
-			<header className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.5rem", borderBottom: "1px solid var(--border)", padding: "0.875rem 1rem" })}>
-				<span className={css({ borderRadius: "999px", background: "var(--muted)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)" })}>{badge}</span>
-				<h2 className={css({ flex: 1, fontSize: "1rem", fontWeight: 700 })}>{title}</h2>
-				{footer ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{footer}</span> : null}
-			</header>
+		<LessonFrame title={title} glyph="checklist" kind={badge} tools={footer}>
 			<div className={bodyClass}>
 				<p className={css({ maxWidth: "72ch", fontSize: "0.875rem", lineHeight: "1.6" })}>{brief}</p>
 				{criteria?.length ? (
@@ -497,7 +463,7 @@ function TaskCard({ badge, title, brief, criteria, items, itemsLabel, footer }: 
 					</div>
 				) : null}
 			</div>
-		</section>
+		</LessonFrame>
 	);
 }
 

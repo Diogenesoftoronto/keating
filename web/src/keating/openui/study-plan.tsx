@@ -1,5 +1,7 @@
+import { Loading } from "../../design-system/kit";
+import { LessonFrame } from "../../components/lesson/LessonFrame";
 import { useState } from "react";
-import { BookOpenCheck, ChevronRight, Clock3, Link2, Loader2, Network, Route } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { defineComponent, useStateField, useIsStreaming } from "@openuidev/react-lang";
 import { z } from "zod";
 import { css, cx } from "../../../styled-system/css";
@@ -53,62 +55,6 @@ const studyPlanPropsSchema = z.object({
 	relatedPlans: z.array(studyPlanLinkSchema).max(8).optional().describe("Links to prerequisite, follow-up, or related StudyPlan ids"),
 });
 
-const planClass = css({
-	minWidth: 0,
-	scrollMarginTop: "5rem",
-	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
-});
-const planHeaderClass = css({
-	display: "flex",
-	flexWrap: "wrap",
-	alignItems: "flex-start",
-	justifyContent: "space-between",
-	gap: "1rem",
-	borderBottom: "1px solid var(--border)",
-	padding: "0.875rem 1rem",
-});
-const planTitleClass = css({ fontSize: "0.9375rem", fontWeight: 650 });
-const overviewClass = css({
-	marginTop: "0.25rem",
-	maxWidth: "70ch",
-	fontSize: "0.75rem",
-	lineHeight: 1.5,
-	color: "var(--muted-foreground)",
-});
-const progressClass = css({
-	flexShrink: 0,
-	borderRadius: "999px",
-	backgroundColor: "var(--muted)",
-	paddingInline: "0.5rem",
-	paddingBlock: "0.1875rem",
-	fontSize: "0.6875rem",
-	fontVariantNumeric: "tabular-nums",
-	color: "var(--muted-foreground)",
-});
-const planActionsClass = css({
-	display: "flex",
-	flexShrink: 0,
-	alignItems: "center",
-	gap: "0.5rem",
-});
-const createCourseButtonClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	justifyContent: "center",
-	gap: "0.375rem",
-	borderRadius: "0.375rem",
-	backgroundColor: "var(--primary)",
-	paddingInline: "0.625rem",
-	paddingBlock: "0.3125rem",
-	fontSize: "0.75rem",
-	fontWeight: 650,
-	color: "var(--primary-foreground)",
-	transitionProperty: "background-color, opacity",
-	transitionDuration: "150ms",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 88%, black)" },
-	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" },
-	_disabled: { cursor: "wait", opacity: 0.65 },
-});
 const courseErrorClass = css({
 	display: "flex",
 	alignItems: "center",
@@ -122,25 +68,12 @@ const courseErrorClass = css({
 	lineHeight: 1.45,
 	color: "var(--destructive)",
 });
-const planListClass = css({ display: "grid", gap: "0.25rem", padding: "0.75rem" });
-const groupClass = css({
-	overflow: "hidden",
-	borderRadius: "0.625rem",
-	backgroundColor: "color-mix(in srgb, var(--muted) 36%, transparent)",
-});
-const groupButtonClass = css({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: "0.625rem",
-	padding: "0.75rem",
-	textAlign: "left",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--muted) 70%, transparent)" },
-	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "-2px" },
-});
+const planListClass = "lesson-outline";
+const groupClass = "lesson-outline-group";
+const groupButtonClass = "lesson-outline-toggle";
 const chevronClass = css({ marginTop: "0.1875rem", flexShrink: 0 });
 const itemCopyClass = css({ minWidth: 0, flex: 1 });
-const itemTitleClass = css({ display: "block", fontSize: "0.8125rem", fontWeight: 600, lineHeight: 1.4 });
+const itemTitleClass = "lesson-outline-title";
 const itemDetailClass = css({
 	display: "block",
 	marginTop: "0.1875rem",
@@ -149,35 +82,13 @@ const itemDetailClass = css({
 	lineHeight: 1.45,
 	color: "var(--muted-foreground)",
 });
-const metaClass = css({
-	display: "inline-flex",
-	flexShrink: 0,
-	alignItems: "center",
-	gap: "0.25rem",
-	fontSize: "0.6875rem",
-	color: "var(--muted-foreground)",
-});
-const childListClass = css({
-	display: "grid",
-	gap: "0.25rem",
-	borderTop: "1px solid color-mix(in srgb, var(--border) 70%, transparent)",
-	padding: "0.5rem",
-	paddingLeft: "1rem",
-});
+const metaClass = "lesson-outline-meta";
+const childListClass = "lesson-outline-children";
 const groupOutcomesClass = css({
 	borderTop: "1px solid color-mix(in srgb, var(--border) 70%, transparent)",
 	padding: "0.625rem 1rem 0.75rem 2.25rem",
 });
-const leafClass = css({
-	display: "flex",
-	cursor: "pointer",
-	alignItems: "flex-start",
-	gap: "0.625rem",
-	borderRadius: "0.5rem",
-	padding: "0.625rem",
-	_hover: { backgroundColor: "var(--muted)" },
-	_focusWithin: { outline: "2px solid var(--primary)", outlineOffset: "1px" },
-});
+const leafClass = "lesson-outline-leaf";
 const outcomeListClass = css({
 	marginTop: "0.5rem",
 	display: "grid",
@@ -331,7 +242,7 @@ function PlanBranch({ item, depth, planId, progress, expansion }: PlanBranchProp
 						) : null}
 					</span>
 					{item.estimatedMinutes ? (
-						<span className={metaClass}><Clock3 aria-hidden="true" size={11} />{item.estimatedMinutes} min</span>
+						<span className={metaClass}><KeatingGlyph name="clock" size={11} />{item.estimatedMinutes} min</span>
 					) : null}
 				</label>
 			</li>
@@ -348,18 +259,16 @@ function PlanBranch({ item, depth, planId, progress, expansion }: PlanBranchProp
 				aria-controls={regionId}
 				onClick={() => expansion.setValue({ ...expansion.value, [item.id]: !isExpanded })}
 			>
-				<ChevronRight
-					aria-hidden="true"
+				<KeatingGlyph name={isExpanded ? "chev" : "chevr"}
 					size={15}
 					className={chevronClass}
-					style={{ transform: isExpanded ? "rotate(90deg)" : undefined }}
 				/>
 				<span className={itemCopyClass}>
 					<span className={itemTitleClass}>{item.title}</span>
 					{item.detail ? <span className={itemDetailClass}>{item.detail}</span> : null}
 				</span>
 				<span className={metaClass}>
-					{item.estimatedMinutes ? <><Clock3 aria-hidden="true" size={11} />{item.estimatedMinutes} min · </> : null}
+					{item.estimatedMinutes ? <><KeatingGlyph name="clock" size={11} />{item.estimatedMinutes} min · </> : null}
 					{completedLeaves}/{leafItems.length}
 				</span>
 			</button>
@@ -412,32 +321,16 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 	};
 
 	return (
-		<section
-			id={studyPlanAnchorId(props.id)}
-			className={planClass}
-			tabIndex={-1}
-		>
-			<header className={planHeaderClass}>
-				<div className={css({ minWidth: 0 })}>
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-						<Route aria-hidden="true" size={16} className={css({ flexShrink: 0, color: "var(--primary)" })} />
-						<h3 className={planTitleClass}>{props.title}</h3>
-					</div>
-					{props.overview ? <p className={overviewClass}>{props.overview}</p> : null}
-				</div>
-				<div className={planActionsClass}>
-					<span className={progressClass}>{completed}/{leafItems.length} steps</span>
-					<button
+		<LessonFrame glyph="route" kind="Study plan" title={props.title} tools={`${completed} of ${leafItems.length}`} id={studyPlanAnchorId(props.id)} tabIndex={-1} footer={<button
 						type="button"
-						className={createCourseButtonClass}
+						className="lesson-primary k-lift"
 						disabled={courseState.status === "creating"}
 						onClick={() => void createPlanCourse()}
 					>
-						{courseState.status === "creating" ? <Loader2 aria-hidden="true" size={13} className={css({ animation: "spin 1s linear infinite", "@media (prefers-reduced-motion: reduce)": { animation: "none" } })} /> : <BookOpenCheck aria-hidden="true" size={13} />}
-						{courseState.status === "creating" ? "Creating…" : courseState.status === "error" ? "Retry course" : "Create course"}
-					</button>
-				</div>
-			</header>
+						{courseState.status !== "creating" && <KeatingGlyph name="book" size={13} />}
+						{courseState.status === "creating" ? <Loading size="inline" label="Creating…" /> : courseState.status === "error" ? "Retry course" : "Create course"}
+					</button>}>
+			{props.overview && <p>{props.overview}</p>}
 			<LessonPlanJudgementReview plan={props} disabled={streaming} />
 			{courseState.status === "error" ? (
 				<div className={courseErrorClass} role="alert">
@@ -460,7 +353,7 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 			{dependencyGraph ? (
 				<details className={dependencySectionClass}>
 					<summary className={dependencySummaryClass}>
-						<Network aria-hidden="true" size={14} />
+						<KeatingGlyph name="tree" size={14} />
 						<span>Dependency graph</span>
 						<span className={css({ marginLeft: "auto", fontWeight: 400, color: "var(--muted-foreground)" })}>
 							{dependencyGraph.edgeCount} link{dependencyGraph.edgeCount === 1 ? "" : "s"}
@@ -474,7 +367,7 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 			{props.relatedPlans?.length ? (
 				<nav className={relatedPlansClass} aria-label={`Study plans linked to ${props.title}`}>
 					<p className={relatedPlansHeadingClass}>
-						<Link2 aria-hidden="true" size={14} />
+						<KeatingGlyph name="link" size={14} />
 						Linked study plans
 					</p>
 					<ul className={relatedPlansListClass}>
@@ -492,8 +385,7 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 											<span className={itemDetailClass}>{link.detail}</span>
 										) : null}
 									</span>
-									<ChevronRight
-										aria-hidden="true"
+									<KeatingGlyph name="chevr"
 										size={15}
 										className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--muted-foreground)" })}
 									/>
@@ -503,7 +395,7 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 					</ul>
 				</nav>
 			) : null}
-		</section>
+		</LessonFrame>
 	);
 }
 

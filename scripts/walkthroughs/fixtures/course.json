@@ -1,0 +1,77 @@
+{
+  "input": {
+    "title": "Recursion Workshop",
+    "displayName": "Morgan Lee",
+    "description": "Sample course. Trace a recursive call from its first argument to the final return.",
+    "outcomes": ["Locate the base case.", "Trace the order of returns through a call stack."],
+    "modules": [
+      {
+        "id": "sample-call-stack",
+        "title": "The call stack",
+        "description": "Build a mental model for what waits and what returns.",
+        "lessons": [
+          {
+            "id": "sample-base-case",
+            "title": "Why the base case matters",
+            "summary": "Read a countdown from its last call back to the first.",
+            "estimatedMinutes": 10,
+            "objectives": ["Name the call that returns first.", "Explain what the waiting calls retain."],
+            "reading": "For countdown(2), the calls start at 2, 1 and then 0. The base case at 0 returns with no new call. The call at 1 resumes and returns. The call at 2 finishes last.",
+            "cardIds": ["sample-why-wait", "sample-why-base"],
+            "exercise": {
+              "id": "sample-trace",
+              "prompt": "Write the call order and the return order for countdown(2).",
+              "rubric": ["Give both orders.", "Identify the base case."]
+            }
+          }
+        ]
+      },
+      {
+        "id": "sample-tree-traversal",
+        "title": "Folder trees",
+        "description": "Apply the same idea when a call has two branches.",
+        "lessons": [
+          {
+            "id": "sample-tree",
+            "title": "Walk a folder tree",
+            "summary": "Trace the return from each folder to its parent.",
+            "estimatedMinutes": 12,
+            "objectives": ["Predict which folder finishes first."],
+            "reading": "Visit the first child folder, return to the parent, and then visit the second child. A folder without child folders returns after visiting its own files."
+          }
+        ]
+      }
+    ],
+    "cards": [
+      {"id": "sample-why-wait", "lessonId": "sample-base-case", "front": "What happens to a call while its recursive call runs?", "back": "It waits at the call site with its own local variables."},
+      {"id": "sample-why-base", "lessonId": "sample-base-case", "front": "What is the base case?", "back": "A branch that returns without making another recursive call."}
+    ]
+  },
+  "document": {
+    "fileName": "countdown-trace.txt",
+    "title": "Countdown trace",
+    "lessonId": "sample-base-case",
+    "content": "Sample trace, Recursion Workshop\nCalls: 2 → 1 → 0\nReturns: 0 → 1 → 2\nAt 0, the base case returns without another call.\n"
+  },
+  "operations": [
+    {
+      "type": "comment.add",
+      "commentId": "sample-course-thread",
+      "lessonId": "sample-base-case",
+      "body": "Sample discussion prompt: When would the two orders stop looking like reverses?"
+    },
+    {
+      "type": "submission.save",
+      "submissionId": "sample-owner-practice",
+      "lessonId": "sample-base-case",
+      "exerciseId": "sample-trace",
+      "answer": "Sample submission entered by the course owner for demonstration. Calls: 2, 1, 0. Returns: 0, 1, 2. The call at 0 is the base case.",
+      "sharedWithPeers": false
+    }
+  ],
+  "learner": {
+    "displayName": "Alex Rivera",
+    "role": "student",
+    "answer": "Calls: 2, 1, 0. Returns: 0, 1, 2. The call at 0 is the base case."
+  }
+}

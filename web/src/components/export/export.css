@@ -1,0 +1,15 @@
+.export-data { padding: .77rem; border: 1px solid var(--border); border-radius: .24rem; color: var(--ink); background: var(--card); }
+.export-data h3 { font-size: .82rem; font-weight: 650; margin-bottom: .38rem; }
+.export-data ul { margin: 0; padding: 0; list-style: none; }
+.export-data li { display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: .38rem; padding: .48rem 0; border-top: 1px solid var(--border); }
+.export-data strong, .export-data small { display: block; }
+.export-data strong { font-size: .61rem; }
+.export-data small, .export-data p { font-size: .55rem; color: var(--muted-foreground); }
+.export-data p:empty { margin: 0; }
+@media (max-width: 30rem) { .export-data li { grid-template-columns: minmax(0,1fr) auto; } .export-data li > div { grid-column: 1/-1; } .export-data .k-chip { justify-self: start; } }
+
+.export-data li a { color: var(--ink); text-decoration: underline; text-underline-offset: .15em; justify-self: end; }
+@media (pointer: coarse) { .export-data :is(a, button) { min-height: 44px; } }
+
+.st-main[data-section="your-data"] .export-data { padding: 0; border: 0; background: transparent; }
+.st-main[data-section="your-data"] #export-data-title { position: absolute; clip-path: inset(50%); height: 1px; width: 1px; overflow: hidden; }

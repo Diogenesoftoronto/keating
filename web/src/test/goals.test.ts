@@ -1,3 +1,6 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { GoalRenderer } from "../components/GoalRenderer";
 import { describe, expect, it } from "bun:test";
 import {
 	advanceGoalStep,
@@ -104,4 +107,11 @@ describe("goalToMarkdown + normalizeGoal", () => {
 		expect(md).toContain("[ ] 1. step one");
 		expect(md).toContain("0/1 steps");
 	});
+});
+
+it("renders the completed step count on the goal progress scale", () => {
+	const goal = buildGoal({ title: "Recursion", steps: [{ title: "Trace" }, { title: "Explain" }] });
+	const updated = advanceGoalStep(goal, goal.steps[0]!.id, "done");
+	const html = renderToStaticMarkup(createElement(GoalRenderer, { goal: updated }));
+	expect(html).toMatch(/role="progressbar" aria-label="Completed goal steps" aria-valuetext="1 of 2"/);
 });

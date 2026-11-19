@@ -1,0 +1,43 @@
+# Walkthrough findings
+
+- **Settings · Inspect Live setup.** The composer’s Live icon immediately opens the call surface and displays “Tavus Live is unavailable”, as expected on the local deployment. More menu → Live sessions opens the separate preflight. The attempt never connected and nothing was said. [Still](settings-live-shortcut.jpg) [W3 preflight](../media/settings-live.jpg)
+- **Companion · Quote a passage.** The desktop rail uses plain lower-case metadata and an ellipsis, but the available width still shortens “lesson plan” to “lesson …”. [Frame at 9 seconds](companion-w5-session-metadata.jpg)
+- **Phone tour · Open Materials.** At 390 px the filter row cuts off “Checklist” after “Checkli”. [Materials](../media/phone-tour-materials.jpg)
+
+## Fixed in W5
+
+- **Your profile, phone · Preview the draft.** The line about the identity used to publish the profile wraps onto a second line and remains readable in Edit and Preview. [W4](profile-phone-w4-preview.jpg) · [W5 Edit](../media/profile-phone-public.jpg) · [W5 Preview](../media/profile-phone-preview.jpg)
+- **Reviewing a session, phone · Add a problem note.** Category, severity, impact and alternative fit in one row. The note body stays above the actions, and the keyboard tip is hidden. [W4](review-a-session-phone-w4-note-draft.jpg) · [W5](../media/review-a-session-phone-note-draft.jpg)
+- **Phone tour · Make flashcards.** The scripted reply’s progress status stays out of the strip below the composer hint. Materials counted one new one-card deck. [W4](phone-tour-w4-status-below-composer.jpg) · [W5 during generation](phone-tour-w5-while-generating.jpg) · [W5 Materials](../media/phone-tour-materials.jpg)
+- **Sessions and materials, phone · Share session.** The strip stays clear after dismissing the disclosure. The phone Sessions sheet shows the complete “lesson plan” label and shortens the longer fork attribution with an ellipsis. [W4](sessions-and-materials-phone-w4-transcript-below-composer.jpg) · [W5 after dismissal](sessions-and-materials-phone-w5-after-share.jpg) · [W5 Sessions](../media/sessions-and-materials-phone-library.jpg)
+- **Sessions and materials · Fork a turn.** The transcript stays above the composer footer after forking. The desktop Materials assertion counted one new one-card deck. [W4](sessions-and-materials-w4-transcript-below-composer.jpg) · [W5 fork](../media/sessions-and-materials-fork.jpg) · [W5 Materials](../media/sessions-and-materials-materials.jpg)
+- **A lesson in chat · Run sample tests.** The strip below the composer hint stays clear on desktop and phone. [W4 desktop](lesson-in-chat-w4-run.jpg) · [W4 phone](lesson-in-chat-phone-w4-run.jpg) · [W5 desktop](../media/lesson-in-chat-run.jpg) · [W5 phone](../media/lesson-in-chat-phone-run.jpg)
+- **Companion · Quote a passage.** The footer covers the thread below the composer hint. [W4](companion-w4-transcript-below-composer.jpg) · [W5](companion-w5-session-metadata.jpg)
+- **Session metadata · Desktop rail.** The boxed “Lesson pl” tag became plain lower-case text on the single metadata line, which ends in an ellipsis when space runs out. [W4](companion-w4-transcript-below-composer.jpg) · [W5](companion-w5-session-metadata.jpg)
+
+## W5 frame audit
+
+- Reviewed frames every three seconds, chapter starts and named stills for all eight takes. Scanned the strip under the chat composer across the source frames and found no transcript, citations or reply status below the hint.
+
+## Fixed in W4
+
+- **Your profile, phone · Preview the draft.** The signed-out notice overlaps the first line of the editor introduction after switching to Preview at 390 px. [Still](profile-phone-w3-preview.jpg) **Fixed in W4.** The notice and introduction now appear on separate lines and can be read in full. [Preview](../media/profile-phone-preview.jpg)
+- **A lesson in chat · Run sample tests.** After moving to the coding lab, the chat header is partly above the viewport on desktop and phone. The lesson controls and sample results remain readable. [Desktop](lesson-in-chat-w3-run.jpg) · [Phone](lesson-in-chat-phone-w3-run.jpg) **Header fixed in W4.** The header stays visible at the coding lab on both viewports. [Desktop](lesson-in-chat-w4-run.jpg) · [Phone](lesson-in-chat-phone-w4-run.jpg)
+- **Phone tour · Open Materials.** Making one new flashcard deck shows two indistinguishable one-card Recursion cards entries. The earlier two-card sample deck is listed separately. [Still](phone-tour-duplicate-decks.jpg) **Fixed in W4.** Materials showed one new one-card deck in both checked takes. [Phone](../media/phone-tour-materials.jpg) · [Desktop](../media/sessions-and-materials-materials.jpg)
+- **Phone tour · Open Materials, W3 reproduction.** Opened the Sessions sheet, searched for recursion, and chose How recursion returns. Then Make flashcards +0.00s, Send message +0.56s, Reveal answer +6.45s, Open materials +10.07s, Inspect Materials +13.39s. One tutor turn produced two one-card rows with the same node ID and different document IDs. [Records](duplicate-deck-records.json) · [Still](phone-tour-w3-duplicate-decks.jpg) **Fixed in W4.** Materials showed one new one-card deck in both checked takes. [Phone](../media/phone-tour-materials.jpg) · [Desktop](../media/sessions-and-materials-materials.jpg)
+- **Sessions and materials · Open Materials, W3 reproduction.** Pinned How recursion returns, forked its reply, then returned to the original session. Then Make flashcards +0.00s, Send message +0.71s, Reveal answer +6.47s, Choose All in Materials +10.19s, Inspect Materials +13.41s. One earlier desktop attempt showed one row. The repeated take showed two rows with the same node ID and distinct document IDs after one tutor turn. [Records](duplicate-deck-records.json) · [Still](sessions-and-materials-w3-duplicate-decks.jpg) **Fixed in W4.** Materials showed one new one-card deck in both checked takes. [Phone](../media/phone-tour-materials.jpg) · [Desktop](../media/sessions-and-materials-materials.jpg)
+- **Phone tour · Open the sessions sheet.** The fork’s parent label is clipped at 390 px after “From How rec”. The timestamp and message count remain readable. [Still](phone-tour-w3-session-metadata.jpg) **Fixed in W4.** The parent label ends with an ellipsis and the Lesson plan tag has no stray dot. [Phone sessions](../media/phone-tour-sessions.jpg)
+- **Reviewing a session · Add a note and open a rewrite draft.** The fields previously had a dark edge. **Fixed in W4.** The inactive border is subtle and the active field retains a green focus ring. [Note](../media/review-a-session-note-draft.jpg) · [Rewrite](../media/review-a-session-rewrite.jpg) · [Phone note](../media/review-a-session-phone-note-draft.jpg)
+
+## W4 frame audit
+
+- **Clean for header clipping and composer bleed.** First run, Courses, Your data, and Activity and Benchmark on desktop and phone, plus desktop Profile, Settings, Study Rooms, and Design System.
+
+## Fixed in W3
+
+- ~~**Phone tour · Open the sessions sheet.** On the sample session and its fork, timestamps overlap message counts at 390 px. [Still](phone-tour-session-metadata.jpg)~~ **Fixed in W3.**
+- ~~**Your profile · Preview the draft.** The signed-out editor shows the draft alongside a save-failure notice. The preview works, but edits disappear when you leave the page. [Still](profile-unsaved-preview.jpg)~~ **Fixed in W3.** The preview now explains how to keep edits before leaving. [Still](../media/profile-preview.jpg)
+- ~~**First run · Choose a model.** Selecting the local tutor leaves the picker open over Continue. Close it explicitly to proceed. The keyboard legend also stacks the two arrows on separate lines at 1280 px. [Still](first-run-model-picker.jpg)~~ **Fixed in W3.**
+- ~~**First run, phone · Choose a model.** The model picker truncates the default Use it for value “Any conversation” at 390 px. [Still](first-run-phone-model-picker.jpg)~~ **Fixed in W3.**
+- ~~**Courses · Mark complete.** The Read, Discuss, Review and Build controls scroll out of view while reading. After using Mark complete at the bottom, scroll back to the top to switch to Discuss. [Still](courses-reading-navigation.jpg)~~ **Fixed in W3 on desktop and phone.** [Phone still](../media/courses-phone-complete.jpg)
+- ~~**Reviewing a session · Open a rewrite draft.** The selection toolbar repeatedly failed to reopen for the rewrite after the three notes had been saved. The existing note affordance appeared on the marked passage. A nearby unmarked passage also failed to reopen the toolbar. [Still](review-annotated-passage.jpg)~~ **Fixed in W3.** [Rewrite draft](../media/review-a-session-rewrite.jpg)

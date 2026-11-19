@@ -14,8 +14,16 @@ import type { OpenUiPresentationRecord, QuestionCheckRecord } from "../storage";
 
 /** Prose and layout nodes; every other component is recorded so policy can see what was used. */
 const NON_INTERACTIVE = new Set(["markdown", "text", "callout", "rows"]);
-/** Components whose presented snapshot is kept on the record: plans for revisions, maps for the session workspace. */
-const SNAPSHOT_COMPONENTS = new Set(["study-plan", "concept-map"]);
+/**
+ * Components whose presented snapshot is kept on the record: plans for
+ * revisions, and every material the session materials panel lists (maps,
+ * quizzes, decks, tasks, notes, …) so it can show them without rebuilding
+ * from the transcript. Readers that want a plan filter by `component`.
+ */
+const SNAPSHOT_COMPONENTS = new Set([
+	"study-plan", "concept-map", "quiz", "deck", "task", "notes", "goal",
+	"simulation", "coding-challenge", "language-practice", "music-lab", "image", "media",
+]);
 
 export interface ActiveWorkSource {
 	getOpenUiPresentations(sessionId?: string): Promise<OpenUiPresentationRecord[]>;

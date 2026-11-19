@@ -1,0 +1,85 @@
+{
+  "title": "Sessions and materials",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study"
+  ],
+  "transcript": "phone-tour",
+  "capturedAt": "2026-11-19T17:06:37.455Z",
+  "viewerNote": "The sessions contain sample data. The local scripted tutor creates a one-card deck, while the earlier study plan and deck are fixtures.",
+  "duration": 48.03399991989136,
+  "bytes": 1775952,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "library",
+      "title": "Open Sessions",
+      "start": 0.003999948501586914,
+      "explanation": "Open your session library.",
+      "alt": "Open Sessions",
+      "still": "library"
+    },
+    {
+      "id": "search",
+      "title": "Find a session",
+      "start": 3.1710000038146973,
+      "explanation": "Search your sessions for recursion.",
+      "alt": "Find a session",
+      "still": "search"
+    },
+    {
+      "id": "subject",
+      "title": "Filter by subject",
+      "start": 7.2170000076293945,
+      "explanation": "Narrow the library by subject.",
+      "alt": "Filter by subject",
+      "still": "subject"
+    },
+    {
+      "id": "pin",
+      "title": "Pin the lesson",
+      "start": 10.967999935150146,
+      "explanation": "Pin a session you expect to revisit.",
+      "alt": "Pin the lesson",
+      "still": "pin"
+    },
+    {
+      "id": "fork",
+      "title": "Fork a reply",
+      "start": 15.616999864578247,
+      "explanation": "Fork a turn and keep the original conversation.",
+      "alt": "Fork a reply",
+      "still": "fork"
+    },
+    {
+      "id": "materials",
+      "title": "Open session materials",
+      "start": 20.691999912261963,
+      "explanation": "Make a deck, then find it in Materials alongside your saved work.",
+      "alt": "Open session materials",
+      "still": "materials"
+    },
+    {
+      "id": "flashcards",
+      "title": "Open the deck",
+      "start": 35.519999980926514,
+      "explanation": "Open your flashcards from the workspace.",
+      "alt": "Open the deck",
+      "still": "flashcards"
+    },
+    {
+      "id": "share",
+      "title": "Read the sharing sheet",
+      "start": 40.94000005722046,
+      "explanation": "Read the sharing disclosure before sharing.",
+      "alt": "Read the sharing sheet",
+      "still": "share"
+    }
+  ]
+}

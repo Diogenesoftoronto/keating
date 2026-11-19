@@ -1,8 +1,6 @@
 import { Children, Fragment, forwardRef, isValidElement, useCallback, useId, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check } from "reicon-react/icons/Check";
-import { ChevronDown } from "reicon-react/icons/ChevronDown";
-import { ChevronUp } from "reicon-react/icons/ChevronUp";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { fieldInput } from "../../styled-system/recipes";
 import "./select.css";
 
@@ -67,25 +65,25 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
 
   const renderOption = (option: Choice) => option.hidden ? null : <SelectPrimitive.Item key={option.key} value={encode(option.value)} disabled={option.disabled} textValue={option.text} className="keating-select-option">
     <SelectPrimitive.ItemText>{option.text}</SelectPrimitive.ItemText>
-    <SelectPrimitive.ItemIndicator className="keating-select-option__check"><Check size={17} aria-hidden="true" /></SelectPrimitive.ItemIndicator>
+    <SelectPrimitive.ItemIndicator className="keating-select-option__check"><KeatingGlyph name="check" size={17} /></SelectPrimitive.ItemIndicator>
   </SelectPrimitive.Item>;
 
   return <>
     <SelectPrimitive.Root value={selected ? encode(stringValue) : ""} onValueChange={(next) => onValueChange(next === emptyValue ? "" : next)} disabled={disabled} required={required}>
       <SelectPrimitive.Trigger {...triggerProps} ref={setTrigger} form={form} type="button" className={[fieldInput({ size: "auto" }), "keating-select", className].filter(Boolean).join(" ")} aria-required={required || undefined}>
         <span className="keating-select__value"><SelectPrimitive.Value placeholder={placeholder}>{selected?.text}</SelectPrimitive.Value></span>
-        <SelectPrimitive.Icon className="keating-select__icon"><ChevronDown size={17} aria-hidden="true" /></SelectPrimitive.Icon>
+        <SelectPrimitive.Icon className="keating-select__icon"><KeatingGlyph name="chev" size={17} /></SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal container={portalContainer}>
         <SelectPrimitive.Content className="keating-select-menu" position="popper" align="start" sideOffset={6} collisionPadding={8} avoidCollisions>
-          <SelectPrimitive.ScrollUpButton className="keating-select-scroll"><ChevronUp size={16} aria-hidden="true" /></SelectPrimitive.ScrollUpButton>
+          <SelectPrimitive.ScrollUpButton className="keating-select-scroll"><KeatingGlyph name="chevu" size={16} /></SelectPrimitive.ScrollUpButton>
           <SelectPrimitive.Viewport className="keating-select-viewport">
             {choices.map((choice) => choice.kind === "option" ? renderOption(choice) : <SelectPrimitive.Group key={choice.key}>
               <SelectPrimitive.Label className="keating-select-group">{choice.label}</SelectPrimitive.Label>
               {choice.choices.map(renderOption)}
             </SelectPrimitive.Group>)}
           </SelectPrimitive.Viewport>
-          <SelectPrimitive.ScrollDownButton className="keating-select-scroll"><ChevronDown size={16} aria-hidden="true" /></SelectPrimitive.ScrollDownButton>
+          <SelectPrimitive.ScrollDownButton className="keating-select-scroll"><KeatingGlyph name="chev" size={16} /></SelectPrimitive.ScrollDownButton>
         </SelectPrimitive.Content>
       </SelectPrimitive.Portal>
     </SelectPrimitive.Root>

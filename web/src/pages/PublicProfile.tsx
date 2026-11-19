@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "@tanstack/react-router";
-import { Flag } from "lucide-react";
+import { AppBar, Button, ButtonLink, Field, Sheet, TextArea } from "../design-system/kit";
+import { KeatingBot } from "../components/KeatingBot";
 import { useSeo } from "../hooks/useSeo";
 import { isProfileDid, publicProfilePath, type FullLearningProfile } from "../keating/public-profile-contract";
 import { PublicProfileView } from "../components/profile/PublicProfileView";
@@ -44,17 +45,10 @@ export async function fetchPublicProfile(did: string, fetcher: typeof fetch = fe
 }
 
 function ReportDialog({ did, publicationId, onClose }: { did: string; publicationId?: string; onClose: () => void }) {
-	const dialog = useRef<HTMLDialogElement>(null);
-	const titleId = useId();
 	const [reason, setReason] = useState<string>("");
 	const [detail, setDetail] = useState("");
 	const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
 	const [error, setError] = useState("");
-
-	useEffect(() => {
-		const element = dialog.current;
-		if (element && !element.open) element.showModal();
-	}, []);
 
 	const submit = async () => {
 		if (!reason) { setError("Choose a reason."); return; }
@@ -75,28 +69,26 @@ function ReportDialog({ did, publicationId, onClose }: { did: string; publicatio
 		}
 	};
 
-	return <dialog ref={dialog} className="profile-report" aria-labelledby={titleId} onClose={onClose} onCancel={onClose}>
-		<h2 id={titleId}>Report this profile</h2>
+	return <Sheet open className="profile-report" title="Report this profile" onClose={onClose}>
 		{state === "sent" ? <>
 			<p role="status">Thank you. The report was sent to Keating for review. We do not tell the profile's owner who reported it.</p>
-			<div className="profile-report__actions"><button type="button" className="profile-button profile-button--primary" autoFocus onClick={onClose}>Close</button></div>
+			<div className="profile-report__actions"><Button variant="primary" autoFocus onClick={onClose}>Close</Button></div>
 		</> : <form method="dialog" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
 			<p>Reports go to Keating, not to the profile's owner. Keating can stop showing a profile on this site; the content itself is stored by the learner's own data server.</p>
 			<fieldset>
 				<legend>What is wrong?</legend>
 				{REPORT_REASONS.map(([value, label]) => <label key={value}><input type="radio" name="report-reason" value={value} checked={reason === value} onChange={() => { setReason(value); setError(""); }} /> {label}</label>)}
 			</fieldset>
-			<label>
-				<span>Details {reason === "other" ? "(required)" : "(optional)"}</span>
-			</label>
-			<textarea rows={3} maxLength={1000} value={detail} aria-label="Details" onChange={event => setDetail(event.target.value)} />
+			<Field label={reason === "other" ? "Details (required)" : "Details (optional)"}>
+				<TextArea rows={3} maxLength={1000} value={detail} onChange={event => setDetail(event.target.value)}/>
+			</Field>
 			{error && <p className="profile-editor__error" role="alert">{error}</p>}
 			<div className="profile-report__actions">
-				<button type="button" className="profile-button" onClick={onClose}>Cancel</button>
-				<button type="submit" className="profile-button profile-button--primary" disabled={state === "sending"}>{state === "sending" ? "Sending…" : "Send report"}</button>
+				<Button onClick={onClose}>Cancel</Button>
+				<Button type="submit" variant="primary" busy={state === "sending"}>{state === "sending" ? "Sending…" : "Send report"}</Button>
 			</div>
 		</form>}
-	</dialog>;
+	</Sheet>;
 }
 
 export function PublicProfile() {
@@ -123,45 +115,48 @@ export function PublicProfile() {
 		...(isProfileDid(did) ? { canonical: `https://chat.keating.help${publicProfilePath(did)}` } : {}),
 	});
 
-	return <div className="profile-shell retro-layout">
+	return <div className="profile-shell profile-visitor">
+	<AppBar menu={false} title={<ButtonLink href="/" variant="ghost" glyph="kmark">Keating</ButtonLink>}>
+		<ButtonLink href="/review/learning-profile" variant="ghost">Make your own profile</ButtonLink>
+	</AppBar>
 	<main className="profile-page">
-		<nav className="profile-page__nav" aria-label="Site">
-			<a href="/">Keating</a>
-			<a href="/review/learning-profile">Make your own profile</a>
-		</nav>
 
 		{state.status === "loading" && <p role="status" aria-live="polite">Loading profile…</p>}
 
 		{state.status === "public" && <>
 			<PublicProfileView profile={state.profile} identity={state.handle ? `@${state.handle}` : did} updatedAt={state.profile.updatedAt} />
-			<div className="profile-page__actions">
-				<button ref={reportButton} type="button" className="profile-button profile-button--quiet" onClick={() => setReporting(true)}><Flag size={14} aria-hidden="true" /> Report this profile</button>
-			</div>
 			<p className="profile-page__note">This profile is stored on the learner's own AT Protocol data server and shown here by Keating.</p>
+			<div className="profile-page__actions">
+				<Button ref={reportButton} glyph="flag" variant="ghost" onClick={() => setReporting(true)}>Report this profile</Button>
+			</div>
 		</>}
 
 		{state.status === "not_public" && <section className="profile-page__status" role="status">
+			<KeatingBot state="idle" size={64} label=""/>
 			<h1>No public profile here</h1>
 			<p>This learner has not published a profile, or has made it private.</p>
-			<a className="profile-button" href="/">Go to Keating</a>
+			<ButtonLink href="/">Go to Keating</ButtonLink>
 		</section>}
 
 		{state.status === "hidden" && <section className="profile-page__status" role="status">
+			<KeatingBot state="idle" size={64} label=""/>
 			<h1>This profile is not shown on Keating</h1>
 			<p>Keating has stopped displaying this profile after a review. If it is yours and you think that is a mistake, contact Keating support.</p>
-			<a className="profile-button" href="/">Go to Keating</a>
+			<ButtonLink href="/">Go to Keating</ButtonLink>
 		</section>}
 
 		{state.status === "invalid" && <section className="profile-page__status" role="alert">
+			<KeatingBot state="thinking" size={64} label=""/>
 			<h1>That profile link is not valid</h1>
 			<p>Profile links look like <code>/u/did:plc:…</code>. Check that the whole link was copied.</p>
-			<a className="profile-button" href="/">Go to Keating</a>
+			<ButtonLink href="/">Go to Keating</ButtonLink>
 		</section>}
 
 		{state.status === "unavailable" && <section className="profile-page__status" role="alert">
+			<KeatingBot state="thinking" size={64} label=""/>
 			<h1>The profile could not be loaded</h1>
 			<p>{state.message}</p>
-			<button type="button" className="profile-button profile-button--primary" onClick={() => setAttempt(value => value + 1)}>Try again</button>
+			<Button variant="primary" onClick={() => setAttempt(value => value + 1)}>Try again</Button>
 		</section>}
 
 		{reporting && state.status === "public" && <ReportDialog did={did} publicationId={state.profile.publicationId} onClose={() => { setReporting(false); reportButton.current?.focus(); }} />}

@@ -54,3 +54,8 @@ export const ProseOnly: Story = {
 
 /** An unparsable component becomes a chip, never a dump of its source. */
 export const UnparsableComponent: Story = { args: { text: broken } };
+
+export const NarrowReply: Story = {
+  ...WithArtifacts,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

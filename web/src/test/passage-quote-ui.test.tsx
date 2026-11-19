@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	AssistantRuntimeProvider,
@@ -14,6 +14,17 @@ import { LearnerQuotedText, QuoteComposerPreview, QuotedTurnView, sendWithDraftQ
 import { makeUserMessageFromAppend } from "../components/chat/user-message";
 import { el, installFakeDom, select, textNode, type FakeDocument, type FakeElement } from "./helpers/quote-fake-dom";
 import { mountRoomUi, settle } from "./helpers/room-ui-mount";
+
+import * as glyphs from "../design-system/glyphs";
+
+// The reconciler host exposes plain nodes without SVG interaction or motion APIs.
+function stubGlyphInteraction() {
+  return spyOn(glyphs, "KeatingGlyph").mockImplementation(({ name, size, label }) =>
+    <svg data-glyph={name} width={size} height={size} aria-label={label} aria-hidden={label ? undefined : true} />);
+}
+let glyphStub: ReturnType<typeof stubGlyphInteraction>;
+beforeEach(() => { glyphStub = stubGlyphInteraction(); });
+afterEach(() => { glyphStub.mockRestore(); });
 
 const SESSION = "session-quotes";
 let dom: ReturnType<typeof installFakeDom>;

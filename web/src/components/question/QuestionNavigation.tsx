@@ -1,5 +1,5 @@
 /** Back / next / submit controls under the current question. */
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { questionStyles, sm } from "./question-styles";
 
@@ -32,7 +32,7 @@ export function QuestionNavigation({
 				disabled={isPending || isFirst}
 				className={cx(questionStyles.buttonSecondary, "activity-back-action")} data-question-back
 			>
-				<ChevronLeft size={14} />
+				<KeatingGlyph name="chevl" size={14} />
 				Back
 			</button>
 
@@ -44,7 +44,7 @@ export function QuestionNavigation({
 					className={cx(questionStyles.buttonPrimary, "activity-main-action")}
 				>
 					{currentAnswered ? "Lock in & next" : "Skip for now"}
-					<ChevronRight size={14} />
+					<KeatingGlyph name="chevr" size={14} />
 				</button>
 			) : (
 				<button
@@ -53,7 +53,7 @@ export function QuestionNavigation({
 					className={cx(questionStyles.buttonPrimary, "activity-main-action", css({ gap: "0.375rem", [sm]: { gap: "0.5rem" } }))}
 					onClick={onSubmit}
 				>
-					<ArrowRight size={16} />
+					<KeatingGlyph name="right" size={14} />
 					{submitLabel}
 				</button>
 			)}

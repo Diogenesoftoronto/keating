@@ -48,6 +48,8 @@ export function ProfileIntakeChat({ onDone, onUseForm }: ProfileIntakeChatProps)
 	const [answers, setAnswers] = useState<readonly IntakeAnswer[]>([]);
 	const [listening, setListening] = useState(false);
 	const [reading, setReading] = useState(false);
+	const [failed, setFailed] = useState(false);
+	const extraction = useRef<AbortController | null>(null);
 	const spoken = useRef(false);
 	const recogniser = useRef<Recogniser | null>(null);
 	const heading = useRef<HTMLParagraphElement>(null);
@@ -56,7 +58,15 @@ export function ProfileIntakeChat({ onDone, onUseForm }: ProfileIntakeChatProps)
 	const done = index >= INTAKE_PROMPTS.length;
 
 	useEffect(() => { heading.current?.focus(); }, [index]);
-	useEffect(() => () => { try { recogniser.current?.stop(); } catch { /* already stopped */ } }, []);
+	useEffect(() => () => { extraction.current?.abort(); stopDictation(); }, []);
+
+	function stopDictation() {
+		const active = recogniser.current;
+		if (!active) return;
+		active.onresult = active.onend = active.onerror = null;
+		recogniser.current = null;
+		try { active.stop(); } catch { /* already stopped */ }
+	}
 
 	function toggleDictation() {
 		if (listening) { try { recogniser.current?.stop(); } catch { /* already stopped */ } return; }
@@ -81,23 +91,41 @@ export function ProfileIntakeChat({ onDone, onUseForm }: ProfileIntakeChatProps)
 	}
 
 	async function advance(recorded: readonly IntakeAnswer[]) {
+		stopDictation();
+		setListening(false);
 		if (index + 1 < INTAKE_PROMPTS.length) { setIndex(index + 1); setDraft(""); spoken.current = false; return; }
+		if (extraction.current) return;
+		const controller = new AbortController();
+		extraction.current = controller;
+		setFailed(false);
 		setReading(true);
-		const { proposals } = await extractIntakeProposals(recorded);
-		setIndex(INTAKE_PROMPTS.length);
-		onDone({ proposals, verbatim: verbatimIntakeFields(recorded), answers: recorded });
+		try {
+			const { proposals } = await extractIntakeProposals(recorded, { signal: controller.signal });
+			if (controller.signal.aborted) return;
+			setIndex(INTAKE_PROMPTS.length);
+			onDone({ proposals, verbatim: verbatimIntakeFields(recorded), answers: recorded });
+		} catch {
+			if (!controller.signal.aborted) setFailed(true);
+		} finally {
+			extraction.current = null;
+			if (!controller.signal.aborted) setReading(false);
+		}
 	}
 
 	function submit() {
-		try { recogniser.current?.stop(); } catch { /* already stopped */ }
 		const text = draft.trim();
+		if (!text || reading) return;
 		const source: ProfileProposalSource = spoken.current ? "speech" : "conversation";
 		const recorded = text ? [...answers, { promptId: prompt!.id, text, source }] : answers;
 		setAnswers(recorded);
 		void advance(recorded);
 	}
 
-	if (done) {
+	if (failed) return <section className="intake-chat"><p role="alert">Keating couldn’t read back your answers.</p>
+		<button type="button" onClick={() => void advance(answers)}>Try again</button>
+		{onUseForm && <button type="button" onClick={onUseForm}>Fill the form instead</button>}</section>;
+
+	if (reading || done) {
 		return <section className="intake-chat" aria-live="polite">
 			<KeatingBot size={72} state={reading ? "sorting" : "settled"} label="" />
 			<p className="intake-chat__reading">{reading ? "Reading back what you told me…" : "Thank you."}</p>
@@ -130,7 +158,7 @@ export function ProfileIntakeChat({ onDone, onUseForm }: ProfileIntakeChatProps)
 				{dictationAvailable() && <button type="button" className="intake-chat__mic" aria-pressed={listening} onClick={toggleDictation}>
 					{listening ? "Stop listening" : "Answer out loud"}
 				</button>}
-				{onUseForm && <button type="button" className="intake-chat__plain" onClick={onUseForm}>Fill a form instead</button>}
+				{onUseForm && <button type="button" className="intake-chat__plain" onClick={onUseForm}>Fill the form instead</button>}
 			</div>
 			<div>
 				<button type="button" className="intake-chat__plain" onClick={() => { setDraft(""); spoken.current = false; void advance(answers); }}>

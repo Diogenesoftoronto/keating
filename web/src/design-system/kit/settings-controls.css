@@ -1,0 +1,46 @@
+.k-switch-field,
+.k-select-field {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.625rem;
+}
+.k-switch {
+	display: grid;
+	place-items: center;
+	width: 2.12rem;
+	min-height: 2.12rem;
+	cursor: pointer;
+}
+.k-switch > span {
+	display: block;
+	width: 1.45rem;
+	height: 0.8rem;
+	padding: 0.1rem;
+	border: 1px solid currentColor;
+	border-radius: 0.14rem;
+}
+.k-switch > span:after {
+	content: "";
+	display: block;
+	background: currentColor;
+	width: 0.48rem;
+	height: 0.48rem;
+}
+.k-switch[aria-checked="true"] > span {
+	background: var(--foreground);
+}
+.k-switch[aria-checked="true"] > span:after {
+	margin-left: auto;
+	background: var(--background);
+}
+.k-select-field .keating-select {
+	font-size: 0.625rem;
+	min-height: 1.55rem;
+	border-radius: 0.1923rem;
+}
+@media (pointer: coarse) {
+	.k-select-field .keating-select {
+		min-height: 44px;
+	}
+}

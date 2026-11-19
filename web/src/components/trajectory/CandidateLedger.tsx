@@ -1,3 +1,4 @@
+import { Button, EmptyState, Loading } from "../../design-system/kit";
 import { Select } from "../Select";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,19 +9,19 @@ import {
 	type StoredModelReference,
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
 import { buildOpenUIPreview } from "../../keating/openui/preview";
 import { OpenUIPreview } from "../OpenUIPreview";
-import { reviewIcon } from "./review-icons";
+import { reviewIcon, ReviewIcon } from "./review-icons";
 import {
 	compatibleReviewModelPools,
 	resolveCompatiblePoolId,
 	reviewPoolGenerationAvailability,
 	reviewTaskLabel,
 } from "./pool-compatibility";
-import { compactButtonClass, inputClass, metaTextClass, primaryButtonClass } from "./styles";
+import { inputClass, metaTextClass } from "./styles";
 
 export interface CandidateLedgerProps {
+	compact?: boolean;
 	candidates: ReviewGenerationCandidate[];
 	modelPools: ReviewModelPool[];
 	availableModels: StoredModelReference[];
@@ -68,6 +69,7 @@ function unavailableModelLabel(models: readonly StoredModelReference[]): string 
 }
 
 export function CandidateLedger({
+	compact = false,
 	candidates,
 	modelPools,
 	availableModels,
@@ -154,13 +156,13 @@ export function CandidateLedger({
 
 	return (
 		<div className={css({ display: "flex", minHeight: 0, flexDirection: "column", gap: "0.75rem" })}>
-			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
+			{!compact && <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
 				<div>
-					<h2 className={css({ fontSize: "1rem", fontWeight: 750, color: "var(--foreground)" })}>Model results</h2>
+					<h2 className="rv-results-title k-halftone">Model results</h2>
 					<p className={cx(metaTextClass, css({ marginTop: "0.2rem" }))}>Compare parallel teaching moves against the active transcript turn or artifact.</p>
 				</div>
 				<div className={metaTextClass}>{relevant.length} result{relevant.length === 1 ? "" : "s"} for this target</div>
-			</div>
+			</div>}
 			<div className={css({ display: "flex", alignItems: "flex-end", gap: "0.5rem" })}>
 				<label className={css({ minWidth: 0, flex: 1, fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)" })}>
 					{activeTask ? `Model pool for ${reviewTaskLabel(activeTask).toLowerCase()}` : "Model pool"}
@@ -177,10 +179,9 @@ export function CandidateLedger({
 						})}
 					</Select>
 				</label>
-				<button type="button" className={primaryButtonClass} disabled={!canGenerate} onClick={generate}>
-					<KeatingIcon icon={isGenerating ? reviewIcon.retry : reviewIcon.pass} size={13} active={isGenerating} className={isGenerating ? css({ animation: "spin 1s linear infinite", _motionReduce: { animation: "none" } }) : undefined} />
-					{isGenerating ? "Generating" : "Generate"}
-				</button>
+				<Button variant="primary" glyph={isGenerating ? undefined : "feather"} disabled={!canGenerate} onClick={generate}>
+					{isGenerating ? <Loading size="inline" label="Generating" /> : "Generate"}
+				</Button>
 			</div>
 			<div className={metaTextClass}>
 				{!activeTask
@@ -213,14 +214,14 @@ export function CandidateLedger({
 										type="button"
 										role="radio"
 										aria-checked={selected}
-										className={css({ display: "inline-flex", minWidth: "8rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid", borderColor: selected ? "var(--ink)" : "transparent", background: selected ? "var(--muted)" : "transparent", padding: "0.5rem", textAlign: "left", _hover: { borderColor: "var(--border)", background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" }, md: { width: "100%" } })}
+										className="rv-candidate-row"
 										onClick={() => onSelectCandidate(candidate.id)}
 									>
-										<span className={css({ display: "inline-flex", width: "1.25rem", height: "1.25rem", flex: "0 0 auto", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: chosen ? "var(--accent-green)" : "var(--muted)", fontSize: "0.625rem", fontWeight: 700, color: chosen ? "var(--ink)" : "var(--muted-foreground)" })}>
-											{chosen ? <KeatingIcon icon={reviewIcon.accept} size={11} active /> : index + 1}
+										<span className="rv-candidate-number" data-chosen={chosen}>
+											{chosen ? <ReviewIcon icon={reviewIcon.accept} size={11} active /> : index + 1}
 										</span>
 										<span className={css({ minWidth: 0 })}>
-											<span className={css({ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)" })}>{candidate.model.name}</span>
+											<span className="rv-candidate-name">{candidate.model.name}</span>
 											<span className={css({ display: "block", fontSize: "0.625rem", color: candidate.state === "failed" ? "var(--destructive)" : "var(--muted-foreground)" })}>{stateLabel(candidate.state)}</span>
 										</span>
 									</button>
@@ -232,7 +233,7 @@ export function CandidateLedger({
 							<article className={css({ minWidth: 0 })}>
 								<header className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" })}>
 									<div className={css({ minWidth: 0 })}>
-										<div className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 750, color: "var(--foreground)" })}>{active.model.provider} / {active.model.name}</div>
+										<div className="rv-candidate-name">{active.model.provider} / {active.model.name}</div>
 										<div className={metaTextClass}>{usageLabel(active) ?? stateLabel(active.state)}</div>
 									</div>
 									<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
@@ -241,15 +242,15 @@ export function CandidateLedger({
 										</div>
 										<button
 											type="button"
-											className={compactButtonClass}
+											className="k-button k-sm k-ghost"
 											disabled={!active.content?.trim()}
 											onClick={() => void copyResponse()}
 										>
-											<KeatingIcon icon={copyStatus?.candidateId === active.id && copyStatus.state === "copied" ? reviewIcon.accept : copyStatus?.candidateId === active.id && copyStatus.state === "failed" ? reviewIcon.problem : reviewIcon.copy} size={12} active={copyStatus?.candidateId === active.id} />
+											<ReviewIcon icon={copyStatus?.candidateId === active.id && copyStatus.state === "copied" ? reviewIcon.accept : copyStatus?.candidateId === active.id && copyStatus.state === "failed" ? reviewIcon.problem : reviewIcon.copy} size={12} active={copyStatus?.candidateId === active.id} />
 											<span aria-live="polite">{copyStatus?.candidateId === active.id ? copyStatus.state === "copied" ? "Copied" : "Copy failed" : "Copy response"}</span>
 										</button>
-										<button type="button" className={compactButtonClass} disabled={!canRegenerate} title={canRegenerate ? undefined : regenerationAvailability?.unavailableModels.length ? `Unavailable model: ${unavailableModelLabel(regenerationAvailability.unavailableModels)}` : "The original pool no longer supports this target or has no models."} onClick={regenerate}>
-											<KeatingIcon icon={reviewIcon.retry} size={12} /> Regenerate
+										<button type="button" className="k-button k-sm k-ghost" disabled={!canRegenerate} title={canRegenerate ? undefined : regenerationAvailability?.unavailableModels.length ? `Unavailable model: ${unavailableModelLabel(regenerationAvailability.unavailableModels)}` : "The original pool no longer supports this target or has no models."} onClick={regenerate}>
+											<ReviewIcon icon={reviewIcon.retry} size={12} /> Regenerate
 										</button>
 									</div>
 								</header>
@@ -259,22 +260,20 @@ export function CandidateLedger({
 									<div className={css({ marginTop: "1rem", maxWidth: "72ch", overflowWrap: "anywhere", fontSize: "0.875rem", lineHeight: 1.65, color: "var(--foreground)" })}>
 										{contentView === "rendered" ? <OpenUIPreview blocks={buildOpenUIPreview(active.content, { sessionId: "candidate", messageId: active.id })} /> : <pre className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: "0.8125rem", lineHeight: 1.6 })}>{active.content}</pre>}
 									</div>
-								) : active.state === "running" || active.state === "queued" ? <div className={cx(metaTextClass, css({ marginTop: "0.75rem" }))}>Waiting for model output...</div> : null}
+								) : active.state === "running" || active.state === "queued" ? <Loading label="Waiting for model output..." /> : null}
 								<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.375rem", borderTop: "1px solid var(--border)", marginTop: "0.75rem", paddingTop: "0.625rem" })}>
-									<button type="button" className={compactButtonClass} disabled={active.state !== "completed" || !active.content?.trim()} onClick={() => onChoose(active.id)}>
-										<KeatingIcon icon={reviewIcon.accept} size={12} /> Choose
+									<button type="button" className="k-button k-sm k-ghost" disabled={active.state !== "completed" || !active.content?.trim()} onClick={() => onChoose(active.id)}>
+										<ReviewIcon icon={reviewIcon.accept} size={12} /> Choose
 									</button>
-									<button type="button" className={primaryButtonClass} disabled={active.state !== "completed" || !active.content?.trim()} onClick={() => onInsert(active.id)}>
-										<KeatingIcon icon={reviewIcon.add} size={12} /> Insert
+									<button type="button" className="k-button k-sm k-primary" disabled={active.state !== "completed" || !active.content?.trim()} onClick={() => onInsert(active.id)}>
+										<ReviewIcon icon={reviewIcon.add} size={12} /> Insert
 									</button>
 								</div>
 							</article>
 						) : null}
 					</div>
 				) : (
-					<div className={css({ display: "grid", minHeight: "10rem", placeItems: "center", padding: "1rem", textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-						Generate parallel teaching moves for the active turn or artifact.
-					</div>
+					<EmptyState heading="Generate parallel teaching moves for the active turn or artifact." />
 				)}
 			</div>
 		</div>

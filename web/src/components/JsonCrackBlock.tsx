@@ -1,5 +1,7 @@
+import { Button } from "../design-system/kit";
+import { DiagramViewport } from "./DiagramViewport";
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { ChevronRight, Copy, Eye, FileJson } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 
 import { css } from "../../styled-system/css";
 interface JsonCrackBlockProps {
@@ -30,52 +32,35 @@ export function JsonCrackBlock({
   }, [jsonText]);
 
   return (
-    <div className={`${css({ borderRadius: "0.375rem", border: "1px solid var(--border)" })} ${className}`}>
+    <div className={`specialist-frame ${className}`}>
       <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", borderBottom: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem" })}>
         <div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
-          <FileJson size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-          {title && <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", fontWeight: 500 })}>{title}</span>}
+          <KeatingGlyph name="doc" size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+          {title && <span className="specialist-json-title">{title}</span>}
           <span className={css({ flexShrink: 0, fontSize: "10px", color: "var(--muted-foreground)" })}>
             {jsonText.length > 1024 ? `${(jsonText.length / 1024).toFixed(1)} KB` : `${jsonText.length} B`}
           </span>
         </div>
         <div className={css({ display: "flex", flexShrink: 0, alignItems: "center", gap: "0.25rem" })}>
           {isValidJson && (
-            <button
-              type="button"
+            <Button variant="ghost" size="sm"
               onClick={() => startModeTransition(() => setMode((m) => (m === "raw" ? "graph" : "raw")))}
-              aria-busy={isModePending}
-              className={css({
-                display: "inline-flex",
-                height: "1.75rem",
-                alignItems: "center",
-                gap: "0.25rem",
-                borderRadius: "0.375rem",
-                paddingInline: "0.5rem",
-                fontSize: "11px",
-                fontWeight: 500,
-                transitionProperty: "color, background-color, border-color",
-                transitionDuration: "150ms",
-                ...(mode === "graph"
-                  ? { backgroundColor: "var(--primary)", color: "var(--primary-foreground)" }
-                  : { border: "1px solid var(--border)", _hover: { background: "var(--accent)" } }),
-              })}
-            >
-              <Eye size={11} />
+              aria-busy={isModePending} aria-pressed={mode === "graph"}>
+              <KeatingGlyph name="eye" size={11} />
               {mode === "graph" ? "Tree" : "Visualize"}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={copyText}
-            className={css({ display: "inline-flex", height: "1.75rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", paddingInline: "0.5rem", fontSize: "11px", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
+            variant="ghost" size="sm"
           >
-            <Copy size={11} /> Copy
-          </button>
+            <KeatingGlyph name="copy" size={11} /> Copy
+          </Button>
         </div>
       </div>
 
-      <div style={{ opacity: isModePending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
+      <DiagramViewport caption="JSON" grid={mode === "graph"}><div style={{ opacity: isModePending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
       {mode === "raw" || !parsed.ok ? (
         <pre
           className={css({ overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "break-word", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })}
@@ -84,11 +69,11 @@ export function JsonCrackBlock({
           {jsonText.length > 10000 ? `${jsonText.slice(0, 10000)}\n\n... (truncated)` : jsonText}
         </pre>
       ) : (
-        <div className={css({ overflowY: "auto", overflowX: "hidden", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
+        <div className={css({ overflowY: "auto", overflowX: "auto", padding: "0.75rem", fontSize: "11px", fontFamily: "var(--mono-display)", lineHeight: "1.625" })} style={{ maxHeight }}>
           <JsonTree value={parsed.value} name="root" depth={0} initiallyOpen />
         </div>
       )}
-      </div>
+      </div></DiagramViewport>
     </div>
   );
 }
@@ -131,7 +116,7 @@ function JsonTree({
         className={css({ display: "flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.125rem", paddingBlock: "0.125rem", paddingRight: "0.25rem", textAlign: "left", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
         style={{ paddingLeft: Math.min(depth, 6) * 12 }}
       >
-        <ChevronRight
+        <KeatingGlyph name="chevr"
           size={12}
           className={css({ transitionProperty: "transform", transitionDuration: "150ms", transform: open ? "rotate(90deg)" : "rotate(0deg)" })}
         />
@@ -151,9 +136,9 @@ function JsonTree({
 
 function JsonPrimitive({ value }: { value: Exclude<JsonNode, JsonNode[] | { [key: string]: JsonNode }> }) {
   if (value === null) return <span className={css({ color: "var(--muted-foreground)" })}>null</span>;
-  if (typeof value === "string") return <span className={css({ minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#047857" })}>"{value}"</span>;
-  if (typeof value === "number") return <span className={css({ color: "#0369a1" })}>{value}</span>;
-  return <span className={css({ color: "#6d28d9" })}>{String(value)}</span>;
+  if (typeof value === "string") return <span className={css({ minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "var(--ink)" })}>"{value}"</span>;
+  if (typeof value === "number") return <span style={{color:"var(--ink)"}}>{value}</span>;
+  return <span style={{color:"var(--ink)"}}>{String(value)}</span>;
 }
 
 function parseJson(value: string): { ok: true; value: JsonNode } | { ok: false } {

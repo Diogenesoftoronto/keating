@@ -37,7 +37,7 @@ function buttons(html: string): Control[] {
   return [...html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].map((m) => ({
     name: decode(/aria-label="([^"]*)"/.exec(m[1]!)?.[1] ?? textOf(m[2]!)),
     disabled: /\sdisabled(=|\s|$)/.test(m[1]!),
-    current: /aria-current="true"/.test(m[1]!),
+    current: /aria-selected="true"/.test(m[1]!),
   }));
 }
 const names = (html: string) => buttons(html).map((b) => b.name);
@@ -80,7 +80,7 @@ describe("WorkspaceHeader", () => {
     expect(labelsOfLinks(html)).toContain("Back to courses");
     expect(labelsOfLinks(html)).toContain("Work on this course with Keating");
     const n = names(html);
-    for (const expected of ["Search ⌘K", "Read", "Discuss", "Review", "Build", "Invite"]) {
+    for (const expected of ["Search this course", "Switch course", "Add", "Read", "Discuss", "Review", "Build", "Invite"]) {
       expect(n).toContain(expected);
     }
   });
@@ -96,16 +96,16 @@ describe("WorkspaceHeader", () => {
     const current = buttons(await header({ view: "discuss" })).filter((b) => b.current).map((b) => b.name);
     expect(current).toEqual(["Discuss"]);
   });
-  test("shows the course comment count on Discuss, and the saving + network state", async () => {
+  test("shows the viewer unread count on Discuss, and the saving + network state", async () => {
     const { snapshot } = deskFixture();
     snapshot.permissions = reviewer;
     snapshot.course.comments = [{ id: "c1" }, { id: "c2" }] as never;
     const html = await renderWithRouter(
-      <WorkspaceHeader snapshot={snapshot} activeLessonId="l1" view="read" saving="note" networkStatus="reconnecting"
+      <WorkspaceHeader unread={1} snapshot={snapshot} activeLessonId="l1" view="read" saving="note" networkStatus="reconnecting"
         mutate={async () => {}} onSnapshot={noop} onError={noop} onOpenBuilder={noop} onViewChange={noop}
         onOpenPalette={noop} onOpenInvite={noop} />,
     );
-    expect(names(html)).toContain("Discuss 2");
+    expect(names(html)).toContain("Discuss 1");
     const text = textOf(html);
     expect(text).toContain("saving…");
     expect(text).toContain("reconnecting");
@@ -123,7 +123,7 @@ describe("banners", () => {
   test("the teacher-access banner offers approve and keep-private", () => {
     const html = renderToStaticMarkup(<TeacherAccessBanner onRespond={noop} />);
     expect(textOf(html)).toContain("Your teacher requested full access to current and future course work.");
-    expect(names(html)).toEqual(["Approve once", "Keep private"]);
+    expect(names(html)).toEqual(["Keep private", "Approve once"]);
   });
 });
 
@@ -154,16 +154,23 @@ describe("LiveRoomRail", () => {
       <LiveRoomRail snapshot={snapshot} onlineAccountIds={new Set(["t1"])} activeLesson={snapshot.course.modules[0]!.lessons[0]} view="read" />,
     );
     const text = textOf(html);
-    expect(text).toContain("Live room");
+    expect(text).toContain("Here now");
+    const present = textOf(html.split('<details class="cw-roster-disclosure">')[0]!);
+    expect(present).toContain("Prof K");
+    expect(present).not.toContain("You");
+    expect(text).toContain("Everyone in this course");
     expect(text).toContain("You");
     expect(text).toContain("Prof K");
     expect(text).toContain("student");
     expect(text).toContain("teacher");
-    expect(text).toMatch(/50\s*% complete/);
+    expect(text).toContain("1 of 2");
+    const ask = html.split('class="cw-keating-actions"')[1]!.split("</section>")[0]!;
+    expect(ask.split("<details>")[0]!.match(/class="cw-keating-link"/g)).toHaveLength(3);
+    expect(textOf(ask.split("<details>")[1]!)).toContain("Draft a quiz");
     expect(text).toContain("Completed a lesson");
     expect(text).not.toContain("Pear feed");
   });
-  test("an empty feed says so, and a Pear key is offered when the network has one", async () => {
+  test("empty presence and activity have distinct states and diagnostics live in course options", async () => {
     const { snapshot } = deskFixture();
     snapshot.course.activity = [];
     snapshot.network = { mode: "pear-gateway", status: "connected", peerCount: 1, publicKey: "abc123key" };
@@ -171,8 +178,9 @@ describe("LiveRoomRail", () => {
       <LiveRoomRail snapshot={snapshot} onlineAccountIds={new Set()} activeLesson={undefined} view="read" />,
     ));
     expect(text).toContain("Nothing has happened here yet.");
-    expect(text).toContain("Pear feed");
-    expect(text).toContain("abc123key");
+    expect(text).toContain("Nobody here now.");
+    expect(text).not.toContain("abc123key");
+    expect(names(await header({snapshot}))).toContain("Course options");
   });
 });
 
@@ -207,7 +215,13 @@ describe("WorkspaceMain", () => {
     expect(textOf(await main("review", learner))).toBe("");
     expect(textOf(await main("build", learner))).toBe("");
     expect(textOf(await main("review"))).not.toBe("");
-    expect(textOf(await main("build"))).not.toBe("");
+    const build = await main("build");
+    expect(build).toContain('<nav aria-label="Course builder sections"');
+    expect(build).toContain('aria-current="page"');
+    expect(build).toContain('aria-label="Lesson editor"');
+    expect(textOf(build)).toContain("The spine");
+    expect(textOf(build)).toContain("0 unsaved");
+    expect(build).toMatch(/aria-label="Move Correlation up"[^>]*disabled|disabled[^>]*aria-label="Move Correlation up"/);
   });
   test("discuss shows the course thread", async () => {
     expect(textOf(await main("discuss"))).not.toBe("");

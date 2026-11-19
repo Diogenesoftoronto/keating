@@ -1,3 +1,4 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
 import type { ReactNode } from "react";
 import { css } from "../../../styled-system/css";
 
@@ -35,7 +36,7 @@ const bodyClass = css({ paddingBottom: "0.75rem" });
 export function HandsOnExplanation({ children }: { children: ReactNode }) {
   return (
     <details className={disclosureClass} data-hands-on-explanation>
-      <summary className={summaryClass}><span className={chevronClass} aria-hidden="true">▸</span>Read the explanation</summary>
+      <summary className={summaryClass}><KeatingGlyph name="chevr" size={14} className={chevronClass} />Read the explanation</summary>
       <div className={bodyClass}>{children}</div>
     </details>
   );

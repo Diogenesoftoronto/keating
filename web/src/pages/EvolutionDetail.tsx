@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, CheckCircle2, CircleDot, ExternalLink, GitCompareArrows } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { useSeo } from "../hooks/useSeo";
 import { keatingStorage } from "../hooks/keating-storage";
 import type { EvolutionResult } from "../keating/storage";
@@ -89,12 +89,12 @@ function DiffUnavailablePage({
 		<div className={styles.page}>
 			<main className={styles.errorMain}>
 				<section className={styles.errorCard} role="alert" aria-labelledby="evolution-diff-error-title">
-					<AlertTriangle className={styles.errorIcon} size={32} aria-hidden="true" />
+					<KeatingGlyph name="alert" className={styles.errorIcon} size={32} />
 					<h1 id="evolution-diff-error-title" className={styles.errorTitle}>{title}</h1>
 					<p className={styles.errorText}>{description}</p>
 					<div className={styles.errorActions}>
 						<button type="button" className={styles.button} onClick={onBack}>
-							<ArrowLeft size={16} /> Back to usage
+							<KeatingGlyph name="left" size={16} /> Back to usage
 						</button>
 					</div>
 				</section>
@@ -171,7 +171,7 @@ export function EvolutionDetail() {
 						<p className={styles.subtitle}>Exact policy changes, candidate decisions, and the original evolution report.</p>
 					</div>
 					<button type="button" className={styles.button} onClick={() => navigate({ to: "/usage" })}>
-						<ArrowLeft size={16} /> Back to usage
+						<KeatingGlyph name="left" size={16} /> Back to usage
 					</button>
 				</div>
 			</header>
@@ -183,14 +183,14 @@ export function EvolutionDetail() {
 					<span className={styles.badge}>{accepted.length} accepted of {detail.trace.length} explored</span>
 					{detail.run.sessionId && (
 						<button type="button" className={styles.badge} onClick={() => navigate({ to: "/chat", search: { session: detail.run.sessionId } })}>
-							Open source session <ExternalLink size={12} />
+							Open source session <KeatingGlyph name="ext" size={12} />
 						</button>
 					)}
 				</div>
 
 				<section className={styles.section}>
 					<div className={styles.sectionHeader}>
-						<h2 className={styles.sectionTitle}><GitCompareArrows size={16} /> Final policy diff</h2>
+						<h2 className={styles.sectionTitle}><KeatingGlyph name="compare" size={16} /> Final policy diff</h2>
 						<span className={styles.subtitle}>{detail.previous ? `Compared with ${new Date(detail.previous.createdAt).toLocaleString()}` : "First saved evolution; all fields are shown"}</span>
 					</div>
 					<DiffRows rows={detail.resolution.diff} />
@@ -198,7 +198,7 @@ export function EvolutionDetail() {
 
 				<section className={styles.section}>
 					<div className={styles.sectionHeader}>
-						<h2 className={styles.sectionTitle}><CheckCircle2 size={16} /> Accepted candidate steps</h2>
+						<h2 className={styles.sectionTitle}><KeatingGlyph name="check" size={16} /> Accepted candidate steps</h2>
 						<span className={styles.subtitle}>Expand a step to inspect its exact field changes and decision reasons.</span>
 					</div>
 					{accepted.length === 0 ? <div className={styles.empty}>No accepted candidate trace was recorded for this run.</div> : accepted.map((candidate) => (
@@ -217,7 +217,7 @@ export function EvolutionDetail() {
 
 				<section className={styles.section}>
 					<details>
-						<summary className={styles.summary}><span className={styles.sectionTitle}><CircleDot size={16} /> Full evolution report</span><span className={styles.subtitle}>Raw saved evidence</span></summary>
+						<summary className={styles.summary}><span className={styles.sectionTitle}><KeatingGlyph name="doc" size={16} /> Full evolution report</span><span className={styles.subtitle}>Raw saved evidence</span></summary>
 						<div className={styles.sectionBody}><pre className={styles.pre}>{detail.run.report}</pre></div>
 					</details>
 				</section>

@@ -1,14 +1,72 @@
-.learning-profile { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem; color: var(--foreground); }
-.learning-profile h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); line-height: 1.2; margin: 1.5rem 0 1rem; }
-.learning-profile p { margin-block: 1rem; line-height: 1.6; }
-.learning-profile-note { color: var(--muted-foreground); font-size: .875rem; }
-.learning-profile code { overflow-wrap: anywhere; }
-.learning-profile form { display: grid; gap: 1rem; margin-top: 1.5rem; }
-.learning-profile textarea { width: 100%; box-sizing: border-box; padding: .75rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--background); color: var(--foreground); font: inherit; }
-.learning-profile-choice { display: flex; gap: .75rem; align-items: flex-start; line-height: 1.5; }
-.learning-profile-choice input { margin-top: .25rem; flex-shrink: 0; }
-.learning-profile-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
-.learning-profile button { border: 1px solid var(--border); border-radius: .375rem; padding: .6rem .85rem; color: var(--foreground); background: var(--background); cursor: pointer; }
-.learning-profile button:hover:enabled { background: var(--accent); }
-.learning-profile button:disabled { opacity: .5; cursor: default; }
-.learning-profile :focus-visible { outline: 2px solid var(--ring, currentColor); outline-offset: 3px; }
+.pf-editor .profile-editor { padding: .8rem clamp(.6rem, 2vw, 1.4rem) 3rem; max-width: 72rem; }
+.pf-pinned { position: sticky; top: 0; z-index: 8; background: var(--paper); }
+.pf-pinned .k-top, .pf-pinned .k-actions { flex-wrap: wrap; height: auto; min-height: 2.3rem; }
+.pf-pinned .k-actions { flex-shrink: 1; padding-block: .2rem; }
+.pf-pinned a, .pf-editor .profile-editor__publish button { font-size: .65rem; text-underline-offset: .15em; }
+.pf-notice { font-size: .63rem; margin: 0; padding: .25rem .7rem; border-bottom: 1px solid var(--line); }
+.pf-notice:empty { display: none; }
+.pf-editor .profile-editor__lede { font-size: .68rem; max-width: 53rem; color: var(--ink-soft); }
+.pf-editor .profile-editor__grid { gap: 1rem; }
+.pf-editor .profile-editor form { gap: .42rem; min-width: 0; }
+.pf-editor .profile-editor__preview { top: 4.6rem; max-height: calc(100dvh - 5rem); padding: .75rem; }
+.pf-editor .profile-editor__preview-label { font: .56rem var(--mono-display); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 .7rem; }
+.pf-card { border: 1px solid var(--line); border-radius: .28rem; background: var(--paper); min-width: 0; }
+.pf-card-head { display: flex; align-items: center; gap: .0962rem; flex-wrap: wrap; padding: .32rem .42rem; }
+.pf-card-head small { font: .55rem var(--mono-display); color: var(--ink-soft); }
+.pf-visibility { margin-left: auto; }
+.pf-disclose { display: inline-flex; align-items: center; gap: .4rem; font-size: .72rem; font-weight: 650; min-height: 1.5rem; }
+.pf-card-body { padding: .65rem; display: grid; gap: .55rem; border-top: 1px solid var(--line-soft); }
+.pf-card-body input:not([type=radio]), .pf-card-body select, .pf-card-body textarea { width: 100%; min-width: 0; padding: .34rem .45rem; border: 1px solid var(--line); border-radius: .2rem; background: var(--paper); font-size: .72rem; }
+.pf-editor .profile-editor__field > span:first-child, .pf-editor .profile-button { font-size: .69rem; }
+.pf-editor .profile-editor__hint { font-size: .6rem; }
+.pf-editor .profile-editor__publish { padding: .45rem; border: 0; gap: .4rem; }
+.pf-editor .profile-editor__publish button, .profile-page__actions .profile-button--quiet { border: 0; background: transparent; color: inherit; text-decoration: underline; }
+.pf-editor .profile-editor__share { overflow-wrap: anywhere; font-size: .65rem; }
+.pf-editor .profile-swatch { position: relative; min-height: 1.45rem; padding: .22rem; }
+.pf-editor .profile-swatch input, .pf-swatch-name { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; }
+.profile-swatch:is(:hover,:focus-within) .pf-swatch-name { clip-path: none; width: auto; height: auto; top: 100%; background: var(--paper); z-index: 1; padding: .12rem; }
+.pf-editor .profile-swatch:focus-within { outline: 2px solid currentColor; }
+@media(max-width: 60rem) {
+  .pf-editor .profile-editor__preview { position: static; max-height: none; }
+  .pf-pinned .k-actions { margin-left: 0; max-width: 100%; }
+}
+
+.pf-status { display: inline-grid; }
+.pf-status > div { grid-area: 1 / 1; }
+.pf-card[data-invalid] { border-color: var(--destructive); }
+
+.pf-field-pair { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,9rem),1fr)); gap: .55rem; }
+.pf-card[data-hidden] { background: var(--paper-deep); }
+.pf-card[data-hidden] .pf-visibility { font-style: italic; }
+.pf-card[data-hidden] button[aria-pressed=false] { color: var(--ink-soft); }
+.pf-destination { font: .56rem/1.5 var(--mono-body); color: var(--ink-soft); overflow-wrap: anywhere; margin: -.4rem 0 .65rem; }
+.pf-editor .profile-editor__publish summary { cursor: pointer; font-size: .6rem; color: var(--ink-soft); }
+.pf-card { border-radius: var(--k-radius); }
+@media (pointer: coarse) {
+  .pf-editor :is(button,summary,.profile-swatch,.pf-pinned a) { min-height: 44px; }
+}
+
+.pf-editor #profile-image-hint { flex: 1 1 9rem; }
+
+.pf-status-text {display:inline-flex;align-items:center;gap:.25rem;font:.55rem var(--mono-body)}
+.pf-editor .pf-card-body .profile-button {border:0;background:transparent;box-shadow:none;text-decoration:underline}
+.pf-editor .profile-editor__row {border:0;border-top:1px solid var(--line-soft);padding-inline:0}
+.pf-editor .profile-editor__preview-label {padding:.35rem .45rem}
+.pf-editor .profile-editor__preview {border:1px solid var(--line);box-shadow:none}
+.public-profile .public-profile__header h1 {font-family:var(--font-ui);font-weight:650}
+.public-profile__header.k-halftone {--k-halftone-strength:.3}
+.public-profile__header.k-halftone :is(h1,p,.public-profile__meta) {width:fit-content;background:var(--paper)}
+.public-profile[data-layout="cards"] .public-profile__work > li {border:0;padding-inline:0;background:transparent}
+.pf-editor .profile-editor__swatches .profile-swatch {border:0;box-shadow:none}
+.pf-editor .profile-swatch:has(:checked) .profile-swatch__dot {outline:2px solid var(--green-deep);outline-offset:2px}
+@media(pointer:fine) {
+ .pf-editor .pf-card-head .k-icon {min-width:1.0577rem;min-height:1.0577rem;width:1.0577rem;height:1.0577rem;padding:0}
+}
+
+.pf-editor .k-seg {border-color:var(--line)}
+html[data-fx="off"] .public-profile__header.k-halftone::after {display:none}
+html[data-fx="off"] .profile-editor__preview-label.k-grid {background-image:none}
+/* On a phone the pinned header wraps to several rows and would cover a third of the screen, hiding the
+   first lines under it. Let it scroll away there; it is one flick back to the top. */
+@media (max-width: 640px) { .pf-pinned { position: static; } }
+@media (max-width: 640px) { .pf-pinned .k-title > span { white-space: normal; } }

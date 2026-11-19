@@ -1,4 +1,4 @@
-import { Moon } from "lucide-react";
+import { KeatingGlyph } from "./glyphs";
 import { useState } from "react";
 import { Select } from "../components/Select";
 import { css } from "../../styled-system/css";
@@ -45,7 +45,7 @@ export function Recipes() {
 				{(["sm", "md", "lg"] as const).map((size) =>
 					(["ghost", "primary"] as const).map((tone) => (
 						<button key={`${size}-${tone}`} type="button" className={iconButton({ size, tone })} title={`${size} / ${tone}`}>
-							<Moon size={size === "sm" ? 12 : size === "md" ? 14 : 16} />
+							<KeatingGlyph name="moon" size={size === "sm" ? 12 : size === "md" ? 14 : 16} />
 						</button>
 					)),
 				)}

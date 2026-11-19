@@ -1,3 +1,4 @@
+import { Loading } from "../../design-system/kit";
 import { useState, useSyncExternalStore } from "react";
 import { beginNotOrganicAuthorization } from "../../notorganic-provider";
 import { CHAT_SYNC_RETRY_EVENT, getChatSyncStatus, subscribeChatSyncStatus } from "../../keating/sync/chat-sync-status";
@@ -14,7 +15,7 @@ export function ChatSyncStatus({ className, buttonClassName }: { className?: str
 		error: "Chat sync couldn't connect. Your chats remain saved on this device; we'll retry automatically.",
 	}[status.phase];
 	return <div className={className}>
-		<p role="status">{message}</p>
+		{status.phase === "syncing" ? <Loading size="inline" label={message}/> : <p role="status">{message}</p>}
 		{status.phase === "reconnect" && <button className={buttonClassName} type="button" disabled={opening} onClick={() => {
 			setOpening(true); setError(false);
 			void beginNotOrganicAuthorization().catch(() => { setOpening(false); setError(true); });

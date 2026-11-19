@@ -28,11 +28,9 @@
 .ou-metric dd { margin: 0; font-size: 1.8rem; line-height: 1.25; font-variant-numeric: tabular-nums; }
 .ou-section, .ou-drill { padding-block: .9rem; border-bottom: 1px solid var(--border); }
 .ou-bars { display: grid; gap: .35rem; margin: .65rem 0; padding: 0; list-style: none; }
-.ou-bars li { display: grid; align-items: center; grid-template-columns: minmax(5.5rem, 9rem) minmax(1.5rem, 1fr) minmax(4rem, auto); gap: .65rem; }
+.ou-bars li { display: grid; align-items: center; grid-template-columns: minmax(4rem, .75fr) minmax(0, 1.5fr); gap: .65rem; }
 .ou-bars li span:first-child, .ou-turn dd, .ou-pair strong { overflow-wrap: anywhere; }
 .ou-bars b { font-size: .8rem; text-align: end; font-variant-numeric: tabular-nums; }
-.ou-track { height: .45rem; background: var(--muted); }
-.ou-track i { display: block; height: 100%; background: var(--primary); }
 .ou-pair { margin-top: .8rem; }
 .ou-pair table { border-collapse: collapse; width: 100%; margin: .25rem 0; font-size: .78rem; }
 .ou-pair th, .ou-pair td { padding: .3rem .15rem; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
@@ -61,3 +59,15 @@
   .ou-metric .ou-count { font-size: .78rem; }
   .ou-pair table { font-size: .72rem; }
 }
+
+.openui-diagnostics { font: .625rem/1.5 var(--font-ui); }
+.openui-diagnostics h3 { font-size: .77rem; }
+.openui-diagnostics h4 { font-size: .67rem; }
+.openui-diagnostics :is(.ou-muted, .ou-count, .ou-turn dl, .ou-pair table, label, .ou-machine > code) { font-size: .55rem; }
+.ou-tools > .k-select-field, .ou-filters > .k-select-field { flex: 1 1 7rem; min-width: 0; }
+.openui-diagnostics :is(button.k-button, .k-segmented button) { border: 0; font-size: .6rem; min-height: 1.55rem; padding: .2rem .4rem; }
+.openui-diagnostics .ou-pair { overflow: auto; }
+.openui-diagnostics .k-select-field button { width: 100%; font-size: .6rem; }
+.openui-diagnostics .ou-metric dt { font-size: .61rem; }
+.openui-diagnostics .ou-metric dd:not(.ou-count) { font: 1.15rem var(--font-display); }
+@media (pointer: coarse) { .openui-diagnostics :is(button, summary) { min-height: 44px; } }

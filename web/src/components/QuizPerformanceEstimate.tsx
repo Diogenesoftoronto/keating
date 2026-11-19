@@ -1,3 +1,4 @@
+import { Loading } from "../design-system/kit";
 import { useEffect, useRef, useState } from "react";
 import type { UiDocumentNode } from "@keating/learner-contracts";
 import { createQuizPerformanceAttempt, exportQuizPerformanceEvidence } from "../keating/judgement/quiz-performance";
@@ -81,7 +82,7 @@ export function useQuizPerformance(options: { documentId: string; documentRevisi
     <summary>Quiz estimate</summary>
     {!options.completed && <>
       <button type="button" className="shared-activity__quiet" disabled={options.disabled || started || busy || savedEstimate || settings.backend === "off"} onClick={() => void estimate()}>
-        {busy ? "Estimating…" : savedEstimate ? "Prediction saved" : "Estimate before answering"}
+        {busy ? <Loading size="inline" label="Estimating…" /> : savedEstimate ? "Prediction saved" : "Estimate before answering"}
       </button>
       <p>{settings.backend === "off" ? "Turn on judgement in Settings to request an estimate." : started && !savedEstimate ? "Estimates are available before you start answering." : settings.backend === "hosted" ? "Uses your hosted judgement service with this quiz and recent assessed work. Saves the estimate on this device to compare with your submitted answers." : "Uses your local judgement model. Saves the estimate on this device to compare with your submitted answers."}</p>
     </>}

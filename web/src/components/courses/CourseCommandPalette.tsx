@@ -1,17 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  BookOpen,
-  CreditCard,
-  FileText,
-  Layers3,
-  MessageSquareText,
-  Search,
-  Shapes,
-  Sparkles,
-  StickyNote,
-  Users,
-  BookUp,
-} from "lucide-react";
+import { KeatingGlyph, type GlyphName } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import {
   COURSE_SEARCH_KIND_LABEL,
@@ -19,20 +7,20 @@ import {
   type CourseSearchResult,
 } from "../../courses/course-search";
 import { allCourseLessons, type Course } from "../../courses/contracts";
-import { courseLabelClass } from "./course-ui";
+import { EmptyState, Eyebrow } from "../../design-system/kit";
 import { prepareCourseSearch, createCourseSearchJudgementSession, courseSearchSettingsKey, COURSE_RERANK_LIMIT, type CourseSearchView } from "../../courses/course-search-judgement";
 import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../../keating/judgement-model";
 
-const KIND_ICON: Record<CourseSearchKind, typeof BookOpen> = {
-  lesson: BookOpen,
-  module: Layers3,
-  document: FileText,
-  artifact: Shapes,
-  assignment: BookUp,
-  card: CreditCard,
-  comment: MessageSquareText,
-  note: StickyNote,
-  member: Users,
+const KIND_ICON: Record<CourseSearchKind, GlyphName> = {
+  lesson: "book",
+  module: "layers",
+  document: "doc",
+  artifact: "shapes",
+  assignment: "checklist",
+  card: "layers",
+  comment: "message",
+  note: "note",
+  member: "people",
 };
 
 const rowClass = css({
@@ -148,9 +136,8 @@ export function CourseCommandPalette({
           maxW: "40rem",
           maxH: "70vh",
           flexDir: "column",
-          border: "2px solid var(--ink)",
+          border: "1px solid var(--line)",
           bg: "var(--card)",
-          boxShadow: "8px 8px 0 color-mix(in srgb, var(--ink) 35%, transparent)",
         })}
       >
         <div
@@ -158,12 +145,12 @@ export function CourseCommandPalette({
             display: "flex",
             alignItems: "center",
             gap: "0.6rem",
-            borderBottom: "2px solid var(--ink)",
+            borderBottom: "1px solid var(--line-soft)",
             px: "0.85rem",
             py: "0.7rem",
           })}
         >
-          <Search size={17} />
+          <span data-glyph-host><KeatingGlyph name="search" size={17} /></span>
           {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
           <input
             autoFocus
@@ -237,14 +224,13 @@ export function CourseCommandPalette({
           </div>
         ) : null}
         <div ref={listRef} className={css({ overflowY: "auto" })}>
-          <p className={cx(courseLabelClass, css({ px: "0.85rem", pt: "0.7rem" }))}>
+          <Eyebrow className={css({ px: "0.85rem", pt: "0.7rem" })}>
             {query.trim()
               ? `${results.length} result${results.length === 1 ? "" : "s"}`
               : "Jump to a lesson"}
-          </p>
+          </Eyebrow>
           <div className={css({ mt: "0.4rem", pb: "0.5rem" })}>
             {results.map((result, index) => {
-              const Icon = KIND_ICON[result.kind];
               return (
                 <button
                   key={result.key}
@@ -254,14 +240,12 @@ export function CourseCommandPalette({
                   onMouseEnter={() => setActive(index)}
                   onClick={() => choose(index)}
                 >
-                  <Icon size={15} />
+                  <KeatingGlyph name={KIND_ICON[result.kind]} size={15} />
                   <span className={css({ minW: 0 })}>
                     <strong
                       className={css({
                         display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        overflowWrap: "anywhere",
                         fontSize: "0.85rem",
                       })}
                     >
@@ -270,9 +254,7 @@ export function CourseCommandPalette({
                     <small
                       className={css({
                         display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        overflowWrap: "anywhere",
                         color: "var(--ink-soft)",
                       })}
                     >
@@ -300,7 +282,7 @@ export function CourseCommandPalette({
                 onMouseEnter={() => setActive(askIndex)}
                 onClick={() => choose(askIndex)}
               >
-                <Sparkles size={15} />
+                <KeatingGlyph name="spark" size={15} />
                 <span className={css({ minW: 0 })}>
                   <strong
                     className={css({ display: "block", fontSize: "0.85rem" })}
@@ -326,16 +308,7 @@ export function CourseCommandPalette({
               </button>
             ) : null}
             {query.trim() && !results.length ? (
-              <p
-                className={css({
-                  px: "0.85rem",
-                  py: "0.6rem",
-                  fontSize: "0.78rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                Nothing in this course matches yet.
-              </p>
+              <EmptyState heading="Nothing in this course matches yet." />
             ) : null}
           </div>
         </div>

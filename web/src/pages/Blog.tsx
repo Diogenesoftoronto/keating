@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Nav } from "../components/Nav";
 import { useSeo } from "../hooks/useSeo";
 import { SimpleFooter } from "../components/Footer";
-import { ChevronDown, ChevronUp, Hash, Search } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import { paperCard } from "../../styled-system/recipes";
 import { V240OpenInterfacesArticle } from "../components/V240OpenInterfacesArticle";
@@ -3208,7 +3208,7 @@ function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean;
       {expanded && post.sections && post.sections.length > 0 && (
         <div className={styles.contentsPanel}>
           <div className={styles.contentsLabel}>
-            <Hash size={12} />
+            <KeatingGlyph name="hash" size={12} />
             Contents
           </div>
           <div className={styles.wrapRow}>
@@ -3233,11 +3233,11 @@ function PostCard({ post, expanded, onToggle }: { post: Post; expanded: boolean;
       >
         {expanded ? (
           <>
-            <ChevronUp size={14} /> Collapse
+            <KeatingGlyph name="chevu" size={14} /> Collapse
           </>
         ) : (
           <>
-            <ChevronDown size={14} /> Read more
+            <KeatingGlyph name="chev" size={14} /> Read more
           </>
         )}
       </button>
@@ -3274,7 +3274,7 @@ function UpdateFilters({
         <label className={styles.labelStack}>
           <span className={styles.terminalLabel}>SEARCH_UPDATES</span>
           <span className={styles.relative}>
-            <Search size={16} className={styles.searchIcon} />
+            <KeatingGlyph name="search" size={16} className={styles.searchIcon} />
             <input
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}

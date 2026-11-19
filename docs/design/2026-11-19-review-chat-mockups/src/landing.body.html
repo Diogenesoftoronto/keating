@@ -1,0 +1,234 @@
+<div class="wrap">
+<p class="lede"><b>Landing page.</b> The same story as today (a pain, then what Keating does about it), told with the new interface. The opening now leads with the pain underneath the wall of text: it made sense when you read it, and it was gone the next day. Sample copy and data. The frame is a 1120px viewport scaled to fit.</p>
+<p class="lede"><a href="public-mockups.html">View the public pages board</a></p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+<!-- ═══════════════ LP1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">LP1</span><h2>Three ways to open</h2><p>Which pain leads. The rest of the page is the same under all three. A is drawn in full below.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt lp-vars">
+    <div class="lp-var lp-pick">
+      <span class="eb">A &middot; Recommended</span>
+      <h3>It made sense yesterday.</h3>
+      <p>The feeling after the wall of text: you read it, you nodded, and the next morning you cannot do it.</p>
+      <div class="lp-mini"><div class="lp-wall" style="filter:blur(1.6px);opacity:.4"><p>Recursion is a programming technique in which a function calls itself to solve a smaller instance of the same problem. A recursive function generally has two parts: a base case, which returns a result without making another call, and a recursive case.</p><p>For example, to sum the integers from zero to a positive integer n, a recursive function can return zero when n is zero, and otherwise return n plus the result of calling the function with n minus one.</p></div><div style="position:absolute;left:12px;right:12px;bottom:10px;padding:8px 10px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)"><span class="eb mu">The next morning</span><b style="display:block;margin-top:3px;font-family:var(--display);font-size:12.5px">What does a base case do?</b></div></div>
+      <div class="lp-why">Lasts longest. Shorter, prettier answers do not fix it: an assistant is built to finish the question for you.</div>
+    </div>
+    <div class="lp-var">
+      <span class="eb mu">B &middot; Today's opening</span>
+      <h3>Seen this before?</h3>
+      <p>The wall of text itself: you asked to learn and got more to read.</p>
+      <div class="lp-mini"><div class="lp-wall"><p>Recursion is a programming technique in which a function calls itself to solve a smaller instance of the same problem. A recursive function generally has two parts: a base case, which returns a result without making another call, and a recursive case, which reduces the problem and calls the function again.</p><p>For example, to sum the integers from zero to a positive integer n, a recursive function can return zero when n is zero, and otherwise return n plus the result of calling the function with n minus one. The call sum(2) therefore becomes 2 + sum(1).</p><p>Each unfinished call has a frame on the call stack. Those frames hold the information needed to continue after the smaller call returns.</p></div></div>
+      <div class="lp-why">Recognised at a glance, and funny. But it is the symptom, and chatbots are already learning to answer shorter.</div>
+    </div>
+    <div class="lp-var">
+      <span class="eb mu">C &middot; The study</span>
+      <h3>Practice up 48%. Exam down 17%.</h3>
+      <p>What happened to nearly 1,000 students who practised with a plain chatbot, then sat the exam without it.</p>
+      <div class="lp-mini" style="display:flex;flex-direction:column;justify-content:center;gap:12px;padding:12px 14px"><div style="display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center;font-family:var(--mono);font-size:9.5px"><span>Practice</span><i style="display:block;height:12px;width:78%;background:var(--ink)"></i></div><div style="display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center;font-family:var(--mono);font-size:9.5px"><span>Exam</span><i style="display:block;height:12px;width:28%;background:repeating-linear-gradient(135deg,var(--red) 0 3px,transparent 3px 6px);box-shadow:inset 0 0 0 1.5px var(--red)"></i></div></div>
+      <div class="lp-why">The hardest evidence, and the most serious. Colder as a first impression; A keeps it as the second beat.</div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li><b>Walls of text are one pain, not the worst.</b> They are what you see. What hurts is what they cause: reading a good explanation feels like learning, so you stop, and nothing was practised. That is the pain that stays when answers get shorter.</li>
+    <li><b>A keeps the wall.</b> The stacked chatbot windows and "Seen this before?" stay as the picture and the kicker. Only the punchline moves, from "you got more to read" to "and it did not stick".</li>
+    <li><b>C is real.</b> Bastani and colleagues, PNAS 2025: a randomised trial in high-school maths. With a plain chatbot, practice scores rose 48% and scores on the later exam, taken without it, fell 17%. Students did not notice. The same model told to give hints instead of answers showed no drop (and no gain). The page says exactly that, no more.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ LP2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">LP2</span><h2>The page</h2><p>Opening A. The four beats above the fold play by themselves and can be clicked. Move the pointer over the mascot panels.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt lp" data-enter="demo">
+    <nav class="lp-nav"><i class="logo" role="img" aria-label="Keating"></i><span class="sp"></span><a>Download</a><a>Pricing</a><a>Documentation</a><a>Blog</a><a>Paper</a><button class="ib" title="Switch theme">{{i:moon}}</button><button class="b pri">Open Keating {{i:right:s}}</button></nav>
+
+    <section class="lp-hero">
+      <div>
+        <span class="eb">Seen this before?</span>
+        <h1 style="margin-top:12px">It made sense<br>yesterday.</h1>
+        <p class="lead">You asked a chatbot to explain it. It did, and well. You nodded, closed the tab, and the understanding went with it.</p>
+        <div class="lp-cta"><button class="b acc xl">Open Keating in the browser {{i:right:s}}</button><button class="b ln xl">{{i:down:s}}Download</button></div>
+        <p class="lp-fine">Free to start &middot; open source &middot; works with the models you already use</p>
+      </div>
+      <div class="lp-play" data-play data-beat="3">
+        <div class="lp-stack">
+          <article class="lp-win w1"><header><i></i><i></i><i></i><b>Gemini</b></header><div class="lp-wall"><p>Probability measures how likely an event is to occur. For a finite set of equally likely outcomes, the probability of an event is the number of outcomes that satisfy the event divided by the total number of possible outcomes. A fair six-sided die has six equally likely outcomes.</p><p>For example, the probability of rolling exactly six is one out of six, because only one face satisfies the event. The probability of rolling an even number is three out of six, or one half.</p><p>The equally likely assumption matters: simply counting outcomes would not give correct probabilities for a biased die.</p></div></article>
+          <article class="lp-win w2"><header><i></i><i></i><i></i><b>Claude</b></header><div class="lp-wall"><p>Photosynthesis is the process by which plants, algae, and some bacteria use light energy to build organic compounds. In plants, it takes place in chloroplasts. The overall process uses carbon dioxide and water to build sugars, while releasing oxygen.</p><p>The light-dependent reactions take place in the thylakoid membranes. Chlorophyll absorbs light, which helps drive electron transfer and the production of ATP and NADPH.</p><p>The Calvin cycle uses ATP and NADPH to incorporate carbon from carbon dioxide into organic molecules.</p></div></article>
+          <article class="lp-win w0"><header><i></i><i></i><i></i><b>ChatGPT</b></header><div class="lp-ask"><span>Explain recursion.</span></div><div class="lp-wall"><p>Recursion is a programming technique in which a function calls itself to solve a smaller instance of the same problem. A recursive function generally has two parts: a base case, which returns a result without making another call, and a recursive case, which reduces the problem and calls the function again.</p><p>For example, to sum the integers from zero to a positive integer n, a recursive function can return zero when n is zero, and otherwise return n plus the result of calling the function with n minus one. The call sum(2) therefore becomes 2 + sum(1), which becomes 2 + 1 + sum(0). Once the base case returns zero, the waiting calls finish, giving a final result of three.</p><p>Each unfinished call has a frame on the call stack. Those frames hold the information needed to continue after the smaller call returns. Calls must make progress toward a base case; otherwise, recursion can exhaust the stack. Understanding both the descent into smaller calls and the return through the waiting calls is essential to reasoning about recursive programs.</p></div></article>
+          <span class="lp-nod">{{i:up:s}}Makes sense, thanks!</span>
+          <div class="lp-quiz"><span class="eb mu">The next morning &middot; no scrolling up</span><b>So what does a base case do?</b><div class="lp-ans">uh<i></i></div><small>It was in the first paragraph.</small></div>
+        </div>
+        <div class="lp-beats" role="group" aria-label="The story in four beats"><button data-beat-btn aria-pressed="false"><b>1</b>You ask</button><button data-beat-btn aria-pressed="false"><b>2</b>It answers</button><button data-beat-btn aria-pressed="false"><b>3</b>You nod</button><button data-beat-btn aria-pressed="true"><b>4</b>The next morning</button></div>
+        <p class="lp-disc">Illustrated examples &middot; authored text, not provider transcripts</p>
+      </div>
+    </section>
+
+    <section class="lp-line">
+      <div class="lp-buried"><u style="left:10px;top:-14px;transform:rotate(-14deg)"></u><u style="left:104px;top:-22px;transform:rotate(11deg)"></u><u style="left:58px;top:-34px;transform:rotate(3deg)"></u><i class="lp-bot"></i><u style="left:-8px;top:66px;transform:rotate(-28deg)"></u><u style="left:120px;top:70px;transform:rotate(24deg)"></u></div>
+      <h2>You asked to learn.<br>You got more to read.</h2>
+    </section>
+
+    <section class="lp-proof">
+      <div>
+        <span class="eb">It is not just you</span>
+        <h2 style="margin-top:10px">It felt like learning.<br>The exam disagreed.</h2>
+        <p class="lead">In a randomised trial with nearly 1,000 high-school maths students, the ones who practised with a plain chatbot solved more problems, then did worse on the exam without it. They did not notice the difference.</p>
+        <cite>Bastani, Bastani, Sungu, Ge, Kabakc&#305; and Mariman. <a>Generative AI without guardrails can harm learning.</a> PNAS, 2025.</cite>
+      </div>
+      <figure class="lp-chart" style="margin:0">
+        <div class="lp-row"><span>Practice<small>with a chatbot</small></span><div class="lp-tr"><i class="lp-bar lp-up" style="width:48%"></i><b class="lp-val" style="left:calc(76% + 12px)">+48%</b></div></div>
+        <div class="lp-row"><span>The exam<small>without it</small></span><div class="lp-tr"><i class="lp-bar lp-dn" style="width:17%"></i><b class="lp-val" style="left:calc(28% + 10px);color:var(--red)">&minus;17%</b></div></div>
+        <div class="lp-row"><span>The exam<small>same model, told to give hints, not answers</small></span><div class="lp-tr"><i class="lp-bar lp-nil"></i><b class="lp-val" style="left:calc(28% + 14px);font-size:12.5px;top:3px;font-family:var(--mono);font-weight:500;color:var(--ink-soft)">no drop</b></div></div>
+        <div class="lp-ft">Compared with students who had no AI. The model was the same in both groups. What changed was whether it handed over the answer.</div>
+      </figure>
+    </section>
+
+    <section class="lp-intro hero">
+      <i class="lp-bot"></i>
+      <h2>so we made keating</h2>
+      <button class="b ln">{{i:play:s}}Watch the film <span class="cnt">1:10</span></button>
+    </section>
+
+    <section class="lp-lesson">
+      <div>
+        <span class="eb">The same question, asked here</span>
+        <h2 style="margin-top:10px">You do the thinking.<br><em>Keating helps it click.</em></h2>
+        <p class="lead">It asks before it tells, and it builds on what you already know.</p>
+        <ul class="lp-notes">
+          <li>{{i:message}}<span><b>A question back, first</b>A wrong guess tells Keating where to start.</span></li>
+          <li>{{i:code}}<span><b>Predict, then run it</b>Code, simulations and diagrams you can poke, in the reply.</span></li>
+          <li>{{i:quiz}}<span><b>A check before moving on</b>One short question, marked, with the reason.</span></li>
+        </ul>
+      </div>
+      <div class="lp-chat">
+        <div class="lp-tabs"><span class="chip on">Recursion</span><span class="chip">Photosynthesis</span><span class="chip">Probability</span><span class="sp"></span><span class="mono faint" style="font-size:10px;align-self:center">Try it. Nothing is sent.</span></div>
+        <div class="lp-th">
+          <div class="me"><p>Explain recursion.</p></div>
+          <div class="lp-who">KEATING<span>12:11</span></div>
+          <div class="prose"><p>Happy to. A guess first, and a wrong one is useful: when a function calls itself, what happens to the call that is still waiting?</p></div>
+          <div class="lp-guess"><span class="chip">It is replaced by the new call</span><span class="chip on">It pauses until the inner call returns</span><span class="chip">Not sure yet</span></div>
+          <div class="prose" style="margin-top:10px"><p>Paused is exactly right. Hold on to that word. Now predict what <code>sum(2)</code> prints before you run it.</p></div>
+          <figure class="code" style="margin:12px 0 4px"><figcaption><b>JavaScript</b>runs in your browser<span class="sp"></span><button class="ib sm" title="Copy">{{i:copy:s}}</button><button class="b sm gh">{{i:play:s}}Run</button></figcaption><pre><span class="n">1</span><span class="kw">function</span> <span class="fn">sum</span>(n) {
+<span class="n">2</span>  <span class="kw">return</span> n === 0 ? 0 : n + <span class="fn">sum</span>(n - 1);
+<span class="n">3</span>}</pre></figure>
+          <div class="acts"><button class="ib" title="Copy">{{i:copy}}</button><button class="ib" title="Quote">{{i:quote}}</button><button class="ib" title="Helpful">{{i:up}}</button><button class="ib" title="Not helpful">{{i:dn}}</button><span class="sp"></span><span class="how">How this reply was made &middot; 3 steps &middot; 6s {{i:chev:s}}</span></div>
+        </div>
+        <div class="lp-dock">
+          <i class="lp-seat" role="img" aria-label="Keating, sitting on the composer"></i>
+          <div class="comp"><div class="ta">Message Keating</div><div class="cbar"><button class="ib" title="Attach files">{{i:clip}}</button><button class="ib" title="Record an audio message">{{i:mic}}</button><button class="ib" title="Start a live conversation">{{i:wave}}</button><span class="sp"></span><button class="send" title="Send message">{{i:send}}</button></div></div>
+          <div class="hint"><span>keating won't give you the answer &mdash; <span style="color:var(--green-deep)">that's the point</span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-pairs">
+      <span class="eb mu">Four more things a chatbot leaves to you</span>
+
+      <div class="lp-pair">
+        <div class="lp-say"><p class="lp-pain">You said "got it."<br>Nobody checked.</p><p class="lp-painp">The chat ends when you stop typing. Whether it stuck is your problem, a week later, in the exam.</p><p class="lp-fix">Keating comes back for it.</p><p class="lp-fixp">What you practised returns as short reviews, spaced out, until you can do it cold.</p></div>
+        <div class="lp-vig hd"><h4>Coming up</h4><div class="lp-rows"><div><small>Today</small><span><b>Base case and return path</b> &middot; 3 cards</span><button class="b sm pri">Review</button></div><div><small>Thursday</small><span>The call stack &middot; quick check</span><small>2 min</small></div><div><small>In 6 days</small><span>Recursion on trees &middot; one problem</span><small>8 min</small></div></div></div>
+      </div>
+
+      <div class="lp-pair">
+        <div class="lp-say"><p class="lp-pain">Explaining where<br>you're at. Again.</p><p class="lp-painp">Every new chat starts from nothing. You rebuild the context: what you tried, what clicked, where you got stuck.</p><p class="lp-fix">Pick up with a teacher that has your history.</p><p class="lp-fixp">Goals and practice carry into the next session. You can read and edit everything Keating is told about you.</p></div>
+        <div class="lp-vig"><h4>What Keating is told</h4><div class="lp-rows"><div><small>Working toward</small><span>Explain recursion to someone else</span><span></span></div><div><small>Last practice</small><span>Traced sum(2) by hand</span><span></span></div><div><small>Still shaky</small><span>Why the "after" lines run backwards</span><span></span></div></div><div style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><i class="bot" style="width:30px;height:30px"></i><p style="font-family:var(--serif);font-size:14px;line-height:1.5">"Last time the return order tripped you up. Let's start there, with a smaller example."</p></div></div>
+      </div>
+
+      <div class="lp-pair">
+        <div class="lp-say"><p class="lp-pain">It sounded sure.<br>Was it right?</p><p class="lp-painp">Fluent and confident look the same whether the answer is correct or not. You are the one learning; you cannot be the one checking.</p><p class="lp-fix">Replies are checked before you see them.</p><p class="lp-fixp">A second pass reads each reply against the lesson and your sources. When something could not be verified, it says so.</p></div>
+        <div class="lp-vig"><h4>How this reply was made</h4><div class="lp-steps"><span class="ok">{{i:pen:s}}Drafted</span><i></i><span class="ok">{{i:search:s}}Checked</span><i></i><span class="ok">{{i:check:s}}Revised</span></div><div class="lp-rows"><div><small>Changed</small><span>Removed the answer to the question it had just asked</span><span></span></div><div><small>Sources</small><span>Your notes, p. 4 &middot; MDN: Recursion</span><span></span></div><div><small>Unverified</small><span style="color:var(--ink-soft)">One claim about stack depth limits</span>{{i:info:s}}</div></div></div>
+      </div>
+
+      <div class="lp-pair">
+        <div class="lp-say"><p class="lp-pain">You know what you want<br>to learn. Figuring out<br>how is another job.</p><p class="lp-painp">Tutorials, saved links, a hundred questions. You still decide where to start and whether any of it is getting you there.</p><p class="lp-fix">Build your way through it, alone or together.</p><p class="lp-fixp">Shape a plan with Keating, then follow it at your own pace, or turn it into a course and a study room for other people.</p></div>
+        <div class="lp-vig hd"><h4>Make your first synth patch &middot; you + 3 studying</h4><div class="lp-path"><div><span><b>Hear what an oscillator does</b><small>Done &middot; 12 min</small></span></div><div><span><b>Shape a sound with filters</b><small>Try this: change the cutoff. Describe what you hear.</small></span></div><div><span><b>Make it move with envelopes</b><small>Next</small></span></div><div><span><b>Build a patch of your own</b><small>Share it with the room</small></span></div></div></div>
+      </div>
+    </section>
+
+    <section class="lp-own">
+      <span class="eb">Yours to keep</span>
+      <h2 style="margin-top:10px">Make it your own.</h2>
+      <div class="lp-tiles">
+        <div>{{i:chip:l}}<b>Any model</b><p>Use Keating's, bring your own key, or run one in your browser with no connection at all.</p></div>
+        <div>{{i:folder:l}}<b>Your data</b><p>Sessions, notes and progress stay on your device unless you share them. Export all of it whenever you like.</p></div>
+        <div>{{i:code:l}}<b>Open source</b><p>Read it, change the teacher, host it yourself. Build as deep as you want.</p></div>
+      </div>
+      <div class="lp-cta" style="margin-top:18px"><a class="lnk">Setup guide</a><a class="lnk">Explore the source</a></div>
+    </section>
+
+    <section>
+      <span class="eb">Watch it work</span>
+      <h2 style="margin-top:10px">A minute each.</h2>
+      <div class="lp-clips">
+        <div class="lp-clip"><div class="lp-shot"><span class="lp-pl">{{i:play}}</span><small>0:57</small></div><b>A lesson in chat</b><span>A question back, a prediction, a check.</span></div>
+        <div class="lp-clip"><div class="lp-shot"><span class="lp-pl">{{i:play}}</span><small>1:25</small></div><b>Reading a session back</b><span>Where it clicked, turn by turn.</span></div>
+        <div class="lp-clip"><div class="lp-shot"><span class="lp-pl">{{i:play}}</span><small>1:20</small></div><b>A course with friends</b><span>A path, a room, and people in it.</span></div>
+        <div class="lp-clip"><div class="lp-shot"><span class="lp-pl">{{i:play}}</span><small>0:55</small></div><b>The first five minutes</b><span>From nothing to your first question.</span></div>
+      </div>
+    </section>
+
+    <section class="lp-close hero">
+      <i class="lp-bot"></i>
+      <span class="eb mu">Done offloading?</span>
+      <h2>Ready to think<br>for yourself?</h2>
+      <div class="lp-cta" style="margin-top:14px;justify-content:center"><button class="b pri xl">Start a session {{i:right:s}}</button><button class="b xl hardb">{{i:down:s}}Download Keating</button></div>
+    </section>
+    <footer class="lp-foot"><span>Keating 4.2</span><span class="sp"></span><span>Documentation</span><span>Source</span><span>Privacy</span></footer>
+  </div></div></div>
+  <ol class="pts">
+    <li><b>What stays.</b> The tilted chatbot windows, the display type, "Seen this before?", "You asked to learn. You got more to read.", "so we made keating" and the film, "You do the thinking", the pain-then-answer rhythm, and "Ready to think for yourself?". Every pain on today's page is still here.</li>
+    <li><b>The opening is a four-beat play.</b> You ask, it answers, you nod, and the next morning a small card asks one question while the answer blurs behind it. It loops, each beat can be clicked, and with reduced motion it rests on the last beat.</li>
+    <li><b>Then the receipt.</b> One chart, three rows, drawn in the app's chart language: ink for the gain, hatched red for the loss, a hollow marker for no change, every value written out. The source is named and linked.</li>
+    <li><b>The product shows itself.</b> The lesson panel is the redesigned chat at true size: bare icons, the hard-edged composer, the mascot on its edge. The four panels below are real screens (Coming up, the profile, the reply record, a course), not illustrations of them.</li>
+    <li><b>Two pains are new.</b> "Nobody checked" and "It sounded sure" were not on the page. Both are things Keating already does; they were never said.</li>
+    <li><b>The mascot plays the frustration.</b> Today that moment is two clips from television. Here it is Keating under falling printouts (a new pose sheet), so the charm is the product's own.</li>
+    <li><b>Walkthroughs do the proving.</b> The four clips are the recordings already planned for the documentation, cut to about a minute.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ LP3 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">LP3</span><h2>On a phone</h2><p>The play stacks under the headline; pairs become pain, answer, screen, in that order.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt phones">
+    <div class="ph-w"><div class="ph">
+      <nav class="lp-nav" style="height:44px;padding:0 10px;gap:8px"><i class="logo" role="img" aria-label="Keating" style="width:38px;height:22px"></i><span class="sp"></span><button class="ib" title="Menu">{{i:more}}</button><button class="b sm pri">Open</button></nav>
+      <div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+        <span class="eb">Seen this before?</span>
+        <h1 style="font-family:var(--display);font-size:32px;line-height:1.03;letter-spacing:-.025em">It made sense yesterday.</h1>
+        <p style="font-family:var(--serif);font-size:14px;line-height:1.5;color:var(--ink-soft)">It explained it, and well. You nodded, closed the tab, and the understanding went with it.</p>
+        <button class="b acc" style="height:40px;justify-content:center">Open Keating in the browser {{i:right:s}}</button>
+        <div style="position:relative;flex:1;min-height:0;margin:6px -4px 0;border:1.5px solid var(--ink);border-bottom:0;border-radius:6px 6px 0 0;background:var(--card);overflow:hidden"><div class="lp-wall" style="filter:blur(2px);opacity:.38;font-size:8.6px"><p>Recursion is a programming technique in which a function calls itself to solve a smaller instance of the same problem. A recursive function generally has two parts: a base case, which returns a result without making another call, and a recursive case, which reduces the problem.</p><p>For example, to sum the integers from zero to a positive integer n, a recursive function can return zero when n is zero, and otherwise return n plus the result of calling the function with n minus one.</p><p>Each unfinished call has a frame on the call stack. Those frames hold the information needed to continue after the smaller call returns.</p></div><div style="position:absolute;left:14px;right:14px;top:34px;padding:11px 12px;border:1.5px solid var(--ink);border-radius:5px;background:var(--paper);box-shadow:var(--hard);transform:rotate(1.2deg)"><span class="eb mu">The next morning</span><b style="display:block;margin-top:4px;font-family:var(--display);font-size:15px;line-height:1.25">So what does a base case do?</b><div class="lp-quiz" style="all:unset"><div class="lp-ans" style="display:flex;align-items:center;gap:6px;height:28px;margin-top:9px;padding:0 9px;border:1px solid var(--line);border-radius:4px;background:var(--card);font-family:var(--mono);font-size:11px;color:var(--ink-faint)">uh</div></div></div></div>
+      </div>
+    </div><span class="cap">Opening</span></div>
+    <div class="ph-w"><div class="ph">
+      <div style="padding:18px 16px;display:flex;flex-direction:column;gap:10px">
+        <span class="eb mu">Four more things a chatbot leaves to you</span>
+        <p style="font-family:var(--display);font-size:22px;font-weight:700;line-height:1.14;letter-spacing:-.02em">You said "got it."<br>Nobody checked.</p>
+        <p style="font-size:13px;line-height:1.5;color:var(--ink-soft)">The chat ends when you stop typing. Whether it stuck is your problem, a week later.</p>
+        <p style="font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--green-deep);margin-top:4px">Keating comes back for it.</p>
+        <div class="lp-vig hd" style="padding:13px 14px"><h4>Coming up</h4><div class="lp-rows"><div style="grid-template-columns:58px 1fr"><small>Today</small><span><b>Base case and return path</b><br><small>3 cards</small></span></div><div style="grid-template-columns:58px 1fr"><small>Thursday</small><span>The call stack<br><small>quick check &middot; 2 min</small></span></div><div style="grid-template-columns:58px 1fr"><small>In 6 days</small><span>Recursion on trees<br><small>one problem &middot; 8 min</small></span></div></div><button class="b pri" style="width:100%;height:36px;justify-content:center;margin-top:12px">Review 3 cards</button></div>
+        <p style="font-family:var(--display);font-size:22px;font-weight:700;line-height:1.14;letter-spacing:-.02em;margin-top:14px;padding-top:16px;border-top:1px solid var(--line)">Explaining where<br>you're at. Again.</p>
+      </div>
+    </div><span class="cap">A pair</span></div>
+  </div></div></div>
+</section>
+</div>
+<script>
+(() => {
+  // The opening's four beats: advance on a timer, hold longest on the last, and let a click take over.
+  const play = document.querySelector('[data-play]');
+  if (!play) return;
+  const buttons = [...play.querySelectorAll('[data-beat-btn]')];
+  const holds = [1500, 2600, 1700, 5600];
+  let beat = 3, timer;
+  const set = (n) => { beat = n; play.dataset.beat = n; buttons.forEach((b, k) => b.setAttribute('aria-pressed', String(k === n))); };
+  const next = () => { set((beat + 1) % 4); timer = setTimeout(next, holds[beat]); };
+  buttons.forEach((b, k) => b.addEventListener('click', () => { clearTimeout(timer); set(k); }));
+  const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduced';
+  if (!still()) timer = setTimeout(next, 4200);
+})();
+</script>

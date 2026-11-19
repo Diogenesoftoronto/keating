@@ -1,5 +1,8 @@
+import { LessonFrame } from "./lesson/LessonFrame";
+import { Countdown, Progress, StackBar, Stat } from "../design-system/charts";
+import "./specialist-lessons.css";
 import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Flag, Send } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import {
   MIN_EXAM_QUESTIONS,
   type UiActionReceipt,
@@ -38,11 +41,9 @@ export interface ExamRendererProps {
 
 export function ExamRenderer(props: ExamRendererProps) {
   if (props.node.questions.length < MIN_EXAM_QUESTIONS) {
-    return <section className="exam-surface" data-exam={props.node.id}>
-      <p className="exam-surface__kind">Exam unavailable</p>
-      <h3>{props.node.title}</h3>
+    return <LessonFrame glyph="quiz" kind="Exam unavailable" title={props.node.title} className="exam-surface" data-exam={props.node.id}>
       <p className="exam-surface__error" role="alert">Exams require at least {MIN_EXAM_QUESTIONS} questions. This exam has {props.node.questions.length}.</p>
-    </section>;
+    </LessonFrame>;
   }
   return <ExamAttempt key={JSON.stringify(props.node)} {...props} />;
 }
@@ -244,12 +245,7 @@ function ExamAttempt({
     return <ExamResults node={node} completion={saved ?? delivered!} focusOnMount={Boolean(delivered)} />;
   if (!clock)
     return (
-      <section className="exam-surface exam-surface--start" data-exam={node.id}>
-        <div className="exam-start__mark" aria-hidden="true">
-          <Clock3 size={28} />
-        </div>
-        <p className="exam-surface__kind">Exam</p>
-        <h3>{node.title}</h3>
+      <LessonFrame glyph="clock" kind="Exam" title={node.title} className="exam-surface exam-surface--start" data-exam={node.id}>
         <p className="exam-start__facts">
           {node.questions.length} questions <span aria-hidden="true">·</span>{" "}
           {seconds < 60
@@ -261,7 +257,7 @@ function ExamAttempt({
         </p>
         <button
           type="button"
-          className="exam-surface__primary"
+          className="exam-surface__primary k-lift"
           disabled={disabled || node.questions.length === 0}
           onClick={() => {
             const at = Date.now();
@@ -270,9 +266,9 @@ function ExamAttempt({
           }}
         >
           Start exam
-          <ArrowRight size={18} />
+          <KeatingGlyph name="right" size={18} />
         </button>
-      </section>
+      </LessonFrame>
     );
 
   const remainingSeconds = Math.ceil(remainingMs / 1000);
@@ -280,34 +276,20 @@ function ExamAttempt({
   const urgent =
     remainingMs > 0 && remainingMs <= Math.min(seconds * 100, 60_000);
   return (
-    <section
-      className="exam-surface"
-      data-exam={node.id}
-      data-exam-phase={reviewing ? "review" : "answering"}
-    >
-      <header className="exam-surface__header">
-        <div>
-          <p className="exam-surface__kind">Exam</p>
-          <h3>{node.title}</h3>
-        </div>
-        <div
+    <LessonFrame glyph="quiz" title={node.title} kind="Exam" className="exam-surface"
+      data-exam={node.id} data-exam-phase={reviewing ? "review" : "answering"}
+      tools={<div
           className="exam-clock"
           role="timer"
           aria-live="off"
           aria-label="Exam time remaining"
           data-urgent={urgent || undefined}
         >
-          <Clock3 size={17} />
+          <KeatingGlyph name="clock" size={17} />
           <strong>{countdown}</strong>
-        </div>
-      </header>
-      <div className="exam-clock__track" aria-hidden="true">
-        <span
-          style={{
-            transform: `scaleX(${Math.max(0, remainingMs / (seconds * 1000))})`,
-          }}
-        />
-      </div>
+        </div>}>
+      <Countdown remaining={remainingSeconds} total={seconds} label="Exam countdown" />
+      <Progress done={answered} total={node.questions.length} label="Answered questions" />
       <div className="exam-surface__progress">
         <button
           type="button"
@@ -318,17 +300,14 @@ function ExamAttempt({
           onClick={() => setNavigatorOpen((value) => !value)}
         >
           Questions
-          <ChevronDown size={15} aria-hidden="true" />
+          <KeatingGlyph name="chev" size={15} />
         </button>
         <span>
-          {answered}/{node.questions.length} answered
+          <KeatingGlyph name="check" size={15} />{answered}/{node.questions.length} answered
         </span>
-        {flagged.length ? (
-          <span>
-            <Flag size={13} />
-            {flagged.length} flagged
-          </span>
-        ) : null}
+        <span><KeatingGlyph name="flag" size={15} />{flagged.length} flagged</span>
+        <span><KeatingGlyph name="minus" size={15} />{node.questions.length - answered} unanswered</span>
+        {!reviewing && <span><KeatingGlyph name="right" size={15} />Current {index + 1}</span>}
       </div>
       {navigatorOpen ? <nav id={navigatorId} className="exam-navigator" aria-label="Exam questions">
         {node.questions.map((question, questionIndex) => (
@@ -345,11 +324,9 @@ function ExamAttempt({
             onClick={() => navigate(questionIndex)}
           >
             <span>{questionIndex + 1}</span>
-            {flagged.includes(question.id) ? (
-              <Flag size={10} />
-            ) : ready[question.id] ? (
-              <Check size={11} />
-            ) : null}
+            {!reviewing && questionIndex === index && <KeatingGlyph name="right" size={11} />}
+            {flagged.includes(question.id) && <KeatingGlyph name="flag" size={11} />}
+            <KeatingGlyph name={ready[question.id] ? "check" : "minus"} size={11} />
           </button>
         ))}
       </nav> : null}
@@ -393,9 +370,9 @@ function ExamAttempt({
                     </small>
                   </span>
                   {flagged.includes(question.id) ? (
-                    <Flag size={15} aria-label="Flagged" />
+                    <KeatingGlyph name="flag" size={15} label="Flagged" />
                   ) : (
-                    <ArrowRight size={15} aria-hidden="true" />
+                    <KeatingGlyph name="right" size={15} />
                   )}
                 </button>
                 {expired && answerText[question.id] ? (
@@ -412,12 +389,12 @@ function ExamAttempt({
           </ol>
           <button
             type="button"
-            className="exam-surface__primary"
+            className="exam-surface__primary k-lift"
             disabled={disabled}
             onClick={submit}
           >
             {pending ? "Retry save exam" : "Submit exam"}
-            <Send size={17} />
+            <KeatingGlyph name="send" size={17} />
           </button>
         </div>
       ) : current ? (
@@ -426,22 +403,7 @@ function ExamAttempt({
             <h4 ref={headingRef} tabIndex={-1}>
               Question {index + 1} of {node.questions.length}
             </h4>
-            <button
-              type="button"
-              className="exam-surface__quiet"
-              aria-pressed={flagged.includes(current.id)}
-              disabled={frozen}
-              onClick={() =>
-                setFlagged((value) =>
-                  value.includes(current.id)
-                    ? value.filter((id) => id !== current.id)
-                    : [...value, current.id],
-                )
-              }
-            >
-              <Flag size={15} />
-              {flagged.includes(current.id) ? "Flagged" : "Flag"}
-            </button>
+
           </div>
           <Question
             key={current.id}
@@ -458,24 +420,26 @@ function ExamAttempt({
               disabled={frozen || index === 0}
               onClick={() => navigate(index - 1)}
             >
-              <ArrowLeft size={17} />
+              <KeatingGlyph name="left" size={17} />
               Back
             </button>
             <button
               type="button"
-              className="exam-surface__primary"
+              className="exam-surface__quiet"
+              aria-pressed={flagged.includes(current.id)}
               disabled={frozen}
               onClick={() =>
-                navigate(
-                  index === node.questions.length - 1 ? "review" : index + 1,
+                setFlagged((value) =>
+                  value.includes(current.id)
+                    ? value.filter((id) => id !== current.id)
+                    : [...value, current.id],
                 )
               }
             >
-              {index === node.questions.length - 1 ? "Review exam" : "Next"}
-              <ArrowRight size={17} />
+              <KeatingGlyph name="flag" size={17} />
+              {flagged.includes(current.id) ? "Flagged" : "Flag"}
             </button>
-          </div>
-          {index < node.questions.length - 1 ? (
+            {index < node.questions.length - 1 ? (
             <button
               type="button"
               className="exam-surface__review-link"
@@ -485,6 +449,20 @@ function ExamAttempt({
               Review all answers
             </button>
           ) : null}
+            <button
+              type="button"
+              className="exam-surface__primary k-lift"
+              disabled={frozen}
+              onClick={() =>
+                navigate(
+                  index === node.questions.length - 1 ? "review" : index + 1,
+                )
+              }
+            >
+              {index === node.questions.length - 1 ? "Review exam" : "Next"}
+              <KeatingGlyph name="right" size={17} />
+            </button>
+          </div>
         </div>
       ) : null}
       {error ? (
@@ -497,7 +475,7 @@ function ExamAttempt({
           Draft saving is unavailable. Keep this tab open until you submit.
         </p>
       ) : null}
-    </section>
+    </LessonFrame>
   );
 }
 
@@ -525,7 +503,7 @@ function ExamResults({
   completion: ExamCompletion;
   focusOnMount: boolean;
 }) {
-  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
+  const resultHeadingRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!focusOnMount) return;
     resultHeadingRef.current?.focus({ preventScroll: true });
@@ -542,34 +520,21 @@ function ExamResults({
     completion.skippedQuestionIds,
     grades,
   );
+  const partly = node.questions.filter(question => {
+    const outcome = quizOutcome(question, answers[question.id], { skipped:completion.skippedQuestionIds.includes(question.id), grades });
+    return outcome.kind === "graded" && outcome.verdict === "partial";
+  }).length;
   return (
-    <section
-      className="exam-surface exam-results"
-      data-exam={node.id}
-      data-exam-phase="completed"
-    >
-      <header className="exam-surface__header">
-        <div>
-          <p className="exam-surface__kind">Exam submitted</p>
-          <h3 ref={resultHeadingRef} tabIndex={-1}>{node.title}</h3>
-        </div>
-        <Check size={24} aria-hidden="true" />
-      </header>
-      <div className="exam-results__score" role="status">
-        <strong>
-          {summary.decided
-            ? `${summary.earned}/${summary.decided}`
-            : "In review"}
-        </strong>
-        <span>
-          {summary.pending ? `${summary.pending} awaiting grading` : "points"}
-        </span>
+    <LessonFrame glyph="quiz" kind="Exam submitted" title={<span role="heading" aria-level={3} ref={resultHeadingRef} tabIndex={-1}>{node.title}</span>}
+      tools={<KeatingGlyph name="check" size={16} />} className="exam-surface exam-results" data-exam={node.id} data-exam-phase="completed">
+      <div className="specialist-stats" role="status">
+        <Stat label="Score" value={summary.decided ? `${summary.earned}/${summary.decided}` : "In review"} support={summary.pending ? `${summary.pending} awaiting grading` : "points"} />
+        <Stat label="Time" value={formatQuizDuration(completion.timing.totalMs)} support={completion.examTimedOut ? "Time limit reached" : "total"} />
       </div>
-      <p className="exam-results__duration">
-        <Clock3 size={15} />
-        {formatQuizDuration(completion.timing.totalMs)} total
-        {completion.examTimedOut ? <span>Time limit reached</span> : null}
-      </p>
+      <StackBar label="Graded and skipped answers" data={[
+        {label:"Correct",value:summary.correct,tone:"ok"}, {label:"Partly",value:partly,tone:"warn",pattern:true},
+        {label:"Missed or skipped",value:summary.decided-summary.correct-partly,tone:"bad"}
+      ]} />
       <ol className="exam-results__questions">
         {node.questions.map((question, index) => {
           const outcome = quizOutcome(question, answers[question.id], {
@@ -627,6 +592,6 @@ function ExamResults({
           );
         })}
       </ol>
-    </section>
+    </LessonFrame>
   );
 }

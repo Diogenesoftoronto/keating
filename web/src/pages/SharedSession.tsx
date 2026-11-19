@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Bot, Copy, GitFork, MessageSquareText, User } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { SharedTrajectoryWorkspace } from "../components/trajectory";
 import { useSeo } from "../hooks/useSeo";
 import { forkSharedSession, loadSharedSessionResultFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
@@ -9,45 +9,13 @@ import { OpenUIPreview } from "../components/OpenUIPreview";
 import { buildOpenUIPreview } from "../keating/openui/preview";
 import { learnerResponseReviewMarkdown } from "../keating/learner-response";
 import { stripReviewNotice } from "../keating/judgement/review-notice";
-import { css, cx } from "../../styled-system/css";
+import { AppBar, Button, Chip, EmptyState, Loading, Note, Prose } from "../design-system/kit";
+import "../components/trajectory/review.css";
 import { sharedSessionOmissionNotice, sharedSessionWorkspaceData } from "./shared-session-view-model";
 
-const styles = {
-	page: css({ minH: "100vh", bg: "var(--background)", color: "var(--foreground)" }),
-	center: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	notFound: css({ mx: "auto", display: "flex", minH: "100vh", maxW: "48rem", flexDir: "column", alignItems: "center", justifyContent: "center", px: "1rem", textAlign: "center" }),
-	iconMuted: css({ mb: "1rem", color: "var(--muted-foreground)" }),
-	h1: css({ fontSize: "1.25rem", fontWeight: "600" }),
-	notFoundCopy: css({ mt: "0.5rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	outlineButton: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem", _hover: { bg: "var(--accent)" } }),
-	backButton: css({ mt: "1.5rem", display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.75rem", fontSize: "0.875rem", _hover: { bg: "var(--accent)" } }),
-	header: css({ borderBottom: "1px solid var(--border)" }),
-	headerInner: css({ mx: "auto", display: "flex", maxW: "56rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", px: "1rem", py: "1rem" }),
-	headerInnerRich: css({ maxW: "88rem" }),
-	minW0: css({ minW: 0 }),
-	eyebrow: css({ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" }),
-	title: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.25rem", fontWeight: "600" }),
-	meta: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	modelBadge: css({ mt: "0.5rem", display: "inline-flex", maxW: "100%", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)", bg: "color-mix(in srgb, var(--primary) 10%, transparent)", px: "0.5rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--primary)" }),
-	shrink0: css({ flexShrink: 0 }),
-	truncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
-	modelDetails: css({ display: "none", color: "color-mix(in srgb, var(--primary) 80%, transparent)", sm: { display: "inline" } }),
-	headerActions: css({ display: "flex", alignItems: "center", gap: "0.5rem" }),
-	primaryButton: css({ display: "inline-flex", h: "2.25rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", bg: "var(--primary)", px: "0.75rem", fontSize: "0.875rem", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.6 } }),
-	main: css({ mx: "auto", maxW: "56rem", px: "1rem", py: "1.5rem" }),
-	richMain: css({ mx: "auto", maxW: "88rem", px: { base: 0, md: "1rem" }, py: { base: "0.75rem", md: "1.25rem" } }),
-	error: css({ mb: "1rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", bg: "color-mix(in srgb, var(--destructive) 5%, transparent)", px: "0.75rem", py: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" }),
-	omissionNotice: css({ mx: { base: "0.75rem", md: 0 }, mb: "0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--muted)", px: "0.75rem", py: "0.625rem", fontSize: "0.75rem", lineHeight: 1.5, color: "var(--foreground)" }),
-	omissionMeta: css({ mt: "0.125rem", color: "var(--muted-foreground)" }),
-	messageStack: css({ "& > * + *": { mt: "1rem" } }),
-	messageArticle: css({ borderRadius: "0.5rem", border: "1px solid", bg: "var(--background)", p: "1rem" }),
-	assistantArticle: css({ borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)", borderLeftWidth: "4px", borderLeftColor: "var(--primary)" }),
-	learnerArticle: css({ borderColor: "rgba(245, 158, 11, 0.4)", borderLeftWidth: "4px", borderLeftColor: "#f59e0b", bg: "rgba(245, 158, 11, 0.05)" }),
-	messageHeader: css({ mb: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.025em" }),
-	assistantText: css({ color: "var(--primary)" }),
-	learnerText: css({ color: "#b45309", _dark: { color: "#fcd34d" } }),
-	markdown: css({ maxW: "none" }),
-};
+function SharedSessionLoading() {
+	return <main><div role="heading" aria-level={1}><Loading size="page" label="Loading shared session…" /></div></main>;
+}
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleString(undefined, {
@@ -159,12 +127,16 @@ function SharedSessionContent() {
 	}, [posthog, shareId]);
 
 	const copyLink = async () => {
-		await navigator.clipboard?.writeText(window.location.href);
-		posthog?.capture("shared_session_link_copied", {
-			clipboard_available: Boolean(navigator.clipboard),
-		});
-		setCopied(true);
-		window.setTimeout(() => setCopied(false), 1500);
+		try {
+			if (!navigator.clipboard) throw new Error("Clipboard unavailable. Copy the link from your address bar.");
+			await navigator.clipboard.writeText(window.location.href);
+			posthog?.capture("shared_session_link_copied", { clipboard_available: true });
+			setError("");
+			setCopied(true);
+			window.setTimeout(() => setCopied(false), 1500);
+		} catch (cause) {
+			setError(cause instanceof Error ? cause.message : "Could not copy the link.");
+		}
 	};
 
 	const forkSession = async () => {
@@ -191,127 +163,32 @@ function SharedSessionContent() {
 		}
 	};
 
-	if (loading) {
-		return (
-			<div className={styles.page}>
-				<div className={styles.center}>
-					Loading shared session...
-				</div>
-			</div>
-		);
-	}
+	if (loading) return <SharedSessionLoading />;
+	if (!session) return <EmptyState className="rv-viewer-state" heading={<span role="heading" aria-level={1}>Shared session not found</span>} actions={<Button glyph="left" variant="ghost" onClick={() => navigate({ to: "/chat" })}>Back to chat</Button>}>
+		<span role="alert">{error || "This share link is missing its session snapshot. Ask for a fresh link or open a cached share from this browser."}</span>
+	</EmptyState>;
 
-	if (!session) {
-		return (
-			<div className={styles.page}>
-				<div className={styles.notFound}>
-					<MessageSquareText className={styles.iconMuted} size={32} />
-					<h1 className={styles.h1}>Shared session not found</h1>
-					<p className={styles.notFoundCopy}>
-						{error || "This share link is missing its session snapshot. Ask for a fresh link or open a cached share from this browser."}
-					</p>
-					<button
-						className={styles.backButton}
-						onClick={() => navigate({ to: "/chat" })}
-					>
-						<ArrowLeft size={16} />
-						Back to chat
-					</button>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div className={styles.page}>
-			<header className={styles.header}>
-				<div className={cx(styles.headerInner, workspaceData ? styles.headerInnerRich : undefined)}>
-					<div className={styles.minW0}>
-						<p className={styles.eyebrow}>Shared Keating session{workspaceData ? " · Read only" : ""}</p>
-						<h1 className={styles.title}>{session.title}</h1>
-						<p className={styles.meta}>
-							{workspaceData
-								? `${workspaceData.messages.length} turns | ${workspaceData.artifacts.length} artifacts | Shared ${formatDate(session.sharedAt)}`
-								: `${session.messageCount} messages | Shared ${formatDate(session.sharedAt)}`}
-						</p>
-						<div className={styles.modelBadge}>
-							<Bot size={13} className={styles.shrink0} />
-							<span className={styles.truncate}>Shared from {modelLabel(session)}</span>
-							<span className={styles.modelDetails}>| {modelDetails(session)}</span>
-						</div>
-					</div>
-					<div className={styles.headerActions}>
-						<button
-							className={styles.outlineButton}
-							onClick={copyLink}
-						>
-							<Copy size={16} />
-							{copied ? "Copied" : "Copy link"}
-						</button>
-						<button
-							className={styles.primaryButton}
-							disabled={forking}
-							title="Starts a new chat from the shared conversation"
-							onClick={forkSession}
-						>
-							<GitFork size={16} />
-							{forking ? "Forking" : "Start from this"}
-						</button>
-					</div>
-				</div>
-			</header>
-
-			{workspaceData ? (
-				<div className={styles.richMain}>
-					{error ? <div className={styles.error}>{error}</div> : null}
-					{omissionNotice?.hasOmissions ? (
-						<div role="note" className={styles.omissionNotice}>
-							<div>Some details were left out because they were private, unsupported, or too large for this link.</div>
-							<div className={styles.omissionMeta}>{omissionNotice.items.join(" · ")}</div>
-						</div>
-					) : null}
-					<SharedTrajectoryWorkspace data={workspaceData} chrome="page" />
-				</div>
-			) : (
-				<main className={styles.main}>
-					{error ? <div className={styles.error}>{error}</div> : null}
-
-					<div className={styles.messageStack}>
-						{session.messages.map((message, index) => {
-							const isAssistant = (message as any).role === "assistant";
-							const RoleIcon = isAssistant ? Bot : User;
-							return (
-								<article
-									key={index}
-									className={cx(styles.messageArticle, isAssistant ? styles.assistantArticle : styles.learnerArticle)}
-								>
-									<div className={cx(styles.messageHeader, isAssistant ? styles.assistantText : styles.learnerText)}>
-										<RoleIcon size={13} />
-										<span>{messageLabel(message)}</span>
-									</div>
-									<div className={styles.markdown}>
-										<OpenUIPreview blocks={sharedMessageBlocks(message)} />
-									</div>
-								</article>
-							);
-						})}
-					</div>
-				</main>
-			)}
-		</div>
-	);
+	return <div className="rv-viewer">
+		<AppBar className="k-halftone" data-glyph-host menu={false} start={<KeatingGlyph name="kmark" size={28} label="Keating"/>} title={<h1>{session.title}</h1>}
+			subtitle={<>{workspaceData ? `${workspaceData.messages.length} turns · ${workspaceData.artifacts.length} artifacts` : `${session.messageCount} messages`} · Shared {formatDate(session.sharedAt)}</>}>
+			<Chip data-glyph-host><KeatingGlyph name="lock"/>Read only</Chip>
+			<Button variant="ghost" glyph="copy" onClick={copyLink} aria-live="polite">{copied ? "Copied" : "Copy link"}</Button>
+			<Button glyph="fork" variant="primary" busy={forking} onClick={forkSession}
+				title="Starts a new chat from the shared conversation">{forking ? <Loading size="inline" label="Forking" /> : "Start from this"}</Button>
+		</AppBar>
+		<p className="rv-viewer-model">Shared from {modelLabel(session)} · {modelDetails(session)}</p>
+		{error && <Note data-glyph-host role="alert" tone="warn">{error}</Note>}
+		{omissionNotice?.hasOmissions && <Note data-glyph-host>Some details were left out because they were private, unsupported, or too large for this link. {omissionNotice.items.join(" · ")}</Note>}
+		{workspaceData ? <SharedTrajectoryWorkspace data={workspaceData} chrome="page" /> : <main>
+			<h1 className="rv-snapshot-heading k-halftone">Shared conversation snapshot</h1>
+			{session.messages.map((message, index) => <article key={index} className="rv-page-turn">
+				<header data-glyph-host className="rv-page-turn-heading"><KeatingGlyph name={messageLabel(message) === "Keating" ? "bot" : "person"}/><h2>{messageLabel(message)}</h2></header>
+				<Prose><OpenUIPreview blocks={sharedMessageBlocks(message)} /></Prose>
+			</article>)}
+		</main>}
+	</div>;
 }
 
 export function SharedSession() {
-	return (
-		<Suspense fallback={
-			<div className={styles.page}>
-				<div className={styles.center}>
-					Loading shared session...
-				</div>
-			</div>
-		}>
-			<SharedSessionContent />
-		</Suspense>
-	);
+	return <Suspense fallback={<SharedSessionLoading />}><SharedSessionContent /></Suspense>;
 }

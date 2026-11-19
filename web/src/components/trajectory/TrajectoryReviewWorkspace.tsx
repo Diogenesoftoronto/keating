@@ -1,17 +1,17 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { Select } from "../Select";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { useEffect, useState } from "react";
+import { ExportSheet } from "../export/ExportSheet";
+import { AppBar, Button, ButtonLink, IconButton, Loading, Menu, Segmented, SubBar, Tabs } from "../../design-system/kit";
 import { PEDAGOGY_RUBRIC_KEYS, type TrajectoryReviewTarget } from "../../keating/trajectory-review";
-import { css, cx } from "../../../styled-system/css";
-import { deskTab } from "../../../styled-system/recipes";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
+import { cx } from "../../../styled-system/css";
 import { artifactReviewTask } from "./pool-compatibility";
-import { annotationKindColor, verdictLabel } from "./review-vocabulary";
+import { verdictLabel } from "./review-vocabulary";
 import { useSurfaceCollapse } from "./use-surface-collapse";
-import { ReviewDesk } from "./ReviewDesk";
+import { ReviewDesk, type DeskTab } from "./ReviewDesk";
 import { CandidateLedger } from "./CandidateLedger";
-import { compactButtonClass, metaTextClass, primaryButtonClass } from "./styles";
 import { TrajectoryCanvas, type TrajectoryCanvasMode } from "./TrajectoryCanvas";
-import { TurnPicker, TurnRail } from "./TurnRail";
+import { TurnRail } from "./TurnRail";
 import type {
 	ArtifactRenderer,
 	TrajectoryPassCallbacks,
@@ -20,14 +20,7 @@ import type {
 	TrajectoryReviewWorkspaceData,
 	TrajectoryTextSelection,
 } from "./types";
-
-type MobileWorkspaceTab = "turns" | "session" | "review";
-
-const MOBILE_TABS: Array<{ value: MobileWorkspaceTab; label: string; icon: keyof typeof reviewIcon }> = [
-	{ value: "turns", label: "Contents", icon: "contents" },
-	{ value: "session", label: "Page", icon: "page" },
-	{ value: "review", label: "Margin", icon: "margin" },
-];
+import "./review.css";
 
 export interface TrajectoryReviewWorkspaceProps {
 	data: TrajectoryReviewWorkspaceData;
@@ -39,442 +32,516 @@ export interface TrajectoryReviewWorkspaceProps {
 	className?: string;
 }
 
-function mobileTabKeyDown(
-	event: KeyboardEvent<HTMLButtonElement>,
-	current: MobileWorkspaceTab,
-	onChange: (tab: MobileWorkspaceTab) => void,
-) {
-	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-	event.preventDefault();
-	const index = MOBILE_TABS.findIndex((tab) => tab.value === current);
-	const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? MOBILE_TABS.length - 1 : event.key === "ArrowRight" ? (index + 1) % MOBILE_TABS.length : (index - 1 + MOBILE_TABS.length) % MOBILE_TABS.length;
-	const next = MOBILE_TABS[nextIndex].value;
-	onChange(next);
-	event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-workspace-tab="${next}"]`)?.focus();
+function countLabel(count: number, label: string) {
+	return count + " " + label + (count === 1 ? "" : "s");
 }
 
 function formattedDate(timestamp: number | undefined): string | null {
 	if (!timestamp || !Number.isFinite(timestamp)) return null;
-	return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(timestamp);
+	return new Intl.DateTimeFormat(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	}).format(timestamp);
 }
 
-const spineButtonClass = css({
-	display: "grid",
-	width: "1.9rem",
-	height: "1.9rem",
-	flex: "0 0 auto",
-	placeItems: "center",
-	borderRadius: "0.25rem",
-	border: "1px solid var(--border)",
-	background: "var(--background)",
-	color: "var(--foreground)",
-	_hover: { borderColor: "var(--ink)", background: "var(--muted)" },
-	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-});
-
-const spineBadgeClass = css({
-	fontSize: "0.5625rem",
-	letterSpacing: "0.04em",
-	color: "var(--muted-foreground)",
-	fontVariantNumeric: "tabular-nums",
-});
-
-export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, passes, passCallbacks, className }: TrajectoryReviewWorkspaceProps) {
-	const [mobileTab, setMobileTab] = useState<MobileWorkspaceTab>("session");
-	const { open: railOpen, set: setRailOpen } = useSurfaceCollapse("rail", false);
-	const { open: deskOpen, set: setDeskOpen } = useSurfaceCollapse("desk", false);
-	// Only one surface may own the open draft at a time. The canvas takes it whenever
-	// it has a rect to anchor to; otherwise (a whole-turn note, say) the desk keeps it.
-	const [draftAnchored, setDraftAnchored] = useState(false);
-	const [canvasMode, setCanvasMode] = useState<TrajectoryCanvasMode>(() => data.activeTargetKey.startsWith("artifact:") ? "artifact" : "transcript");
+export function TrajectoryReviewWorkspace({
+	data,
+	callbacks,
+	renderArtifact,
+	passes,
+	passCallbacks,
+	className,
+}: TrajectoryReviewWorkspaceProps) {
+	const [mobileTab, setMobileTab] = useState<"session" | "review" | "turns">("session");
+	const { open: railOpen, set: setRailOpen } = useSurfaceCollapse("rail", true);
+	const { open: deskOpen, set: setDeskOpen } = useSurfaceCollapse("desk", true);
+	const [exporting, setExporting] = useState(false);
+	const [exportResult, setExportResult] = useState("");
+	const [exportError, setExportError] = useState("");
+	const openExport = () => { setExportResult(""); setExportError(""); setExportOpen(true); };
+	const [exportOpen, setExportOpen] = useState(false);
+	const [raw, setRaw] = useState(false);
+	const [deskTab, setDeskTab] = useState<DeskTab>("notes");
+	const [canvasMode, setCanvasMode] = useState<TrajectoryCanvasMode>(() =>
+		data.activeTargetKey.startsWith("artifact:") ? "artifact" : "transcript",
+	);
 	const [transcriptMode, setTranscriptMode] = useState<"single" | "continuous">("continuous");
 	const activeMessage = data.messages.find((message) => message.id === data.activeTurnId) ?? data.messages[0];
 	const activeArtifact = data.artifacts.find((artifact) => artifact.id === data.activeArtifactId) ?? data.artifacts[0];
 	const targetIsArtifact = data.activeTargetKey.startsWith("artifact:");
-	const activeArtifactTask = targetIsArtifact && activeArtifact
-		? artifactReviewTask(activeArtifact.reference.artifactType)
-		: null;
+	const activeArtifactTask =
+		targetIsArtifact && activeArtifact ? artifactReviewTask(activeArtifact.reference.artifactType) : null;
 	const activeTask = targetIsArtifact
 		? activeArtifactTask
 		: activeMessage?.role === "assistant"
-			? "response" as const
+			? ("response" as const)
 			: null;
-	const generationUnavailableReason = targetIsArtifact && activeArtifact && activeArtifactTask === null
-		? `Annotate this ${activeArtifact.reference.artifactType} directly. Parallel candidates currently return text only and cannot materialize native media.`
-		: undefined;
-	const activeTarget: TrajectoryReviewTarget = targetIsArtifact && activeArtifact
-		? { kind: "artifact", artifact: activeArtifact.reference }
-		: activeMessage
-			? { kind: "message", messageId: activeMessage.id, role: activeMessage.role, messageTimestamp: activeMessage.timestamp, contentFingerprint: activeMessage.contentFingerprint }
-			: { kind: "session" };
-	const promptCharacters = 1_500
-		+ data.messages.reduce((total, message) => total + message.text.length, 0)
-		+ (targetIsArtifact ? activeArtifact?.plainText?.length ?? 0 : 0)
-		+ data.annotations.reduce((total, annotation) => total
-			+ annotation.note.length
-			+ (annotation.pedagogicalImpact?.length ?? 0)
-			+ (annotation.suggestedAlternative?.length ?? 0), 0);
+	const generationUnavailableReason =
+		targetIsArtifact && activeArtifact && activeArtifactTask === null
+			? `Annotate this ${activeArtifact.reference.artifactType} directly. Parallel candidates currently return text only and cannot materialize native media.`
+			: undefined;
+	const activeTarget: TrajectoryReviewTarget =
+		targetIsArtifact && activeArtifact
+			? { kind: "artifact", artifact: activeArtifact.reference }
+			: activeMessage
+				? {
+						kind: "message",
+						messageId: activeMessage.id,
+						role: activeMessage.role,
+						messageTimestamp: activeMessage.timestamp,
+						contentFingerprint: activeMessage.contentFingerprint,
+					}
+				: { kind: "session" };
+	const promptCharacters =
+		1_500 +
+		data.messages.reduce((total, message) => total + message.text.length, 0) +
+		(targetIsArtifact ? (activeArtifact?.plainText?.length ?? 0) : 0) +
+		data.annotations.reduce(
+			(total, annotation) =>
+				total +
+				annotation.note.length +
+				(annotation.pedagogicalImpact?.length ?? 0) +
+				(annotation.suggestedAlternative?.length ?? 0),
+			0,
+		);
 	const sessionDate = formattedDate(data.session.startedAt);
 	const scoredCount = PEDAGOGY_RUBRIC_KEYS.filter((key) => data.review.ratings[key]).length;
 
-	// One dot per turn, carrying the strongest signal on it: a problem outranks a
-	// suggestion outranks a strength, because that is the order a reviewer triages in.
-	const turnDots = data.messages.map((message) => {
-		const kinds = new Set(
-			data.annotations
-				.filter((annotation) => (annotation.target.kind === "message" || annotation.target.kind === "message-span") && annotation.target.messageId === message.id)
-				.map((annotation) => annotation.kind),
-		);
-		const kind = kinds.has("problem") ? "problem" : kinds.has("suggestion") ? "suggestion" : kinds.has("strength") ? "strength" : undefined;
-		return {
-			id: message.id,
-			tone: kind ? annotationKindColor(kind) : undefined,
-			label: `Turn ${message.ordinal + 1} · ${message.role}${kind ? ` · ${kind}` : ""}`,
-		};
-	});
-
-	useEffect(() => {
-		// Mobile has no anchored popover, so the draft still routes to the Margin tab
-		// there. On desktop the editor comes to the text instead.
-		if (data.annotationDraft) setMobileTab("review");
-	}, [data.annotationDraft]);
-
+	const candidateCount = data.candidates.filter((candidate) => candidate.targetKey === data.activeTargetKey).length;
+	const activeIndex = data.messages.indexOf(activeMessage);
+	const model = activeMessage?.model ?? data.messages.find((message) => message.model)?.model;
+	const chatHref = "/chat?session=" + encodeURIComponent(data.session.id);
+	const status = data.busy?.saving
+		? "Saving changes..."
+		: data.busy?.exporting
+			? "Preparing export..."
+			: data.reviewDirty
+				? "Unsaved changes"
+				: "";
+	const tabs = [
+		{ id: "trajectory-transcript-panel", label: "Transcript" },
+		...(data.artifacts.length
+			? [{ id: "trajectory-artifact-panel", label: "Artifacts", count: data.artifacts.length }]
+			: []),
+		{ id: "trajectory-candidates-panel", label: "Model results", count: candidateCount },
+	];
 	useEffect(() => {
 		setCanvasMode(data.activeTargetKey.startsWith("artifact:") ? "artifact" : "transcript");
 	}, [data.activeTargetKey, data.session.id]);
-
 	useEffect(() => {
+		setExportOpen(false);
 		setTranscriptMode("continuous");
+		setRaw(false);
 	}, [data.session.id]);
-
 	useEffect(() => {
-		if (canvasMode === "artifact" && data.artifacts.length === 0) setCanvasMode("transcript");
+		if (canvasMode === "artifact" && !data.artifacts.length) setCanvasMode("transcript");
 	}, [canvasMode, data.artifacts.length]);
-
 	function selectTurn(messageId: string) {
 		callbacks.onSelectTurn(messageId);
 		setCanvasMode("transcript");
 		setTranscriptMode("single");
 		setMobileTab("session");
 	}
-
-	function selectArtifact(artifactId: string) {
-		callbacks.onSelectArtifact(artifactId);
+	function selectArtifact(id: string) {
+		callbacks.onSelectArtifact(id);
 		setCanvasMode("artifact");
 		setMobileTab("session");
 	}
-
 	function changeCanvasMode(mode: TrajectoryCanvasMode) {
-		if (mode === "candidates") {
-			setCanvasMode(mode);
-			return;
-		}
-		if (mode === "artifact") {
-			if (!activeArtifact) return;
-			callbacks.onSelectArtifact(activeArtifact.id);
-		} else {
-			if (!activeMessage) return;
-			callbacks.onSelectTurn(activeMessage.id);
-		}
+		if (mode === "artifact" && activeArtifact) callbacks.onSelectArtifact(activeArtifact.id);
+		if (mode === "transcript" && activeMessage) callbacks.onSelectTurn(activeMessage.id);
 		setCanvasMode(mode);
+		setMobileTab("session");
 	}
-
+	function openNotes() {
+		setDeskTab("notes");
+		setDeskOpen(true);
+		setMobileTab("session");
+	}
+	useEffect(() => {
+		if (data.annotationDraft) openNotes();
+	}, [data.annotationDraft?.targetKey, data.annotationDraft?.id]);
 	function beginAnnotation(target: TrajectoryReviewTarget) {
+		openNotes();
 		callbacks.onStartAnnotation(target);
-		setDeskOpen(true);
-		setMobileTab("review");
 	}
-
 	function textSelection(selection: TrajectoryTextSelection) {
+		openNotes();
 		callbacks.onTextSelection(selection);
-		setDeskOpen(true);
-		setMobileTab("review");
 	}
-
-	function selectAnnotation(annotationId: string) {
-		const annotation = data.annotations.find((item) => item.id === annotationId);
+	function selectAnnotation(id: string) {
+		const annotation = data.annotations.find((note) => note.id === id);
 		if (annotation) {
+			openNotes();
 			callbacks.onEditAnnotation(annotation);
-			setDeskOpen(true);
-			setMobileTab("review");
 		}
 	}
-
+	function step(delta: number) {
+		const next = data.messages[activeIndex + delta];
+		if (next) selectTurn(next.id);
+	}
+	useEffect(() => {
+		function shortcut(event: KeyboardEvent) {
+			if (
+				event.defaultPrevented ||
+				event.isComposing ||
+				event.metaKey ||
+				event.ctrlKey ||
+				event.altKey ||
+				document.querySelector('dialog[open], [role="dialog"]:not([hidden]), [role="menu"]:not([hidden])') ||
+				(event.target instanceof Element &&
+					event.target.closest(
+						'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
+					))
+			)
+				return;
+			switch (event.key.toLowerCase()) {
+				case "j":
+					step(1);
+					break;
+				case "k":
+					step(-1);
+					break;
+				case "n":
+					if (!activeMessage || event.repeat) return;
+					beginAnnotation({
+						kind: "message",
+						messageId: activeMessage.id,
+						role: activeMessage.role,
+						messageTimestamp: activeMessage.timestamp,
+						contentFingerprint: activeMessage.contentFingerprint,
+					});
+					break;
+				default:
+					return;
+			}
+			event.preventDefault();
+		}
+		window.addEventListener("keydown", shortcut);
+		return () => window.removeEventListener("keydown", shortcut);
+	});
+	const renderCandidates = (compact = false) => (
+		<CandidateLedger
+			compact={compact}
+			candidates={data.candidates}
+			modelPools={data.modelPools}
+			availableModels={data.availableModels}
+			activeTargetKey={data.activeTargetKey}
+			activeTask={activeTask}
+			generationUnavailableReason={generationUnavailableReason}
+			promptCharacters={promptCharacters}
+			activeCandidateId={data.activeCandidateId}
+			activeModelPoolId={data.activeModelPoolId}
+			selectedCandidateId={data.review.selectedCandidateIds[data.activeTargetKey]}
+			isGenerating={data.busy?.generating}
+			onSelectCandidate={callbacks.onSelectCandidate}
+			onSelectModelPool={callbacks.onSelectModelPool}
+			onGenerate={callbacks.onGenerateCandidates}
+			onChoose={callbacks.onChooseCandidate}
+			onInsert={callbacks.onInsertCandidate}
+			onRegenerate={callbacks.onRegenerateCandidate}
+		/>
+	);
+	const phoneTab = mobileTab === "review" ? deskTab : mobileTab === "turns" ? "turns" : canvasMode;
+	const extraPhoneLabel = { rewrites: "Rewrites", turns: "Turns", artifact: "Artifacts", candidates: "Model results" };
+	const phoneItems = [
+		{ id: "rv-phone-transcript", label: "Transcript" },
+		{ id: "rv-phone-notes", label: "Notes", count: data.annotations.length },
+		{ id: "rv-phone-rubric", label: "Rubric", count: scoredCount + "/" + PEDAGOGY_RUBRIC_KEYS.length },
+	];
+	const auxiliaryMode = phoneTab === "transcript" || phoneTab === "notes" || phoneTab === "rubric" ? null : extraPhoneLabel[phoneTab];
+	function openDeskTab(tab: DeskTab) {
+		setDeskTab(tab);
+		setMobileTab("review");
+	}
 	return (
-		<main
-			className={cx(
-				css({
-					display: "flex",
-					width: "100%",
-					// Fill the viewport at any zoom level; a fixed cap left a blank band below.
-					height: { base: "auto", md: "100dvh" },
-					minHeight: { base: "36rem", md: "40rem" },
-					flexDirection: "column",
-					overflow: "hidden",
-					border: "1px solid var(--border)",
-					borderRadius: { base: 0, md: "0.5rem" },
-					background: "var(--paper, var(--background))",
-					color: "var(--foreground)",
-				}),
-				className,
-			)}
-		>
-			<header className={css({ display: "flex", minHeight: "4rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", background: "var(--paper, var(--background))", padding: { base: "0.625rem 0.75rem", md: "0.625rem 1rem" } })}>
-				<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.75rem" })}>
-					<a href={`/chat?session=${encodeURIComponent(data.session.id)}`} className={compactButtonClass} title="Return to this chat session">
-						<KeatingIcon icon={reviewIcon.back} size={13} /> Back to session
-					</a>
-					<div className={css({ minWidth: 0 })}>
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-						<h1 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "serif", fontSize: { base: "1rem", md: "1.125rem" }, fontWeight: 700, color: "var(--foreground)" })}>{data.session.title}</h1>
-						<span className={css({ display: "inline-flex", flex: "0 0 auto", alignItems: "center", gap: "0.2rem", borderRadius: "9999px", background: data.review.status === "final" ? "color-mix(in srgb, var(--accent-green) 25%, transparent)" : "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.5625rem", fontWeight: 750, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--muted-foreground)" })}>
-							{data.review.status}
-						</span>
-					</div>
-					<div className={cx(metaTextClass, css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.35rem", marginTop: "0.125rem" }))}>
-						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.2rem" })}><KeatingIcon icon={reviewIcon.verdict} size={11} /> Review records stay local</span>
-						{data.session.subtitle ? <><span aria-hidden="true">·</span><span>{data.session.subtitle}</span></> : null}
-						{sessionDate ? <><span aria-hidden="true">·</span><span>{sessionDate}</span></> : null}
-					</div>
-					</div>
-				</div>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
-					<span role="status" aria-live="polite" className={metaTextClass}>{data.busy?.saving ? "Saving changes..." : data.busy?.exporting ? "Preparing export..." : data.reviewDirty ? "Unsaved changes" : ""}</span>
-					<button type="button" className={compactButtonClass} disabled={data.busy?.exporting} onClick={callbacks.onExport}><KeatingIcon icon={reviewIcon.export} size={13} /> <span className={css({ display: "none", sm: { display: "inline" } })}>Export</span></button>
-					<button type="button" className={primaryButtonClass} disabled={data.busy?.saving || !data.reviewDirty} onClick={callbacks.onSave}><KeatingIcon icon={reviewIcon.save} size={13} /> <span className={css({ display: "none", sm: { display: "inline" } })}>{data.busy?.saving ? "Saving" : "Save review"}</span></button>
-				</div>
-			</header>
-
-			<div role="tablist" aria-label="Review workspace" className={css({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderBottom: "1px solid var(--border)", md: { display: "none" } })}>
-				{MOBILE_TABS.map((option) => {
-					const selected = mobileTab === option.value;
-					return (
-						<button
-							key={option.value}
-							type="button"
-							role="tab"
-							id={`trajectory-workspace-${option.value}-tab`}
-							aria-controls={`trajectory-workspace-${option.value}-panel`}
-							aria-selected={selected}
-							tabIndex={selected ? 0 : -1}
-							data-workspace-tab={option.value}
-							className={deskTab()}
-							onClick={() => setMobileTab(option.value)}
-							onKeyDown={(event) => mobileTabKeyDown(event, option.value, setMobileTab)}
-						>
-							<KeatingIcon icon={reviewIcon[option.icon]} size={14} /> {option.label}
-						</button>
-					);
-				})}
-			</div>
-
-			{/*
-			 * The desktop grid never changes width. Both side surfaces collapse to
-			 * spines and expand as overlays, so opening one cannot reflow the canvas —
-			 * a reader who opens the desk must not lose the line they were reading.
-			 */}
+		<main className={cx("rv-work", className)}>
+			<ExportSheet open={exportOpen} onClose={() => setExportOpen(false)} title="Export this review"
+				included={`${countLabel(data.messages.length, "turn")} of “${data.session.title}”, ${countLabel(data.annotations.length, "note")}, ${scoredCount} of ${PEDAGOGY_RUBRIC_KEYS.length} rubric scores, ${countLabel(Object.keys(data.review.selectedCandidateIds).length, "chosen rewrite")}`}
+				excluded="Other sessions, your profile, your keys"
+				format="ZIP with JSONL files and a README" destination="Your downloads folder. Nothing is uploaded."
+				error={exportError || undefined}
+				note={exportResult ? <span role="status">{exportResult}</span> : data.reviewDirty ? "You have unsaved changes. Exporting saves the review first." : undefined}
+				confirmLabel={data.reviewDirty ? "Save and download" : "Download ZIP"} busy={exporting || data.busy?.exporting}
+				onConfirm={async () => {
+					setExporting(true); setExportResult(""); setExportError("");
+					try { await callbacks.onExport(); setExportResult("ZIP download started."); }
+					catch (cause) { setExportError(cause instanceof Error ? cause.message : "Could not export this review."); }
+					finally { setExporting(false); }
+				}}
+			/>
+			<AppBar
+				className="rv-head"
+				menu={false}
+				start={
+					<ButtonLink href="/review" glyph="left" variant="ghost" aria-label="Reviews">
+						<span className="rv-desktop">Reviews</span>
+					</ButtonLink>
+				}
+				title={<h1>{data.session.title}</h1>}
+			>
+				<Select
+					className="rv-status"
+					aria-label="Review status"
+					value={data.review.status}
+					onValueChange={(value) =>
+						callbacks.onReviewChange({
+							...data.review,
+							updatedAt: Date.now(),
+							status: value === "final" ? "final" : "draft",
+						})
+					}
+				>
+					<option value="draft">Draft</option>
+					<option value="final">Final</option>
+				</Select>
+				<span className="rv-meta" title={data.session.subtitle}>
+					{[data.messages.length + " turns", model, sessionDate].filter(Boolean).join(" · ")}
+				</span>
+				<ButtonLink
+					className="rv-desktop rv-chat k-bloom"
+					href={chatHref}
+					variant="ghost"
+					glyph="ext"
+					aria-label="Return to this chat session"
+					title="Return to this chat session"
+				/>
+				{data.busy?.saving || data.busy?.exporting
+					? <Loading className="rv-save-state" size="inline" aria-live="polite" label={status} />
+					: <span className="rv-save-state" role="status" aria-live="polite">{status}</span>}
+				<Button className="rv-desktop" variant="ghost" glyph="export" disabled={data.busy?.exporting} onClick={openExport}>
+					Export
+				</Button>
+				<Button
+					className="rv-save"
+					aria-label="Save review"
+					glyph="save"
+					variant="primary"
+					disabled={data.busy?.saving}
+					onClick={callbacks.onSave}
+				>
+					<span className="rv-desktop">{data.busy?.saving ? "Saving" : "Save review"}</span>
+				</Button>
+				<Menu
+					className="rv-phone"
+					label="Review actions"
+					trigger={<IconButton glyph="more" label="More review actions" />}
+					items={[
+						{
+							id: "export",
+							label: "Export",
+							glyph: "export",
+							disabled: data.busy?.exporting,
+							onSelect: openExport,
+						},
+						{ id: "rewrites", label: "Rewrites", onSelect: () => openDeskTab("rewrites") },
+						{
+							id: "results",
+							label: "Model results (" + candidateCount + ")",
+							onSelect: () => changeCanvasMode("candidates"),
+						},
+						...(data.artifacts.length
+							? [
+									{
+										id: "artifacts",
+										label: "Artifacts (" + data.artifacts.length + ")",
+										onSelect: () => changeCanvasMode("artifact"),
+									},
+								]
+							: []),
+						{
+							id: "view",
+							label: raw ? "Show rendered transcript" : "Show raw transcript",
+							onSelect: () => {
+								setRaw(!raw);
+								changeCanvasMode("transcript");
+							},
+						},
+						{
+							id: "layout",
+							label: transcriptMode === "single" ? "All turns" : "One turn",
+							onSelect: () => {
+								setTranscriptMode(transcriptMode === "single" ? "continuous" : "single");
+								changeCanvasMode("transcript");
+							},
+						},
+						{ id: "chat", label: "Return to this chat session", onSelect: () => window.location.assign(chatHref) },
+					]}
+				/>
+			</AppBar>
+			<SubBar className="rv-desktop rv-sub">
+				<Tabs
+					label="Review page"
+					items={tabs}
+					value={`trajectory-${canvasMode}-panel`}
+					onChange={(id) => changeCanvasMode(id.split("-")[1] as TrajectoryCanvasMode)}
+				/>
+				{canvasMode === "transcript" && (
+					<>
+						<Segmented<"single" | "continuous">
+							size="sm"
+							label="Transcript layout"
+							value={transcriptMode}
+							onChange={setTranscriptMode}
+							options={[
+								{ value: "continuous", label: "All turns" },
+								{ value: "single", label: "One turn" },
+							]}
+						/>
+						<Segmented
+							size="sm"
+							label="Transcript format"
+							value={raw ? "raw" : "rendered"}
+							onChange={(value) => setRaw(value === "raw")}
+							options={[
+								{ value: "rendered", label: "Rendered" },
+								{ value: "raw", label: "Raw" },
+							]}
+						/>
+					</>
+				)}
+			</SubBar>
+			<SubBar className="rv-phone">
+				<Tabs
+					stretch
+					label="Review workspace"
+					items={phoneItems}
+					value={"rv-phone-" + (auxiliaryMode ? mobileTab === "review" ? "notes" : "transcript" : phoneTab)}
+					onChange={(id) => {
+						if (id === "rv-phone-transcript") changeCanvasMode("transcript");
+						if (id === "rv-phone-notes") openDeskTab("notes");
+						if (id === "rv-phone-rubric") openDeskTab("rubric");
+					}}
+				/>
+			</SubBar>
+			{auxiliaryMode && <strong className="rv-phone rv-mode-label">{auxiliaryMode}</strong>}
 			<div
-				className={css({
-					position: "relative",
-					display: { base: "block", md: "grid" },
-					minHeight: 0,
-					flex: 1,
-					gridTemplateColumns: { md: "2.75rem minmax(0, 1fr) 2.75rem" },
-				})}
+				className="rv-columns"
+				data-rail={railOpen}
+				data-desk={deskOpen}
+				data-phone={mobileTab}
 				onKeyDown={(event) => {
-					if (event.key !== "Escape") return;
-					if (deskOpen) {
-						setDeskOpen(false);
-						event.stopPropagation();
+					if (
+						event.key !== "Escape" ||
+						event.defaultPrevented ||
+						(event.target instanceof Element && event.target.closest("dialog[open]"))
+					)
 						return;
-					}
-					if (railOpen) {
-						setRailOpen(false);
-						event.stopPropagation();
-					}
+					if (data.annotationDraft) callbacks.onCancelAnnotation();
+					else if (deskOpen) setDeskOpen(false);
+					else if (railOpen) setRailOpen(false);
+					else return;
+					event.stopPropagation();
 				}}
 			>
-				<nav
-					aria-label="Turns"
-					className={css({ display: "none", md: { display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", borderRight: "1px solid var(--border)", background: "var(--card, var(--background))", paddingBlock: "0.6rem" } })}
-				>
-					<button
-						type="button"
-						aria-expanded={railOpen}
-						aria-controls="trajectory-workspace-turns-panel"
-						title={railOpen ? "Collapse turn list" : "Expand turn list"}
-						className={spineButtonClass}
-						onClick={() => setRailOpen(!railOpen)}
-					>
-						<KeatingIcon icon={reviewIcon.contents} size={14} />
-					</button>
-					{/* Collapsed, the spine is still a map: colour tells you where the
-					    problems cluster without opening anything. */}
-					{turnDots.map((dot) => (
-						<button
-							key={dot.id}
-							type="button"
-							title={dot.label}
-							aria-label={dot.label}
-							aria-current={dot.id === data.activeTurnId ? "true" : undefined}
-							className={css({
-								width: "0.7rem",
-								height: "0.7rem",
-								flex: "0 0 auto",
-								cursor: "pointer",
-								borderRadius: "9999px",
-								border: "1.5px solid var(--border)",
-								_hover: { outline: "2px solid var(--ink)", outlineOffset: "3px" },
-								_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-							})}
-							style={{
-								background: dot.tone ?? "transparent",
-								borderColor: dot.tone ?? "var(--border)",
-								boxShadow: dot.id === data.activeTurnId ? "0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent)" : undefined,
-							}}
-							onClick={() => selectTurn(dot.id)}
-						/>
-					))}
-				</nav>
-
-				<div
-					id="trajectory-workspace-turns-panel"
-					role="tabpanel"
-					aria-labelledby="trajectory-workspace-turns-tab"
-					className={css({
-						display: mobileTab === "turns" ? "block" : "none",
-						minHeight: "32rem",
-						md: {
-							display: railOpen ? "block" : "none",
-							position: "absolute",
-							insetBlock: 0,
-							left: "2.75rem",
-							zIndex: 25,
-							width: "15rem",
-							minHeight: 0,
-							borderRight: "1px solid var(--ink)",
-							background: "var(--card, var(--background))",
-							boxShadow: "14px 0 30px -24px rgba(0, 0, 0, 0.8)",
-						},
-					})}
-				>
-					<TurnRail messages={data.messages} annotations={data.annotations} activeMessageId={data.activeTurnId} onSelect={selectTurn} />
-				</div>
-
-				<div id="trajectory-workspace-session-panel" role="tabpanel" aria-labelledby="trajectory-workspace-session-tab" className={css({ display: mobileTab === "session" ? "flex" : "none", minWidth: 0, minHeight: "32rem", flexDirection: "column", md: { display: "flex", minHeight: 0 } })}>
-					<div className={css({ display: "none", borderBottom: "1px solid var(--border)", padding: "0.5rem 0.75rem", md: { display: "block" }, xl: { display: "none" } })}>
-						<TurnPicker messages={data.messages} activeMessageId={data.activeTurnId} onSelect={selectTurn} />
-					</div>
-					<TrajectoryCanvas
+				<div className="rv-outline-col" id="rv-phone-turns" aria-label="Turns">
+					<TurnRail
 						messages={data.messages}
-						artifacts={data.artifacts}
 						annotations={data.annotations}
-						activeMessageId={data.activeTurnId}
-						activeArtifactId={data.activeArtifactId}
-						activeAnnotationId={data.activeAnnotationId}
-						mode={canvasMode}
-						onModeChange={changeCanvasMode}
-						transcript={transcriptMode}
-						onTranscriptChange={setTranscriptMode}
-						onSelectMessage={selectTurn}
-						onSelectArtifact={selectArtifact}
-						onSelectAnnotation={selectAnnotation}
-						onTextSelection={textSelection}
-						onStartAnnotation={beginAnnotation}
-						onDeleteAnnotation={callbacks.onDeleteAnnotation}
-						annotationDraft={data.annotationDraft}
-						onAnnotationDraftChange={callbacks.onAnnotationDraftChange}
-						onSaveAnnotation={callbacks.onSaveAnnotation}
-						onCancelAnnotation={callbacks.onCancelAnnotation}
-						onExpandAnnotation={passes && passCallbacks ? () => passCallbacks.onRunPass("annotation-expand") : undefined}
-						isSavingAnnotation={data.busy?.saving}
-						isExpandingAnnotation={passes?.running === "annotation-expand"}
-						onDraftAnchoredChange={setDraftAnchored}
-						renderArtifact={renderArtifact}
-						candidateCount={data.candidates.filter((candidate) => candidate.targetKey === data.activeTargetKey).length}
-						candidatePanel={(
-							<CandidateLedger
-								candidates={data.candidates}
-								modelPools={data.modelPools}
-								availableModels={data.availableModels}
-								activeTargetKey={data.activeTargetKey}
-								activeTask={activeTask}
-								generationUnavailableReason={generationUnavailableReason}
-								promptCharacters={promptCharacters}
-								activeCandidateId={data.activeCandidateId}
-								activeModelPoolId={data.activeModelPoolId}
-								selectedCandidateId={data.review.selectedCandidateIds[data.activeTargetKey]}
-								isGenerating={data.busy?.generating}
-								onSelectCandidate={callbacks.onSelectCandidate}
-								onSelectModelPool={callbacks.onSelectModelPool}
-								onGenerate={callbacks.onGenerateCandidates}
-								onChoose={callbacks.onChooseCandidate}
-								onInsert={callbacks.onInsertCandidate}
-								onRegenerate={callbacks.onRegenerateCandidate}
-							/>
-						)}
-						className={css({ minHeight: 0, flex: 1 })}
+						activeMessageId={activeMessage?.id}
+						onSelect={selectTurn}
+						collapsed={!railOpen}
+						onToggle={() => setRailOpen(!railOpen)}
 					/>
 				</div>
-
-				<div
-					id="trajectory-workspace-review-panel"
-					role="tabpanel"
-					aria-labelledby="trajectory-workspace-review-tab"
-					className={css({
-						display: mobileTab === "review" ? "block" : "none",
-						minWidth: 0,
-						minHeight: "32rem",
-						md: {
-							display: deskOpen ? "block" : "none",
-							position: "absolute",
-							insetBlock: 0,
-							right: "2.75rem",
-							zIndex: 25,
-							width: "22rem",
-							maxWidth: "70vw",
-							minHeight: 0,
-							borderLeft: "1px solid var(--ink)",
-							background: "var(--card, var(--background))",
-							boxShadow: "-14px 0 30px -24px rgba(0, 0, 0, 0.8)",
-						},
-					})}
-				>
-					<ReviewDesk data={data} callbacks={callbacks} activeTarget={activeTarget} passes={passes} passCallbacks={passCallbacks} draftAnchored={draftAnchored} onOpenCandidates={() => { setCanvasMode("candidates"); setMobileTab("session"); }} />
+				<div className="rv-document" id="rv-phone-transcript">
+					<div className="rv-phone-page" id={canvasMode === "transcript" ? undefined : "rv-phone-" + canvasMode}>
+						<TrajectoryCanvas
+							messages={data.messages}
+							artifacts={data.artifacts}
+							annotations={data.annotations}
+							activeMessageId={data.activeTurnId}
+							activeArtifactId={data.activeArtifactId}
+							activeAnnotationId={data.activeAnnotationId}
+							mode={canvasMode}
+							onModeChange={changeCanvasMode}
+							transcript={transcriptMode}
+							onTranscriptChange={setTranscriptMode}
+							onActivateMessage={callbacks.onSelectTurn}
+							onSelectMessage={selectTurn}
+							onSelectArtifact={selectArtifact}
+							onSelectAnnotation={selectAnnotation}
+							onTextSelection={textSelection}
+							onStartAnnotation={beginAnnotation}
+							onDeleteAnnotation={callbacks.onDeleteAnnotation}
+							annotationDraft={data.annotationDraft}
+							onAnnotationDraftChange={callbacks.onAnnotationDraftChange}
+							onSaveAnnotation={callbacks.onSaveAnnotation}
+							onCancelAnnotation={callbacks.onCancelAnnotation}
+							onExpandAnnotation={
+								passes && passCallbacks ? () => passCallbacks.onRunPass("annotation-expand") : undefined
+							}
+							isSavingAnnotation={data.busy?.saving}
+							isExpandingAnnotation={passes?.running === "annotation-expand"}
+							hideControls
+							raw={raw}
+							renderArtifact={renderArtifact}
+							candidateCount={
+								data.candidates.filter((candidate) => candidate.targetKey === data.activeTargetKey).length
+							}
+							candidatePanel={renderCandidates()}
+							className="rv-canvas"
+						/>
+					</div>
 				</div>
-
-				<nav
-					aria-label="Review desk"
-					className={css({ display: "none", md: { display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", borderLeft: "1px solid var(--border)", background: "var(--card, var(--background))", paddingBlock: "0.6rem" } })}
-				>
-					<button
-						type="button"
-						aria-expanded={deskOpen}
-						aria-controls="trajectory-workspace-review-panel"
-						title={deskOpen ? "Collapse review desk" : "Open review desk"}
-						className={spineButtonClass}
-						onClick={() => setDeskOpen(!deskOpen)}
-					>
-						<KeatingIcon icon={reviewIcon.margin} size={14} />
-					</button>
-					{/* Collapsed, the desk still reports itself. Without this the spine is
-					    a memory tax; with it, the glance replaces opening the panel. */}
-					<span title={`Verdict: ${verdictLabel(data.review.verdict)}`} className={spineBadgeClass}>
-						{data.review.verdict === "accepted" ? "✓" : data.review.verdict === "rejected" ? "✕" : data.review.verdict === "review" ? "!" : "—"}
-					</span>
-					<span title={`Rubric: ${scoredCount} of ${PEDAGOGY_RUBRIC_KEYS.length} scored`} className={spineBadgeClass}>
-						{scoredCount}/{PEDAGOGY_RUBRIC_KEYS.length}
-					</span>
-					<span title={`${data.candidates.length} candidates`} className={spineBadgeClass}>
-						{data.candidates.length}◇
-					</span>
-					{passes?.rubric ? (
-						<span title="A rubric proposal is waiting" className={cx(spineBadgeClass, css({ color: "var(--accent-dim)", fontWeight: 700 }))}>
-							●
+				<aside className="rv-margin" aria-label="The Margin">
+					<ReviewDesk
+						data={data}
+						callbacks={callbacks}
+						activeTarget={activeTarget}
+						passes={passes}
+						passCallbacks={
+							passCallbacks && {
+								...passCallbacks,
+								onRevealProposal: (proposal) => {
+									if (!proposal.messageId) return;
+									passCallbacks.onRevealProposal?.(proposal);
+									setTranscriptMode("single");
+									setCanvasMode("transcript");
+									setMobileTab("session");
+								},
+							}
+						}
+						tab={deskTab}
+						onTabChange={setDeskTab}
+						rewrites={renderCandidates(true)}
+						onCollapse={() => setDeskOpen(false)}
+						onOpenCandidates={() => changeCanvasMode("candidates")}
+					/>
+				</aside>
+				{!deskOpen && (
+					<aside data-glyph-host className="rv-desk-spine">
+						<IconButton label="Open review desk" glyph="panelr" onClick={() => setDeskOpen(true)} />
+						<span title={"Verdict: " + verdictLabel(data.review.verdict)}>
+							<KeatingGlyph size={15} label={verdictLabel(data.review.verdict)} name={data.review.verdict === "accepted" ? "check"
+								: data.review.verdict === "rejected" ? "x"
+								: data.review.verdict === "review" ? "alert" : "ring"} />
 						</span>
-					) : null}
-				</nav>
+						<span title="Rubric dimensions scored">{scoredCount}/6</span>
+						<span title="Rewrites">{candidateCount}<KeatingGlyph name="layers" size={15} /></span>
+						{passes?.rubric && <span title="A rubric proposal is waiting"><KeatingGlyph name="ruler" size={15} /></span>}
+					</aside>
+				)}
 			</div>
+			<footer className="rv-phone rv-bottom">
+				<IconButton
+					label="Turn list"
+					glyph="route"
+					onClick={() => setMobileTab(mobileTab === "turns" ? "session" : "turns")}
+				/>
+				<IconButton label="Previous turn" glyph="left" disabled={activeIndex <= 0} onClick={() => step(-1)} />
+				<span>{data.messages.length ? `Turn ${activeIndex + 1} of ${data.messages.length}` : "No turns"}</span>
+				<IconButton
+					label="Next turn"
+					glyph="right"
+					disabled={activeIndex >= data.messages.length - 1}
+					onClick={() => step(1)}
+				/>
+				<IconButton label="Add note" glyph="note" onClick={() => beginAnnotation(activeTarget)} />
+			</footer>
 		</main>
 	);
 }

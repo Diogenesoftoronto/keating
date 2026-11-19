@@ -1,8 +1,8 @@
 /**
  * Share-session state for the chat page: consent gate, share-link creation and
- * the transient status shown in the header menu and the share banner.
+ * the result that stays in the sheet until the learner dismisses it.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import type { SharedSessionUrlResult } from "../../keating/shared-sessions";
 import {
@@ -11,7 +11,6 @@ import {
 } from "../../keating/ui-settings";
 import {
   acknowledgeShareConsent,
-  PUBLIC_SHARE_CONSENT_MESSAGE,
   shareFailureMessage,
   shareNeedsConsent,
   shareReadyMessage,
@@ -22,9 +21,9 @@ export interface SessionSharing {
   shareState: ShareState;
   shareUrl: string | null;
   shareMessage: string | null;
-  /** First click: asks for consent when needed, otherwise shares. */
+  /** Open a new sheet for the current session. */
   handleShare: () => Promise<void>;
-  /** Second click after the warning: remembers consent, then shares. */
+  /** Create a link after the sheet confirms the current mode. */
   confirmShare: () => Promise<void>;
   dismissShare: () => void;
 }
@@ -41,55 +40,65 @@ export function useSessionSharing({
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
 
-  const performShare = async () => {
-    setShareState("sharing");
-    setShareMessage(null);
+  const request = useRef(0);
+  const busy = useRef(false);
+  const mode = useRef<ReturnType<typeof loadKeatingUiSettings>["shareLinkMode"] | null>(null);
+
+  useEffect(() => {
+    dismissShare();
+    return () => { request.current++; };
+  }, [activeSessionId]);
+
+  const handleShare = async () => {
+    mode.current = loadKeatingUiSettings().shareLinkMode;
     setShareUrl(null);
+    setShareMessage("Share session");
+    setShareState("confirm");
+  };
+
+  const confirmShare = async () => {
+    if (busy.current || shareState !== "confirm") return;
+    const settings = loadKeatingUiSettings();
+    if (settings.shareLinkMode !== mode.current) {
+      setShareMessage("The share mode changed. Reopen Share session to continue.");
+      setShareState("error");
+      return;
+    }
+    busy.current = true;
+    const id = ++request.current;
+    setShareState("sharing");
     try {
+      if (shareNeedsConsent(settings)) {
+        const acknowledged = acknowledgeShareConsent(settings);
+        if (acknowledged) saveKeatingUiSettings(acknowledged);
+      }
       const result = await shareSession();
+      if (request.current !== id) return;
       setShareUrl(result.url);
       setShareMessage(shareReadyMessage(result));
-      setShareState("copied");
+      setShareState("ready");
       posthog.capture("session_shared", {
         share_mode: result.mode,
         fallback: result.fallback,
         session_id: activeSessionId,
       });
-      window.setTimeout(() => setShareState("idle"), 1600);
     } catch (error) {
+      if (request.current !== id) return;
       console.warn("Failed to share session:", error);
       setShareMessage(shareFailureMessage(error));
       setShareState("error");
-      window.setTimeout(() => setShareState("idle"), 2200);
+    } finally {
+      if (request.current === id) busy.current = false;
     }
   };
 
-  // Rich session shares publish more than the old transcript-only links. Gate
-  // the first expanded share behind fresh consent even when the legacy
-  // transcript warning was already acknowledged. Local links stay on-device.
-  const handleShare = async () => {
-    if (shareNeedsConsent(loadKeatingUiSettings())) {
-      setShareUrl(null);
-      setShareMessage(PUBLIC_SHARE_CONSENT_MESSAGE);
-      setShareState("confirm");
-      return;
-    }
-    await performShare();
-  };
-
-  // Second click after the warning: remember the acknowledgement so the prompt
-  // never shows again, then create the link.
-  const confirmShare = async () => {
-    const acknowledged = acknowledgeShareConsent(loadKeatingUiSettings());
-    if (acknowledged) saveKeatingUiSettings(acknowledged);
-    await performShare();
-  };
-
-  const dismissShare = () => {
+  function dismissShare() {
+    request.current++;
+    busy.current = false;
     setShareState("idle");
     setShareUrl(null);
     setShareMessage(null);
-  };
+  }
 
   return { shareState, shareUrl, shareMessage, handleShare, confirmShare, dismissShare };
 }

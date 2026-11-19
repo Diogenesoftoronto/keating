@@ -1,0 +1,83 @@
+{
+  "title": "Courses",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "local-account"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T15:51:11.704Z",
+  "viewerNote": "The outline and sample submission are seeded after blank-course creation. The course owner entered the sample submission.",
+  "duration": 40.47000002861023,
+  "bytes": 750655,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "assemble",
+      "title": "Open the course assembler",
+      "start": 0.003999948501586914,
+      "explanation": "Open the course assembler.",
+      "alt": "Open the course assembler",
+      "still": "assemble"
+    },
+    {
+      "id": "create",
+      "title": "Create Recursion Workshop",
+      "start": 3.675999879837036,
+      "explanation": "Create a course you can fill in.",
+      "alt": "Create Recursion Workshop",
+      "still": "create"
+    },
+    {
+      "id": "outline",
+      "title": "See the sample course outline",
+      "start": 9.708999872207642,
+      "explanation": "Organise lessons into modules.",
+      "alt": "See the sample course outline",
+      "still": "outline"
+    },
+    {
+      "id": "reading",
+      "title": "Read the base-case lesson",
+      "start": 15.634999990463257,
+      "explanation": "Open the lesson and its reading.",
+      "alt": "Read the base-case lesson",
+      "still": "reading"
+    },
+    {
+      "id": "complete",
+      "title": "Mark the lesson complete",
+      "start": 22.269999980926514,
+      "explanation": "Mark this lesson complete.",
+      "alt": "Mark the lesson complete",
+      "still": "complete"
+    },
+    {
+      "id": "discussion",
+      "title": "Post a lesson comment",
+      "start": 25.961999893188477,
+      "explanation": "Keep the question with the lesson.",
+      "alt": "Post a lesson comment",
+      "still": "discussion"
+    },
+    {
+      "id": "review",
+      "title": "Inspect reviewable work",
+      "start": 31.852999925613403,
+      "explanation": "See which learner work awaits review.",
+      "alt": "Inspect reviewable work",
+      "still": "review"
+    },
+    {
+      "id": "self-paced",
+      "title": "Find self-paced courses",
+      "start": 35.9210000038147,
+      "explanation": "Find self-paced courses and any plans saved here.",
+      "alt": "Find self-paced courses",
+      "still": "self-paced"
+    }
+  ]
+}

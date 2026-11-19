@@ -1,3 +1,5 @@
+import { Meter } from "../design-system/charts";
+import { ConfirmDialog, Loading } from "../design-system/kit";
 import { useEffect, useState } from "react";
 import { desktopOfflineBridge, DESKTOP_OFFLINE_MODELS, type DesktopOfflineStatus } from "../lib/desktop-offline";
 import "./offline-tutor-settings.css";
@@ -10,6 +12,7 @@ export function OfflineTutorSettings() {
   const isBonsai = modelId === DESKTOP_OFFLINE_MODELS[2].id;
 	const [status, setStatus] = useState<DesktopOfflineStatus>();
 	const [error, setError] = useState("");
+	const [removeId,setRemoveId] = useState<string>();
 	const [busy, setBusy] = useState(false);
 	useEffect(() => {
 		if (!bridge) return;
@@ -35,20 +38,21 @@ export function OfflineTutorSettings() {
 	const progress = Math.min(100, Math.round(downloaded / total * 100));
 	return <section id="offline-tutor" className="offline-tutor-settings" aria-labelledby="offline-tutor-title">
 		<h3 id="offline-tutor-title">Offline tutor</h3>
-		<label>Offline model <select value={modelId} disabled={busy} onChange={event => { setModelId(event.target.value); setStatus(undefined); setError(""); }}>
+		<label>Offline model <select value={modelId} disabled={busy || !!removeId} onChange={event => { setModelId(event.target.value); setStatus(undefined); setError(""); }}>
       {DESKTOP_OFFLINE_MODELS.filter(item => item.id === DESKTOP_OFFLINE_MODELS[0].id || bridge.supportedModels?.includes(item.id)).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select></label>
     <p>Download once, then learn without an account or connection.</p>
 		<p>{isBonsai ? "About 6.58 GB of weights, plus runtime and working memory. Images and text; Keating enables it on supported desktops with at least 12 GB RAM. Uses the Prism runtime with a conservative 4,096 token context and 512 token replies." : isGemma ? "About 3.66 GB plus working memory. Supports images and WAV recordings; starts with a conservative 4,096 token context. Larger and slower than MiniCPM on compact devices." : "About 1.55 GB. A compact text tutor. Images need a vision model; recordings need a transcript."} Kept across app updates.</p>
-		{!status ? <p role="status">Checking local storage…</p> : <>
-			<p role="status">{status.downloading ? `Downloading: ${progress}%` : status.installed ? `Ready offline. Choose ${model.name} in the model selector.` : downloaded > 0 ? "Download paused. Resume when you’re ready." : status.available ? "Optional download. Your other models remain available." : "Offline runtime unavailable in this build."}</p>
-			{status.downloading && <progress aria-label="Offline tutor download" max={total} value={downloaded} />}
+		{!status ? <Loading label="Checking local storage…" size="inline"/> : <>
+			<p role="status">{status.downloading ? status.totalBytes > 0 ? `Downloading: ${progress}%` : "Starting download…" : status.installed ? `Ready offline. Choose ${model.name} in the model selector.` : downloaded > 0 ? "Download paused. Resume when you’re ready." : status.available ? "Optional download. Your other models remain available." : "Offline runtime unavailable in this build."}</p>
+			{status.downloading && <Meter progress label="Offline tutor download" indeterminate={!status.totalBytes} max={total} value={downloaded}/>}
 			<div className="offline-tutor-settings__actions">
 				{status.downloading ? <button type="button" onClick={() => void action(() => bridge.cancelDownload(modelId))}>Pause download</button> : !status.installed && <button type="button" disabled={busy || !status.available} onClick={() => void action(() => bridge.download(modelId))}>{downloaded > 0 ? "Resume download" : `Download ${isBonsai ? "Bonsai · 6.58 GB" : isGemma ? "Gemma · 3.66 GB" : "MiniCPM · 1.55 GB"}`}</button>}
-				{!status.downloading && (status.installed || downloaded > 0) && !status.bundled && <button type="button" disabled={busy || status.generating} onClick={() => void action(() => bridge.remove(modelId))}>Remove download</button>}
+				{!status.downloading && (status.installed || downloaded > 0) && !status.bundled && <button type="button" disabled={busy || status.generating} onClick={() => setRemoveId(modelId)}>Remove download</button>}
 			</div>
 			{status.bundled && <p>Included with this offline edition. Removing the app removes its bundled model.</p>}
 		</>}
+		<ConfirmDialog open={!!removeId} title={"Remove "+model.name+"?"} description="Removes the downloaded files from this device. Download the model again to use it offline." confirmLabel="Remove download" onCancel={()=>setRemoveId(undefined)} onConfirm={()=>{if(removeId && !status?.bundled && !status?.generating) void action(()=>bridge.remove(removeId)); setRemoveId(undefined);}}/>
 		{(error || status?.error) && <p role="alert">{error || status?.error}</p>}
 	</section>;
 }

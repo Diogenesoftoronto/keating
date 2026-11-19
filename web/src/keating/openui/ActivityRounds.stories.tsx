@@ -51,9 +51,9 @@ export const FlashcardSaveRecovery: Story = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await userEvent.click(canvas.getByRole("button", { name: "Reveal answer" }));
-		await userEvent.click(canvas.getByRole("button", { name: "Good" }));
+		await userEvent.click(canvas.getByRole("button", { name: /^Good/ }));
 		await userEvent.click(canvas.getByRole("button", { name: "Reveal answer" }));
-		await userEvent.click(canvas.getByRole("button", { name: "Easy" }));
+		await userEvent.click(canvas.getByRole("button", { name: /^Easy/ }));
 		await expect(canvas.getByRole("button", { name: "Retry save deck" })).toBeEnabled();
 		await userEvent.click(canvas.getByRole("button", { name: "Retry save deck" }));
 		await expect(canvas.getByText("Session complete. 2 cards reviewed.")).toBeVisible();
@@ -64,8 +64,11 @@ export const QuizSaveRecovery: Story = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await userEvent.click(canvas.getByRole("radio", { name: "Its time to live" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Check" }));
+		await expect(canvas.getByText("Correct.")).toBeVisible();
 		await userEvent.click(canvas.getByRole("button", { name: "Next" }));
 		await userEvent.click(canvas.getByRole("radio", { name: "False" }));
+		await userEvent.click(canvas.getByRole("button", { name: "Check" }));
 		await userEvent.click(canvas.getByRole("button", { name: "Review" }));
 		await userEvent.click(canvas.getByRole("button", { name: "Submit quiz" }));
 		await expect(canvas.getByRole("button", { name: "Retry save quiz" })).toBeEnabled();

@@ -11,7 +11,7 @@ import { resolveLessonContext } from "../pages/course-workspace/model";
 import { courseWorkspaceReducer, INITIAL_WORKSPACE_STATE } from "../pages/course-workspace/state";
 import { deskFixture } from "./course-outline-fixtures";
 import { renderWithRouter } from "./course-render";
-import { describe, expect, test } from "bun:test";
+import { beforeEach, afterEach, describe, expect, spyOn, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { learningSourceHash } from "@keating/learner-contracts";
@@ -24,6 +24,17 @@ import { createRoomPrivateForkSessionAdapter } from "../rooms/private-fork-sessi
 import type { RoomMember, RoomMessage, RoomOperationInput, RoomPrivateForkContext, RoomPrivateForkOffer, RoomViewerSnapshot } from "../rooms/contracts";
 import type { SessionData } from "../types/session";
 import { mountRoomUi, settle } from "./helpers/room-ui-mount";
+
+import * as glyphs from "../design-system/glyphs";
+
+// The reconciler host exposes plain nodes without SVG interaction or motion APIs.
+function stubGlyphInteraction() {
+  return spyOn(glyphs, "KeatingGlyph").mockImplementation(({ name, size, label }) =>
+    <svg data-glyph={name} width={size} height={size} aria-label={label} aria-hidden={label ? undefined : true} />);
+}
+let glyphStub: ReturnType<typeof stubGlyphInteraction>;
+beforeEach(() => { glyphStub = stubGlyphInteraction(); });
+afterEach(() => { glyphStub.mockRestore(); });
 
 const at = "2026-10-25T12:00:00.000Z";
 const text = "Before 🧠\r\n  repeat\r\nThen repeat: **exact**.  ";
@@ -71,11 +82,11 @@ describe("exact private source choice", () => {
   });
   test("only active learners can branch unhidden public chat or Keating messages", () => {
     const render = (view: RoomViewerSnapshot, message = source) => renderToStaticMarkup(<RoomMessageItem snapshot={view} message={message} onContinuePrivately={() => {}} />);
-    expect(render(snapshot())).toContain("Continue privately");
-    expect(render(snapshot(), { ...source, kind: "keating" })).toContain("Continue privately");
-    for (const message of [{ ...source, hidden: { by: "host_1", at } }, { ...source, kind: "whisper" as const, audience: "teachers" as const }, { ...source, kind: "system" as const }]) expect(render(snapshot(), message)).not.toContain("Continue privately");
-    for (const role of ["host", "teacher", "observer"] as const) { const view = snapshot(); view.viewer.role = role; expect(render(view)).not.toContain("Continue privately"); }
-    const removed = snapshot(); removed.room.members = []; expect(render(removed)).not.toContain("Continue privately");
+    expect(render(snapshot())).toContain('aria-haspopup="menu"');
+    expect(render(snapshot(), { ...source, kind: "keating" })).toContain('aria-haspopup="menu"');
+    for (const message of [{ ...source, hidden: { by: "host_1", at } }, { ...source, kind: "whisper" as const, audience: "teachers" as const }, { ...source, kind: "system" as const }]) expect(render(snapshot(), message)).not.toContain('aria-haspopup="menu"');
+    for (const role of ["host", "teacher", "observer"] as const) { const view = snapshot(); view.viewer.role = role; expect(render(view)).not.toContain('aria-haspopup="menu"'); }
+    const removed = snapshot(); removed.room.members = []; expect(render(removed)).not.toContain('aria-haspopup="menu"');
   });
   test("long sources require an explicit passage; select and keyboard cancel are real controls", async () => {
     const ui = mountRoomUi(); let opened = 0, cancelled = 0;

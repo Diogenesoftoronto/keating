@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { ExtractionAccount } from "../components/settings/data/ExtractionAccount";
 import { LearningIntelligenceDiagnostics } from "../components/LearningIntelligenceDiagnostics";
 import { configureJudgementDiagnostics } from "../keating/judgement/diagnostics";
 import { clearLearningDiagnostics, recordLearningDiagnostic } from "../keating/learning-intelligence/diagnostics";
@@ -8,8 +9,8 @@ import { learningSourceHash } from "@keating/learner-contracts";
 afterEach(() => { configureJudgementDiagnostics({ enabled: false, details: false }); clearLearningDiagnostics(); });
 test("learning controls are available without captured private details", () => {
   const html = renderToStaticMarkup(<LearningIntelligenceDiagnostics controls />);
-  expect(html).toContain("Enable learning extraction and forecasts");
-  expect(html).toContain("Connect extraction account");
+  expect(html).toContain("Manage learning extraction");
+  expect(renderToStaticMarkup(<ExtractionAccount />)).toContain("Connect extraction account");
   expect(html).not.toContain("Original message");
 });
 test("diagnostics show real extraction source links and forecast intervals", () => {

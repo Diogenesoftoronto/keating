@@ -129,5 +129,6 @@ export function deskFixture(): {
     { id: "as_c", title: "Course task", brief: "Reflect.", deliverables: [], rubric: [], updatedAt: NOW, updatedBy: "teacher_1" },
   ];
   course.sharedNotes = [{ id: "n1", lessonId: "l1", title: "Notes", text: "hi", version: 2, updatedAt: NOW, updatedBy: "teacher_1" }];
-  return { snapshot: { course, viewer, permissions: teacher } };
+  // A copy: tests set flags on `snapshot.permissions`, and every test file shares this process.
+  return { snapshot: { course, viewer, permissions: { ...teacher } } };
 }

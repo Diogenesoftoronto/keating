@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { StackBar } from "../design-system/charts";
+import { animate } from "motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { css, cx } from "../../styled-system/css";
-import { eyebrow } from "../../styled-system/recipes";
+import { motion } from "motion/react";
+import { AppBar, Button, Chip, EmptyState, Loading, SearchField } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { Select } from "../components/Select";
+import { EASE, useMotionAllowed } from "../design-system/motion";
+import "../components/trajectory/review.css";
 import { useSessions } from "../hooks/use-sessions";
-import { KeatingIcon } from "../components/KeatingIcon";
 import { PatternDigestPanel } from "../components/trajectory/PatternDigestPanel";
-import { reviewIcon } from "../components/trajectory/review-icons";
 import { trajectoryReviewStore } from "../keating/trajectory-store";
 import type { DigestSessionInput } from "../keating/trajectory-passes";
 import type { ReviewModelPool, TrajectoryAnnotation, TrajectoryReview } from "../keating/trajectory-review";
@@ -26,15 +30,45 @@ import {
 	type ReviewSort,
 } from "../keating/review-index";
 
-const page = css({
-	minHeight: "100dvh",
-	background: "var(--paper)",
-	color: "var(--ink)",
-	paddingInline: { base: "1rem", md: "2rem" },
-	paddingBlock: { base: "1rem", md: "1.5rem" },
-});
+const privacy = "Reviews stay local; remote passes send redacted context to the selected provider.";
+
+function localReviewDate(date: Date) {
+	const today = new Date();
+	const yesterday = new Date(today);
+	yesterday.setDate(today.getDate() - 1);
+	const day = date.toDateString();
+	if (day === today.toDateString() || day === yesterday.toDateString()) {
+		return (day === today.toDateString() ? "Today" : "Yesterday") + ", " + date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+	}
+	return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function ReviewedTotal({ value }: { value: number }) {
+	const number = useRef<HTMLSpanElement>(null);
+	const allowed = useMotionAllowed();
+	useEffect(() => {
+		const node = number.current;
+		if (!allowed || !node || !value) return;
+		const controls = animate(0, value, { duration: .46, ease: EASE, onUpdate: n => { node.textContent = String(Math.round(n)); } });
+		return () => { controls.stop(); node.textContent = String(value); };
+	}, [value, allowed]);
+	return <span ref={number}>{value}</span>;
+}
+
+function NoteTally({ notes, compact = false }: { notes: Record<TrajectoryAnnotation["kind"], number>; compact?: boolean }) {
+	return <span className="rv-index-tally">
+		{(["problem", "strength", "suggestion"] as const).map(kind => {
+			const label = `${kind}${notes[kind] === 1 ? "" : "s"}`;
+			return <span key={kind} title={`${notes[kind]} ${label}`}>
+				<i aria-hidden="true" className={`rv-index-kind rv-index-${kind}`} />
+				{notes[kind]}<span className={compact ? "k-sr" : undefined}> {label}</span>
+			</span>;
+		})}
+	</span>;
+}
 
 export function TrajectoryReviewIndex() {
+	const motionAllowed = useMotionAllowed();
 	const sessions = useSessions({ flatLimit: 100 });
 	const [reviews, setReviews] = useState<TrajectoryReview[]>([]);
 	const [annotationsByReview, setAnnotationsByReview] = useState<Map<string, TrajectoryAnnotation[]>>(new Map());
@@ -106,233 +140,63 @@ export function TrajectoryReviewIndex() {
 	);
 
 	return (
-		<main className={page}>
-			<div className={css({ maxWidth: "72rem", marginInline: "auto" })}>
-				<header className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", paddingBottom: "1.5rem", borderBottom: "1px solid var(--line)" })}>
+		<main className="rv-index">
+			<AppBar className="rv-index-header k-halftone" back={{ to: "/chat", label: "Back to teaching" }} menu={false}
+				title={<span data-glyph-host role="heading" aria-level={1}><KeatingGlyph name="pen" size={21} /> Session reviews</span>}>
+				<Chip data-glyph-host title={privacy} aria-description={privacy}><KeatingGlyph name="lock" size={12}/> Reviews stay on this device</Chip>
+			</AppBar>
+			<p className="rv-index-intro">Read back how a lesson actually went, mark the exact line that earned praise or blame, and turn what you learn into training examples.</p>
+			<section aria-label="Review progress" className="rv-index-progress">
+				{summary.sessions === 0 ? <p>No sessions to review yet.</p> : <>
+					<div><strong><ReviewedTotal value={summary.final + summary.draft}/> of {summary.sessions}</strong><small>sessions reviewed</small></div>
 					<div>
-						<Link
-							to="/chat"
-							className={css({
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.4rem",
-								minHeight: "2.25rem",
-								color: "var(--ink-soft)",
-								fontSize: "0.8125rem",
-								transitionProperty: "color",
-								transitionDuration: "{durations.base}",
-								_hover: { color: "var(--ink)", "& .keating-duo-icon": { transform: "translateX(-3px)" } },
-								_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-							})}
-						>
-							<KeatingIcon icon={reviewIcon.back} size={15} /> Back to teaching
-						</Link>
-						<div className={css({ display: "flex", alignItems: "center", gap: "0.65rem", marginTop: "0.35rem" })}>
-							<KeatingIcon icon={reviewIcon.annotate} size={24} className={css({ color: "var(--accent-dim)" })} />
-							<h1 className={css({ fontFamily: "var(--mono-display)", fontSize: { base: "1.65rem", md: "2rem" }, fontWeight: 700, letterSpacing: "-0.02em" })}>
-								Session reviews
-							</h1>
-						</div>
-						<p className={css({ maxWidth: "42rem", marginTop: "0.5rem", color: "var(--ink-soft)", fontSize: "0.9rem", lineHeight: 1.6 })}>
-							Read back how a lesson actually went, mark the exact line that earned praise or blame, and turn what you learn into training examples.
-						</p>
+						<StackBar label={`${summary.final} final, ${summary.draft} in progress, ${summary.unreviewed} not reviewed`}
+							data={[{ label: "Final", value: summary.final, tone: "ink" }, { label: "In progress", value: summary.draft, tone: "ink", pattern: true }, { label: "Not reviewed", value: summary.unreviewed, tone: "rest" }]} />
 					</div>
-					<div className={css({ display: "inline-flex", maxWidth: "25rem", alignItems: "center", gap: "0.45rem", color: "var(--ink-soft)", fontSize: "0.75rem", lineHeight: 1.45, paddingTop: "0.5rem" })}>
-						<KeatingIcon icon={reviewIcon.locked} size={14} />
-						Reviews stay local; remote passes send redacted context to the selected provider.
-					</div>
-				</header>
-
-				<section aria-labelledby="progress-heading" className={css({ marginTop: "1.5rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", background: "var(--card)", padding: "1rem" })}>
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem" })}>
-						<div className={css({ minWidth: 0 })}>
-							<h2 id="progress-heading" className={cx(eyebrow(), css({ fontSize: "11px" }))}>Review progress</h2>
-							<p className={css({ marginTop: "0.35rem", fontSize: "0.9rem", lineHeight: 1.55 })}>
-								{summary.sessions === 0
-									? "No sessions to review yet."
-									: `${summary.final + summary.draft} of ${summary.sessions} sessions reviewed: ${summary.final} final, ${summary.draft} in progress.`}
-							</p>
-							{summary.sessions > 0 && (
-								<p className={css({ marginTop: "0.25rem", color: "var(--ink-soft)", fontSize: "0.8125rem", lineHeight: 1.5 })}>
-									{summary.notes.problem} problems, {summary.notes.strength} strengths and {summary.notes.suggestion} suggestions noted
-									{summary.averageRating !== undefined ? ` · average rating ${summary.averageRating} of 5` : ""}.
-								</p>
-							)}
+					<div><NoteTally notes={summary.notes} />{summary.averageRating !== undefined && <small>average rating {summary.averageRating} of 5</small>}</div>
+					{next && <Link className="rv-index-next k-lift" to="/review/sessions/$sessionId" params={{ sessionId: next.session.id }}>
+						{next.state === "draft" ? "Continue: " : "Review next: "}{next.session.title || "Untitled session"}
+					</Link>}
+				</>}
+			</section>
+			<div className="rv-index-body" data-side={digestSessions.length >= 2}>
+				<section aria-label="Choose a session" className="rv-index-queue">
+					<div className="rv-index-filters">
+						<div role="group" aria-label="Filter by review status">
+							{REVIEW_FILTERS.map(filter => <Chip as="button" key={filter} selected={filter === prefs.filter}
+								count={filterCounts[filter]} onClick={() => choose({ filter })}>{REVIEW_FILTER_LABELS[filter]}</Chip>)}
 						</div>
-						{next && (
-							<Link
-								to="/review/sessions/$sessionId"
-								params={{ sessionId: next.session.id }}
-								className={css({ display: "inline-flex", alignItems: "center", minHeight: "2.75rem", maxWidth: "100%", paddingInline: "1rem", border: "1.5px solid var(--ink)", borderRadius: "{radii.keating}", background: "var(--ink)", color: "var(--paper)", fontSize: "0.875rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } })}
-							>
-								<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
-									{next.state === "draft" ? "Continue: " : "Review next: "}{next.session.title || "Untitled session"}
-								</span>
-							</Link>
-						)}
+						<SearchField data-glyph-host className="rv-index-find" value={sessions.query} onChange={sessions.setQuery} label="Search sessions" placeholder="Search transcript or title" />
+						<Select className="rv-index-sort" aria-label="Sort" value={prefs.sort} onValueChange={sort => choose({ sort: sort as ReviewSort })}>
+							{REVIEW_SORTS.map(sort => <option key={sort} value={sort}>{REVIEW_SORT_LABELS[sort]}</option>)}
+						</Select>
 					</div>
-					{summary.sessions > 0 && (
-						<div
-							role="img"
-							aria-label={`${summary.final} final, ${summary.draft} in progress, ${summary.unreviewed} not reviewed`}
-							className={css({ display: "flex", height: "0.5rem", marginTop: "0.85rem", border: "1px solid var(--line)", borderRadius: "999px", overflow: "hidden", background: "var(--paper)" })}
-						>
-							<span style={{ width: `${(summary.final / summary.sessions) * 100}%` }} className={css({ background: "var(--ink)" })} />
-							<span style={{ width: `${(summary.draft / summary.sessions) * 100}%` }} className={css({ background: "repeating-linear-gradient(45deg, var(--ink) 0 2px, transparent 2px 5px)" })} />
-						</div>
-					)}
+					{reviewsError && <p role="alert" className="rv-index-error">Saved reviews could not be read on this device, so every session shows as not reviewed. Your reviews are not deleted; reload the page to try again.</p>}
+					{sessions.loading ? <Loading label="Loading sessions…" />
+						: sessions.error ? <p role="alert" className="rv-index-error">{sessions.error}</p>
+						: summary.sessions === 0 ? <EmptyState className="rv-index-state" glyph="book" heading="There are no saved sessions on this device yet."><Link to="/chat">Teach a lesson</Link>, then come back to review it.</EmptyState>
+						: rows.length === 0 ? <EmptyState heading={<span role="status">{sessions.query.trim()
+								? `No ${prefs.filter === "all" ? "" : `${REVIEW_FILTER_LABELS[prefs.filter].toLowerCase()} `}sessions match “${sessions.query.trim()}”.`
+								: `No sessions are ${REVIEW_FILTER_LABELS[prefs.filter].toLowerCase()}.`}</span>} actions={<Button size="sm" onClick={() => { choose({ filter: "all" }); sessions.setQuery(""); }}>Show all sessions</Button>} />
+						: <ul className="rv-index-list">{rows.map((row, index) => {
+							const { session } = row;
+							const reviewed = row.state !== "unreviewed" && row.reviewedAt !== undefined;
+							const timestamp = reviewed ? row.reviewedAt : row.sessionAt;
+							const date = timestamp ? new Date(timestamp) : null;
+							return <motion.li key={session.id} initial={motionAllowed ? { y: 7 } : false}
+								animate={{ y: 0 }} transition={{ duration: motionAllowed ? .32 : 0, ease: EASE, delay: motionAllowed ? Math.min(index, 8) * .045 : 0 }}>
+								<Link to="/review/sessions/$sessionId" params={{ sessionId: session.id }} className="rv-index-row" data-next={next?.session.id === session.id}>
+									<i aria-hidden="true" className="rv-index-status" data-state={row.state} />
+									<div className="rv-index-title"><h3>{session.title || "Untitled session"}</h3><p>{session.preview || "No transcript preview"}</p></div>
+									<div className="rv-index-meta"><span>{session.messageCount} turns · {session.modelName ?? session.modelId ?? "Unknown model"}</span>
+										{date && <time dateTime={date.toISOString()}>{reviewed ? "Reviewed " : ""}{localReviewDate(date)}</time>}</div>
+									<div className="rv-index-notes">{row.noteCount ? <NoteTally compact notes={row.notes} /> : "no notes"}</div>
+									<span className="rv-index-stateword">{reviewStateLabel(row)}{row.rating !== undefined && <small>rated {row.rating} of 5</small>}</span>
+								</Link>
+							</motion.li>;
+						})}</ul>}
 				</section>
-
-				<PatternDigestPanel
-					sessions={digestSessions}
-					pools={pools}
-					titleForSession={(sessionId) => titleBySession.get(sessionId)}
-					className={css({ marginTop: "1.5rem" })}
-				/>
-
-				<section aria-labelledby="sessions-heading" className={css({ paddingTop: "1.5rem" })}>
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.85rem", marginBottom: "0.9rem" })}>
-						<div>
-							<h2 id="sessions-heading" className={cx(eyebrow(), css({ fontSize: "11px" }))}>Choose a session</h2>
-							<p className={css({ color: "var(--ink-soft)", fontSize: "0.75rem", marginTop: "0.25rem" })}>
-								{summary.sessions} sessions on this device · {summary.final} final · {summary.draft} in progress · {summary.unreviewed} not reviewed
-							</p>
-						</div>
-						<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", width: { base: "100%", sm: "18rem" }, height: "2.5rem", borderBottom: "1.5px solid var(--line)", transitionProperty: "border-color", transitionDuration: "{durations.base}", _focusWithin: { borderColor: "var(--accent-dim)" } })}>
-							<KeatingIcon icon={reviewIcon.search} size={15} className={css({ color: "var(--ink-soft)" })} />
-							<span className={css({ srOnly: true })}>Search sessions</span>
-							<input
-								value={sessions.query}
-								onChange={(event) => sessions.setQuery(event.target.value)}
-								placeholder="Search transcript or title"
-								className={css({ flex: 1, minWidth: 0, background: "transparent", outline: "none", fontSize: "0.8125rem", color: "var(--ink)" })}
-							/>
-						</label>
-					</div>
-
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.9rem" })}>
-						<div role="group" aria-label="Filter by review status" className={css({ display: "flex", flexWrap: "wrap", gap: "0.4rem" })}>
-							{REVIEW_FILTERS.map((filter) => (
-								<button
-									key={filter}
-									type="button"
-									aria-pressed={prefs.filter === filter}
-									onClick={() => choose({ filter })}
-									className={css({
-										minHeight: "2.5rem", paddingInline: "0.8rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}",
-										background: "var(--card)", color: "var(--ink)", fontSize: "0.8125rem", cursor: "pointer",
-										"&[aria-pressed=true]": { background: "var(--ink)", color: "var(--paper)", borderColor: "var(--ink)", fontWeight: 650 },
-										_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-									})}
-								>
-									{REVIEW_FILTER_LABELS[filter]} <span className={css({ opacity: 0.75 })}>{filterCounts[filter]}</span>
-								</button>
-							))}
-						</div>
-						<label className={css({ display: "inline-flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8125rem", color: "var(--ink-soft)" })}>
-							Sort
-							<select
-								value={prefs.sort}
-								onChange={(event) => choose({ sort: event.target.value as ReviewSort })}
-								className={css({ minHeight: "2.5rem", paddingInline: "0.6rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", background: "var(--card)", color: "var(--ink)", fontSize: "0.8125rem", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } })}
-							>
-								{REVIEW_SORTS.map((sort) => <option key={sort} value={sort}>{REVIEW_SORT_LABELS[sort]}</option>)}
-							</select>
-						</label>
-					</div>
-
-					{reviewsError && (
-						<p role="alert" className={css({ marginBottom: "0.9rem", border: "1.5px solid var(--destructive)", borderRadius: "{radii.keating}", padding: "0.75rem 0.85rem", fontSize: "0.8125rem", lineHeight: 1.5 })}>
-							Saved reviews could not be read on this device, so every session shows as not reviewed. Your reviews are not deleted; reload the page to try again.
-						</p>
-					)}
-
-					{sessions.loading ? (
-						<p role="status" className={css({ paddingBlock: "3rem", color: "var(--ink-soft)", fontSize: "0.875rem" })}>Loading sessions…</p>
-					) : sessions.error ? (
-						<p role="alert" className={css({ paddingBlock: "3rem", color: "var(--destructive)", fontSize: "0.875rem" })}>{sessions.error}</p>
-					) : summary.sessions === 0 ? (
-						<p className={css({ paddingBlock: "3rem", color: "var(--ink-soft)", fontSize: "0.875rem", lineHeight: 1.6 })}>
-							There are no saved sessions on this device yet. <Link to="/chat" className={css({ textDecoration: "underline" })}>Teach a lesson</Link>, then come back to review it.
-						</p>
-					) : rows.length === 0 ? (
-						<div className={css({ paddingBlock: "3rem", color: "var(--ink-soft)", fontSize: "0.875rem", lineHeight: 1.6 })}>
-							<p role="status">
-								{sessions.query.trim()
-									? `No ${prefs.filter === "all" ? "" : `${REVIEW_FILTER_LABELS[prefs.filter].toLowerCase()} `}sessions match “${sessions.query.trim()}”.`
-									: `No sessions are ${REVIEW_FILTER_LABELS[prefs.filter].toLowerCase()}.`}
-							</p>
-							<button
-								type="button"
-								onClick={() => { choose({ filter: "all" }); sessions.setQuery(""); }}
-								className={css({ marginTop: "0.6rem", minHeight: "2.5rem", paddingInline: "0.8rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", background: "var(--card)", color: "var(--ink)", cursor: "pointer", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } })}
-							>
-								Show all sessions
-							</button>
-						</div>
-					) : (
-						<ul className={css({ listStyle: "none", display: "grid", gap: "0.4rem" })}>
-							{rows.map((row) => {
-								const { session } = row;
-								const isFinal = row.state === "final";
-								const reviewed = row.reviewedAt && row.state !== "unreviewed"
-									? new Date(row.reviewedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-									: null;
-								const detail = [
-									`${session.messageCount} turns`,
-									session.modelName ?? session.modelId ?? "Unknown model",
-									...(row.noteCount ? [`${row.notes.problem} problems, ${row.notes.strength} strengths, ${row.notes.suggestion} suggestions`] : []),
-									...(row.rating !== undefined ? [`rated ${row.rating} of 5`] : []),
-									...(reviewed ? [`reviewed ${reviewed}`] : []),
-								].join(" · ");
-								return (
-									<li key={session.id}>
-										<Link
-											to="/review/sessions/$sessionId"
-											params={{ sessionId: session.id }}
-											className={css({
-												display: "grid",
-												gridTemplateColumns: "minmax(0, 1fr) auto",
-												alignItems: "center",
-												gap: { base: "0.5rem", md: "1rem" },
-												minHeight: "4.5rem",
-												border: "1.5px solid var(--line)",
-												borderRadius: "{radii.keating}",
-												background: "var(--card)",
-												paddingBlock: "0.75rem",
-												paddingInline: "0.85rem",
-												transitionProperty: "transform, box-shadow, border-color",
-												transitionDuration: "{durations.base}",
-												transitionTimingFunction: "{easings.standard}",
-												_hover: {
-													transform: "translate(-2px, -2px)",
-													boxShadow: "4px 4px 0 var(--ink)",
-													borderColor: "var(--ink)",
-													"& .keating-duo-icon": { transform: "rotate(-6deg) scale(1.12)" },
-												},
-												_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
-											})}
-										>
-											<div className={css({ minWidth: 0 })}>
-												<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 650, color: "var(--ink)" })}>
-													{session.title || "Untitled session"}
-												</h3>
-												<p className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "0.3rem", color: "var(--ink-soft)", fontSize: "0.75rem" })}>
-													{session.preview || "No transcript preview"}
-												</p>
-												<p className={css({ marginTop: "0.3rem", color: "var(--ink-soft)", fontSize: "0.75rem", lineHeight: 1.45 })}>{detail}</p>
-											</div>
-											<span className={css({ display: "inline-flex", alignItems: "center", justifySelf: "end", gap: "0.35rem", color: isFinal ? "var(--accent-dim)" : "var(--ink-soft)", fontSize: "0.75rem", fontWeight: 650, whiteSpace: "nowrap" })}>
-												<KeatingIcon icon={isFinal ? reviewIcon.verdict : reviewIcon.annotate} size={14} active={isFinal} />
-												{reviewStateLabel(row)}
-											</span>
-										</Link>
-									</li>
-								);
-							})}
-						</ul>
-					)}
-				</section>
+				<PatternDigestPanel sessions={digestSessions} pools={pools} titleForSession={sessionId => titleBySession.get(sessionId)} />
 			</div>
 		</main>
 	);

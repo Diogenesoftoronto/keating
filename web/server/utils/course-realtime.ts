@@ -26,10 +26,15 @@ function peersFor(courseId: string): Map<string, CourseRealtimePeer> {
 	return peers;
 }
 
+export function connectedCourseAccounts(courseId: string): Set<string> | undefined {
+	const peers = coursePeers.get(courseId);
+	return peers && new Set([...peers.values()].map(connection => connection.accountId));
+}
+
 function broadcastPresence(courseId: string): void {
 	const peers = coursePeers.get(courseId);
 	if (!peers) return;
-	const accountIds = [...new Set([...peers.values()].map((connection) => connection.accountId))];
+	const accountIds = [...connectedCourseAccounts(courseId)!];
 	const message: CourseRealtimeMessage = { type: "presence", courseId, accountIds };
 	for (const connection of peers.values()) send(connection.peer, message);
 }

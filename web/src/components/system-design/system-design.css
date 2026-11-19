@@ -6,12 +6,13 @@
 .sd-heading, .sd-section-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
 .sd-kicker { font-size: .6875rem; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
 .sd-muted { color: var(--muted-foreground); font-size: .8125rem; }
-.sd-diagram { overflow: auto; min-height: 9rem; border: 1px solid var(--border); border-radius: .625rem; background: color-mix(in srgb, var(--muted) 25%, transparent); padding: 1rem; }
+.sd-diagram {overflow:auto;min-width:0}
+.sd-diagram .mermaid-container.specialist-frame {border:0;padding:0}
 .sd-empty { display: grid; min-height: 7rem; place-items: center; color: var(--muted-foreground); text-align: center; }
 .sd-editor { display: grid; gap: .75rem; min-width: 0; border: 0; padding: 0; margin: 0; }
 .sd-editor legend { width: 100%; padding: 0 0 .75rem; font-weight: 650; }
-.system-design-workbench button { min-height: 2.5rem; border: 1px solid var(--border); border-radius: .375rem; padding: .4rem .75rem; background: var(--background); color: var(--foreground); cursor: pointer; font-size: .8125rem; font-weight: 600; }
-.system-design-workbench button:hover:enabled { background: var(--muted); }
+.system-design-workbench button:not(.k-icon) { min-height: 2.12rem; border: 0; border-radius: .1923rem; padding: .3rem .48rem; background: transparent; color: var(--foreground); cursor: pointer; font-size: .8125rem; font-weight: 600; }
+.system-design-workbench button:not(.k-icon):hover:enabled { color: var(--ink); }
 .system-design-workbench button:disabled { cursor: default; opacity: .5; }
 .system-design-workbench :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .system-design-workbench :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 2.5rem; border: 1px solid var(--border); border-radius: .375rem; padding: .5rem .625rem; background: var(--background); color: var(--foreground); font: inherit; }

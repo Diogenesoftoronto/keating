@@ -1,0 +1,221 @@
+{
+  "slug": "first-run-phone",
+  "title": "First run",
+  "viewport": "phone",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "first-run"
+  ],
+  "ready": [
+    {
+      "text": "What would you like to understand?"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat"
+    },
+    {
+      "kind": "chapter",
+      "id": "question",
+      "title": "Enter a learning goal",
+      "explanation": "Give Keating something you want to learn.",
+      "alt": "Enter a learning goal"
+    },
+    {
+      "kind": "caption",
+      "text": "Give Keating something you want to learn."
+    },
+    {
+      "kind": "type",
+      "selector": ".chat-onboarding textarea",
+      "text": "I want to understand recursion well enough to explain it to someone else.",
+      "delay": 27
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "question"
+    },
+    {
+      "kind": "chapter",
+      "id": "choices",
+      "title": "Choose quick profile setup",
+      "explanation": "Choose how to tell Keating about yourself.",
+      "alt": "Choose quick profile setup"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose how to tell Keating about yourself."
+    },
+    {
+      "kind": "click",
+      "label": "A few quick choices",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Continue"
+    },
+    {
+      "kind": "wait-for",
+      "text": "How would you like to chat?",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "choices"
+    },
+    {
+      "kind": "chapter",
+      "id": "model",
+      "title": "Choose a model",
+      "explanation": "This walkthrough uses a local demo tutor.",
+      "alt": "Choose a model"
+    },
+    {
+      "kind": "caption",
+      "text": "This walkthrough uses a local demo tutor."
+    },
+    {
+      "kind": "click",
+      "label": "Bring your own key",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Choose a model and provider",
+      "ready": [
+        {
+          "label": "local-tutor",
+          "contains": true
+        }
+      ]
+    },
+    {
+      "kind": "pause",
+      "ms": 1400,
+      "still": "picker"
+    },
+    {
+      "kind": "click",
+      "label": "local-tutor",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "model"
+    },
+    {
+      "kind": "chapter",
+      "id": "you",
+      "title": "Set your name and preference",
+      "explanation": "Choose what helps you learn.",
+      "alt": "Set your name and preference"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose what helps you learn."
+    },
+    {
+      "kind": "click",
+      "label": "Continue"
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder=\"Sam\"]",
+      "text": "Alex",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Nudge me",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "you"
+    },
+    {
+      "kind": "chapter",
+      "id": "ready",
+      "title": "Check your first message",
+      "explanation": "Your question is waiting in the composer.",
+      "alt": "Check your first message"
+    },
+    {
+      "kind": "caption",
+      "text": "Your question is waiting in the composer."
+    },
+    {
+      "kind": "click",
+      "label": "Continue"
+    },
+    {
+      "kind": "wait-for",
+      "text": "You are set, Alex.",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "ready"
+    },
+    {
+      "kind": "chapter",
+      "id": "start",
+      "title": "Open Chat",
+      "explanation": "Open Chat with your first message ready.",
+      "alt": "Open Chat"
+    },
+    {
+      "kind": "caption",
+      "text": "Open Chat with your first message ready."
+    },
+    {
+      "kind": "click",
+      "label": "Start chatting"
+    },
+    {
+      "kind": "wait-for",
+      "selector": "textarea[placeholder=\"Message Keating\"]"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "start"
+    },
+    {
+      "kind": "chapter",
+      "id": "send",
+      "title": "Send your first question",
+      "explanation": "Give Keating a starting point.",
+      "alt": "Send your first question"
+    },
+    {
+      "kind": "caption",
+      "text": "Give Keating a starting point."
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "wait-for",
+      "text": "What happens to the first call while the second runs?",
+      "timeout": 20000
+    },
+    {
+      "kind": "pause",
+      "ms": 4800,
+      "still": "send"
+    }
+  ],
+  "transcript": "first-run",
+  "viewerNote": "The sample learner is Alex. Keating replies through a scripted local tutor."
+}

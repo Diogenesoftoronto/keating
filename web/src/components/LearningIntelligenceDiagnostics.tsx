@@ -1,9 +1,9 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { css } from "../../styled-system/css";
-import { Toggle } from "./Toggle";
+import { Button, EmptyState } from "../design-system/kit";
+import { ConfirmAction } from "./settings/data/ConfirmAction";
 import { getJudgementDiagnostics, subscribeJudgementDiagnostics } from "../keating/judgement/diagnostics";
-import { clearLearningDiagnostics, discardLearningDiagnosticAnchor, getLearningDiagnostics, subscribeLearningDiagnostics } from "../keating/learning-intelligence/diagnostics";
-import { learningIntelligenceAccount, learningIntelligenceEnabled, setLearningIntelligenceEnabled, subscribeLearningIntelligence, connectLearningIntelligence } from "../keating/learning-intelligence/account";
+import { clearLearningDiagnostics, discardLearningDiagnosticAnchor, getLearningDiagnostics, subscribeLearningDiagnostics, type LearningDiagnostic } from "../keating/learning-intelligence/diagnostics";
 import { clearLearningPassage, getLearningNavigationFeedback, getLearningPassage, learningPassageExcerpt, navigateLearningSource, setLearningNavigationFeedback, subscribeLearningNavigationFeedback, subscribeLearningPassage } from "../keating/learning-intelligence/source-navigation";
 import type { LearningEvidenceAnchor } from "@keating/learner-contracts";
 import { sanitizeDiagnosticText } from "../lib/diagnostics";
@@ -47,59 +47,49 @@ function SourceLink({ anchor }: { anchor: LearningEvidenceAnchor }) {
   </div>;
 }
 
+export function LearningOperationDetails({ event, open }: { event: LearningDiagnostic; open?: boolean }) {
+  return <details open={open}>
+    <summary className={summary}>{event.kind} · {event.status}{event.model ? ` · ${event.model}` : ""}{event.elapsedMs !== undefined ? ` · ${Math.round(event.elapsedMs)} ms` : ""}</summary>
+    <div className={stack}>
+      <p className={muted}>Source conversation: {event.sessionId} · Recorded <time dateTime={new Date(event.createdAt).toISOString()}>{new Date(event.createdAt).toLocaleString()}</time></p>
+      {event.reasons.length > 0 && <ul className={muted}>{event.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
+      {event.forecast?.map((forecast, index) => <div key={index} className={mono}>
+        <strong>{forecast.target}</strong>
+        {forecast.probability !== undefined && <span>: {Math.round(forecast.probability * 100)}% estimated probability</span>}
+        {forecast.median !== undefined && <span>: median {forecast.median.toFixed(2)}{forecast.p10 !== undefined && forecast.p90 !== undefined ? `, central 80% range ${forecast.p10.toFixed(2)}–${forecast.p90.toFixed(2)}` : ""}</span>}
+        {forecast.observedCount !== undefined && <span> · {forecast.observedCount} observations</span>}
+        {forecast.baseline !== undefined && <p className={muted}>Usual estimate from recorded outcomes: {forecast.baseline.toFixed(2)}.</p>}
+        {forecast.dueAt !== undefined && <ReviewDueDate dueAt={forecast.dueAt} />}
+        {forecast.horizonHours !== undefined && <p className={muted}>Forecast horizon: {forecast.horizonHours} hours.</p>}
+        {forecast.status && <p className={muted}>{forecastStatus(forecast.status)}</p>}
+      </div>)}
+      {event.evidence?.map((anchor, index) => <SourceLink key={`${anchor.messageId}:${anchor.start}:${index}`} anchor={anchor} />)}
+      {!event.evidence?.length && <p className={muted}>No source passages retained. Exact quotes are captured only while diagnostic details are enabled.</p>}
+    </div>
+  </details>;
+}
+
 export function LearningIntelligenceDiagnostics({ controls = false, sessionId }: { controls?: boolean; sessionId?: string | null }) {
   const capture = useSyncExternalStore(subscribeJudgementDiagnostics, getJudgementDiagnostics, getJudgementDiagnostics);
   const events = useSyncExternalStore(subscribeLearningDiagnostics, getLearningDiagnostics, getLearningDiagnostics);
-  const enabled = useSyncExternalStore(subscribeLearningIntelligence, learningIntelligenceEnabled, () => false);
-  const [account, setAccount] = useState(learningIntelligenceAccount);
-  const [connection, setConnection] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const connectPending = useRef(false);
   const navigationStatus = useSyncExternalStore(subscribeLearningNavigationFeedback, getLearningNavigationFeedback, () => "");
-  useEffect(() => subscribeLearningIntelligence(() => setAccount(learningIntelligenceAccount())), []);
+
   const recent = events.filter(event => !sessionId || event.sessionId === sessionId).slice(-12).reverse();
   if (!controls && !capture.enabled) return null;
   return <section aria-label="Learning extraction and forecasts" className={stack}>
     {controls && <>
       <div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" })}>
         <h4>Learning extraction and forecasts</h4>
-        <Toggle aria-label="Enable learning extraction and forecasts" checked={enabled} onChange={setLearningIntelligenceEnabled} />
+        <Button variant="ghost" onClick={() => window.dispatchEvent(new CustomEvent("keating:settings-tab", { detail: "extraction-privacy" }))}>Manage learning extraction</Button>
       </div>
       <p className={muted}>Use bounded lesson and learner passages to ground feedback, quizzes, constraints and memory. Forecasts estimate the next recorded answer or card self-rating, which does not establish objective mastery. Review dates come from spaced repetition. Hosted requests use your Not Organic account.</p>
-      {!account.authorized && <button type="button" className={button} aria-busy={connecting} aria-disabled={connecting || !account.configured} onClick={async () => {
-        if (connectPending.current || !account.configured) return;
-        connectPending.current = true;
-        setConnecting(true); setConnection("");
-        try { window.location.assign(await connectLearningIntelligence(window.location.href)); }
-        catch { setConnection("The extraction account could not be connected. Try again when the account service is available."); setConnecting(false); connectPending.current = false; }
-      }}>{connecting ? "Connecting account…" : "Connect extraction account"}</button>}
-      <p role="status" aria-live="polite" className={muted}>{connection}</p>
-      {!account.configured && <p className={muted}>Account connection is unavailable in this build.</p>}
     </>}
-    {capture.enabled && <details open={controls}>
+    {capture.enabled && <details>
       <summary className={summary}>Extraction and forecasts · {recent.length} recent operations</summary>
       <div className={css({ display: "flex", flexDirection: "column", gap: ".75rem", minWidth: 0, maxHeight: "min(22rem, 40dvh)", overflowY: "auto", paddingBlock: ".5rem" })}>
-        {recent.length === 0 && <p className={muted}>Operations appear here after learning extraction or a forecast runs. Enable details to retain exact source links for future operations.</p>}
-        {recent.map(event => <details key={event.id}>
-          <summary className={summary}>{event.kind} · {event.status}{event.model ? ` · ${event.model}` : ""}{event.elapsedMs !== undefined ? ` · ${Math.round(event.elapsedMs)} ms` : ""}</summary>
-          <div className={stack}>
-            <p className={muted}>Source conversation: {event.sessionId} · Recorded <time dateTime={new Date(event.createdAt).toISOString()}>{new Date(event.createdAt).toLocaleString()}</time></p>
-            {event.reasons.length > 0 && <ul className={muted}>{event.reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>}
-            {event.forecast?.map((forecast, index) => <div key={index} className={mono}>
-              <strong>{forecast.target}</strong>
-              {forecast.probability !== undefined && <span>: {Math.round(forecast.probability * 100)}% estimated probability</span>}
-              {forecast.median !== undefined && <span>: median {forecast.median.toFixed(2)}{forecast.p10 !== undefined && forecast.p90 !== undefined ? `, central 80% range ${forecast.p10.toFixed(2)}–${forecast.p90.toFixed(2)}` : ""}</span>}
-              {forecast.observedCount !== undefined && <span> · {forecast.observedCount} observations</span>}
-              {forecast.baseline !== undefined && <p className={muted}>Usual estimate from recorded outcomes: {forecast.baseline.toFixed(2)}.</p>}
-              {forecast.dueAt !== undefined && <ReviewDueDate dueAt={forecast.dueAt} />}
-              {forecast.horizonHours !== undefined && <p className={muted}>Forecast horizon: {forecast.horizonHours} hours.</p>}
-              {forecast.status && <p className={muted}>{forecastStatus(forecast.status)}</p>}
-            </div>)}
-            {event.evidence?.map((anchor, index) => <SourceLink key={`${anchor.messageId}:${anchor.start}:${index}`} anchor={anchor} />)}
-            {!event.evidence?.length && <p className={muted}>No source passages retained. Exact quotes are captured only while diagnostic details are enabled.</p>}
-          </div>
-        </details>)}
-        {recent.length > 0 && <button type="button" className={button} onClick={clearLearningDiagnostics}>Clear learning operations</button>}
+        {recent.length === 0 && <EmptyState heading="No learning operations yet">Operations appear here after learning extraction or a forecast runs. Enable details to retain exact source links for future operations.</EmptyState>}
+        {recent.map(event => <LearningOperationDetails key={event.id} event={event} />)}
+        {recent.length > 0 && <ConfirmAction label="Clear learning operations" description="Remove the captured extraction and forecast operations from this tab." onConfirm={clearLearningDiagnostics}/>}
       </div>
     </details>}
     <p role="status" aria-live="polite" className={muted}>{navigationStatus}</p>

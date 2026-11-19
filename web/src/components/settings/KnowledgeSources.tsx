@@ -1,3 +1,5 @@
+import { EmptyState, Loading, Switch } from "../../design-system/kit";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { connectKnowledge, getKnowledgeReview, knowledgeClient, knowledgeSetupUrl, knowledgeVersion, subscribeKnowledge, type KnowledgeResource } from "../../notorganic-provider/knowledge";
 import "./knowledge-sources.css";
@@ -45,14 +47,14 @@ export function KnowledgeSources() {
     finally { if (alive.current && epoch === operation.current) { setBusy(false); tick(v => v + 1); } }
   };
   const setup = knowledgeSetupUrl();
-  return <section className="knowledge-sources" aria-label="Knowledge sources">
+  return <section id="source-permissions" className="knowledge-sources" aria-label="Knowledge sources">
     <header><div><h3>Your sources</h3><p>Bring account knowledge into this conversation. Choose each source and the tools you want Keating to use.</p></div><button type="button" onClick={() => void refresh()} disabled={!client || busy || state?.status === "signed-out" || state?.status === "permission"}>Refresh</button></header>
     {!client ? <p>Not Organic connections are not configured on this Keating deployment.</p> : state?.status === "signed-out" || state?.status === "permission" ? <div className="knowledge-sources-notice"><p>{state.status === "signed-out" ? "Connect your Not Organic account to bring your sources with you." : "Your account is connected. Allow knowledge access to use shared sources here."}</p><button type="button" disabled={busy} onClick={() => void action(connectKnowledge)}>{state.status === "signed-out" ? "Connect account & sources" : "Allow knowledge access"}</button></div> : <>
-      {busy && <p role="status">Loading sources…</p>}
-      {!busy && state?.status === "ready" && !state.sources.length && <p>No sources are shared with this Keating app yet. Add a remote MCP connection in Not Organic and review Keating’s access.</p>}
+      {busy && <Loading label="Loading sources…" size="inline"/>}
+      {!busy && state?.status === "ready" && !state.sources.length && <EmptyState heading="No sources are shared with this Keating app yet." glyph="server">Add a remote MCP connection in Not Organic and review Keating’s access.</EmptyState>}
       {state?.sources.map(source => {
         const selected = !!state.selected[source.id];
-        return <div className="knowledge-source" key={source.id}><label className="knowledge-source-toggle"><input type="checkbox" checked={selected} disabled={busy} onChange={event => { client?.selectSource(source.id, event.target.checked); setResources({}); setContent(undefined); }} /><span><strong>{source.label}</strong><small>Remote MCP · {source.resources_allowed ? "Resources shared" : "Resources not shared"} · {source.tools.length} permitted tools</small></span></label>
+        return <div className="knowledge-source" key={source.id}><div className="knowledge-source-toggle"><span><strong id={selectId+source.id}>{source.label}</strong><small>Remote MCP · {source.resources_allowed ? "Resources shared" : "Resources not shared"} · {source.tools.length} permitted tools</small></span><Switch labelledBy={selectId+source.id} checked={selected} disabled={busy} onChange={enabled => {client?.selectSource(source.id,enabled);setResources({});setContent(undefined);}}/></div>
           {selected && <div className="knowledge-source-details">{source.tools.length > 0 && <fieldset><legend>Allow tools in Keating</legend><p>Each call will ask you to review its arguments before running.</p>{!toolPermission && <button type="button" disabled={busy} onClick={() => void action(connectKnowledge)}>Allow tool access</button>}{source.tools.map(tool => <label key={tool.name}><input type="checkbox" checked={!!state.selected[source.id]?.tools[tool.name]} disabled={busy || !toolPermission} onChange={event => client?.selectTool(source.id, tool.name, event.target.checked)} /><span>{tool.name}{tool.description && <small>{tool.description.slice(0, 240)}</small>}</span></label>)}</fieldset>}
             {source.resources_allowed && <><button type="button" disabled={busy} onClick={() => void action(async () => { const found = await client!.resources(source.id); if (alive.current && client!.snapshot().selected[source.id]) setResources(previous => ({ ...previous, [source.id]: found })); })}>Browse resources</button>{resources[source.id] && (resources[source.id].length ? <><label htmlFor={`${selectId}-${source.id}`}>Read a resource</label><select id={`${selectId}-${source.id}`} value={reading?.startsWith(`${source.id}\n`) ? reading.split("\n")[1] : ""} onChange={event => setReading(`${source.id}\n${event.target.value}`)}><option value="">Choose a resource…</option>{resources[source.id].map(resource => <option key={resource.uri} value={resource.uri}>{resource.name}</option>)}</select><button type="button" disabled={busy || !reading?.startsWith(`${source.id}\n`) || !reading.split("\n")[1]} onClick={() => void action(async () => { const result = await client!.read(source.id, reading!.split("\n")[1]); if (alive.current) setContent(result); })}>Read</button></> : <p>This source has no listed resources. Enable a permitted search tool if it provides one.</p>)}</>}
           </div>}
@@ -61,7 +63,7 @@ export function KnowledgeSources() {
     </>}
     {(error || state?.error) && <p role="alert" className="knowledge-sources-error">{error ?? state?.error}</p>}
     {content && <details open><summary>Source content · untrusted evidence</summary><pre className="knowledge-source-content">{content}</pre></details>}
-    {setup && <a href={setup} target="_blank" rel="noopener noreferrer">Add connections or review sharing in Not Organic ↗</a>}
+    {setup && <a href={setup} target="_blank" rel="noopener noreferrer">Add connections or review sharing in Not Organic <KeatingGlyph name="ext" /></a>}
     <footer><strong>Google Drive</strong><span>Coming soon</span><p>Start with a remote MCP server. Google sign-in connections are on the way.</p></footer>
   </section>;
 }
@@ -74,7 +76,7 @@ export function KnowledgeSourcesButton() {
   const count = Object.keys(state?.selected ?? {}).length;
   useEffect(() => { const timer = setInterval(() => { knowledgeClient()?.snapshot(); }, 2_000); return () => clearInterval(timer); }, []);
   useEffect(() => { if (open) dialog.current?.showModal(); else dialog.current?.close(); }, [open]);
-  return <><button type="button" className="knowledge-sources-button" onClick={() => setOpen(true)} aria-label={`Choose knowledge sources. ${count} selected.`}>Sources · {count}</button><dialog ref={dialog} className="knowledge-sources-dialog" aria-label="Choose your sources" onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}><button className="knowledge-sources-close" type="button" onClick={() => setOpen(false)} aria-label="Close sources">×</button>{open && <KnowledgeSources />}</dialog></>;
+  return <><button type="button" className="knowledge-sources-button" onClick={() => setOpen(true)} aria-label={`Choose knowledge sources. ${count} selected.`}>Sources · {count}</button><dialog ref={dialog} className="knowledge-sources-dialog" aria-label="Choose your sources" onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}><button className="knowledge-sources-close k-bloom" type="button" onClick={() => setOpen(false)} aria-label="Close sources"><KeatingGlyph name="x" /></button>{open && <KnowledgeSources />}</dialog></>;
 }
 export function KnowledgeToolReview() {
   useSyncExternalStore(subscribeKnowledge, knowledgeVersion, () => 0);

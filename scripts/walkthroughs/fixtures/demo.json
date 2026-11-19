@@ -1,0 +1,19 @@
+{
+  "provider": {
+    "id": "keating-walkthrough-demo",
+    "name": "Keating Demo",
+    "type": "openai-completions",
+    "apiKey": "local-demo-no-secret"
+  },
+  "model": {
+    "id": "local-tutor",
+    "name": "local-tutor",
+    "api": "openai-completions",
+    "provider": "Keating Demo",
+    "reasoning": false,
+    "input": ["text"],
+    "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+    "contextWindow": 32000,
+    "maxTokens": 4096
+  }
+}

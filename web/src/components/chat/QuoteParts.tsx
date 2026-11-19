@@ -1,3 +1,4 @@
+import "../workspace/materials.css";
 /**
  * Passage quotes in the tutor chat: the floating "Quote" control for a
  * selection, the per-message Quote action, the composer preview, and the
@@ -7,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouse
 import { createPortal } from "react-dom";
 import { useAui, useAuiState } from "@assistant-ui/react";
 import type { AppendMessage } from "@assistant-ui/react";
-import { ArrowUpRight, Quote, X } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import {
 	MAX_QUOTE_LENGTH,
@@ -180,7 +181,7 @@ export function QuoteSelectionControl({ sessionId }: { sessionId?: string }) {
 						_focusVisible: focusRing,
 					})}
 				>
-					<Quote size={14} aria-hidden="true" />
+					<KeatingGlyph name="quote" size={14} />
 					{selection.truncated ? `Quote first ${MAX_QUOTE_LENGTH.toLocaleString("en")} chars` : "Quote"}
 				</button>,
 				document.body,
@@ -218,7 +219,7 @@ export function QuoteMessageButton({ sessionId, className }: { sessionId?: strin
 				onMouseDown={keepSelection}
 				onClick={onClick}
 			>
-				<Quote size={13} aria-hidden="true" />
+				<KeatingGlyph name="quote" size={13} />
 			</button>
 			<span role="status" aria-live="polite" className={srOnly}>{announcement}</span>
 		</>
@@ -245,20 +246,9 @@ export function QuoteComposerPreview({ sessionId }: { sessionId?: string }) {
 				{quotes.map((quote) => (
 					<li
 						key={quote.draftId}
-						className={css({
-							display: "flex",
-							alignItems: "flex-start",
-							gap: "0.5rem",
-							minWidth: 0,
-							borderLeft: "3px solid var(--primary)",
-							borderRadius: "0.25rem",
-							backgroundColor: "color-mix(in srgb, var(--muted, var(--accent)) 60%, transparent)",
-							paddingBlock: "0.375rem",
-							paddingInlineStart: "0.5rem",
-							paddingInlineEnd: "0.25rem",
-						})}
+						className="h1-quote"
 					>
-						<Quote size={13} aria-hidden="true" className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--muted-foreground)" })} />
+						<KeatingGlyph name="quote" size={13} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--muted-foreground)" })} />
 						<div className={css({ minWidth: 0, flex: 1, fontSize: "0.75rem", lineHeight: "1.125rem" })}>
 							<div className={css({ fontWeight: 600, color: "var(--foreground)" })}>Quoting {quoteSourceLabel(quote.source)}</div>
 							<div className={css({ color: "var(--foreground)", overflowWrap: "anywhere" })}>“{truncateQuoteForPreview(quote.exact)}”</div>
@@ -275,7 +265,7 @@ export function QuoteComposerPreview({ sessionId }: { sessionId?: string }) {
 								focusComposer();
 							}}
 						>
-							<X size={13} aria-hidden="true" />
+							<KeatingGlyph name="x" size={13} />
 						</button>
 					</li>
 				))}
@@ -344,16 +334,9 @@ function QuotedPassage({ quote }: { quote: PassageQuote }) {
 	return (
 		<figure
 			data-quoted-passage=""
-			className={css({
-				margin: 0,
-				display: "grid",
-				gap: "0.25rem",
-				borderLeft: "3px solid var(--primary)",
-				paddingInlineStart: "0.625rem",
-				paddingBlock: "0.125rem",
-				textAlign: "start",
-			})}
+			className="h1-quote"
 		>
+			<KeatingGlyph name="quote" size={13} />
 			<blockquote className={css({ margin: 0, fontStyle: "italic", color: "var(--foreground)", overflowWrap: "anywhere", whiteSpace: "normal" })}>
 				{quote.exact}
 			</blockquote>
@@ -361,11 +344,11 @@ function QuotedPassage({ quote }: { quote: PassageQuote }) {
 				<span>From {label}</span>
 				{state === "changed" ? (
 					<span role="note" data-quote-outdated="" className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontWeight: 600, color: "var(--foreground)" })}>
-						<span aria-hidden="true">⚠</span> This passage has changed since you quoted it
+						<KeatingGlyph name="alert" size={13} /> This passage has changed since you quoted it
 					</span>
 				) : (
 					<button type="button" className={smallButton} onClick={goToSource} aria-label={`Go to source: ${label}`}>
-						<ArrowUpRight size={12} aria-hidden="true" /> Go to source
+						<KeatingGlyph name="ext" size={12} /> Go to source
 					</button>
 				)}
 				<span role="status" aria-live="polite" className={srOnly}>{notice}</span>

@@ -1,0 +1,392 @@
+<div class="wrap">
+<p class="lede"><b>Profile, rooms, courses and export.</b> The same pass on the remaining surfaces. Sample data throughout; copy is taken from the app where it exists. Frames are a 1120px viewport scaled to fit; open full screen to use them at size.</p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+<!-- ═══════════════ P1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">P1</span><h2>Public learning profile</h2><p>Edit your public profile and see what visitors will see.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:auto" data-enter="dash">
+    <header class="top">
+      <a class="b sm gh">{{i:left:s}}Chat</a><span class="vr"></span>
+      <div class="ttl"><b>Your public learning profile</b><span>Publishing as @sam.example</span></div>
+      <span class="st-dot"><i></i>Public · unpublished edits</span>
+      <span class="sp"></span>
+      <a class="b ln">{{i:ext:s}}View public page</a>
+      <label class="row"><input type="checkbox" checked> I have checked the preview</label>
+      <button class="b pri">Publish changes</button>
+    </header>
+    <p class="m1-profile-intro">Say what you are learning, show work you are proud of, and choose how the page looks. You decide every word that appears.</p><div class="pf">
+      <div class="pf-e">
+        <div class="pfs open" data-w><div class="pfs-h">{{i:chev:s}}<b>About</b><span class="sp"></span><span class="lg">shown</span><button class="ib sm" title="Move About down">{{i:down:s}}</button><button class="ib sm" title="Hide this section">{{i:eye:s}}</button></div>
+          <div class="pfs-b">
+            <div class="row" style="gap:12px"><i class="av xl">S</i><div class="row" style="gap:6px"><button class="b sm ln">Change image</button><button class="b sm gh">Remove image</button></div><span class="faint" style="font-size:10.5px;line-height:1.35">JPEG, PNG or WebP up to 10 MB. Keating crops the image to a square.</span></div>
+            <div class="two-c"><div class="fld"><label>Name to show</label><div class="inp">Sam Okafor</div></div><div class="fld"><label>Headline</label><div class="inp">Working through recursion from first principles</div></div></div>
+            <div class="fld"><label>About <span class="faint" style="font-weight:400">· 212 of 1200 characters</span></label><div class="inp" style="min-height:58px">Self-taught, evenings and weekends. I learn best when someone asks me what I expect to happen before I run the code.</div></div>
+          </div></div>
+        <div class="pfs" data-w><div class="pfs-h">{{i:chevr:s}}<b>Learning now</b><span class="cnt">2 of 8</span><span class="sp"></span><span class="lg">shown</span><button class="ib sm">{{i:down:s}}</button><button class="ib sm">{{i:eye:s}}</button></div></div>
+        <div class="pfs" data-w><div class="pfs-h">{{i:chevr:s}}<b>Topics</b><span class="cnt">4 of 20</span><span class="sp"></span><span class="lg">shown</span><button class="ib sm">{{i:down:s}}</button><button class="ib sm">{{i:eye:s}}</button></div></div>
+        <div class="pfs" data-w><div class="pfs-h">{{i:chevr:s}}<b>Shared work</b><span class="cnt">1 of 12</span><span class="sp"></span><span class="lg">shown</span><button class="ib sm">{{i:down:s}}</button><button class="ib sm">{{i:eye:s}}</button></div></div>
+        <div class="pfs off" data-w><div class="pfs-h">{{i:chevr:s}}<b>Next steps</b><span class="cnt">2 of 6</span><span class="sp"></span><span class="lg">Hidden from public view</span><button class="ib sm">{{i:down:s}}</button><button class="ib sm" style="opacity:.45">{{i:eye:s}}</button></div></div>
+        <div class="pfs" data-w><div class="pfs-h">{{i:chevr:s}}<b>Links</b><span class="cnt">0 of 6</span><span class="sp"></span><span class="lnk">+ Add a link</span></div></div>
+        <div class="pfs open" data-w><div class="pfs-h">{{i:chev:s}}<b>Look and layout</b></div>
+          <div class="pfs-b"><div class="row" style="gap:18px;flex-wrap:wrap"><div class="fld"><label>Accent colour</label><div class="row" style="gap:6px" data-single><span class="sw on" style="--c:#1c211b" title="Ink"></span><span class="sw" style="--c:#14743c" title="Moss"></span><span class="sw" style="--c:#b9432e" title="Ember"></span><span class="sw" style="--c:#2f6fed" title="Tide"></span><span class="sw" style="--c:#7c3f8c" title="Plum"></span></div></div>
+            <div class="fld"><label>Layout</label><div class="seg" data-pick><span class="on">Open page</span><span>Cards</span></div></div>
+            <div class="fld"><label>Activity</label><span class="chip on" data-multi-one>{{i:check:s}}Show that I have 14 saved sessions</span></div></div></div></div>
+        <div class="row" style="gap:14px;padding:2px 2px 0"><span class="lnk">Make private</span><span class="lnk">Discard my edits</span><span class="sp"></span><span class="mono faint" style="font-size:10px">Edits stay on this device until you publish</span></div>
+      </div>
+      <div class="pf-p" data-w>
+        <div class="row m1-grid" style="margin-bottom:8px;padding:6px"><span class="eb mu">Preview: what visitors will see</span><span class="sp"></span><span class="mono faint" style="font-size:10px">keating.help/u/did:plc:…</span></div>
+        <div class="pub">
+          <div class="row" style="gap:14px;align-items:flex-start"><i class="av xxl">S</i><div style="flex:1;min-width:0"><h3>Sam Okafor</h3><span class="mono faint" style="font-size:11px">@sam.example</span><p class="pub-h">Working through recursion from first principles</p><span class="mono faint" style="font-size:10.5px">14 saved sessions · Updated Nov 19, 2026</span></div><i class="kmini" style="--r:0" title="Grows with your active days"></i></div>
+          <hr>
+          <span class="eb mu">About</span><p>Self-taught, evenings and weekends. I learn best when someone asks me what I expect to happen before I run the code.</p>
+          <span class="eb mu">Learning now</span>
+          <div class="pub-r"><b>Recursion</b><span>Explain the call stack to someone else without notes.</span></div>
+          <div class="pub-r"><b>SQL joins</b><span>Read a query plan and say why it is slow.</span></div>
+          <span class="eb mu">Topics</span><div class="row" style="flex-wrap:wrap;gap:5px"><span class="chip">Call stack</span><span class="chip">Bayesian reasoning</span><span class="chip">Derivatives</span><span class="chip">Passé composé</span></div>
+          <span class="eb mu">Shared work</span>
+          <div class="pub-w"><span class="mono faint" style="font-size:10px">Tutoring session · keating.help</span><b>Recursion: pause and resume, not replace {{i:ext:s}}</b><div class="pub-f"><span class="mono" style="font-size:9.5px">Keating's AI feedback, shared by the learner</span>You moved from "the function restarts" to "calls pause and resume in reverse" in three turns.</div></div>
+          <p class="faint" style="font-size:10.5px;line-height:1.4;margin-top:10px">Written and chosen by the learner. Keating has not verified these claims, and nothing here is a grade or certificate.</p>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The editor shows a preview of the public profile.</li>
+    <li>Visibility and ordering can be set by section.</li>
+    <li>Publishing requires checking the preview first.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ P2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">P2</span><h2>Your profile in Settings</h2><p>What you tell Keating, and what Keating is then told.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:500px" data-enter="dash">
+    <header class="top"><b class="m1-display">Settings</b><span class="sfind">{{i:search:s}}Find a setting<span class="sp"></span><kbd>/</kbd></span><span class="sp"></span><button class="ib" title="Close settings">{{i:x}}</button></header>
+    <div class="sx m1-learning"><nav class="sx-n" aria-label="Settings sections">
+        <a class="sx-g">{{i:gear}}Interface</a><a class="sx-g on">{{i:bulb}}Learning</a>
+        <a class="sx-s on">Your profile</a><a class="sx-s">Teaching</a><a class="sx-s">Voice and Live</a><a class="sx-s">Recall and predictions</a>
+        <a class="sx-g">{{i:chip}}Models and connections</a><a class="sx-g">{{i:lock}}Data and support</a>
+      </nav><div class="sett">
+      <nav class="st-n" data-w>
+        <span class="eb mu">Your profile</span>
+        <a class="tr"><span></span><span></span><span class="ex">About you</span><span class="cnt">3</span></a>
+        <a class="tr"><span></span><span></span><span class="ex">Language</span><span class="cnt">2</span></a>
+        <a class="tr"><span></span><span></span><span class="ex">Background</span><span class="cnt">0</span></a>
+        <a class="tr"><span></span><span></span><span class="ex">Goals</span><span class="cnt">1</span></a>
+        <a class="tr on"><span></span><span></span><span class="ex">Teaching</span><span class="cnt">4</span></a>
+        <a class="tr"><span></span><span></span><span class="ex">Accessibility</span><span class="cnt">1</span></a>
+        <a class="tr"><span></span><span></span><span class="ex">Anything else</span><span class="cnt">0</span></a>
+
+      </nav>
+      <div class="st-m" data-w>
+        <h3>How Keating should teach you</h3>
+        <p class="soft" style="font-size:12px;margin:-4px 0 4px">These are preferences, not a test. Keating follows them.</p>
+        <div class="fld"><label>How much should Keating ask before it tells?</label><div class="seg wide" data-pick><span>Mostly explain, ask sometimes</span><span class="on">A balance of both</span><span>Keep asking until it clicks</span></div></div>
+        <div class="two-c"><div class="fld"><label>When you are stuck</label><div class="seg wide" data-pick><span>Let me struggle</span><span class="on">Nudge me</span><span>Clear hint</span></div></div><div class="fld"><label>Depth</label><div class="seg wide" data-pick><span>The shape</span><span class="on">Standard</span><span>Rigorous</span></div></div></div>
+        <div class="two-c"><div class="fld"><label>Tone</label><div class="seg wide" data-pick><span class="on">Warm</span><span>Neutral</span><span>Direct</span><span>Playful</span></div></div><div class="fld"><label>Start with</label><div class="seg wide" data-pick><span class="on">A concrete example</span><span>The general rule</span></div></div></div>
+        <div class="fld"><label>Draw analogies from</label><div class="inp">cooking, music, carpentry</div></div>
+        <div class="row ob-f" style="margin-top:auto"><i class="d" style="--c:var(--green-deep)"></i><span class="mono soft" style="font-size:10.5px">Saved · nothing to apply</span><span class="sp"></span><button class="b ln" disabled>Discard</button><button class="b pri" disabled>{{i:save:s}}Save profile</button></div>
+      </div>
+      <aside class="st-a" data-w>
+        <span class="eb">What Keating is told</span>
+        <p class="prose" style="font-size:13.5px;line-height:1.55">Sam, they/them. Explain in English. Balance asking and telling. When Sam is stuck, nudge. Warm tone, standard depth, start from a concrete example. Draw analogies from cooking, music and carpentry. Sam wants to understand recursion well enough to explain it. Reduce motion.</p>
+        <span class="faint" style="font-size:11px;line-height:1.45">{{i:lock:s}} Saved in this browser. Keating includes it in requests to your tutor model so it can tailor lessons.</span>
+        <span class="lnk" style="align-self:flex-start;margin-top:auto">Clear profile</span>
+      </aside>
+    </div></div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The Learning group includes Your profile, Teaching, Voice and Live, and Recall and predictions.</li>
+    <li>Profile sections list the number of answered fields.</li>
+    <li>The footer says “Saved · nothing to apply” when the profile is clean.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ R1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">R1</span><h2>Study rooms</h2><p>Who is there and whether Keating is running, before you open anything.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:560px" data-enter="dash">
+    <header class="top"><a class="b sm gh">{{i:left:s}}Chat</a><span class="vr"></span><i class="logo" role="img" aria-label="Keating"></i><div class="ttl" style="margin-left:4px"><b>Study rooms</b><span>One shared conversation for a group and Keating</span></div><span class="sp"></span><button class="b pri">{{i:plus:s}}New room</button></header>
+    <div class="rm">
+      <div class="rm-l">
+        <div class="lhead"><span class="chip on">Open <b>3</b></span><span class="chip">Hosting <b>1</b></span><span class="chip">Course rooms <b>1</b></span><span class="chip">Ended <b>2</b></span><span class="chip">All <b>6</b></span><span class="sp"></span><div class="find" style="margin:0;width:230px;height:26px">{{i:search:s}}<span style="font-size:11.5px">Search title, topic, course</span></div></div>
+        <a class="rr next" data-w><div><b>Thursday proof workshop</b><span class="pv">Induction on the natural numbers</span></div><span class="pres"><i class="av">P</i><i class="av">M</i><i class="av">A</i><i class="av">+1</i></span><span class="m">4 here · 9 members<br>Active 2 min ago</span><span class="kst on"><i class="bot"></i>Keating is running<small>from your browser</small></span><span class="chip">Host</span></a>
+        <a class="rr" data-w><div><b>Recursion study group</b><span class="pv">Recursion from first principles · Lesson 6</span></div><span class="pres"><i class="av">J</i><i class="av">R</i></span><span class="m">2 here · 5 members<br>Active 20 min ago</span><span class="kst on"><i class="bot"></i>Keating is running<small>from Jo's browser</small></span><span class="chip">Learner</span></a>
+        <a class="rr" data-w><div><b>French past tenses</b><span class="pv">Passé composé or imparfait?</span></div><span class="pres"></span><span class="m">Nobody here · 3 members<br>Active yesterday</span><span class="kst"><i class="d"></i>Keating is not running<small>someone needs to start it</small></span><span class="chip">Observer</span></a>
+        <div class="rm-e" data-w><i class="kmini" style="--r:1"></i><div><b>Start one for a study group or a class.</b><span>Share an invite link or QR code. Course teachers can also open a room from any lesson.</span></div></div>
+      </div>
+      <aside class="rm-n" data-w>
+        <div class="row"><h3>New study room</h3><span class="sp"></span><button class="ib sm">{{i:x:s}}</button></div>
+        <span class="soft" style="font-size:11.5px;margin-top:-4px">You will host it as Sam. Invite people once it is open.</span>
+        <div class="fld"><label>Title</label><div class="inp pl">Thursday proof workshop</div></div>
+        <div class="fld"><label>Topic <span class="faint" style="font-weight:400">optional</span></label><div class="inp pl">Induction on the natural numbers</div></div>
+        <div class="fld"><label>Goal for the session <span class="faint" style="font-weight:400">optional</span></label><div class="inp pl" style="min-height:46px">Everyone writes one induction proof and explains its base case.</div></div>
+        <div class="fld"><label>How Keating participates</label><div class="seg wide" data-pick><span class="on">Joins in</span><span>When asked</span></div><span class="faint" style="font-size:10.5px">Keating reads along and speaks when it can help.</span></div>
+        <div class="fld"><label>Teacher review of Keating's replies</label><div class="seg wide" data-pick><span class="on">Post directly</span><span>Teacher approves</span></div><span class="faint" style="font-size:10.5px">Keating's replies reach the room right away.</span></div>
+        <div class="row ob-f" style="margin-top:auto"><button class="b ln">Cancel</button><span class="sp"></span><button class="b pri">Create room</button></div>
+      </aside>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The room list has status filters and a search field.</li>
+    <li>New room opens the setup form beside the list on desktop.</li>
+    <li>Participation and review settings determine when Keating replies and whether a teacher approves them.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ R2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">R2</span><h2>Inside a room</h2><p>Keating is a participant with a visible state, and a teacher's private work sits in the transcript where it applies.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr rv" style="height:700px" data-enter="work">
+    <header class="top">
+      <a class="b sm gh">{{i:left:s}}Rooms</a><span class="vr"></span>
+      <div class="ttl"><b>Thursday proof workshop</b><span>Induction on the natural numbers · Goal: everyone writes one induction proof</span></div>
+      
+      <span class="sp"></span>
+      
+      <span class="mono soft row" style="font-size:10.5px;gap:6px"><i class="d" style="--c:var(--green)"></i>Live</span>
+      <button class="b ln">{{i:plus:s}}Invite</button><button class="ib" title="More">{{i:more}}</button>
+    </header>
+    <div class="kstrip"><i class="bot" style="width:30px;height:30px"></i><div class="ttl"><b>Keating is not running</b><span>A facilitating browser must run Keating before it can answer room messages</span></div><span class="sp"></span><span class="chip">Joins in</span><span class="chip">Teacher approves</span><button class="b sm gh">Details</button><button class="b sm acc">Run Keating from this tab</button><button class="b sm gh" disabled>Ask Keating to step in</button><button class="b sm gh" disabled>Pause Keating</button></div>
+    <div class="body">
+      <div class="page"><div class="page-in" style="padding:14px 40px 0">
+        <div class="sysl">Priya joined as a learner.</div>
+        <section class="turn lr"><div class="th"><i class="av">M</i><span class="eb mu">Marco · Learner</span><span class="mdl">2:11</span></div><p class="tx" style="border:0;padding-left:0;color:var(--ink)">Base case n = 1 works. Then I assume it for k and show k + 1. Done?</p></section>
+        <section class="turn lr"><div class="th"><i class="av">P</i><span class="eb mu">Priya · Learner</span><span class="mdl">2:14</span><span class="sp"></span><button class="b sm gh">Reply</button><button class="ib sm">{{i:more:s}}</button></div><p class="tx" style="border:0;padding-left:0;color:var(--ink)">I assumed P(k) and got to P(k+1), but I never used the base case. Is that fine?</p></section>
+        <div class="nt prop" style="margin:0 0 12px"><div class="nh">{{i:lock:s}}<b>Private guidance</b><em>teachers only · you, 2:15</em></div><span>Ask Priya to say what breaks without the base case before giving hints.</span></div>
+        <div class="held"><div class="row"><i class="bot"></i><span class="eb">Keating drafted a reply</span><span class="chip">waiting for a teacher</span><span class="sp"></span><span class="mono faint" style="font-size:10px">to Priya</span></div>
+          <div class="prose" style="font-size:15px"><p>Before I answer, Priya: suppose the claim were false for n = 1. What would your step from k to k + 1 still prove?</p></div>
+          <div class="row"><button class="b sm pri">{{i:check:s}}Approve and post</button><button class="b sm ln">{{i:edit:s}}Edit</button><button class="b sm ln">Reject</button></div></div>
+        <div class="sysl" style="text-align:left">Ana is typing…</div>
+      </div>
+      <div class="kbar" style="height:auto;display:block;padding:8px 40px 10px;border-top:1px solid var(--line)">
+        <div class="comp"><div class="row" style="padding:6px 8px 0"><div class="seg" data-pick><span class="on">Message the room</span><span>{{i:lock:s}}Private guidance for Keating</span></div></div><div class="ta">Message as Sam</div><div class="cbar"><span class="mono faint" style="font-size:10px;padding-left:6px">enter to send · shift+enter for newline</span><span class="sp"></span><button class="send">{{i:send}}</button></div></div>
+      </div></div>
+      <aside class="desk" style="width:300px">
+        <div class="tabs" style="padding-top:4px"><span class="on">People <span class="cnt">9</span></span><span>Invite</span><span>Settings</span></div>
+        <div class="desk-b" style="gap:0">
+          <div class="dl" style="padding-bottom:6px"><span>4 here · 9 total</span><span class="sp"></span><span>messages</span></div>
+          <div class="pp"><i class="av">S</i><div><b>Sam <span class="faint" style="font-weight:400">you</span></b><span><i class="d" style="--c:var(--green)"></i>Host · here now</span></div><span class="hb"><u data-grow style="width:22%"></u></span><em>4</em></div>
+          <div class="pp"><i class="av">P</i><div><b>Priya</b><span><i class="d" style="--c:var(--green)"></i>Learner · here now</span></div><span class="hb"><u data-grow style="width:66%"></u></span><em>12</em></div>
+          <div class="pp"><i class="av">M</i><div><b>Marco</b><span><i class="d" style="--c:var(--green)"></i>Learner · here now</span></div><span class="hb"><u data-grow style="width:38%"></u></span><em>7</em></div>
+          <div class="pp"><i class="av">A</i><div><b>Ana</b><span><i class="d" style="--c:var(--green)"></i>Learner · here now</span></div><span class="hb"><u style="width:0"></u></span><em>0</em></div>
+          <div class="pp away"><i class="av">J</i><div><b>Jo</b><span><i class="d"></i>Teacher · away</span></div><span class="hb"><u data-grow style="width:11%"></u></span><em>2</em></div>
+          <div class="pp away"><i class="av">R</i><div><b>Rui</b><span><i class="d"></i>Observer · away · muted</span></div><span class="hb"><u style="width:0"></u></span><em>0</em></div>
+          <div class="note" style="margin-top:8px">{{i:alert:s}}<span>Ana is here and has not posted yet.</span></div>
+          <div class="row" style="margin-top:auto;padding-top:10px"><button class="b sm ln">{{i:export:s}}Export transcript</button><span class="sp"></span><span class="lnk">End room…</span></div>
+        </div>
+      </aside>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The status strip shows whether Keating is running and gives facilitators the available controls.</li>
+    <li>Teachers can send private guidance and review held drafts.</li>
+    <li>People, Invite and Settings sit beside the transcript on desktop.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ C1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">C1</span><h2>Course library</h2><p>Each card says where you are and what is next.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr m2-library" style="height:auto" data-enter="dash">
+    <header class="top"><a class="b sm gh">{{i:left:s}}Chat</a><span class="vr"></span><i class="logo" role="img" aria-label="Keating"></i><div class="ttl" style="margin-left:4px"><b>Courses</b><span>Local workspace</span></div><span class="sp"></span><div class="find" style="margin:0;width:200px;height:28px">{{i:search:s}}<span style="font-size:11.5px">Find a course…</span></div><button class="b ln">Assemble manually</button><button class="b pri">{{i:feather:s}}Plan with Keating</button></header>
+    <div class="dash" style="padding-top:18px">
+      <div class="row m2-welcome m1-halftone" style="align-items:flex-end;gap:14px" data-w><i class="kmini" style="--r:2"></i><div style="flex:1"><h2 style="font:600 24px var(--ui)">What's next to learn?</h2><p class="soft" style="font-size:12.5px">Pick up where you left off, or build something new with Keating.</p></div><div class="row" style="gap:5px" data-single><span class="chip on">All <b>3</b></span><span class="chip">Learning <b>2</b></span><span class="chip">Teaching <b>1</b></span></div></div>
+      <div class="cg">
+        <a class="cc hardc" data-w><div class="row"><span class="chip">Student</span><span class="sp"></span><span class="mono faint" style="font-size:10px">4 people</span></div><h3>Recursion from first principles</h3><p>From "the function restarts" to reading a stack trace without fear.</p><div class="cp"><span class="hb"><u data-grow style="width:42%"></u></span><em>5 of 12 lessons</em></div><div class="cn"><span>Continue · Lesson 6 · The call stack</span>{{i:right}}</div></a>
+        <a class="cc" data-w><div class="row"><span class="chip">Peer</span><span class="sp"></span><span class="mono faint" style="font-size:10px">7 people</span></div><h3>Bayes for people who distrust formulas</h3><p>Start with 1,000 people and count.</p><div class="cp"><span class="hb"><u data-grow style="width:75%"></u></span><em>6 of 8 lessons</em></div><div class="cn"><span>Continue · Lesson 7 · Base rates in the news</span>{{i:right}}</div></a>
+        <a class="cc" data-w><div class="row"><span class="chip">Owner</span><span class="sp"></span><span class="mono faint" style="font-size:10px">12 people</span></div><h3>French past tenses</h3><p>A shared course in progress.</p><div class="cp"><span class="hb"><u data-grow style="width:0"></u></span><em>0 of 4 lessons</em></div><div class="cn"><span><b>Open course</b></span>{{i:right}}</div><div class="cn">3 waiting on you {{i:right:s}}</div></a>
+      </div>
+      <div class="foot" data-w>{{i:book:s}}<span>Just one paper or topic?</span><a class="lnk">Study it at your own pace {{i:right:s}}</a><span class="sp"></span><span class="mono faint" style="font-size:10px">Courses keep lessons, sources, notes, cards and teacher review together</span></div>
+    </div>
+  </div></div></div>
+  <div class="kt m2-frame"><div class="m2-grid"><div class="m2-stack"><span class="cap">Empty library</span><div class="m2-empty m1-halftone" ><h3>Bring your first big question.</h3><p>What would you love to understand? Tell Keating what you want to learn and bring any notes or readings. You’ll shape the outline together before building your first course.</p><div class="m2-row"><button type="button" class="b sm pri" >{{i:spark:s}}Plan with Keating</button><button type="button" class="b sm gh" >Or assemble manually</button></div></div></div><div class="m2-stack"><span class="cap">Your building blocks</span><div class="m2-stack"><p>Blank modules and lessons</p><p>StudyPlans from saved chats</p><p>Selected plan sections</p><p>Saved flashcard decks</p><p>Quizzes, visuals, documents, and images</p><p>Editable questions, assignments, and cards</p></div></div></div></div><ol class="pts">
+    <li>The library has a search field and filters for learning and teaching.</li>
+    <li>Plan with Keating and Assemble manually are separate ways to start.</li>
+    <li>Owner cards include the number of submissions waiting.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ C2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">C2</span><h2>A lesson</h2><p>Outline, reading desk and the room, with one way to add and one way forward.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr rv m2-course-shell" data-enter="work">
+    <header class="top"><button type="button" class="ib sm" aria-label="Back to courses" title="Back to courses" >{{i:left:s}}</button><div class="ttl"><b>Recursion from first principles</b></div><button type="button" class="ib sm" aria-label="Switch course" title="Switch course" >{{i:chev:s}}</button><span class="chip">Owner</span><span class="sp"></span><button type="button" class="b sm ln" >{{i:search:s}}Search this course</button><button type="button" class="b sm ln" >{{i:plus:s}}Add</button><button type="button" class="b sm ln" >Keating</button><button type="button" class="b sm ln" >Invite</button><small class="m2-meta">▪ offline</small></header>
+    <div class="sub"><div class="tabs"><span class="on">{{i:book:s}}Read</span><span>{{i:message:s}}Discuss</span><span>{{i:checklist:s}}Review</span><span>{{i:tool:s}}Build</span></div><span class="sp"></span><span class="mono faint" style="font-size:10px">Module 2 · Lesson 6 of 12</span><button class="b sm ln m2-phone-only">Outline</button><button class="b sm gh">{{i:left:s}}Previous</button><button class="b sm gh">Next{{i:right:s}}</button><button class="b sm gh m2-phone-only">People</button></div>
+    <div class="body">
+      <aside class="out" style="width:226px">
+        <div class="out-h"><span class="eb mu">Course outline</span><span class="sp"></span><span class="cnt">5/12</span></div>
+        <span class="grp" style="padding-top:4px">1 · Calls</span>
+        <a class="tr"><span class="no">1</span><span class="ro fill">{{i:check:s}}</span><span class="ex">Functions call functions</span><span></span></a>
+        <a class="tr"><span class="no">2</span><span class="ro fill">{{i:check:s}}</span><span class="ex">A function calls itself</span><span></span></a>
+        <a class="tr"><span class="no">3</span><span class="ro fill">{{i:check:s}}</span><span class="ex">Pause and resume</span><span></span></a>
+        <span class="grp">2 · The stack</span>
+        <a class="tr"><span class="no">4</span><span class="ro fill">{{i:check:s}}</span><span class="ex">Predicting output</span><span></span></a>
+        <a class="tr"><span class="no">5</span><span class="ro fill">{{i:check:s}}</span><span class="ex">Unwinding in reverse</span><span></span></a>
+        <a class="tr on"><span class="no">6</span><span class="ro"></span><span class="ex">The call stack</span><span class="cnt">3</span></a>
+        <a class="tr"><span class="no">7</span><span class="ro"></span><span class="ex">Base cases</span><span></span></a>
+        <a class="tr"><span class="no">8</span><span class="ro"></span><span class="ex">Reading a stack trace</span><span></span></a>
+        <span class="grp">3 · Choosing</span>
+        <a class="tr"><span class="no">9</span><span class="ro"></span><span class="ex">Recursion or a loop?</span><span></span></a>
+        <div class="legend" style="flex-direction:column;gap:5px"><span class="eb mu">Course shelf</span><span>Documents 4 · Assignments 2</span><span>Artifacts 3 · Cards 28</span><span>Course threads 3</span></div>
+      </aside>
+      <div class="page"><div class="page-in" style="padding:22px 46px 0">
+        <span class="eb">The stack · 25 min</span>
+        <h1 class="lh1">The call stack</h1>
+        <p class="soft" style="font-size:14.5px;line-height:1.5;margin:6px 0 12px">Where paused calls wait, and why the last one in is the first one out.</p>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:14px"><span class="eb mu">By the end</span><span class="chip">Draw the stack for a three-deep call</span><span class="chip">Say which call returns first</span></div>
+        <div class="prose" style="font-size:16px"><p data-w>Each time a function calls another, the caller is set aside with everything it knew. The place those set-aside calls wait is the <b>call stack</b>.</p><p data-w>You already predicted that <code>countdown(2)</code> prints its <code>after</code> lines backwards. The stack is the reason: the most recent call is on top, and only the top can finish.</p></div>
+        <div class="card" style="margin-top:16px" data-w><div class="row"><span class="eb">Worked exercise</span><span class="sp"></span><span class="chip">Share with peers</span></div><b style="font-size:13.5px">Draw the stack at the moment countdown(0) is running.</b><div class="inp pl" style="min-height:52px">Write your answer…</div><div class="row"><span class="lnk">Continue privately with Keating</span><span class="sp"></span><button class="b sm pri">Save work</button></div></div>
+        <section class="m2-card m2-card-body m2-stack">
+          <span class="m2-label">Shared notes · Version 0</span>
+          <div class="m2-row"><h3>The margin everyone can write in.</h3><span class="sp"></span><span data-glyph-host>{{i:note:s}}</span></div>
+          <textarea class="inp m2-shared-notes" rows="6" aria-label="Shared notes" placeholder="Add a definition, question, or useful example…"></textarea>
+          <div class="m2-row"><span class="sp"></span><button class="b sm ln">Save shared notes</button></div>
+        </section>
+        <div class="lnext" data-w><button class="b ln">{{i:check:s}}Mark complete</button><span class="sp"></span><a class="b pri" style="height:32px">Lesson 7 · Base cases {{i:right:s}}</a></div>
+      </div></div>
+      <aside class="desk" style="width:262px">
+        <div class="desk-b">
+          <span class="eb mu">Here now</span>
+          <div class="pp"><i class="av">S</i><div><b>You</b><span><i class="d" style="--c:var(--green)"></i>Student</span></div></div>
+          <div class="pp"><i class="av">J</i><div><b>Jo</b><span><i class="d" style="--c:var(--green)"></i>Teacher</span></div></div>
+          <div class="cp" style="margin:4px 0 2px"><span class="hb"><u data-grow style="width:42%"></u></span><em>5 of 12</em></div>
+          <span class="eb mu" style="margin-top:8px">Work with Keating</span>
+          <button class="b sm ln" style="justify-content:flex-start">Review this lesson</button><button class="b sm ln" style="justify-content:flex-start">Write a practice question</button><button class="b sm ln" style="justify-content:flex-start">Find sources for it</button>
+          <span class="eb mu" style="margin-top:8px">Study rooms</span>
+          <div class="cd"><span class="no"><i class="d" style="--c:var(--green)"></i></span><div><b>Recursion study group</b><span>2 here · Keating running</span></div><button class="b sm ln">Join…</button></div>
+          <span class="eb mu" style="margin-top:8px">Recent activity</span>
+          <span class="faint" style="font-size:11.5px;line-height:1.5">Jo reviewed your exercise in Lesson 5.<br>Rui commented on this lesson.</span>
+        </div>
+      </aside>
+    </div>
+  </div></div></div>
+  <div class="m2-stack"><span class="cap">Discuss</span><div class="kt scr m2-course-shell"><header class="top"><button type="button" class="ib sm" aria-label="Back to courses" title="Back to courses" >{{i:left:s}}</button><div class="ttl"><b>Recursion from first principles</b></div><button type="button" class="ib sm" aria-label="Switch course" title="Switch course" >{{i:chev:s}}</button><span class="chip">Owner</span><span class="sp"></span><button type="button" class="b sm ln" >{{i:search:s}}Search this course</button><button type="button" class="b sm ln" >{{i:plus:s}}Add</button><button type="button" class="b sm ln" >Keating</button><button type="button" class="b sm ln" >Invite</button><small class="m2-meta">▪ offline</small></header><div class="sub"><div class="tabs"><span>{{i:book:s}}Read</span><span class="on">{{i:message:s}}Discuss</span><span>{{i:checklist:s}}Review</span><span>{{i:tool:s}}Build</span></div><span class="sp"></span><button type="button" class="b sm ln">Outline</button><button type="button" class="b sm gh" >{{i:people:s}}People</button></div>
+    <div class="m2-course-layout">
+    <aside class="m2-frame m2-course-side m2-stack"><span class="m2-label">Course outline · 0/1</span><small class="m2-meta">1 · Calls</small><p class="m2-card-body m2-current">1　The call stack</p><span class="m2-label">Course shelf</span><small class="m2-meta">Documents 0 · Assignments 0 · Artifacts 0 · Cards 0</small></aside><div class="m2-frame">
+    <div class="m2-stack"><span class="m2-label">Discussion</span><h3>Think where others can answer.</h3><div class="m2-row">
+    <div class="m2-stack"><span class="m2-label">Channel</span><div class="m2-row"><span class="chip">Course-wide thread (0)</span><span class="chip on">The call stack (0)</span><span class="chip">Everything (0)</span></div></div>
+    <div class="m2-stack"><span class="m2-label">Find in discussion</span><input class="inp" aria-label="Find in discussion" placeholder="Search threads…"></div></div><div class="comp m2-card-body m2-stack"><textarea aria-label="Comment" class="inp" placeholder="Ask or add context for this lesson…"></textarea><div class="m2-row"><small class="m2-meta">⌘ / Ctrl + Enter</small><span class="sp"></span><button type="button" class="b sm pri" disabled>{{i:send:s}}Post comment</button></div></div><div class="m2-empty m1-halftone" ><span data-glyph-host>{{i:message:s}}</span><h3>No thread yet. Leave the first useful question.</h3></div></div></div>
+    <aside class="m2-frame m2-course-side m2-stack"><span class="m2-label">Here now</span><b>You</b><small class="m2-meta">▪ Owner · Online</small><details><summary>Everyone in this course</summary></details><span class="m2-label">Work with Keating</span><p>Read the discussion with me</p><p>Suggest a follow-up</p><p>Find the course’s gaps</p><span class="m2-label">Study rooms</span><p>No open rooms.</p></aside></div></div><span class="cap">Review</span><div class="kt scr m2-course-shell"><header class="top"><button type="button" class="ib sm" aria-label="Back to courses" title="Back to courses" >{{i:left:s}}</button><div class="ttl"><b>Recursion from first principles</b></div><button type="button" class="ib sm" aria-label="Switch course" title="Switch course" >{{i:chev:s}}</button><span class="chip">Owner</span><span class="sp"></span><button type="button" class="b sm ln" >{{i:search:s}}Search this course</button><button type="button" class="b sm ln" >{{i:plus:s}}Add</button><button type="button" class="b sm ln" >Keating</button><button type="button" class="b sm ln" >Invite</button><small class="m2-meta">▪ offline</small></header><div class="sub"><div class="tabs"><span>{{i:book:s}}Read</span><span>{{i:message:s}}Discuss</span><span class="on">{{i:checklist:s}}Review</span><span>{{i:tool:s}}Build</span></div><span class="sp"></span><button type="button" class="b sm ln">Outline</button><button type="button" class="b sm gh" >{{i:people:s}}People</button></div>
+    <div class="m2-course-layout">
+    <aside class="m2-frame m2-course-side m2-stack"><span class="m2-label">Course outline · 0/1</span><small class="m2-meta">1 · Calls</small><p class="m2-card-body m2-current">1　The call stack</p><span class="m2-label">Course shelf</span><small class="m2-meta">Documents 0 · Assignments 0 · Artifacts 0 · Cards 0</small></aside><div class="m2-frame">
+    <div class="m2-stack"><span class="m2-label">Review</span><h3>Many learners, one clear view.</h3><label><input type="checkbox" checked> Only work awaiting review</label><span class="m2-label">Roster · 0</span><div class="m2-empty m1-halftone" ><h3>No learners have joined yet.</h3></div><span class="m2-label">Lesson work · 0</span><div class="call"><span>Nothing is waiting on you.</span></div><span class="m2-label">Assignment submissions · 0</span><div class="call"><span>No assignment drafts are waiting.</span></div></div></div>
+    <aside class="m2-frame m2-course-side m2-stack"><span class="m2-label">Here now</span><b>You</b><small class="m2-meta">▪ Owner · Online</small><details><summary>Everyone in this course</summary></details><span class="m2-label">Work with Keating</span><p>Read the discussion with me</p><p>Suggest a follow-up</p><p>Find the course’s gaps</p><span class="m2-label">Study rooms</span><p>No open rooms.</p></aside></div></div><span class="cap">Build</span><div class="kt scr m2-course-shell"><header class="top"><button type="button" class="ib sm" aria-label="Back to courses" title="Back to courses" >{{i:left:s}}</button><div class="ttl"><b>Recursion from first principles</b></div><button type="button" class="ib sm" aria-label="Switch course" title="Switch course" >{{i:chev:s}}</button><span class="chip">Owner</span><span class="sp"></span><button type="button" class="b sm ln" >{{i:search:s}}Search this course</button><button type="button" class="b sm ln" >{{i:plus:s}}Add</button><button type="button" class="b sm ln" >Keating</button><button type="button" class="b sm ln" >Invite</button><small class="m2-meta">▪ offline</small></header><div class="sub"><div class="tabs"><span>{{i:book:s}}Read</span><span>{{i:message:s}}Discuss</span><span>{{i:checklist:s}}Review</span><span class="on">{{i:tool:s}}Build</span></div><span class="sp"></span><button type="button" class="b sm ln">Outline</button><button type="button" class="b sm gh" >{{i:people:s}}People</button></div><div class="m2-frame">
+    <div class="m2-stack"><small class="m2-meta">▪ Saved 2:14</small><div class="call"><span>Review course design uses saved work.</span></div><div class="m2-row"><button type="button" class="b sm gh" >Details</button><button type="button" class="b sm ln" >Outline</button><button type="button" class="b sm gh" >Documents</button><button type="button" class="b sm gh" >Assignments</button><button type="button" class="b sm gh" >Artifacts</button><button type="button" class="b sm gh" >Cards</button><button type="button" class="b sm gh" >People</button></div><h3>The spine</h3><p>Modules hold lessons in the order a learner meets them.</p><div class="m2-row"><h3>1 · Calls</h3><span class="sp"></span><button type="button" class="ib sm" aria-label="Move lesson up" title="Move lesson up" >{{i:rise:s}}</button><button type="button" class="ib sm" aria-label="Move lesson down" title="Move lesson down" >{{i:down:s}}</button></div><a href="flows-mockups.html" class="lnk">See the builder boards</a></div></div></div></div><ol class="pts">
+    <li>The outline, reading desk and People rail provide separate views of the same course.</li>
+    <li>Mark complete records lesson progress. The outline tracks completion.</li>
+    <li>The tab bar stays at the top while the lesson scrolls. On phones, Outline and People open sheets.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ E1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">E1</span><h2>Training data</h2><p>Four steps on the left, the dataset taking shape on the right.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:600px" data-enter="dash">
+    <header class="top"><a class="b sm gh">{{i:left:s}}Activity</a><span class="vr"></span><div class="ttl"><b>Training data</b><span>Turn your teaching work into a dataset you can inspect and use</span></div><span class="sp"></span><span class="mono soft row" style="font-size:10.5px;gap:6px">{{i:save:s}}Checkpointed in this browser</span><button class="b ln">Bring existing data in</button></header>
+    <div class="td">
+      <nav class="td-s" data-w>
+        <a class="stp done"><b>{{i:check:s}}</b><div><strong>Choose your data</strong><span>All sources · ChatML + Alpaca</span></div></a>
+        <a class="stp on"><b>2</b><div><strong>Shape the dataset</strong><span>Filter for training</span></div></a>
+        <a class="stp"><b>3</b><div><strong>Score it</strong><span>Optional · off</span></div></a>
+        <a class="stp"><b>4</b><div><strong>Download or share</strong><span>ZIP, JSONL</span></div></a>
+        <span class="faint" style="font-size:10.5px;line-height:1.45;margin-top:auto">Preparation runs locally. No model calls while scoring is off.</span>
+      </nav>
+      <div class="td-m" data-w>
+        <h3>Shape the dataset</h3>
+        <div class="seg wide" data-pick><span class="on">Filter for training</span><span>Keep everything</span></div>
+        <span class="faint" style="font-size:11px;margin-top:-4px">Lengths are in characters. Records outside the range are excluded, not truncated.</span>
+        <div class="two-c"><div class="fld"><label>Minimum response</label><div class="inp">200</div></div><div class="fld"><label>Maximum response <span class="faint" style="font-weight:400">0 means none</span></label><div class="inp">0</div></div></div>
+        <div class="two-c"><div class="fld"><label>Record limit <span class="faint" style="font-weight:400">0 includes all</span></label><div class="inp">0</div></div><div class="fld"><label>Validation share (%)</label><div class="inp">10</div></div></div>
+        <div class="row" style="flex-wrap:wrap;gap:6px" data-multi><span class="chip on">{{i:check:s}}Remove duplicate examples</span><span class="chip on">{{i:check:s}}Redact detected secrets</span></div>
+        <span class="faint" style="font-size:11px;line-height:1.45">Redaction removes recognized credentials and email addresses. Inspect source data in Review before sharing.</span>
+        <div class="row ob-f" style="margin-top:auto"><button class="b ln">Back</button><span class="sp"></span><button class="b ln">Refresh source data</button><button class="b pri">Prepare dataset</button></div>
+      </div>
+      <aside class="td-o" data-w>
+        <div class="row"><span class="eb">Dataset overview</span><span class="sp"></span><span class="mono faint" style="font-size:10px">prepared 2 min ago · redaction on</span></div>
+        <div class="row" style="gap:10px"><div class="tile"><span>Records</span><b>412</b></div><div class="tile"><span>SFT examples</span><b>388</b></div><div class="tile"><span>Validation</span><b>41</b></div></div>
+        <span class="eb mu">Composition</span>
+        <div class="stk" style="margin:2px 0 4px"><u data-grow style="flex:301;background:var(--c1)"></u><u data-grow style="flex:74;background:var(--c2)"></u><u data-grow style="flex:37;background:var(--c3)"></u></div>
+        <div class="row" style="gap:12px;flex-wrap:wrap"><span class="lg"><i style="background:var(--c1)"></i>Conversation responses <b>301</b></span><span class="lg"><i style="background:var(--c2)"></i>Teaching artifacts <b>74</b></span><span class="lg"><i style="background:var(--c3)"></i>Sandbox records <b>37</b></span></div>
+        <span class="mono faint" style="font-size:10px">58 skipped · 12 redactions · 9 duplicates removed</span>
+        <span class="eb mu" style="margin-top:6px">In the ZIP</span>
+        <dl class="dlist"><dt>README.md</dt><dd>What this is and how it was made</dd><dt>keating.training.jsonl</dt><dd>Canonical records with provenance</dd><dt>sft/train.chatml.jsonl</dt><dd>Chat format</dd><dt>sft/train.alpaca.jsonl</dt><dd>Instruction pairs</dd></dl>
+        <div class="row" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--line-soft)"><i class="kmini sm" style="--r:3"></i><span class="lnk">Share with Keating…</span><span class="sp"></span><button class="b sm ln">Records JSONL</button><button class="b sm pri">{{i:export:s}}Download ZIP</button></div>
+      </aside>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The dataset preview accompanies the preparation steps.</li>
+    <li>The export lists the archive contents before download.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ E2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">E2</span><h2>Every export says what is in it</h2><p>One pattern for the six places data leaves the app.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt panes" data-enter="panes">
+    <div class="pane" style="min-height:440px"><span class="cap">Export from a review</span><div class="ob-p">
+      <h3>Export this review</h3>
+      <dl class="dlist"><dt>Included</dt><dd>8 turns of "Recursion: pause and resume, not replace", 3 notes, 2 of 6 rubric scores, 1 chosen rewrite</dd><dt>Not included</dt><dd>Other sessions, your profile, your keys</dd><dt>Format</dt><dd>ZIP with JSONL files and a README</dd><dt>Goes to</dt><dd>Your downloads folder. Nothing is uploaded.</dd></dl>
+      <div class="note" style="margin-top:2px">{{i:save:s}}<span>You have unsaved changes. Exporting saves the review first.</span></div>
+      <div class="row ob-f"><button class="b ln">Cancel</button><span class="sp"></span><button class="b pri">{{i:export:s}}Save and download</button></div>
+    </div></div>
+    <div class="pane" style="min-height:440px"><span class="cap">Share a session</span><div class="ob-p">
+      <h3>Share session</h3>
+      <dl class="dlist"><dt>Becomes public</dt><dd>The visible conversation, safe session artifacts, and any finalized review feedback</dd><dt>Stays private</dt><dd>Drafts, hidden tool traffic, unsupported or oversized artifacts</dd><dt>Who can read it</dt><dd>Anyone with the link</dd></dl>
+      <label class="row"><input type="checkbox"> I understand anyone with the link can read this</label>
+      <div class="row ob-f"><button class="b ln">Cancel</button><span class="sp"></span><button class="b pri" disabled>Share publicly</button></div>
+    </div></div>
+    <div class="pane" style="min-height:440px"><span class="cap">Settings: your data</span><div class="ob-p" style="gap:0">
+      <h3 style="margin-bottom:8px">Your data</h3>
+      <div class="xr"><div><b>Everything on this device</b><span>Sessions, learner state, materials, goals, sandbox history</span></div><span class="chip">JSON</span><button class="b sm ln">Export</button></div>
+      <div class="xr"><div><b>A session review</b><span>From the review workspace</span></div><span class="chip">ZIP</span><span class="lnk">Open reviews</span></div>
+      <div class="xr"><div><b>A training dataset</b><span>Filtered, scored and documented</span></div><span class="chip">ZIP</span><span class="lnk">Prepare</span></div>
+      <div class="xr"><div><b>Materials</b><span>Plans, maps, decks, one at a time or all</span></div><span class="chip">MD · SVG · JSON</span><span class="lnk">Open materials</span></div>
+      <div class="xr"><div><b>Flashcards</b><span>For Anki</span></div><span class="chip">APKG</span><span class="lnk">Open decks</span></div>
+      <div class="xr"><div><b>Bring data in</b><span>From another browser</span></div><span class="chip">JSON</span><button class="b sm ln">Import</button></div>
+    </div></div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The review export explains what goes into the archive.</li>
+    <li>Chat sharing uses a consent sheet. Settings links to export and import actions.</li>
+  </ol>
+</section>
+
+<section class="board">
+  <div class="board-h"><span class="n">R3</span><h2>Study room invitation</h2><p>Read who can see messages and how the room is run before joining.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-stage m1-halftone"><div class="m1-demo m1-join">
+  <i class="bot" aria-hidden="true"></i><span class="eb">Study room invitation</span><h3>Thursday proof workshop</h3><p>Induction on the natural numbers</p>
+  <div class="sec m1-room-disclosure"><p>Sam invited you. You will join as <b>a learner</b>.</p><p>Keating joins the conversation when it can help. Link valid until Nov 22, 2026.</p></div>
+  <h4>Before you join</h4>
+  <dl class="m1-def"><dt>One shared transcript.</dt><dd>Room members can read and export what you post under your display name.</dd><dt>Teacher oversight.</dt><dd>Sam (host) can see participation counts, mute or remove members, and guide Keating privately.</dd><dt>Who processes messages.</dt><dd>Keating runs in a member’s browser. Room messages go to their chosen AI provider.</dd><dt>Your private work stays private.</dt><dd>Only what you write in this room is shared.</dd></dl>
+  <label class="fld">Your name in this room<input class="inp" value="Tess"><small>Shown beside your messages. You can rename yourself later.</small></label>
+  <footer class="row"><button class="b gh">Not now</button><span class="sp"></span><button class="b pri">Join as learner</button></footer>
+</div></div></div></div></div>
+  <ol class="pts">
+    <li>The invitation can preview the room’s title, host and your effective role.</li>
+    <li>The form asks for the name that will appear beside your messages.</li>
+  </ol>
+</section>
+
+
+<section class="board">
+  <div class="board-h"><span class="n">C3</span><h2>Course invitation</h2><p>Managed enrollment asks for consent to teacher access.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec m2-more-join"><header class="top"><span class="b gh">{{i:left:s}}Courses</span><b>Course invitation</b></header>
+<div class="m1-stage"><div class="m1-demo m1-join hardc">
+  <i class="bot" aria-hidden="true"></i><h3 class="m1-halftone">Teacher access at enrollment</h3>
+  <dl class="m1-def"><dt>Who can see it</dt><dd>The teachers of this managed course.</dd><dt>What they can see</dt><dd>Your current and future course work, tutoring threads, submissions, and progress.</dd><dt>Scope</dt><dd>This approval applies only to this course.</dd></dl>
+  <footer class="row"><button class="b gh">Decline</button><span class="sp"></span><button class="b pri">Approve and join {{i:right:s}}</button></footer>
+</div></div></div></div></div>
+  <div class="kt m2-frame"><div class="m2-grid"><div class="m2-stack"><span class="cap">Joining</span><div class="m1-demo m1-join hardc m2-stack"><i class="bot" aria-hidden="true"></i><h3>Joining the course…</h3><div class="m2-wait m1-loading" role="status"><span class="m1-ink" aria-hidden="true"></span><span><small class="m2-meta">Your account is verified. Keating is adding this course to your library.</small></span></div></div></div><div class="m2-stack"><span class="cap">Invalid or expired invitation</span><div class="m1-demo m1-join hardc m2-stack"><i class="bot" aria-hidden="true"></i><h3>Invitation unavailable</h3><div class="call"><span>This invite is invalid, expired, or fully used.</span></div><button type="button" class="b sm gh" >{{i:right:s}}Open course library</button></div></div></div></div><ol class="pts">
+    <li>The course title is disclosed after enrollment.</li>
+    <li>Decline returns to the course library.</li>
+  </ol>
+</section>
+
+</div>

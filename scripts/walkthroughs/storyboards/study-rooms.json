@@ -1,0 +1,402 @@
+{
+  "slug": "study-rooms",
+  "title": "Study rooms",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "local-account"
+  ],
+  "ready": [
+    {
+      "label": "New room"
+    },
+    {
+      "text": "No rooms yet"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/rooms"
+    },
+    {
+      "kind": "chapter",
+      "id": "create",
+      "title": "Name the room",
+      "explanation": "Create a room for the sample study group.",
+      "alt": "Name the room"
+    },
+    {
+      "kind": "caption",
+      "text": "Create a room for the sample study group."
+    },
+    {
+      "kind": "click",
+      "label": "New room"
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder=\"Thursday proof workshop\"]",
+      "text": "Recursion Study Room",
+      "delay": 27
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "create"
+    },
+    {
+      "kind": "chapter",
+      "id": "approval",
+      "title": "Require teacher approval",
+      "explanation": "Hold replies for teacher approval.",
+      "alt": "Require teacher approval"
+    },
+    {
+      "kind": "caption",
+      "text": "Hold replies for teacher approval."
+    },
+    {
+      "kind": "click",
+      "label": "When asked"
+    },
+    {
+      "kind": "click",
+      "label": "Teacher approves"
+    },
+    {
+      "kind": "click",
+      "label": "Create room"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Recursion Study Room",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "approval"
+    },
+    {
+      "kind": "chapter",
+      "id": "invite",
+      "title": "Create a learner invitation",
+      "explanation": "Make a limited learner invitation.",
+      "alt": "Create a learner invitation"
+    },
+    {
+      "kind": "caption",
+      "text": "Make a limited learner invitation."
+    },
+    {
+      "kind": "click",
+      "label": "People,",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "selector": ".rm-rename input"
+    },
+    {
+      "kind": "press",
+      "key": "a",
+      "ctrl": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rm-rename input",
+      "text": "Morgan Lee"
+    },
+    {
+      "kind": "click",
+      "label": "Rename"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Name updated."
+    },
+    {
+      "kind": "click",
+      "label": "Invite"
+    },
+    {
+      "kind": "click",
+      "label": "Learner"
+    },
+    {
+      "kind": "click",
+      "selector": "input[type=number]"
+    },
+    {
+      "kind": "press",
+      "key": "a",
+      "ctrl": true
+    },
+    {
+      "kind": "type",
+      "selector": "input[type=number]",
+      "text": "1"
+    },
+    {
+      "kind": "click",
+      "label": "Create invite link"
+    },
+    {
+      "kind": "click",
+      "label": "Copy link"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Copied",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "invite"
+    },
+    {
+      "kind": "chapter",
+      "id": "disclosure",
+      "title": "Read the join disclosure",
+      "explanation": "Read what the room shares before joining.",
+      "alt": "Read the join disclosure"
+    },
+    {
+      "kind": "caption",
+      "text": "Read what the room shares before joining."
+    },
+    {
+      "kind": "profile",
+      "name": "learner",
+      "pathFrom": {
+        "selector": ".rm-created-invite input"
+      },
+      "keepPrevious": true,
+      "fixtures": [
+        "demo",
+        "profile",
+        "local-account"
+      ],
+      "ready": [
+        {
+          "text": "Before you join"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Before you join",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "disclosure"
+    },
+    {
+      "kind": "chapter",
+      "id": "join",
+      "title": "Join as Alex",
+      "explanation": "Join through the learner invitation.",
+      "alt": "Join as Alex"
+    },
+    {
+      "kind": "caption",
+      "text": "Join through the learner invitation."
+    },
+    {
+      "kind": "click",
+      "selector": ".rm-join input"
+    },
+    {
+      "kind": "press",
+      "key": "a",
+      "ctrl": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rm-join input",
+      "text": "Alex Rivera",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Join as learner"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Message as Alex Rivera",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "join"
+    },
+    {
+      "kind": "chapter",
+      "id": "guidance",
+      "title": "Send private guidance",
+      "explanation": "Send guidance visible only to teachers.",
+      "alt": "Send private guidance"
+    },
+    {
+      "kind": "caption",
+      "text": "Send guidance visible only to teachers."
+    },
+    {
+      "kind": "profile",
+      "name": "main",
+      "keepPrevious": true
+    },
+    {
+      "kind": "click",
+      "label": "Private guidance for Keating"
+    },
+    {
+      "kind": "type",
+      "selector": ".rm-textarea",
+      "text": "Ask which frame resumes after the base case.",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Send private guidance"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Ask which frame resumes after the base case.",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "guidance"
+    },
+    {
+      "kind": "chapter",
+      "id": "ask",
+      "title": "Ask Keating as a learner",
+      "explanation": "Ask Keating a question from the learner profile.",
+      "alt": "Ask Keating as a learner"
+    },
+    {
+      "kind": "caption",
+      "text": "Ask Keating a question from the learner profile."
+    },
+    {
+      "kind": "click",
+      "label": "Run Keating from this tab"
+    },
+    {
+      "kind": "click",
+      "label": "Use my model access"
+    },
+    {
+      "kind": "wait-for",
+      "label": "Stop running Keating"
+    },
+    {
+      "kind": "profile",
+      "name": "learner",
+      "keepPrevious": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rm-textarea",
+      "text": "@Keating which call returns first?",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "wait-for",
+      "text": "which call returns first?",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "ask"
+    },
+    {
+      "kind": "chapter",
+      "id": "approve",
+      "title": "Approve the held reply",
+      "explanation": "Approve the held reply.",
+      "alt": "Approve the held reply"
+    },
+    {
+      "kind": "caption",
+      "text": "Approve the held reply."
+    },
+    {
+      "kind": "profile",
+      "name": "main",
+      "keepPrevious": true
+    },
+    {
+      "kind": "wait-for",
+      "label": "Approve and post",
+      "timeout": 26000,
+      "still": "approve"
+    },
+    {
+      "kind": "click",
+      "label": "Approve and post"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Alex, which call can finish without asking another call to do work?",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100
+    },
+    {
+      "kind": "chapter",
+      "id": "people",
+      "title": "Check the learner transcript",
+      "explanation": "The learner sees the approved reply.",
+      "alt": "Check the learner transcript"
+    },
+    {
+      "kind": "caption",
+      "text": "The learner sees the approved reply."
+    },
+    {
+      "kind": "profile",
+      "name": "learner",
+      "keepPrevious": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Alex, which call can finish without asking another call to do work?",
+      "timeout": 7000
+    },
+    {
+      "kind": "click",
+      "label": "People",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Alex Rivera",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "people"
+    }
+  ],
+  "transcript": "study-rooms",
+  "viewerNote": "Two local sample profiles use the same room. Keating’s reply is scripted and the invitation URL and QR code are hidden."
+}

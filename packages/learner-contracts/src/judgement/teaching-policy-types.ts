@@ -2,6 +2,7 @@ import type { ActiveWork } from "./active-work.js";
 import type { JudgementOutcome } from "./contracts.js";
 import type { InteractionRecommendation } from "./interaction-affordances.js";
 import type { PlanReview } from "./plan-review.js";
+import type { ResourceReview } from "./resource-review.js";
 
 /** Observations supplied by the runtime, never inferred permissions or benchmark labels. */
 export interface TeachingPolicyTurn {
@@ -39,6 +40,8 @@ export interface TeachingPolicyPlan {
   readonly interaction: InteractionRecommendation;
   /** Present only on a triggered plan-review turn with an active plan. */
   readonly planReview: PlanReview | null;
+  /** Present only when the session lacks a resource worth raising this turn. */
+  readonly resourceReview?: ResourceReview;
   readonly directives: readonly string[];
   readonly uncertain: readonly string[];
   /** Advisory subset; a host must independently enforce schemas and authorization. */

@@ -1,0 +1,208 @@
+{
+  "slug": "activity-and-benchmark-phone",
+  "title": "Activity, Coming up and the model benchmark",
+  "viewport": "phone",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "ready": [
+    {
+      "label": "More menu"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat"
+    },
+    {
+      "kind": "chapter",
+      "id": "activity",
+      "title": "Open Learning usage",
+      "explanation": "Start with your Learning activity.",
+      "alt": "Open Learning usage"
+    },
+    {
+      "kind": "caption",
+      "text": "Start with your Learning activity."
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Learning usage",
+      "ready": [
+        {
+          "text": "Daily activity"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "7d",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "activity"
+    },
+    {
+      "kind": "chapter",
+      "id": "week",
+      "title": "Switch to seven days",
+      "explanation": "See what changed this week.",
+      "alt": "Switch to seven days"
+    },
+    {
+      "kind": "caption",
+      "text": "See what changed this week."
+    },
+    {
+      "kind": "click",
+      "label": "7d"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "week"
+    },
+    {
+      "kind": "chapter",
+      "id": "coming-up",
+      "title": "Look at the study queue",
+      "explanation": "See what is ready to review next.",
+      "alt": "Look at the study queue"
+    },
+    {
+      "kind": "caption",
+      "text": "See what is ready to review next."
+    },
+    {
+      "kind": "goto",
+      "path": "/coming-up",
+      "ready": [
+        {
+          "label": "Start due review"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Start due review",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "coming-up"
+    },
+    {
+      "kind": "chapter",
+      "id": "recall",
+      "title": "Review a due card",
+      "explanation": "Recall an answer before rating the card.",
+      "alt": "Review a due card"
+    },
+    {
+      "kind": "caption",
+      "text": "Recall an answer before rating the card."
+    },
+    {
+      "kind": "click",
+      "label": "Start due review"
+    },
+    {
+      "kind": "click",
+      "label": "Reveal answer"
+    },
+    {
+      "kind": "pause",
+      "ms": 2200
+    },
+    {
+      "kind": "click",
+      "label": "Good",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "recall"
+    },
+    {
+      "kind": "chapter",
+      "id": "private",
+      "title": "Choose private evidence",
+      "explanation": "Switch the benchmark to private evidence.",
+      "alt": "Choose private evidence"
+    },
+    {
+      "kind": "caption",
+      "text": "Switch the benchmark to private evidence."
+    },
+    {
+      "kind": "goto",
+      "path": "/bench",
+      "ready": [
+        {
+          "text": "Replay case bank"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "Private",
+      "contains": true
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "h2",
+        "label": "Replay case bank"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "private"
+    },
+    {
+      "kind": "chapter",
+      "id": "case-bank",
+      "title": "Inspect the replay case bank",
+      "explanation": "Check which replay cases are available on this device.",
+      "alt": "Inspect the replay case bank"
+    },
+    {
+      "kind": "caption",
+      "text": "Check which replay cases are available on this device."
+    },
+    {
+      "kind": "click",
+      "label": "All",
+      "contains": true,
+      "within": "[aria-label=\"Filter replay cases by stage\"]"
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "h2",
+        "label": "Replay case bank"
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "case-bank"
+    }
+  ],
+  "viewerNote": "The activity and cards use sample data. Private benchmark results depend on available evidence in the browser."
+}

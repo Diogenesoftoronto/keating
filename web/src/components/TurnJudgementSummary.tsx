@@ -1,3 +1,4 @@
+import { ChartTable, Meter } from "../design-system/charts";
 /**
  * Everything judged for one tutor turn, in pipeline order: drafts and their
  * checks, the completed-reply review, learning extraction and memory admission.
@@ -8,10 +9,10 @@ import { MEMORY_CATEGORIES, type ActiveWork, type MemoryCategory, type TeachingD
 import { useState } from "react";
 import { css } from "../../styled-system/css";
 import { DraftReviewReceipt, type DraftCheckLabelControls } from "./trajectory/DraftReviewReceipt";
+import { MemoryDecisionScore } from "./MessageDecisionVisuals";
 import type { JudgementLabelRecord, MemoryVerdict, TurnExtraction, TurnJudgementRecord, TurnMemoryDecision } from "../keating/judgement/turn-records";
 
 const muted = css({ color: "var(--muted-foreground)", fontSize: "0.75rem", lineHeight: 1.5 });
-const mono = css({ fontFamily: "var(--mono-body)", fontSize: "0.6875rem" });
 const sectionSummary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } });
 const quoteClass = css({ borderInlineStart: "3px solid var(--border)", paddingInlineStart: "0.5rem", fontSize: "0.75rem", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere" });
 const button = css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", paddingInline: "0.5rem", minHeight: "1.75rem", fontSize: "0.6875rem", fontWeight: 600,
@@ -53,6 +54,7 @@ export interface TurnJudgementSummaryProps {
 	checkControls?: DraftCheckLabelControls;
 	memoryControls?: MemoryLabelControls;
 	open?: boolean;
+	embedded?: boolean;
 }
 
 const extractionFor = (record: TurnJudgementSummaryProps["record"], role: NonNullable<TurnJudgementSummaryProps["role"]>) =>
@@ -87,6 +89,10 @@ export function summarizeTurnJudgements({ draft, record, status, role = "turn", 
 }
 
 function ReplyReviewSection({ review }: { review: NonNullable<TurnJudgementRecord["replyReview"]> }) {
+	const rows = review.answers.flatMap(answer => answer.probabilities.map(option => [
+		replyQuestions[answer.id] ?? answer.id, words(option.label), option.value,
+	]));
+
 	return (
 		<details>
 			<summary className={sectionSummary}>Completed-reply review · {review.answers.length} {review.answers.length === 1 ? "question" : "questions"}</summary>
@@ -98,23 +104,25 @@ function ReplyReviewSection({ review }: { review: NonNullable<TurnJudgementRecor
 						<details>
 							<summary className={css({ cursor: "pointer" })}>All options</summary>
 							{answer.probabilities.map((option) => (
-								<span key={option.label} className={css({ display: "flex", gap: "0.375rem", alignItems: "center" })}>
-									<meter aria-label={`${replyQuestions[answer.id] ?? answer.id}: ${option.label}`} min={0} max={1} value={option.value} className={css({ width: "4rem" })} />
-									<span className={mono}>{option.value.toFixed(3)} {words(option.label)}</span>
-								</span>
+								<div key={option.label}>
+									<Meter label={`${replyQuestions[answer.id] ?? answer.id}: ${option.label}`} value={option.value} max={1}
+										valueText={`${option.value.toFixed(3)} ${words(option.label)}`} />
+								</div>
 							))}
 						</details>
 					</li>
 				))}
 			</ul>
+			{rows.length > 3 && <ChartTable caption="Review option probabilities" columns={["Question", "Option", "Probability"]} rows={rows} />}
+
 		</details>
 	);
 }
 
-function ExtractionSection({ rows }: { rows: readonly TurnExtraction[] }) {
+function ExtractionSection({ rows, embedded }: { rows: readonly TurnExtraction[]; embedded?: boolean }) {
 	const total = rows.reduce((sum, row) => sum + row.items.length, 0);
 	return (
-		<details>
+		<details open={embedded && rows.some(row => row.status === "failed" || row.status === "unavailable")}>
 			<summary className={sectionSummary}>Learning extraction · {total} {total === 1 ? "passage" : "passages"}</summary>
 			<div className={css({ display: "grid", gap: "0.5rem", marginTop: "0.25rem" })}>
 				{rows.map((row) => (
@@ -127,7 +135,7 @@ function ExtractionSection({ rows }: { rows: readonly TurnExtraction[] }) {
 							<div key={`${item.messageId}:${item.start}`} className={css({ display: "grid", gap: "0.125rem" })}>
 								<span className={muted}><strong>{extractionKinds[item.kind] ?? item.kind}</strong> · characters {item.start}–{item.end}</span>
 								{item.quote !== undefined ? <blockquote className={quoteClass}>{item.quote}</blockquote>
-									: <span className={muted}>Passage hidden. Turn on “Save judgements for review” or redacted details to keep passages.</span>}
+									: <span className={muted}>{embedded ? "Passage wasn’t kept. Enable redacted details in Diagnostics settings to keep passages from future turns." : "Passage hidden. Turn on “Save judgements for review” or redacted details to keep passages."}</span>}
 							</div>
 						))}
 						{!row.items.length ? <p className={muted}>Nothing extracted from this message.</p> : null}
@@ -147,22 +155,23 @@ const effectText: Record<JudgementLabelRecord["effect"], string> = {
 	none: "",
 };
 
-function MemoryRow({ decision, controls }: { decision: TurnMemoryDecision; controls?: MemoryLabelControls }) {
+function MemoryRow({ decision, controls, embedded }: { decision: TurnMemoryDecision; controls?: MemoryLabelControls; embedded?: boolean }) {
 	const label = controls?.labels.find(({ target }) => target.kind === "memory-admission" && target.candidateId === decision.candidate.id);
 	const [category, setCategory] = useState<MemoryCategory>(MEMORY_CATEGORIES.includes(decision.category as MemoryCategory) ? decision.category as MemoryCategory : MEMORY_CATEGORIES[0]);
 	const redacted = !decision.candidate.evidence;
 	const admittedNow = label ? label.verdict === "admit" : decision.accepted;
 	return (
 		<li className={css({ display: "grid", gap: "0.25rem" })}>
-			{redacted ? <span className={muted}>Passage hidden.</span> : <blockquote className={quoteClass}>{decision.candidate.evidence}</blockquote>}
+			{redacted ? <span className={muted}>{embedded ? "Passage wasn’t kept. Enable redacted details in Diagnostics settings to keep passages from future turns." : "Passage hidden."}</span> : <blockquote className={quoteClass}>{decision.candidate.evidence}</blockquote>}
 			<span className={muted}>
 				Model: {decision.accepted ? "admitted" : `not admitted, ${memoryReasons[decision.reason] ?? decision.reason}`}
 				{decision.category && decision.category !== "not-memory" ? ` · ${words(decision.category)}` : ""}
-				{decision.probability !== null ? ` · P(worth remembering) ${decision.probability.toFixed(3)}` : ""}
-				{decision.threshold !== null ? ` (admits at ≥ ${decision.threshold.toFixed(2)})` : ""}
+				{!embedded && decision.probability !== null ? ` · P(worth remembering) ${decision.probability.toFixed(3)}` : ""}
+				{!embedded && decision.threshold !== null ? ` (admits at ≥ ${decision.threshold.toFixed(2)})` : ""}
 				{decision.backend ? ` · ${decision.backend}` : ""}
 				{!decision.committed && decision.accepted ? " · bank write skipped" : ""}
 			</span>
+			{embedded && <MemoryDecisionScore probability={decision.probability} threshold={decision.threshold} />}
 			{label ? <span className={muted}><strong>You: {label.verdict === "admit" ? `admitted as ${words(label.category ?? "")}` : "removed from memory"}.</strong> {effectText[label.effect]}</span> : null}
 			{controls ? (
 				<span className={css({ display: "flex", flexWrap: "wrap", gap: "0.375rem", alignItems: "center" })}>
@@ -184,36 +193,42 @@ function MemoryRow({ decision, controls }: { decision: TurnMemoryDecision; contr
 	);
 }
 
-function MemorySection({ rows, controls }: { rows: readonly TurnMemoryDecision[]; controls?: MemoryLabelControls }) {
+function MemorySection({ rows, controls, embedded }: { rows: readonly TurnMemoryDecision[]; controls?: MemoryLabelControls; embedded?: boolean }) {
 	const admitted = rows.filter((row) => row.accepted).length;
 	return (
 		<details>
 			<summary className={sectionSummary}>Memory admission · {admitted} of {rows.length} admitted</summary>
 			<p className={muted}>Admitted memories are model estimates shown to the tutor on later turns.{controls ? " Removing or admitting one here changes what later turns see; past replies stay as they were." : ""}</p>
 			<ul className={css({ display: "grid", gap: "0.625rem", marginTop: "0.375rem", listStyle: "none" })}>
-				{rows.map((row) => <MemoryRow key={row.candidate.id} decision={row} controls={controls} />)}
+				{rows.map((row) => <MemoryRow key={row.candidate.id} decision={row} controls={controls} embedded={embedded} />)}
 			</ul>
 		</details>
 	);
 }
 
-export function TurnJudgementSummary({ draft, record, status, role = "turn", checkControls, memoryControls, open }: TurnJudgementSummaryProps) {
+export function TurnJudgementSummary({ draft, record, status, role = "turn", checkControls, memoryControls, open, embedded }: TurnJudgementSummaryProps) {
 	const extraction = extractionFor(record, role);
 	const tutorSide = role !== "learner";
-	const labels = [...(checkControls?.labels ?? []), ...(memoryControls?.labels ?? [])].filter((label, index, all) => all.findIndex((row) => row.id === label.id) === index);
-	const headline = summarizeTurnJudgements({ draft, record, status, role, labels });
 	const showDraft = tutorSide && draft;
 	const showReview = tutorSide && record?.replyReview;
 	const showMemory = tutorSide && !!record?.memory.length;
 	if (!showDraft && !showReview && !extraction.length && !showMemory) return null;
+	const sections = <>
+		{showDraft ? <DraftReviewReceipt receipt={draft} controls={checkControls} embedded compact={embedded}
+			open={embedded && (draft.snapshot.phase === "withheld" || draft.snapshot.attempts.some(attempt =>
+				attempt.status !== "pass" || attempt.checks.some(check => check.status !== "pass"))) ? true : undefined} /> : null}
+		{showReview ? <ReplyReviewSection review={record.replyReview!} /> : null}
+		{extraction.length ? <ExtractionSection rows={extraction} embedded={embedded} /> : null}
+		{showMemory ? <MemorySection rows={record!.memory} controls={memoryControls} embedded={embedded} /> : null}
+	</>;
+	if (embedded) return sections;
+	const labels = [...(checkControls?.labels ?? []), ...(memoryControls?.labels ?? [])].filter((label, index, all) => all.findIndex((row) => row.id === label.id) === index);
+	const headline = summarizeTurnJudgements({ draft, record, status, role, labels });
 	return (
 		<details data-testid="turn-judgements" open={open} className={css({ marginTop: "0.75rem", border: "1px solid var(--border)", borderRadius: "0.5rem", padding: "0.5rem 0.75rem", minWidth: 0 })}>
 			<summary className={sectionSummary}>{role === "learner" ? "Extracted from this message" : "Judgements"} · {headline}</summary>
 			<div className={css({ display: "grid", gap: "0.5rem", marginTop: "0.5rem", minWidth: 0 })}>
-				{showDraft ? <DraftReviewReceipt receipt={draft} controls={checkControls} embedded /> : null}
-				{showReview ? <ReplyReviewSection review={record.replyReview!} /> : null}
-				{extraction.length ? <ExtractionSection rows={extraction} /> : null}
-				{showMemory ? <MemorySection rows={record!.memory} controls={memoryControls} /> : null}
+				{sections}
 			</div>
 		</details>
 	);

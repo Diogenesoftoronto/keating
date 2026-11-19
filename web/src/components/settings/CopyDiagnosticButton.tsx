@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Button, IconButton } from "../../design-system/kit";
 import { css } from "../../../styled-system/css";
 
-export function CopyDiagnosticButton({ label, text, disabled = false }: { label: string; text: string | (() => string); disabled?: boolean }) {
+export function CopyDiagnosticButton({ label, text, disabled = false, showLabel = false }: { label: string; text: string | (() => string); disabled?: boolean; showLabel?: boolean }) {
   const [state, setState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
   const [fallback, setFallback] = useState("");
   useEffect(() => {
@@ -24,9 +24,10 @@ export function CopyDiagnosticButton({ label, text, disabled = false }: { label:
     }
   };
   return <div className={css({ display: "inline-block", flexShrink: 0, verticalAlign: "middle" })}>
-    <button type="button" title={state === "copied" ? "Copied" : label} aria-label={label} disabled={disabled || state === "copying"} onClick={() => void copy()} className={css({ display: "inline-flex", alignItems: "center", gap: ".375rem", justifyContent: "center", minWidth: "2.75rem", height: "2.25rem", flexShrink: 0, border: "1px solid var(--border)", borderRadius: ".375rem", paddingInline: ".875rem", paddingBlock: 0, fontSize: ".75rem", fontWeight: 500, color: "var(--foreground)", cursor: "pointer", _hover: { background: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "2px" }, _disabled: { opacity: .5, cursor: "not-allowed" } })}>
-      {state === "copied" ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}<span role="status" aria-live="polite" className={css({ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" })}>{state === "copied" ? "Copied" : ""}</span>
-    </button>
+    {showLabel
+      ? <Button variant="ghost" aria-label={label} glyph={state === "copied" ? "check" : "copy"} disabled={disabled || state === "copying"} onClick={() => void copy()}>{label}</Button>
+      : <IconButton size="sm" glyph={state === "copied" ? "check" : "copy"} label={label} disabled={disabled || state === "copying"} onClick={() => void copy()}/>}
+    <span role="status" aria-live="polite" className={css({ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" })}>{state === "copied" ? "Copied" : ""}</span>
     {state === "failed" && <div className={css({ marginTop: ".5rem" })}><p role="status" className={css({ fontSize: ".75rem" })}>Clipboard unavailable. Select and copy the details below.</p><textarea aria-label={`${label} details`} readOnly value={fallback} onFocus={event => event.currentTarget.select()} className={css({ width: "100%", minHeight: "8rem", padding: ".5rem", border: "1px solid var(--border)", fontFamily: "var(--mono-body)", fontSize: ".75rem" })} /></div>}
   </div>;
 }

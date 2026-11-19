@@ -1,3 +1,4 @@
+import { LessonFrame } from "./lesson/LessonFrame";
 /**
  * Multi-question form renderer (choice, text, blanks, classification, matching).
  * Owns interaction state (reducer) and layout; answer serialization/validation
@@ -5,7 +6,7 @@
  * ./question/QuestionCompletionReview.
  */
 import { useCallback, useMemo, useReducer, useRef, useTransition } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import { RoundProgress } from "./quiz/ActivityGame";
 import {
@@ -35,7 +36,7 @@ import {
 	createQuestionInteractionState,
 	questionInteractionReducer,
 } from "./question/question-state";
-import { questionStyles, sm } from "./question/question-styles";
+import { sm } from "./question/question-styles";
 
 /** A single blank within a fill-in-the-blank question. */
 export interface BlankField {
@@ -268,7 +269,7 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 		if (prev !== null) startQuestionTransition(() => dispatch({ type: "navigate", current: prev }));
 	}, [current]);
 
-	if (submitted) return <QuestionCompletionReview questions={questions} answers={states} />;
+	if (submitted) return <LessonFrame glyph="help" title={data.topic} kind="Quick check"><QuestionCompletionReview questions={questions} answers={states}/></LessonFrame>;
 
 	const q = questions[current];
 	if (!q) return null;
@@ -284,13 +285,13 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 	};
 
 	return (
-		<div className={cx(questionStyles.shell, "activity-game")} aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
+		<LessonFrame glyph="help" title={data.topic} kind="Quick check" className="activity-game" aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
 			<div className={css({ display: "flex", alignItems: "flex-start" })}>
 				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
 					<div data-question-progress className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
 						<div className={css({ flex: 1, minWidth: 0 })}><RoundProgress current={current} total={total} label="Question progress" /></div>
 						<button type="button" onClick={() => dispatch({ type: "toggle-collapsed" })} aria-expanded={!collapsed} aria-label={collapsed ? "Show questions" : "Hide questions"} className="activity-back-action">
-							{collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+							{collapsed ? <KeatingGlyph name="chev" size={18} /> : <KeatingGlyph name="chevu" size={18} />}
 						</button>
 					</div>
 					{collapsed ? (
@@ -364,6 +365,6 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 					)}
 				</div>
 			</div>
-		</div>
+		</LessonFrame>
 	);
 }

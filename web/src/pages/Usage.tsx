@@ -1,7 +1,10 @@
 import { Suspense, use, useEffect, useMemo, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BookOpenCheck, Brain, CalendarDays, ChevronRight, Clock3, Cpu, Download, Flame, Gem, MessageSquareText, TrendingUp, Upload } from "lucide-react";
+import { Button, Card, EmptyState, Loading, Segmented } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { motion } from "motion/react";
+import { DURATION, EASE, useMotionAllowed } from "../design-system/motion";
 import { useSeo } from "../hooks/useSeo";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
@@ -14,8 +17,8 @@ import {
 	type KeatingPortableImportResult,
 } from "../keating/portable-data";
 import { css, cx } from "../../styled-system/css";
-import { Nav } from "../components/Nav";
-import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
+import { Stat, Meter } from "../design-system/charts";
+import { LearningShell } from "../components/LearningInsightsHeader";
 import { HostedCreditsPanel } from "../components/usage/HostedCreditsPanel";
 import {
 	USAGE_RANGES,
@@ -62,46 +65,10 @@ function sessionModelLabel(session: SessionMetadata): string | null {
 
 const styles = {
 	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
-	main: css({ mx: "auto", minW: 0, maxW: "72rem", overflow: "hidden", px: "1rem", py: "1.5rem" }),
-	metricGrid: css({ display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, lg: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
-	metricGridThree: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "0.75rem", sm: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
 	panel: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	panelHeader: css({ borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	panelTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
 	panelSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	truncate: css({ minW: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
-	actionRow: css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", xl: { justifyContent: "flex-end" } }),
-	button: css({ display: "inline-flex", minH: "2.25rem", minW: 0, maxW: "100%", py: "0.5rem", overflowWrap: "anywhere", lineHeight: "1.4", "& svg": { flexShrink: 0 }, alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", px: "0.75rem", fontSize: "0.875rem" }),
-	primaryButton: css({ bg: "var(--primary)", fontWeight: "500", color: "var(--primary-foreground)", _hover: { bg: "color-mix(in srgb, var(--primary) 90%, transparent)" }, _disabled: { opacity: 0.5 } }),
-	borderButton: css({ border: "1px solid var(--border)", _hover: { bg: "var(--accent)" }, _disabled: { opacity: 0.5 } }),
-	fileLabel: css({ cursor: "pointer", "&:has(:disabled)": { cursor: "not-allowed", opacity: 0.5 } }),
-	srOnly: css({ position: "absolute", w: "1px", h: "1px", p: 0, m: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", borderWidth: 0 }),
-	error: css({ maxW: "24rem", fontSize: "0.75rem", color: "var(--destructive)" }),
-	portableBody: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem", p: "1rem" }),
-	inlineLabel: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem" }),
-	basisFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	errorFull: css({ flexBasis: "100%", fontSize: "0.75rem", color: "var(--destructive)" }),
-	contentGrid: css({ mt: "1.5rem", display: "grid", minW: 0, gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1.25fr) minmax(0, 0.75fr)" } }),
-	section: css({ minW: 0, overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
-	dividerList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
-	emptyState: css({ px: "1rem", py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	stack3: css({ "& > * + *": { mt: "0.75rem" }, p: "1rem" }),
-	deepButton: css({ display: "flex", w: "100%", minW: 0, cursor: "pointer", alignItems: "flex-start", gap: "0.75rem", borderRadius: "0.375rem", p: "0.5rem", textAlign: "left", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } }),
-	rankBox: css({ display: "flex", h: "1.75rem", w: "1.75rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", bg: "var(--muted)", fontSize: "0.75rem", fontWeight: "500" }),
-	flex1: css({ minW: 0, flex: "1 1 0%" }),
-	lineClamp2: css({ overflow: "hidden", textOverflow: "ellipsis", lineClamp: 2 }),
-	metaRow: css({ mt: "0.25rem", display: "flex", minW: 0, flexWrap: "wrap", alignItems: "center", columnGap: "0.5rem", rowGap: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	sessionRow: css({ display: "flex", minH: "9rem", w: "100%", minW: 0, cursor: "pointer", flexDir: "column", gap: "0.75rem", px: "1rem", py: "0.75rem", textAlign: "left", transitionProperty: "background-color", transitionDuration: "150ms", _hover: { bg: "var(--accent)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" } }),
-	sessionTitle: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: "500" }),
-	sessionPreview: css({ mt: "0.5rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 4 }),
-	badgeRow: css({ display: "flex", minW: 0, flexWrap: "wrap", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" }),
-	badge: css({ display: "inline-flex", minW: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem" }),
-	shrink0: css({ flexShrink: 0 }),
-	rangeBar: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", mb: "1rem" }),
-	rangeGroup: css({ display: "inline-flex", flexWrap: "wrap", gap: "0.4rem" }),
-	rangeButton: css({ minH: "2.75rem", px: "0.85rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", bg: "var(--card)", color: "var(--ink)", fontSize: "0.8125rem", cursor: "pointer", transitionProperty: "background-color, color, border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}", _hover: { borderColor: "var(--ink)" }, "&[aria-pressed=true]": { bg: "var(--ink)", color: "var(--paper)", borderColor: "var(--ink)", fontWeight: "650" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
-	rangeEmpty: css({ mb: "1rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", px: "1rem", py: "0.75rem", fontSize: "0.875rem" }),
-	linkButton: css({ textDecoration: "underline", cursor: "pointer", minH: "2rem", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
 	spendWrap: css({ overflowX: "auto", px: "1rem", py: "0.75rem" }),
 	spendTable: css({ w: "100%", minW: "32rem", borderCollapse: "collapse", fontSize: "0.8125rem" }),
 	spendTh: css({ textAlign: "left", fontWeight: "600", fontSize: "0.75rem", color: "var(--muted-foreground)", px: "0.5rem", py: "0.4rem", borderBottom: "1px solid var(--border)" }),
@@ -109,9 +76,6 @@ const styles = {
 	spendModel: css({ textAlign: "left", overflowWrap: "anywhere", fontWeight: "500" }),
 	right: css({ textAlign: "right" }),
 	shareRow: css({ display: "flex", alignItems: "center", gap: "0.5rem", minW: "8rem" }),
-	shareTrack: css({ flex: "1 1 0%", h: "0.5rem", borderRadius: "0.125rem", bg: "var(--muted)", overflow: "hidden" }),
-	shareFill: css({ w: "100%", h: "100%", bg: "var(--ink)", transformOrigin: "left center", transitionProperty: "transform", transitionDuration: "{durations.base}", transitionTimingFunction: "{easings.standard}" }),
-	centerContent: css({ display: "flex", minH: "16rem", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
 };
 
 function useSessionMetadata() {
@@ -125,12 +89,12 @@ function useSessionMetadata() {
 function PortableDataPanel() {
 	const posthog = usePostHog();
 	const [includeSandbox, setIncludeSandbox] = useState(true);
-	const [busy, setBusy] = useState(false);
+	const [busy, setBusy] = useState<"export" | "import" | null>(null);
 	const [result, setResult] = useState<string>("");
 	const [error, setError] = useState("");
 
 	const handlePortableExport = async () => {
-		setBusy(true);
+		setBusy("export");
 		setError("");
 		setResult("");
 		try {
@@ -151,7 +115,7 @@ function PortableDataPanel() {
 			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
-			setBusy(false);
+			setBusy(null);
 		}
 	};
 
@@ -171,7 +135,7 @@ function PortableDataPanel() {
 
 	const handlePortableImport = async (file: File | null) => {
 		if (!file) return;
-		setBusy(true);
+		setBusy("import");
 		setError("");
 		setResult("");
 		try {
@@ -193,55 +157,25 @@ function PortableDataPanel() {
 			});
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
-			setBusy(false);
+			setBusy(null);
 		}
 	};
 
 	return (
-		<section className={styles.panel}>
-			<div className={styles.panelHeader}>
-				<h2 className={styles.panelTitle}>Portable data</h2>
-				<p className={styles.panelSubtitle}>Move Keating sessions, learner state, artifacts, goals, and sandbox history between browsers.</p>
-			</div>
-			<div className={styles.portableBody}>
-				<label className={styles.inlineLabel}>
-					<input
-						type="checkbox"
-						checked={includeSandbox}
-						onChange={(event) => setIncludeSandbox(event.target.checked)}
-					/>
-					Include sandbox code history
-				</label>
-				<div className={styles.actionRow}>
-					<button
-						type="button"
-						className={cx(styles.button, styles.borderButton)}
-						onClick={handlePortableExport}
-						disabled={busy}
-					>
-						<Download size={16} />
-						Export portable JSON
-					</button>
-					<label className={cx(styles.button, styles.primaryButton, styles.fileLabel)}>
-						<Upload size={16} />
-						Import portable JSON
-						<input
-							type="file"
-							accept="application/json,.json"
-							className={styles.srOnly}
-							disabled={busy}
-							onChange={(event) => {
-								const file = event.target.files?.[0] ?? null;
-								void handlePortableImport(file);
-								event.currentTarget.value = "";
-							}}
-						/>
-					</label>
-				</div>
-				{result && <div className={styles.basisFull}>{result}</div>}
-				{error && <div className={styles.errorFull}>{error}</div>}
-			</div>
-		</section>
+		<footer className="lr-footer">
+        <strong data-glyph-host><KeatingGlyph name="lock"/> Your data</strong>
+        <Button variant="ghost" glyph="export" disabled={!!busy} onClick={handlePortableExport}>{busy === "export" ? "Exporting…" : "Export portable JSON"}</Button>
+        <label className="lr-file">{busy === "import" ? "Importing…" : "Import portable JSON"}
+          <input type="file" accept="application/json,.json" disabled={!!busy} onChange={event => {
+            void handlePortableImport(event.target.files?.[0] ?? null);
+            event.currentTarget.value = "";
+          }}/>
+        </label>
+        <label className="lr-data-chip"><input type="checkbox" checked={includeSandbox} onChange={event => setIncludeSandbox(event.target.checked)}/> Include sandbox code history</label>
+        <Link to="/training-data">Prepare a training dataset <KeatingGlyph name="right"/></Link>
+        {result && <p role="status">{result}</p>}
+        {error && <p role="alert">{error}</p>}
+      </footer>
 	);
 }
 
@@ -249,7 +183,7 @@ function useArtifactMetrics() {
 	const [metrics, setMetrics] = useState<{
 		plans: number; maps: number; animations: number;
 		benchmarks: number; evolutions: number; promptEvolutions: number; improvements: number;
-	} | null>(null);
+	} | "failed" | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -265,11 +199,28 @@ function useArtifactMetrics() {
 			if (!cancelled) {
 				setMetrics({ plans: plans.length, maps: maps.length, animations: animations.length, benchmarks: benchmarks.length, evolutions: evolutions.length, promptEvolutions: promptEvolutions.length, improvements: improvements.length });
 			}
-		}).catch(() => {});
+		}).catch(() => { if (!cancelled) setMetrics("failed"); });
 		return () => { cancelled = true; };
 	}, []);
 
 	return metrics;
+}
+
+function Dashboard({ children }: { children: React.ReactNode }) {
+  const allowed = useMotionAllowed();
+  const [tip, setTip] = useState<{text: string; x: number; y: number} | null>(null);
+  function show(target: EventTarget | null) {
+    const mark = target instanceof Element ? target.closest("[data-lr-tip]") : null;
+    if (!mark) { setTip(null); return; }
+    const bounds = mark.getBoundingClientRect();
+    setTip({text: mark.getAttribute("data-lr-tip")!, x: Math.max(8, Math.min(bounds.left, window.innerWidth - 210)), y: Math.max(8,bounds.top - 40)});
+  }
+  return <motion.main className="lr-dashboard" data-motion={allowed}
+    initial={false} animate={{ y: allowed ? [6,0] : 0 }} transition={{duration: DURATION.play, ease:EASE}}
+    onFocus={e => show(e.target)} onBlur={() => setTip(null)} onMouseOver={e => show(e.target)}
+    onMouseOut={() => setTip(null)} onScrollCapture={() => setTip(null)} onKeyDown={e => {if(e.key === "Escape") setTip(null);}}>
+    {children}{tip && <span className="lr-tooltip" role="tooltip" style={{left:tip.x,top:tip.y}}>{tip.text}</span>}
+  </motion.main>;
 }
 
 function UsageContent() {
@@ -292,66 +243,19 @@ function UsageContent() {
 	const dailyMessages = totals.activeDays ? totals.messages / totals.activeDays : 0;
 	const emptyRange = metadata.length > 0 && inRange.length === 0;
 
-	const selfImprovement = artifactMetrics ? artifactMetrics.benchmarks + artifactMetrics.evolutions + artifactMetrics.promptEvolutions + artifactMetrics.improvements : 0;
-	const teachingMats = artifactMetrics ? artifactMetrics.plans + artifactMetrics.maps + artifactMetrics.animations : 0;
-	const openSession = (sessionId: string) => navigate({ to: "/chat", search: { session: sessionId } });
-
-	return (
-		<>
-			<LearningInsightsHeader
-				current="usage"
-				context="Learning intelligence // Activity"
-				title="Learning activity"
-				description="Your sessions, learning materials, model usage, and improvement history in one local-first view."
-			/>
-			<main className={styles.main}>
-				<div className={styles.rangeBar}>
-					<div role="group" aria-label="Period" className={styles.rangeGroup}>
-						{USAGE_RANGES.map((option) => (
-							<button key={option} type="button" aria-pressed={range === option} className={styles.rangeButton} onClick={() => chooseRange(option)}>
-								{USAGE_RANGE_LABELS[option]}
-							</button>
-						))}
-					</div>
-					<p className={styles.panelSubtitle}>
-						{range === "all" ? `All ${formatNumber(metadata.length)} saved sessions on this device.` : `Sessions last active in the past ${rangeLabel}, on this device.`}
-					</p>
-				</div>
-				{emptyRange && (
-					<p role="status" className={styles.rangeEmpty}>
-						Nothing in the past {rangeLabel}. <button type="button" className={styles.linkButton} onClick={() => chooseRange("all")}>Show all time</button>
-					</p>
-				)}
-				<div className={styles.metricGrid}>
-					<LearningMetric
-						icon={<BookOpenCheck size={18} />}
-						label="Learning sessions"
-						value={formatNumber(totals.sessions)}
-						detail={change(totals.sessions, previous?.sessions) ?? (totals.sessions ? `${totals.activeDays} active ${totals.activeDays === 1 ? "day" : "days"}` : "No sessions yet")}
-					/>
-					<LearningMetric
-						icon={<MessageSquareText size={18} />}
-						label="Socratic turns"
-						value={formatNumber(totals.messages)}
-						detail={change(totals.messages, previous?.messages) ?? `${dailyMessages.toFixed(1)} messages per active day`}
-					/>
-					<LearningMetric
-						icon={<Brain size={18} />}
-						label="Model tokens"
-						value={formatNumber(totals.tokens)}
-						detail={`${formatNumber(totals.inputTokens)} in / ${formatNumber(totals.outputTokens)} out${totals.cachedTokens ? ` · ${formatNumber(totals.cachedTokens)} cached` : ""}`}
-					/>
-					<LearningMetric
-						icon={<TrendingUp size={18} />}
-						label="Estimated spend"
-						value={formatCost(totals.cost)}
-						detail={change(totals.cost, previous?.cost) ?? "From the usage each provider reported"}
-					/>
-				</div>
-
-				<section className={styles.panel} aria-labelledby="model-spend-heading">
+	const [deep, setDeep] = useState(false);
+  const counts = artifactMetrics && artifactMetrics !== "failed" ? artifactMetrics : null;
+  const pendingCounts = artifactMetrics === "failed" ? "Artifact counts could not be read." : <Loading size="inline" label="Loading artifact counts…"/>;
+  const openSession = (sessionId: string) => navigate({ to: "/chat", search: { session: sessionId } });
+  const metrics = [
+    {label:"Learning sessions", value:formatNumber(totals.sessions), detail:totals.sessions ? `${totals.activeDays} active ${totals.activeDays === 1 ? "day" : "days"}` : "No sessions yet", comparison:change(totals.sessions, previous?.sessions)},
+    {label:"Turns", value:formatNumber(totals.messages), detail:`${dailyMessages.toFixed(1)} messages per active day`, comparison:change(totals.messages, previous?.messages)},
+    {label:"Estimated spend", value:formatCost(totals.cost), detail:"From the usage each provider reported", comparison:change(totals.cost, previous?.cost)},
+  ];
+  const visibleSessions = deep ? deepest : recent;
+  const models = <Card as="section" className="lr-card lr-models" aria-labelledby="model-spend-heading">
 					<div className={styles.panelHeader}>
-						<h2 id="model-spend-heading" className={styles.panelTitle}>Spend by model</h2>
+						<h2 id="model-spend-heading" className={styles.panelTitle}>Models and cost</h2>
 						<p className={styles.panelSubtitle}>
 							{spend.basis === "cost"
 								? "Estimated from the token counts and prices each provider reported. Your provider's own bill is the authority."
@@ -359,10 +263,10 @@ function UsageContent() {
 						</p>
 					</div>
 					{spend.rows.length === 0 ? (
-						<div className={styles.emptyState}>No model usage in this period.</div>
+						<EmptyState heading="No model usage in this period."/>
 					) : (
 						<div className={styles.spendWrap}>
-							<table className={styles.spendTable}>
+							<table className={styles.spendTable} aria-label={`Models and cost: ${spend.rows[0].label} has the largest share of ${spend.basis === "cost" ? "spend" : "tokens"} at ${Math.round(spend.rows[0].share*100)}%`}>
 								<thead><tr>
 									<th scope="col" className={styles.spendTh}>Model</th>
 									<th scope="col" className={cx(styles.spendTh, styles.right)}>Sessions</th>
@@ -378,8 +282,8 @@ function UsageContent() {
 											<td className={cx(styles.spendTd, styles.right)}>{formatNumber(row.tokens)}</td>
 											<td className={cx(styles.spendTd, styles.right)}>{row.cost > 0 ? formatCost(row.cost) : "Not priced"}</td>
 											<td className={styles.spendTd}>
-												<div className={styles.shareRow}>
-													<div className={styles.shareTrack} aria-hidden="true"><div className={styles.shareFill} style={{ transform: `scaleX(${row.share.toFixed(3)})` }} /></div>
+												<div className={styles.shareRow} tabIndex={0} data-lr-tip={`${row.label}: ${Math.round(row.share*100)}%`}>
+													<Meter label={`${row.label} share of ${spend.basis === "cost" ? "spend" : "tokens"}`} max={100} value={row.share*100}/>
 													<span>{Math.round(row.share * 100)}%</span>
 												</div>
 											</td>
@@ -389,130 +293,36 @@ function UsageContent() {
 							</table>
 						</div>
 					)}
-				</section>
-
-				<HostedCreditsPanel />
-
-				{/* Self-improvement vs Learning distinction */}
-				<div className={styles.metricGridThree}>
-					<LearningMetric
-						icon={<Gem size={18} />}
-						label="Teaching materials"
-						value={formatNumber(teachingMats)}
-						detail={`${formatNumber(artifactMetrics?.plans ?? 0)} plans · ${formatNumber(artifactMetrics?.maps ?? 0)} maps · ${formatNumber(artifactMetrics?.animations ?? 0)} animations`}
-					/>
-					<LearningMetric
-						icon={<Cpu size={18} />}
-						label="Self-improvement runs"
-						value={formatNumber(selfImprovement)}
-						detail={`${formatNumber(artifactMetrics?.evolutions ?? 0)} evolutions · ${formatNumber(artifactMetrics?.promptEvolutions ?? 0)} prompt evos`}
-					/>
-					<LearningMetric
-						icon={<Flame size={18} />}
-						label="Improvement attempts"
-						value={formatNumber(artifactMetrics?.improvements ?? 0)}
-						detail={artifactMetrics && artifactMetrics.improvements > 0 ? `${formatNumber(artifactMetrics.benchmarks)} benchmarks measured` : "No improvements logged yet"}
-					/>
-				</div>
-
-				<PortableDataPanel />
-				<div className={styles.panelHeader}><Link to="/training-data">Prepare a training dataset <ChevronRight size={16} /></Link><p className={styles.panelSubtitle}>Filter, inspect, import, and download training data in its dedicated workspace.</p></div>
-
-				<div className={styles.contentGrid}>
-					<section className={styles.section}>
-						<div className={styles.panelHeader}>
-							<h2 className={styles.panelTitle}>Recent learning</h2>
-							<p className={styles.panelSubtitle}>Latest saved sessions in this period and their focus</p>
-						</div>
-						<div className={styles.dividerList}>
-							{recent.length === 0 ? (
-								<div className={styles.emptyState}>
-									{emptyRange ? "No sessions in this period." : "Start a chat and Keating will track your learning activity here."}
-								</div>
-							) : recent.map((session) => (
-								<SessionRow key={session.id} session={session} onOpen={openSession} />
-							))}
-						</div>
-					</section>
-
-					<section className={styles.section}>
-						<div className={styles.panelHeader}>
-							<h2 className={styles.panelTitle}>Deepest dives</h2>
-							<p className={styles.panelSubtitle}>Sessions with the most back-and-forth in this period</p>
-						</div>
-						<div className={styles.stack3}>
-							{deepest.length === 0 ? (
-								<div className={styles.emptyState}>{emptyRange ? "No sessions in this period." : "No learning history yet"}</div>
-							) : deepest.map((session, index) => (
-								<button key={session.id} type="button" className={styles.deepButton} onClick={() => openSession(session.id)}>
-									<div className={styles.rankBox}>
-										{index + 1}
-									</div>
-									<div className={styles.flex1}>
-										<div className={cx(styles.lineClamp2, css({ fontSize: "0.875rem", fontWeight: "500" }))}>
-											{session.title}
-										</div>
-										<div className={styles.metaRow}>
-											<Clock3 size={13} />
-											<span>{session.messageCount} messages</span>
-											<span aria-hidden="true">|</span>
-											<span>{formatDate(session.lastModified)}</span>
-										</div>
-									</div>
-									<ChevronRight size={16} className={styles.shrink0} aria-hidden="true" />
-								</button>
-							))}
-						</div>
-					</section>
-				</div>
-
-				<UsageCharts sessionMetadata={metadata} onOpenSession={openSession} />
-			</main>
-		</>
-	);
+				</Card>;
+  return <LearningShell current="activity" controls={<><span className="lr-period-label">Period</span>
+    <Segmented label="Period" size="sm" value={range} onChange={chooseRange} options={USAGE_RANGES.map(value => ({value, label: <><span className="lr-long">{USAGE_RANGE_LABELS[value]}</span><span className="lr-short">{value === "all" ? "All" : value}</span></>}))}/></>}>
+    <Dashboard>
+      <p className="lr-caption">{range === "all" ? `All ${formatNumber(metadata.length)} saved sessions on this device.` : `Sessions last active in the past ${rangeLabel}, on this device.`}</p>
+      {emptyRange && <EmptyState role="status" heading={`Nothing in the past ${rangeLabel}.`} actions={<Button onClick={() => chooseRange("all")}>Show all time</Button>}/>}
+      <UsageCharts range={range} sessionMetadata={inRange} onOpenSession={openSession}
+        tiles={<div className="lr-tiles">{metrics.map(metric => <div className="lr-tile" key={metric.label}><Stat label={metric.label} value={metric.value} support={metric.detail}/>{metric.comparison && <small className="lr-comparison">{metric.comparison}</small>}</div>)}</div>}
+        recent={<Card as="section" className="lr-card"><header className="k-halftone"><h2>Recent learning</h2>
+          <Button variant="ghost" aria-pressed={deep} onClick={() => setDeep(!deep)}>Deepest dives</Button></header>
+          <p className="lr-caption">{deep ? "Sessions with the most back-and-forth in this period" : "Latest saved sessions in this period and their focus"}</p>
+          {visibleSessions.length ? visibleSessions.map((session,i) => <SessionRow key={session.id} session={session} onOpen={openSession} rank={deep ? i+1 : undefined}/>) :
+            <EmptyState heading={emptyRange ? "No sessions in this period." : deep ? "No learning history yet" : "Start a chat and Keating will track your learning activity here."}/>}
+        </Card>}
+        costs={<div className="lr-row lr-costs">{models}<HostedCreditsPanel/></div>}
+        materials={counts ? `${counts.plans+counts.maps+counts.animations} teaching materials · ${counts.plans} plans · ${counts.maps} maps · ${counts.animations} animations` : pendingCounts}
+        runs={counts ? `${counts.benchmarks+counts.evolutions+counts.promptEvolutions+counts.improvements} self-improvement runs · ${counts.benchmarks} benchmarks · ${counts.evolutions} evolutions · ${counts.promptEvolutions} prompt evolutions · ${counts.improvements} improvement attempts` : pendingCounts}
+      />
+      <PortableDataPanel/>
+    </Dashboard>
+  </LearningShell>;
 }
 
-function SessionRow({ session, onOpen }: { session: SessionMetadata; onOpen: (sessionId: string) => void }) {
-	const tokens = session.usage.totalTokens || session.usage.input + session.usage.output;
-	const modelLabel = sessionModelLabel(session);
-	return (
-		<button type="button" className={styles.sessionRow} onClick={() => onOpen(session.id)} aria-label={`Open session ${session.title}`}>
-			<div className={styles.flex1}>
-				<div className={styles.sessionTitle}>{session.title}</div>
-				<p className={styles.sessionPreview}>
-					{firstSentence(session.preview)}
-				</p>
-			</div>
-			<div className={styles.badgeRow}>
-				<span className={styles.badge}>
-					<CalendarDays size={12} className={styles.shrink0} />
-					<span className={styles.truncate}>{formatDate(session.lastModified)}</span>
-				</span>
-				<span className={styles.badge}>
-					<MessageSquareText size={12} className={styles.shrink0} />
-					<span className={styles.truncate}>{session.messageCount} turns</span>
-				</span>
-				<span className={styles.badge}>
-					<Brain size={12} className={styles.shrink0} />
-					<span className={styles.truncate}>{formatNumber(tokens)} tokens</span>
-				</span>
-				{modelLabel && (
-					<span className={styles.badge}>
-						<Cpu size={12} className={styles.shrink0} />
-						<span className={styles.truncate}>{modelLabel}</span>
-					</span>
-				)}
-				<span className={styles.badge}>
-					<Brain size={12} className={styles.shrink0} />
-					<span className={styles.truncate}>Thinking: {session.thinkingLevel}</span>
-				</span>
-				<span className={styles.badge}>
-					<span>Open session</span>
-					<ChevronRight size={12} className={styles.shrink0} />
-				</span>
-			</div>
-		</button>
-	);
+function SessionRow({ session, onOpen, rank }: { session: SessionMetadata; onOpen: (id: string) => void; rank?: number }) {
+  const tokens = session.usage?.totalTokens || (session.usage?.input ?? 0) + (session.usage?.output ?? 0);
+  return <button className="lr-session" type="button" onClick={() => onOpen(session.id)} aria-label={`Open session ${session.title}`} aria-describedby={`lr-session-details-${session.id}`}>
+    <b>{rank && `${rank}. `}{session.title}</b><span>{firstSentence(session.preview)}</span>
+    <small className="lr-time">{formatDate(session.lastModified)} · {session.messageCount} turns</small><small id={`lr-session-details-${session.id}`} className="lr-extra">{[`${formatNumber(tokens)} tokens`,
+      sessionModelLabel(session), `Thinking: ${session.thinkingLevel}`].filter(Boolean).join(" · ")} <KeatingGlyph name="chevr"/></small>
+  </button>;
 }
 
 export function Usage() {
@@ -523,11 +333,8 @@ export function Usage() {
 	});
 	return (
 		<div className={cx("retro-layout", "retro-page", styles.page)}>
-			<Nav />
 			<Suspense fallback={
-				<div className={styles.centerContent}>
-					Loading usage...
-				</div>
+				<LearningShell current="activity"><Loading size="page" label="Loading usage..."/></LearningShell>
 			}>
 				<UsageContent />
 			</Suspense>

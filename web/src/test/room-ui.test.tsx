@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type {
   RoomJoinDisclosure,
@@ -12,16 +12,36 @@ import type {
   RoomViewerSnapshot,
 } from "../rooms/contracts";
 import { composerBlockedReason, composerOperation, RoomComposer } from "../components/rooms/RoomComposer";
+import { RoomLifecycle, RoomTranscriptExport } from "../components/rooms/RoomSettingsPanel";
+import { RoomCreateForm } from "../components/rooms/RoomCreateForm";
 import { clampUses } from "../components/rooms/RoomInvitesPanel";
 import { RoomJoinDisclosureList } from "../components/rooms/RoomJoinDisclosure";
 import { ModelAccessDisclosure, RoomDraftReview } from "../components/rooms/RoomKeatingPanel";
-import { filterRooms } from "../components/rooms/RoomList";
+import { renderWithRouter } from "./course-render";
+import { filterRooms, RoomRow } from "../components/rooms/RoomList";
 import { RoomParticipationSummary, RoomPeoplePanel, roleChangeConsequence } from "../components/rooms/RoomPeoplePanel";
-import { RoomMessageItem } from "../components/rooms/RoomTranscript";
+import { RoomMessageItem, RoomTranscript } from "../components/rooms/RoomTranscript";
 import { canOpenCourseRoom, courseRoomJoinRole } from "../components/rooms/CourseRooms";
 import { describeKeatingBehavior, inviteState, keatingRunState, memberActions } from "../components/rooms/room-ui";
+import { Rooms } from "../pages/Rooms";
+import { RoomJoin } from "../pages/RoomJoin";
+import * as navigation from "../components/Nav";
+import * as roomAccess from "../courses/useCoursesAccess";
 import { roomSideTabs } from "../pages/RoomWorkspace";
 import { mountRoomUi, settle } from "./helpers/room-ui-mount";
+
+// The reconciler host exercises React handlers without a browser or SVG DOM.
+import * as glyphRuntime from "../design-system/glyphs/runtime";
+import * as roomMotion from "../design-system/motion";
+
+beforeEach(() => {
+  spyOn(glyphRuntime, "bindGlyph").mockReturnValue({ update() {}, dispose() {} });
+  spyOn(roomMotion, "useMotionAllowed").mockReturnValue(false);
+});
+afterEach(() => {
+  spyOn(glyphRuntime, "bindGlyph").mockRestore();
+  spyOn(roomMotion, "useMotionAllowed").mockRestore();
+});
 
 const at = "2026-10-24T12:00:00.000Z";
 
@@ -101,9 +121,9 @@ describe("permission rules mirrored from the server", () => {
   test("learners manage nobody and see no oversight tabs", () => {
     const learnerView = snapshotFor("priya");
     for (const target of members) expect(memberActions(learnerView, target)).toEqual({ canMute: false, canRemove: false, roleOptions: [] });
-    expect(roomSideTabs(learnerView).map((tab) => tab.id)).toEqual(["keating", "people"]);
-    expect(roomSideTabs(snapshotFor("priya", { permissions: { canInvite: true, inviteRoles: ["learner"] } })).map((tab) => tab.id)).toEqual(["keating", "people", "invite"]);
-    expect(roomSideTabs(snapshotFor("tomas")).map((tab) => tab.id)).toEqual(["keating", "people", "invite", "settings"]);
+    expect(roomSideTabs(learnerView).map((tab) => tab.id)).toEqual(["people"]);
+    expect(roomSideTabs(snapshotFor("priya", { permissions: { canInvite: true, inviteRoles: ["learner"] } })).map((tab) => tab.id)).toEqual(["people", "invite"]);
+    expect(roomSideTabs(snapshotFor("tomas")).map((tab) => tab.id)).toEqual(["people", "invite", "settings"]);
   });
 
   test("composer explains why observers, muted members, and ended rooms cannot post", () => {
@@ -138,6 +158,22 @@ describe("permission rules mirrored from the server", () => {
     expect(clampUses("")).toBe(1);
     expect(clampUses("50")).toBe(50);
     expect(clampUses("999")).toBe(200);
+  });
+
+  test("room rows render live faces, overflow and run state with a legacy fallback", async () => {
+    const room: RoomListItem = { ...disclosure, memberCount: 8, updatedAt: at, joined: true, id: "room_1", title: "Proofs", topic: "", role: "host", status: "open" };
+    const live = await renderWithRouter(<RoomRow room={{ ...room, present: members, presentCount: 7, keating: "running", viewerIsFacilitator: true }} />);
+    expect(live).toContain('aria-label="7 here: Hana, Tomas, Priya, Omar, Ivy"');
+    expect(live.replaceAll("<!-- -->", "")).toContain("+4");
+    expect(live).toContain("Keating is running");
+    expect(live).toContain("from your browser");
+    expect(live).toContain('data-lead="true"');
+    expect(live).toContain(at);
+    expect(await renderWithRouter(<RoomRow room={{ ...room, keating: "paused" }} />)).toContain("Keating is paused");
+    const old = await renderWithRouter(<RoomRow room={room} />);
+    expect(old).toContain("Keating is not running");
+    expect(old).not.toContain(" here");
+    expect(old).toContain(at);
   });
 
   test("library filters by status, hosting, course, and text", () => {
@@ -209,6 +245,42 @@ describe("disclosures", () => {
 });
 
 describe("transcript visibility", () => {
+  test("pending replies sit between messages for teachers and disappear when resolved", () => {
+    const snapshot = snapshotFor("tomas", { messages: [
+      message("first", 1),
+      message("last", 2, { createdAt: "2026-10-24T12:02:00.000Z" }),
+    ] });
+    const draft = { id: "d1", turnId: "turn1", body: "Held question", createdAt: "2026-10-24T12:01:00.000Z",
+      facilitatorAccountId: "tomas", model: "m", reason: "review" as const, status: "pending" as const };
+    snapshot.room.drafts = [draft];
+    const render = () => renderToStaticMarkup(<RoomTranscript snapshot={snapshot} preview={null} typingNames={[]}
+      mutate={async () => {}} onLoadEarlier={async () => {}} onReply={() => {}} onHide={() => {}} />);
+    const html = render();
+    expect(html).toContain("waiting for a teacher");
+    expect(html.indexOf("message first")).toBeLessThan(html.indexOf("Held question"));
+    expect(html.indexOf("Held question")).toBeLessThan(html.indexOf("message last"));
+    snapshot.permissions = permissionsFor("learner");
+    expect(render()).not.toContain("Held question");
+    snapshot.permissions = permissionsFor("teacher");
+    snapshot.room.drafts = [{ ...draft, status: "approved" }];
+    expect(render()).not.toContain("waiting for a teacher");
+  });
+
+  test("only overseers see learner counts and the present nonposter note", () => {
+    const view = (id: string) => renderToStaticMarkup(<RoomPeoplePanel snapshot={snapshotFor(id, { messages: [message("m1", 1)] })}
+      presentAccountIds={["omar", "priya"]} mutate={async () => {}} onLeft={() => {}} />);
+    expect(view("hana")).toContain("Omar is here and has not posted yet.");
+    for (const viewer of ["hana", "tomas"]) {
+      const html = view(viewer);
+      expect(html.match(/role="meter"/g)).toHaveLength(2);
+      expect(html).toContain("Priya messages in the loaded transcript");
+      expect(html).toContain("Omar messages in the loaded transcript");
+    }
+    expect(view("ivy")).not.toContain('role="meter"');
+    expect(view("priya")).not.toContain('role="meter"');
+    expect(view("priya")).not.toContain("not posted yet");
+  });
+
   test("hidden messages are withheld from learners but shown to teachers", () => {
     const hidden = message("m1", 1, { body: "spoiler answer", hidden: { by: "tomas", at } });
     const learner = renderToStaticMarkup(<ol><RoomMessageItem message={hidden} snapshot={snapshotFor("omar")} onReply={() => {}} onHide={() => {}} /></ol>);
@@ -217,7 +289,7 @@ describe("transcript visibility", () => {
     expect(learner).not.toContain("Show to room");
     const teacher = renderToStaticMarkup(<ol><RoomMessageItem message={hidden} snapshot={snapshotFor("tomas")} onReply={() => {}} onHide={() => {}} /></ol>);
     expect(teacher).toContain("spoiler answer");
-    expect(teacher).toContain("Show to room");
+    expect(teacher).toContain('aria-haspopup="menu"');
   });
 
   test("private guidance is labelled and cannot be replied to", () => {
@@ -235,6 +307,21 @@ describe("transcript visibility", () => {
 
 const submitEvent = { preventDefault() {} };
 const typeInto = (node: { props: Record<string, any> }, value: string) => node.props.onChange({ target: { value } });
+
+test("switching create panels preserves the title and selected participation hint", async () => {
+  const ui = mountRoomUi();
+  const render = (wide: boolean) => ui.render(<RoomCreateForm onCreate={async () => {}}
+    renderPanel={form => wide ? <aside>{form}</aside> : <dialog open>{form}</dialog>} />);
+  await render(true);
+  typeInto(ui.all("input")[0]!, "Study induction");
+  ui.button("When asked").props.onClick();
+  await settle();
+  await render(false);
+  expect(ui.all("input")[0]!.props.value).toBe("Study induction");
+  expect(ui.button("When asked").props["aria-checked"]).toBe(true);
+  expect(ui.text()).toContain("Only after @Keating or a teacher’s request.");
+  await ui.unmount();
+});
 
 describe("composer interactions", () => {
   test("a failed send keeps the text and retries with the same operation id", async () => {
@@ -379,4 +466,54 @@ describe("oversight interactions", () => {
     expect(left).toBe(true);
     await ui.unmount();
   });
+});
+
+
+test("transcript export presents its Markdown scope before a download", () => {
+  const html = renderToStaticMarkup(<RoomTranscriptExport roomId="room_1" />);
+  expect(html).toContain("Export transcript");
+  expect(html).toContain("Markdown (.md)");
+  expect(html).toContain("other rooms");
+  expect(html).toContain("downloaded to your device");
+  expect(html).not.toContain("href=");
+});
+
+test("the People footer uses the reversible first step of end-room confirmation", async () => {
+  const ui = mountRoomUi();
+  const calls: RoomOperationInput[] = [];
+  await ui.render(<RoomLifecycle snapshot={snapshotFor("hana")} endOnly mutate={async op => calls.push(op)} />);
+  ui.button("End room…").props.onClick();
+  await settle();
+  expect(ui.text()).toContain("End the room for everyone?");
+  expect(ui.text()).not.toContain("Delete room");
+  ui.button("Cancel").props.onClick();
+  await settle();
+  expect(calls).toEqual([]);
+  await ui.unmount();
+});
+
+test("directory and join entry points render their accessible loading states", async () => {
+  const nav = spyOn(navigation, "Nav").mockImplementation(() => <nav />);
+  const access = spyOn(roomAccess, "useCoursesAccess").mockReturnValue([
+    { status: "ready", account: { id: "local", mode: "local", displayName: "Alex" } }, () => {},
+  ]);
+  try {
+    const list = await renderWithRouter(<Rooms />);
+    expect(list).toContain("Filter rooms");
+    expect(list).toContain("Search rooms");
+    expect(list).toContain("Loading your rooms");
+    expect(list).toContain('aria-busy="true"');
+    const invitation = await renderWithRouter(<RoomJoin />);
+    expect(invitation).toContain("Checking the invitation");
+    expect(invitation).toContain('aria-busy="true"');
+    for (const [recovery, label] of [["account", "Check account"], ["retry", "Retry course access"]] as const) {
+      access.mockReturnValue([{ status: "unavailable", error: "Access unavailable", recovery }, () => {}]);
+      const gate = await renderWithRouter(<RoomJoin />);
+      expect(gate).toContain(label);
+      expect(gate).toContain("Access unavailable");
+    }
+  } finally {
+    access.mockRestore();
+    nav.mockRestore();
+  }
 });

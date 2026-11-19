@@ -1,0 +1,228 @@
+{
+  "slug": "settings",
+  "title": "Settings",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "sessions"
+  ],
+  "ready": [
+    {
+      "label": "More menu"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat"
+    },
+    {
+      "kind": "chapter",
+      "id": "groups",
+      "title": "Find Settings",
+      "explanation": "Start with the Settings groups.",
+      "alt": "Find Settings"
+    },
+    {
+      "kind": "caption",
+      "text": "Start with the Settings groups."
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Settings"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Models and connections",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "groups"
+    },
+    {
+      "kind": "chapter",
+      "id": "providers",
+      "title": "Open Providers and keys",
+      "explanation": "Find the available model connections.",
+      "alt": "Open Providers and keys"
+    },
+    {
+      "kind": "caption",
+      "text": "Find the available model connections."
+    },
+    {
+      "kind": "click",
+      "label": "Models and connections",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Providers and keys",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "providers"
+    },
+    {
+      "kind": "chapter",
+      "id": "search",
+      "title": "Find visual effects",
+      "explanation": "Search for visual effects in Settings.",
+      "alt": "Find visual effects"
+    },
+    {
+      "kind": "caption",
+      "text": "Search for visual effects in Settings."
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder=\"Find a setting\"]",
+      "text": "effects",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Visual effects",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "search"
+    },
+    {
+      "kind": "chapter",
+      "id": "effects",
+      "title": "Turn effects off",
+      "explanation": "Turn off decorative visual effects.",
+      "alt": "Turn effects off"
+    },
+    {
+      "kind": "caption",
+      "text": "Turn off decorative visual effects."
+    },
+    {
+      "kind": "click",
+      "selector": "[role=\"switch\"][aria-labelledby=\"effects-label\"]"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "effects"
+    },
+    {
+      "kind": "chapter",
+      "id": "theme",
+      "title": "Try the Terminal theme",
+      "explanation": "Switch the theme and keep your place.",
+      "alt": "Try the Terminal theme"
+    },
+    {
+      "kind": "caption",
+      "text": "Switch the theme and keep your place."
+    },
+    {
+      "kind": "click",
+      "label": "Display and reading",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Terminal"
+    },
+    {
+      "kind": "pause",
+      "ms": 3000
+    },
+    {
+      "kind": "click",
+      "label": "Paper"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "theme"
+    },
+    {
+      "kind": "chapter",
+      "id": "data",
+      "title": "Open Your data",
+      "explanation": "Find export controls under Data and support.",
+      "alt": "Open Your data"
+    },
+    {
+      "kind": "caption",
+      "text": "Find export controls under Data and support."
+    },
+    {
+      "kind": "click",
+      "label": "Data and support",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Your data",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Everything on this device",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "data"
+    },
+    {
+      "kind": "chapter",
+      "id": "live",
+      "title": "Inspect Live setup",
+      "explanation": "See the voice choices before starting Live.",
+      "alt": "Inspect Live setup"
+    },
+    {
+      "kind": "caption",
+      "text": "See the voice choices before starting Live."
+    },
+    {
+      "kind": "click",
+      "label": "Close settings"
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Live sessions",
+      "ready": [
+        {
+          "selector": "[aria-label=\"Live provider\"]"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Who you talk to"
+    },
+    {
+      "kind": "hover",
+      "selector": "[aria-label=\"Live provider\"]"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "live"
+    }
+  ]
+}

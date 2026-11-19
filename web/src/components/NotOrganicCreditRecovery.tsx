@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { ArrowUpRight, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { createNotOrganicCheckout, getNotOrganicWallet } from "../notorganic-provider";
 import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
 import { notOrganicCheckoutReturnUrl } from "../notorganic-provider/checkout-return";
@@ -17,6 +17,7 @@ export interface CreditRecoveryCardProps {
   requiredMicros?: number;
   checkoutEnabled?: boolean;
   details?: string;
+  diagnostics?: ReactNode;
   initialPackId?: NotOrganicPackId;
   preserveMessage?: boolean;
   checkoutReturned?: boolean;
@@ -27,7 +28,7 @@ export interface CreditRecoveryCardProps {
 }
 
 export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = false, retrying = false, error,
-  checkoutUrl, requiredMicros = 100_000, checkoutEnabled = false, details, initialPackId, preserveMessage = true, checkoutReturned = false,
+  checkoutUrl, requiredMicros = 100_000, checkoutEnabled = false, details, diagnostics, initialPackId, preserveMessage = true, checkoutReturned = false,
   onRefresh, onRetry, onCheckout, onModelSelect }: CreditRecoveryCardProps) {
   const [showPacks, setShowPacks] = useState(!!initialPackId);
   const [selected, setSelected] = useState<NotOrganicPackId>(initialPackId ?? "keating_pack_10");
@@ -39,7 +40,7 @@ export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = f
   const starter = wallet?.welcomeCredit;
   const hasStarter = !!starter?.granted && starter.remainingMicros > 0;
   const busy = refreshing || checkingOut || retrying;
-  return <section className="keating-credit-recovery" aria-labelledby={titleId} aria-busy={busy}>
+  return <section data-chat-recovery="" className="keating-credit-recovery" aria-labelledby={titleId} aria-busy={busy}>
     <KeatingCreditSprite refreshing={refreshing} ready={ready} balanceMicros={wallet?.availableMicros} />
     <div className="keating-credit-recovery__body">
       <h3 id={titleId}>{ready ? hasStarter ? "Your starter credit is ready" : "Ready to keep learning" : preserveMessage ? "Your message is safe" : "Your Keating credits"}</h3>
@@ -57,10 +58,10 @@ export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = f
       </div>
       {error && <p className="keating-credit-recovery__error" role="alert">{error}</p>}
       <div className="keating-credit-recovery__actions">
-        {ready && onRetry ? <button type="button" data-primary="true" disabled={busy} onClick={onRetry}>{retrying ? "Resuming…" : preserveMessage ? "Retry response" : "Continue"}</button>
-          : <button type="button" data-primary="true" disabled={busy} onClick={() => setShowPacks(value => !value)} aria-expanded={showPacks}>Add credits</button>}
-        <button type="button" disabled={busy} onClick={onRefresh}><RefreshCw size={14} aria-hidden="true" />{refreshing ? "Refreshing…" : "Refresh balance"}</button>
+        <button type="button" disabled={busy} onClick={onRefresh}><KeatingGlyph name="refresh" size={14} />{refreshing ? "Refreshing…" : "Refresh balance"}</button>
         {onModelSelect && <button type="button" disabled={busy} onClick={onModelSelect}>Choose another model</button>}
+        {ready && onRetry ? <button type="button" data-primary={showPacks && chosen ? undefined : "true"} disabled={busy} onClick={onRetry}>{retrying ? "Resuming…" : preserveMessage ? "Retry response" : "Continue"}</button>
+          : <button type="button" data-primary={showPacks && chosen ? undefined : "true"} disabled={busy} onClick={() => setShowPacks(value => !value)} aria-expanded={showPacks}>Add credits</button>}
       </div>
       {showPacks && <fieldset disabled={busy}>
         <legend>One-time credit packs · USD</legend>
@@ -76,16 +77,18 @@ export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = f
           <p className="keating-credit-recovery__muted">Refresh to check your balance and any starter credit, or use another model.</p>
         </>}
       </fieldset>}
-      {checkoutUrl && <div className="keating-credit-recovery__actions"><a className="keating-credit-recovery__link" href={checkoutUrl} target="_blank" rel="noopener noreferrer">Open secure checkout <ArrowUpRight size={14} aria-hidden="true" /></a></div>}
+      {checkoutUrl && <div className="keating-credit-recovery__actions"><a className="keating-credit-recovery__link" href={checkoutUrl} target="_blank" rel="noopener noreferrer">Open secure checkout <KeatingGlyph name="ext" size={14} /></a></div>}
+      {diagnostics}
       {details && <details><summary>Technical details</summary><p>{details}</p></details>}
     </div>
   </section>;
 }
 
-export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, initialPackId, preserveMessage = true, checkoutReturned = false }: {
+export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, diagnostics, initialPackId, preserveMessage = true, checkoutReturned = false }: {
   onRetry?: () => void | Promise<void>;
   onModelSelect?: () => void;
   details?: string;
+  diagnostics?: ReactNode;
   initialPackId?: NotOrganicPackId;
   preserveMessage?: boolean;
   checkoutReturned?: boolean;
@@ -154,7 +157,7 @@ export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, init
     } finally { pending.current = false; if (mounted.current) setCheckingOut(false); }
   };
   return <CreditRecoveryCard wallet={wallet} refreshing={refreshing} checkingOut={checkingOut} retrying={retrying}
-    requiredMicros={requiredMicros} checkoutEnabled={checkoutEnabled} error={error} checkoutUrl={checkoutUrl} details={details}
+    requiredMicros={requiredMicros} checkoutEnabled={checkoutEnabled} error={error} checkoutUrl={checkoutUrl} details={details} diagnostics={diagnostics}
     initialPackId={initialPackId} preserveMessage={preserveMessage} checkoutReturned={checkoutReturned} onRefresh={() => void refresh()} onRetry={onRetry ? () => void retry() : undefined}
     onCheckout={packId => void checkout(packId)} onModelSelect={onModelSelect} />;
 }

@@ -2,11 +2,16 @@ import { describe, expect, it } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { CritiqueProposals, RubricProposal } from "../components/trajectory/MarginProposals";
 import { SocraticPass } from "../components/trajectory/SocraticPass";
+import User from "reicon-react/icons/User";
 import { KeatingIcon } from "../components/KeatingIcon";
-import { reviewIcon } from "../components/trajectory/review-icons";
+import { reviewIcon, ReviewIcon } from "../components/trajectory/review-icons";
 import { TutorialShot } from "../components/TutorialShot";
 import type { CritiqueProposal, RubricSweepProposal } from "../keating/trajectory-passes";
 import type { ReviewModelPool } from "../keating/trajectory-review";
+
+it("uses the Keating feather for a Socratic pass", () => {
+	expect(renderToStaticMarkup(<ReviewIcon icon={reviewIcon.pass} />)).toContain('data-glyph="feather"');
+});
 
 const noOp = () => {};
 
@@ -45,15 +50,15 @@ const anchoredProposal: CritiqueProposal = {
 
 describe("KeatingIcon", () => {
 	it("renders both weights so the swap can happen in CSS alone", () => {
-		const html = renderToStaticMarkup(<KeatingIcon icon={reviewIcon.pass} size={16} />);
+		const html = renderToStaticMarkup(<KeatingIcon icon={User} size={16} />);
 		expect(html).toContain('data-weight="Outline"');
 		expect(html).toContain('data-weight="Filled"');
 		expect(html).toContain("currentColor");
 	});
 
 	it("hides itself from assistive tech unless given a label", () => {
-		expect(renderToStaticMarkup(<KeatingIcon icon={reviewIcon.pass} />)).toContain('aria-hidden="true"');
-		const labelled = renderToStaticMarkup(<KeatingIcon icon={reviewIcon.pass} label="Socratic pass" />);
+		expect(renderToStaticMarkup(<KeatingIcon icon={User} />)).toContain('aria-hidden="true"');
+		const labelled = renderToStaticMarkup(<KeatingIcon icon={User} label="Socratic pass" />);
 		expect(labelled).toContain('role="img"');
 		expect(labelled).toContain('aria-label="Socratic pass"');
 	});

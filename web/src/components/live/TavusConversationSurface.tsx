@@ -1,7 +1,8 @@
+import { Loading } from "../../design-system/kit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DailyCall, DailyParticipant, DailyParticipantsObject } from "@daily-co/daily-js";
 
-import { css } from "../../../styled-system/css";
+import "../../pages/live.css";
 
 export interface TavusConversationControls {
 	ready: boolean;
@@ -225,66 +226,14 @@ export default function TavusConversationSurface({
 			? "KeatingBot is joining…"
 			: error;
 
-	return (
-		<section
-			aria-label={title}
-			className={css({
-				position: "absolute",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				backgroundColor: "#080808",
-				overflow: "hidden",
-			})}
-		>
-			<video
-				ref={remoteVideoRef}
-				autoPlay
-				playsInline
-				aria-label={playableTrack(primaryRemote, "screenVideo") ? "KeatingBot shared activity" : "KeatingBot video"}
-				className={css({ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: playableTrack(primaryRemote, "screenVideo") ? "contain" : "cover" })}
-			/>
-			<audio ref={remoteAudioRef} autoPlay aria-label="KeatingBot audio" />
-
-			<video
-				ref={localVideoRef}
-				muted
-				autoPlay
-				playsInline
-				aria-label="Your camera preview"
-				className={css({
-					position: "absolute",
-					right: "0.75rem",
-					top: "0.75rem",
-					width: "min(25%, 11rem)",
-					aspectRatio: "4 / 3",
-					objectFit: "cover",
-					transform: "scaleX(-1)",
-					border: "1px solid rgba(255,255,255,0.4)",
-					boxShadow: "0 0.5rem 1.5rem rgba(0,0,0,0.35)",
-					display: cameraOn && localVideoTrack ? "block" : "none",
-				})}
-			/>
-
-			{status ? (
-				<p
-					role={callState === "failed" ? "alert" : "status"}
-					aria-live="polite"
-					className={css({
-						position: "relative",
-						maxWidth: "24rem",
-						paddingInline: "0.875rem",
-						paddingBlock: "0.5rem",
-						backgroundColor: "rgba(0,0,0,0.72)",
-						color: "white",
-						fontSize: "0.8125rem",
-						textAlign: "center",
-					})}
-				>
-					{status}
-				</p>
-			) : null}
-		</section>
-	);
+	return <section aria-label={title} className="lv-hosted">
+		<video ref={remoteVideoRef} autoPlay playsInline className="lv-remote"
+			style={{objectFit: playableTrack(primaryRemote, "screenVideo") ? "contain" : "cover"}}
+			aria-label={playableTrack(primaryRemote, "screenVideo") ? "KeatingBot shared activity" : "KeatingBot video"}/>
+		<audio ref={remoteAudioRef} autoPlay aria-label="KeatingBot audio"/>
+		<div className="lv-inset k-grid"><video ref={localVideoRef} muted autoPlay playsInline aria-label="Your camera preview"
+			hidden={!cameraOn || !localVideoTrack} style={{transform: "scaleX(-1)"}}/>
+			<span>{screenOn ? "Sharing your screen" : cameraOn && localVideoTrack ? "Your camera is on" : "Your camera is off"}</span></div>
+		{status && (callState === "connecting" || callState === "waiting" ? <Loading size="inline" className="lv-host-status" aria-live="polite" label={status}/> : <p className="lv-host-status" role={callState === "failed" ? "alert" : "status"} aria-live="polite">{status}</p>)}
+	</section>;
 }

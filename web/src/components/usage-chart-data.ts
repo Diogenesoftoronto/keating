@@ -58,9 +58,9 @@ export function hasMeaningfulPolicyScores(scores: Array<{ score: number }>): boo
 
 export function aggregateFeedback(entries: FeedbackEntry[]): FeedbackSignalGroup[] {
 	const definitions: Array<{ signal: FeedbackEntry["signal"]; label: string; color: string }> = [
-		{ signal: "thumbs-up", label: "Confident", color: "#22c55e" },
-		{ signal: "thumbs-down", label: "Off-track", color: "#ef4444" },
-		{ signal: "confused", label: "Confused", color: "#f97316" },
+		{ signal: "thumbs-up", label: "Confident", color: "var(--series-1)" },
+		{ signal: "thumbs-down", label: "Off-track", color: "var(--series-2)" },
+		{ signal: "confused", label: "Confused", color: "var(--series-3)" },
 	];
 	return definitions.flatMap((definition) => {
 		const matching = entries

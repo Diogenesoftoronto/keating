@@ -181,13 +181,18 @@ export function navigateLearningSource(anchor: LearningEvidenceAnchor, options: 
 export function learningRowSourceIds(rows: readonly { id?: string; role: string; createdAt?: Date; content?: unknown }[], originals: readonly unknown[]): string[][] {
   const ids = rows.map(() => [] as string[]);
   const byId = new Map<string, number[]>(), byTimestamp = new Map<string, number[]>();
+  const precedingLearner: (number | undefined)[] = [];
+  let visibleLearner: number | undefined;
   rows.forEach((row, index) => {
+    if (row.role === "user") visibleLearner = index;
+    precedingLearner[index] = visibleLearner;
     if (row.id) byId.set(row.id, [...(byId.get(row.id) ?? []), index]);
     if (row.createdAt) {
       const key = `${row.role}:${row.createdAt.getTime()}`;
       byTimestamp.set(key, [...(byTimestamp.get(key) ?? []), index]);
     }
   });
+  let sourceLearnerRow: number | undefined;
   originals.forEach((message, index) => {
     const entry = message as SourceMessage;
     if (!["user", "user-with-attachments", "assistant"].includes(String(entry?.role))) return;
@@ -195,10 +200,16 @@ export function learningRowSourceIds(rows: readonly { id?: string; role: string;
     const role = entry.role === "assistant" ? "assistant" : "user";
     // Legacy visible row indices differ after filtering. Their generated ids
     // must never impersonate an original message's fallback id.
-    let candidates = typeof entry.id === "string" ? byId.get(entry.id) ?? [] : [];
+    let candidates = typeof entry.id === "string" ? (byId.get(entry.id) ?? []).filter(rowIndex => rows[rowIndex]?.role === role) : [];
     if (!candidates.length && typeof entry.timestamp === "number") candidates = (byTimestamp.get(`${role}:${entry.timestamp}`) ?? [])
       .filter(rowIndex => !text || learningMessageText(rows[rowIndex]).includes(text));
-    if (!candidates.length && text) candidates = rows.flatMap((row, rowIndex) => row.role === role && learningMessageText(row).includes(text) ? [rowIndex] : []);
+    if (!candidates.length && text) candidates = rows.flatMap((row, rowIndex) => {
+      // Native reply IDs differ from model-message IDs. A matched learner
+      // message bounds the text fallback to that learner's turn.
+      if (role === "assistant" && sourceLearnerRow !== undefined && precedingLearner[rowIndex] !== sourceLearnerRow) return [];
+      return row.role === role && learningMessageText(row).includes(text) ? [rowIndex] : [];
+    });
+    if (role === "user") sourceLearnerRow = candidates.length === 1 ? candidates[0] : undefined;
     if (candidates.length === 1) ids[candidates[0]!]!.push(id);
   });
   return ids;

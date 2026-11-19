@@ -11,6 +11,7 @@ import type {
 	ReviewRating,
 	ReviewSeverity,
 	ReviewVerdict,
+	TrajectoryAnnotation,
 	TrajectoryReviewTarget,
 } from "../../keating/trajectory-review";
 
@@ -23,7 +24,7 @@ export const RUBRIC_LABELS: Record<PedagogyRubricKey, string> = {
 	verification: "Verification",
 };
 
-/** One line on what each dimension is actually asking, shown on hover. */
+/** One line on what each dimension is actually asking. */
 export const RUBRIC_HINTS: Record<PedagogyRubricKey, string> = {
 	diagnosis: "Did the tutor find out what the learner believes before correcting it?",
 	accuracy: "Is everything asserted true, with uncertainty named?",
@@ -77,4 +78,17 @@ export function reviewTargetLabel(target: TrajectoryReviewTarget, mode: "compact
 	return mode === "editor"
 		? `${target.artifact.artifactType} · ${(target.startMs / 1_000).toFixed(1)}s to ${(target.endMs / 1_000).toFixed(1)}s`
 		: `${target.artifact.artifactType} time range`;
+}
+
+/** Stable numbering shared by the page and the Margin. Non-turn notes follow the transcript. */
+export function orderReviewNotes(notes: readonly TrajectoryAnnotation[], messages: readonly { id: string }[]): TrajectoryAnnotation[] {
+	const order = new Map(messages.map((message, index) => [message.id, index]));
+	function position(target: TrajectoryReviewTarget) {
+		return "messageId" in target ? order.get(target.messageId) ?? messages.length : messages.length;
+	}
+	function offset(target: TrajectoryReviewTarget) {
+		return "anchor" in target ? target.anchor.start : -1;
+	}
+	return [...notes].sort((a, b) => position(a.target) - position(b.target)
+		|| offset(a.target) - offset(b.target) || a.createdAt - b.createdAt || a.id.localeCompare(b.id));
 }

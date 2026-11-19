@@ -1,0 +1,64 @@
+.specialist-frame.specialist-frame {box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);gap:.48rem;min-width:0;width:100%;max-width:100%;padding:.58rem;border:1px solid var(--line);border-radius:.1923rem;background:var(--card);color:var(--ink);box-shadow:none;font:.625rem/1.5 var(--font-sans,system-ui,sans-serif);overflow-wrap:anywhere}
+.specialist-frame > * {min-width:0;max-width:100%}
+.specialist-frame > header,.specialist-toolbar {display:flex;align-items:center;gap:.0962rem;flex-wrap:wrap;border-bottom:1px solid var(--line-soft);padding-bottom:.38rem}
+.specialist-frame > header :is(h3,h4){font-size:.77rem;line-height:1.3;margin:0}
+.specialist-caption,.specialist-frame figcaption {font:.5rem/1.55 var(--font-mono,monospace);color:var(--ink-soft)}
+.specialist-scroll {max-width:100%;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.specialist-frame pre {max-width:100%;overflow:auto}
+@media(pointer:coarse){.specialist-frame :is(button,select,summary){min-height:44px}}
+
+.specialist-stats{display:flex;align-items:flex-start;flex-wrap:wrap;gap:.86rem}
+.coding-challenge.lesson-frame .coding-challenge__timer-reading,.language-game.lesson-frame .language-game__duration{font:.58rem/1.4 var(--font-mono,monospace)}
+.specialist-frame .learning-lab__primary,.language-game.lesson-frame .language-game__primary,.exam-surface.lesson-frame .exam-surface__primary{margin-inline-start:auto;color:var(--paper);background:var(--ink);border-radius:.1923rem}
+.language-game.lesson-frame .language-feedback {background:transparent;border:0;border-inline-start:2px solid var(--ink);border-radius:0}
+.coding-challenge.lesson-frame .coding-challenge__timer-digits,.exam-surface.lesson-frame .exam-clock strong{font:inherit}
+
+.specialist-seek{position:relative;display:grid;align-items:center;min-height:44px}
+.specialist-seek input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.specialist-seek:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.specialist-playback{display:flex;align-items:center;gap:.38rem;flex-wrap:wrap}.specialist-playback .specialist-seek{flex:1 1 7rem}
+
+.learning-lab.lesson-frame {display:block;padding:0}
+.learning-lab.lesson-frame .learning-lab__toolbar {justify-content:space-between;border-top:1px solid var(--line);padding-top:.38rem}
+.specialist-frame.frustration-clip {max-width:min(100%,420px)}
+.exam-surface.lesson-frame .exam-surface__progress {flex-wrap:wrap}
+.exam-surface.lesson-frame .exam-navigator [aria-current] {outline:2px solid var(--ink);outline-offset:-2px}
+.coding-challenge .lesson-foot .learning-lab__primary {margin-inline-start:auto;background:var(--ink);color:var(--paper);border-radius:.1923rem}
+
+.exam-surface.lesson-frame .exam-question__footer {flex-wrap:wrap}
+.exam-surface.lesson-frame .exam-surface__kind,.language-game.lesson-frame .language-game__eyebrow{font:.5rem/1.5 var(--font-mono)}
+.language-game.lesson-frame .language-round h4,.exam-surface.lesson-frame .exam-question h4 {font:600 .673rem/1.4 var(--font-ui)}
+@media(max-width:640px){.exam-surface.lesson-frame .exam-clock{min-width:0}.language-game.lesson-frame .language-game__actions{flex-wrap:wrap}}
+
+.lesson-frame:is(.exam-surface,.language-game) {padding:0;display:block;background:var(--paper);border:1px solid var(--ink);border-radius:.1923rem;box-shadow:none;max-width:100%}
+.lesson-frame:is(.exam-surface,.language-game,.coding-challenge) .lesson-head {text-align:start}
+
+.specialist-json-title{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.specialist-frame:has(.specialist-json-title)>div:first-child {flex-wrap:wrap}
+.specialist-frame .specialist-scroll{max-height:32rem}
+.specialist-animation-stage{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:.1923rem;background:var(--paper-deep)}
+
+.lesson-frame .mermaid-container.specialist-frame {border:0;padding:0;background:transparent}
+.specialist-toolbar .specialist-caption:first-of-type {margin-inline-end:auto}
+
+.specialist-stage-grid {position:absolute;inset:0}
+.specialist-scene-choice {display:flex;align-items:baseline;gap:.38rem;width:100%;min-width:0;padding:.29rem .38rem;border:0;border-inline-start:3px solid transparent;background:transparent;text-align:start;color:var(--ink);font:.625rem/1.4 var(--font-ui);overflow-wrap:anywhere}
+.specialist-scene-choice strong {flex:1;font-weight:600}
+.specialist-scene-choice[aria-current] {border-inline-start-color:var(--accent-green);background:var(--k-wash)}
+.specialist-scene-detail {padding-block:.48rem;border-block:1px solid var(--line-soft)}
+.specialist-scene-detail :is(header,p) {display:flex;align-items:baseline;gap:.38rem}
+.specialist-scene-detail header .specialist-caption {margin-inline-start:auto}
+.specialist-scene-detail svg {flex:none}
+
+.ch-code .ch-code-caption {display:flex;align-items:center;flex-wrap:wrap}
+.ch-code-caption > .k-busy-inline {max-width:100%}
+
+.specialist-notes {border-top:1px solid var(--line-soft);padding-top:.38rem}
+.specialist-notes .specialist-frame {border:0;padding-inline:0}
+.specialist-scene-heading {margin:0;font:600 .77rem/1.4 var(--font-ui);overflow-wrap:anywhere}
+
+.specialist-animation.lesson-frame,.learning-lab.lesson-frame,.language-game.lesson-frame,.ch-code:has(.ch-code-toolbar) {border-color:var(--line)}
+.specialist-frame :is(.specialist-toolbar,.specialist-scene-detail header) {font-family:var(--font-ui)}
+@media(pointer:fine){
+  .specialist-toolbar .k-icon {min-width:1.3462rem;min-height:1.3462rem}
+}

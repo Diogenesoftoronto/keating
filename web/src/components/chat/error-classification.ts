@@ -3,22 +3,14 @@
  * recovery advice and icon shown in error badges, and whether a failure is
  * worth offering a diagnostics report for.
  */
-import {
-  CircleAlert,
-  CircleDollarSign,
-  KeyRound,
-  Server,
-  ShieldAlert,
-  Square,
-  Wifi,
-} from "lucide-react";
+import { type GlyphName } from "../../design-system/glyphs";
 import { classifyLlmError, type LlmErrorDetails } from "../../core/api-retry";
 
 export const VOICE_ERROR_PATTERNS =
   /keating_voice|gemini live speech|voice layer|speech model|speech failed|speech timed out/i;
 
 export interface ClassifiedError extends LlmErrorDetails {
-  icon: typeof CircleAlert;
+  icon: GlyphName;
 }
 
 /**
@@ -82,27 +74,27 @@ export function classifyError(errorText: string): ClassifiedError {
         underlying.category === "auth"
           ? "Update the speech provider credentials, or turn speech off and continue with text."
           : "Turn speech off and continue with text, or retry the voice connection.",
-      icon: underlying.category === "auth" ? KeyRound : Wifi,
+      icon: underlying.category === "auth" ? "key" : "signal",
     };
   }
 
   const details = classifyLlmError(errorText);
   const icon =
     details.category === "auth"
-      ? KeyRound
+      ? "key"
       : details.category === "billing"
-        ? CircleDollarSign
+        ? "card"
         : details.category === "permission" || details.category === "safety"
-          ? ShieldAlert
+          ? "alert"
           : details.category === "server" ||
               details.category === "model-unavailable"
-            ? Server
+            ? "server"
             : details.category === "network" ||
                 details.category === "rate-limit" ||
                 details.category === "timeout"
-              ? Wifi
+              ? "signal"
               : details.category === "aborted"
-                ? Square
-                : CircleAlert;
+                ? "stop"
+                : "alert";
   return { ...details, icon };
 }

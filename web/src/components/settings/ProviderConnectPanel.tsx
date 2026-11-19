@@ -1,109 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
-import { getCloudProviderModels, refreshCloudModelCatalog } from "../../lib/models-dev-catalog";
-import { Check, Search } from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
+import {
+	displayModelProvider,
+	requiresProviderCredential,
+} from "../../lib/model-catalog";
+import type { KeatingCustomProvider } from "../../lib/provider-models";
+import { useImageAccess } from "./models/image-access";
+import { getNotOrganicAccount } from "../../notorganic-provider";
+import { extractNotOrganicProfile } from "../../notorganic-provider/profile";
+import {
+	DESKTOP_OFFLINE_MODELS,
+	desktopOfflineBridge,
+} from "../../lib/desktop-offline";
+import { formatBytes } from "../../lib/model-download-progress";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	getCloudProviderModels,
+	refreshCloudModelCatalog,
+} from "../../lib/models-dev-catalog";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import {
+	Button,
+	EmptyState,
+	Loading,
+	SearchField,
+	Switch,
+} from "../../design-system/kit";
+import { StatusLine } from "./ui";
+import { openModelSection } from "./models/model-choices";
 import { getAppStorage } from "../../keating/app-storage";
 import { loadOAuthCredentials, providerToOAuthId } from "../../keating/oauth";
-import { PROVIDER_CREDENTIALS_CHANGED_EVENT, type ModelPrefs } from "../../keating/model-prefs";
-import { Toggle } from "../Toggle";
-import { NotOrganicAccountCard } from "./NotOrganicAccountCard";
-import { NOTORGANIC_PROVIDER_ID, NOTORGANIC_CHAT_MODELS, isNotOrganicFeatureEnabled, notOrganicPublicClient } from "../../notorganic-provider";
+import {
+	PROVIDER_CREDENTIALS_CHANGED_EVENT,
+	type ModelPrefs,
+} from "../../keating/model-prefs";
+import {
+	NOTORGANIC_PROVIDER_ID,
+	NOTORGANIC_CHAT_MODELS,
+	isNotOrganicFeatureEnabled,
+	notOrganicPublicClient,
+} from "../../notorganic-provider";
 import { readConnectedProviders } from "../../lib/provider-connection";
 import { ProviderCredentialForm } from "./CloudProviderKeysSection";
-
-const layoutClass = css({
-	display: "grid",
-	gap: "1rem",
-	gridTemplateColumns: "1fr",
-	sm: { gridTemplateColumns: "15rem 1fr", alignItems: "start" },
-});
-const searchWrapClass = css({
-	position: "relative",
-	display: "flex",
-	alignItems: "center",
-});
-const searchIconClass = css({ position: "absolute", left: "0.625rem", color: "var(--muted-foreground)", pointerEvents: "none" });
-const searchInputClass = css({
-	width: "100%",
-	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
-	backgroundColor: "var(--background)",
-	paddingLeft: "2rem",
-	paddingRight: "0.625rem",
-	paddingBlock: "0.5rem",
-	fontSize: "0.875rem",
-	_focusVisible: { outline: "2px solid var(--primary)", outlineOffset: "1px" },
-});
-const listClass = css({
-	display: "flex",
-	flexDirection: "column",
-	gap: "0.125rem",
-	maxHeight: "16rem",
-	overflowY: "auto",
-	sm: { maxHeight: "28rem" },
-});
-const itemBase = css({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: "0.5rem",
-	width: "100%",
-	textAlign: "left",
-	borderRadius: "0.375rem",
-	paddingInline: "0.625rem",
-	paddingBlock: "0.5rem",
-	fontSize: "0.875rem",
-	textTransform: "capitalize",
-	color: "var(--muted-foreground)",
-	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-});
-const itemActive = css({
-	backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
-	color: "var(--primary)",
-	fontWeight: 500,
-});
-const connectedDot = css({ display: "inline-flex", color: "var(--success, #16a34a)", flexShrink: 0 });
-const detailClass = css({ display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0 });
-const detailHeaderClass = css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" });
-const detailTitleClass = css({ fontSize: "1rem", fontWeight: 600, textTransform: "capitalize", color: "var(--foreground)" });
-const mutedClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
-const modelsBoxClass = css({
-	display: "flex",
-	flexDirection: "column",
-	maxHeight: "14rem",
-	overflowY: "auto",
-	borderRadius: "0.5rem",
-	border: "1px solid var(--border)",
-});
-const modelRowClass = css({
-	display: "flex",
-	justifyContent: "space-between",
-	gap: "0.75rem",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.375rem",
-	fontSize: "0.8125rem",
-	borderBottom: "1px solid var(--border)",
-	_last: { borderBottom: "none" },
-});
-const emptyClass = css({ padding: "1rem", fontSize: "0.875rem", color: "var(--muted-foreground)" });
 
 type ModelInfo = { id: string; name: string };
 
 export function modelsFor(provider: string): ModelInfo[] {
 	if (provider === NOTORGANIC_PROVIDER_ID) {
-		return isNotOrganicFeatureEnabled() ? NOTORGANIC_CHAT_MODELS.map(({ id, name }) => ({ id, name })) : [];
+		return isNotOrganicFeatureEnabled()
+			? NOTORGANIC_CHAT_MODELS.map(({ id, name }) => ({ id, name }))
+			: [];
 	}
 	try {
-		return getCloudProviderModels(provider).map((m) => ({ id: m.id, name: m.name }));
+		return getCloudProviderModels(provider).map((m) => ({
+			id: m.id,
+			name: m.name,
+		}));
 	} catch {
 		return [];
 	}
 }
 
 /** Providers that already hold an API key or a subscription sign-in. */
-export function useProviderConnectionState(providers: string[]): { connected: Set<string>; checked: boolean } {
+export function useProviderConnectionState(providers: string[]) {
 	const [connected, setConnected] = useState<Set<string>>(new Set());
 	const [checked, setChecked] = useState(false);
+	const [endings, setEndings] = useState<Record<string, string>>({});
 	const dep = providers.join(",");
 	useEffect(() => {
 		let active = true;
@@ -112,21 +72,41 @@ export function useProviderConnectionState(providers: string[]): { connected: Se
 			const version = ++refreshVersion;
 			setChecked(false);
 			setConnected(new Set());
-			const next = await readConnectedProviders(providers, {
-				hostedSession: async () => await notOrganicPublicClient()?.activeSession() ?? null,
-				apiKey: (provider) => getAppStorage().providerKeys.get(provider),
-				oauth: async (provider) => {
-					const oauthId = providerToOAuthId(provider);
-					return oauthId ? await loadOAuthCredentials(oauthId) : null;
+			const suffixes: Record<string, string> = {};
+			const next = await readConnectedProviders(
+				providers,
+				{
+					hostedSession: async () =>
+						(await notOrganicPublicClient()?.activeSession()) ?? null,
+					apiKey: async (provider) => {
+						const key = await getAppStorage().providerKeys.get(provider);
+						if (key)
+							suffixes[provider] = key.length > 4 ? key.slice(-4) : "••••";
+						return key;
+					},
+					oauth: async (provider) => {
+						const oauthId = providerToOAuthId(provider);
+						return oauthId ? await loadOAuthCredentials(oauthId) : null;
+					},
 				},
-			}, partial => { if (active && version === refreshVersion) setConnected(partial); });
-			if (active && version === refreshVersion) { setConnected(next); setChecked(true); }
+				(partial) => {
+					if (active && version === refreshVersion) setConnected(partial);
+				},
+			);
+			if (active && version === refreshVersion) {
+				setConnected(next);
+				setEndings(suffixes);
+				setChecked(true);
+			}
 		};
 		void refresh();
 		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);
-		return () => { active = false; window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh); };
+		return () => {
+			active = false;
+			window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);
+		};
 	}, [dep]);
-	return { connected, checked };
+	return { connected, checked, endings };
 }
 
 export function useConnectedProviders(providers: string[]): Set<string> {
@@ -137,103 +117,332 @@ export function useConnectedProviders(providers: string[]): Set<string> {
  * Searchable provider picker: pick a provider on the left, connect it and
  * browse its models on the right. Searching also matches model names.
  */
-export function ProviderConnectPanel({ providers, modelPrefs, onToggleVisibility }: {
+export function ProviderConnectPanel({
+	providers,
+	modelPrefs,
+	customProviders,
+	onToggleVisibility,
+}: {
 	providers: string[];
 	modelPrefs: ModelPrefs;
+	customProviders: KeatingCustomProvider[];
 	onToggleVisibility: (provider: string, hidden: boolean) => void;
 }) {
+	const { generator, ready } = useImageAccess();
+	const [accountName, setAccountName] = useState("");
 	const [query, setQuery] = useState("");
-	const [selected, setSelected] = useState(providers[0] ?? "");
-	const connected = useConnectedProviders(providers);
+	const [selected, setSelected] = useState("");
+	const { connected, checked, endings } = useProviderConnectionState(providers);
+	const [verified, setVerified] = useState<Record<string, string | undefined>>(
+		{},
+	);
+	useEffect(() => {
+		const invalidate = () => setVerified({});
+		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, invalidate);
+		return () =>
+			window.removeEventListener(
+				PROVIDER_CREDENTIALS_CHANGED_EVENT,
+				invalidate,
+			);
+	}, []);
+	const reportKey = useCallback(
+		(p: string, status: string | undefined) =>
+			setVerified((prev) =>
+				prev[p] === status ? prev : { ...prev, [p]: status },
+			),
+		[],
+	);
+	const [offline, setOffline] = useState<
+		{ id: string; name: string; bytes: number }[]
+	>([]);
+	useEffect(() => {
+		const bridge = desktopOfflineBridge();
+		if (!bridge) return;
+		let active = true;
+		const refresh = async () => {
+			const items = await Promise.all(
+				DESKTOP_OFFLINE_MODELS.filter(
+					(m, i) => i === 0 || bridge.supportedModels?.includes(m.id),
+				).map(async (m) => {
+					const status = await bridge.status(m.id).catch(() => undefined);
+					return status?.available && status.installed
+						? {
+								id: m.id,
+								name: m.name,
+								bytes: status.totalBytes || status.downloadedBytes,
+							}
+						: undefined;
+				}),
+			);
+			if (active)
+				setOffline(items.filter((m): m is NonNullable<typeof m> => !!m));
+		};
+		void refresh();
+		const timer = setInterval(refresh, 2500);
+		return () => {
+			active = false;
+			clearInterval(timer);
+		};
+	}, []);
 	const [catalogRevision, setCatalogRevision] = useState(0);
 	useEffect(() => {
 		let active = true;
-		const refresh = () => { void refreshCloudModelCatalog().then(() => { if (active) setCatalogRevision(value => value + 1); }); };
+		const refresh = () => {
+			void refreshCloudModelCatalog().then(() => {
+				if (active) setCatalogRevision((value) => value + 1);
+			});
+		};
 		refresh();
 		window.addEventListener("focus", refresh);
-		return () => { active = false; window.removeEventListener("focus", refresh); };
+		return () => {
+			active = false;
+			window.removeEventListener("focus", refresh);
+		};
 	}, []);
-	const catalog = useMemo(() => new Map(providers.map((p) => [p, modelsFor(p)])), [providers.join(","), catalogRevision]);
+	const catalog = useMemo(
+		() =>
+			new Map(
+				providers.map((p) => {
+					const custom = customProviders.find((item) => item.name === p);
+					const entries = [
+						...modelsFor(p),
+						...(custom?.models ?? []).map((m) => ({
+							id: m.id,
+							name: m.name || m.id,
+						})),
+						...modelPrefs.customModels
+							.filter((m) => m.provider === p)
+							.map((m) => ({ id: m.id, name: m.name })),
+					];
+					return [
+						p,
+						Array.from(new Map(entries.map((m) => [m.id, m])).values()),
+					];
+				}),
+			),
+		[
+			providers.join(","),
+			catalogRevision,
+			customProviders,
+			modelPrefs.customModels,
+		],
+	);
 
 	const q = query.trim().toLowerCase();
 	const visible = useMemo(() => {
 		const list = providers.filter((p) => {
 			if (!q) return true;
-			return p.toLowerCase().includes(q) || (catalog.get(p) ?? []).some((m) => `${m.id} ${m.name}`.toLowerCase().includes(q));
+			return (
+				p.toLowerCase().includes(q) ||
+				(catalog.get(p) ?? []).some((m) =>
+					`${m.id} ${m.name}`.toLowerCase().includes(q),
+				)
+			);
 		});
 		// Connected providers first, keeping the existing priority order within each group.
-		return [...list.filter((p) => connected.has(p)), ...list.filter((p) => !connected.has(p))];
+		return [
+			...list.filter((p) => connected.has(p)),
+			...list.filter((p) => !connected.has(p)),
+		];
 	}, [providers.join(","), q, catalog, connected]);
 
-	const active = visible.includes(selected) ? selected : visible[0];
-	const models = (catalog.get(active ?? "") ?? []).filter((m) => !q || active?.toLowerCase().includes(q) || `${m.id} ${m.name}`.toLowerCase().includes(q));
-	const hidden = active ? modelPrefs.hiddenProviders.includes(active) : false;
-
+	const visibleOffline = offline.filter((m) =>
+		(m.name + " " + m.id + " on this device").toLowerCase().includes(q),
+	);
+	const hostedConnected = connected.has(NOTORGANIC_PROVIDER_ID);
+	useEffect(() => {
+		let active = true;
+		setAccountName("");
+		if (hostedConnected)
+			void getNotOrganicAccount()
+				.then((account) => {
+					if (active)
+						setAccountName(
+							extractNotOrganicProfile(account).name ??
+								account.did ??
+								account.id,
+						);
+				})
+				.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, [hostedConnected]);
+	const firstBroken =
+		visible.find((p) => verified[p] === "invalid" && endings[p]) ??
+		(ready === false && !generator?.needsBaseUrl
+			? generator?.providerKey
+			: undefined);
 	return (
-		<div id="settings-section-cloud-providers" className={css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" })}>
-			<div className={searchWrapClass}>
-				<Search size={14} className={searchIconClass} />
-				<input
-					type="search"
-					className={searchInputClass}
-					placeholder="Search providers or models (e.g. “claude”, “llama”)"
-					aria-label="Search providers and models"
+		<div id="settings-section-cloud-providers" className="s2-pane">
+			<div data-glyph-host>
+				<SearchField
+					label="Search providers and models"
 					value={query}
-					onChange={(e) => setQuery(e.target.value)}
+					onChange={setQuery}
+					placeholder="Search providers or models (e.g. “claude”, “llama”)"
 				/>
 			</div>
-			<div className={layoutClass}>
-				<div className={listClass} role="listbox" aria-label="Providers">
-					{visible.length === 0 && <p className={emptyClass}>No provider or model matches “{query}”.</p>}
-					{visible.map((p) => (
-						<button
-							key={p}
-							type="button"
-							role="option"
-							aria-selected={p === active}
-							className={cx(itemBase, p === active && itemActive)}
-							onClick={() => setSelected(p)}
-						>
-							<span>{p}</span>
-							{connected.has(p) && <span className={connectedDot} title="Connected"><Check size={14} /></span>}
-						</button>
-					))}
-				</div>
-				{active && (
-					<div className={detailClass} key={active}>
-						<div className={detailHeaderClass}>
-							<div>
-								<div className={detailTitleClass}>{active}</div>
-								<div className={mutedClass}>{connected.has(active) ? "Connected" : "Not connected yet"}</div>
-							</div>
-							<label className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-								Show in model picker
-								<Toggle
-									tone="success"
-									aria-label={`Show ${active} in model picker`}
-									checked={!hidden}
-									onChange={(checked) => onToggleVisibility(active, !checked)}
-								/>
-							</label>
+			{!visibleOffline.length && visible.length === 0 && (
+				<EmptyState
+					heading={`No provider or model matches “${query}”.`}
+					glyph="search"
+				/>
+			)}
+			{!checked && (
+				<Loading size="inline" label="Checking provider connections" />
+			)}
+			<div
+				className="s2-list s2-provider-list"
+				role="region"
+				aria-label="Providers"
+				tabIndex={0}
+			>
+				{visibleOffline.map((m) => (
+					<div key={m.id} className="s2-provider" data-glyph-host>
+						<KeatingGlyph name="chip" size={16} />
+						<div>
+							<strong>{m.name}</strong>
+							<p>On this device · {formatBytes(m.bytes)}</p>
 						</div>
-						<ProviderCredentialForm provider={active} />
-						{active === NOTORGANIC_PROVIDER_ID && <NotOrganicAccountCard />}
-						<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
-							<div className={mutedClass}>{models.length} model{models.length === 1 ? "" : "s"}{q ? " matching" : ""}</div>
-							{models.length > 0 && (
-								<div className={modelsBoxClass}>
-									{models.map((m) => (
-										<div key={m.id} className={modelRowClass}>
-											<span>{m.name}</span>
-											<span className={mutedClass}>{m.id}</span>
-										</div>
-									))}
+						<StatusLine tone="ok">Ready offline</StatusLine>
+						<Button variant="ghost" onClick={() => openModelSection("offline")}>
+							Manage
+						</Button>
+					</div>
+				))}
+				{visible.map((p) => {
+					const hosted = p === NOTORGANIC_PROVIDER_ID;
+					const subscription = !!providerToOAuthId(p);
+					const custom = customProviders.find((c) => c.name === p);
+					const status =
+						checked && custom && !requiresProviderCredential(p) && !endings[p]
+							? "Not verified"
+							: providerStatus({
+									checked,
+									connected: connected.has(p),
+									keyed: !!endings[p],
+									subscription: subscription || hosted,
+									verification: verified[p],
+								});
+					const matches = (catalog.get(p) ?? []).filter(
+						(m) =>
+							!q ||
+							p.toLowerCase().includes(q) ||
+							(m.name + " " + m.id).toLowerCase().includes(q),
+					);
+					return (
+						<div key={p}>
+							<div className="s2-provider" data-glyph-host>
+								<KeatingGlyph name="server" size={16} />
+								<div>
+									<strong>
+										{hosted ? "Keating (Not Organic)" : displayModelProvider(p)}
+									</strong>
+									<p>
+										{hosted
+											? accountName
+												? "Hosted · signed in as " + accountName
+												: "Hosted · Not Organic account"
+											: endings[p]
+												? "Your key ending in " + endings[p]
+												: custom
+													? "Your endpoint · " + custom.type
+													: subscription
+														? "Subscription sign-in"
+														: "Provider API key"}
+									</p>
+								</div>
+								{
+									<StatusLine
+										tone={
+											status === "Key rejected"
+												? "bad"
+												: status === "Needs a key"
+													? "warn"
+													: ["Connected", "Key works"].includes(status)
+														? "ok"
+														: "idle"
+										}
+									>
+										{status}
+									</StatusLine>
+								}
+								<Button
+									aria-label={(firstBroken === p ? "Fix " : "Manage ") + p}
+									aria-expanded={selected === p}
+									variant={firstBroken === p ? "primary" : "ghost"}
+									onClick={() => setSelected(selected === p ? "" : p)}
+								>
+									{firstBroken === p ? "Fix" : "Manage"}
+								</Button>
+							</div>
+							{selected === p && (
+								<div className="s2-editor">
+									<Switch
+										label="Show in model picker"
+										checked={!modelPrefs.hiddenProviders.includes(p)}
+										onChange={(show) => onToggleVisibility(p, !show)}
+									/>
+									{hosted ? (
+										<Button onClick={() => openModelSection("account")}>
+											Your account
+										</Button>
+									) : (
+										<ProviderCredentialForm
+											provider={p}
+											reportKey={reportKey}
+										/>
+									)}
+									<details>
+										<summary>
+											{matches.length} model{matches.length === 1 ? "" : "s"}
+											{q ? " matching" : ""}
+										</summary>
+										<ul className="s2-model-catalog">
+											{matches.map((m) => (
+												<li key={m.id}>
+													{m.name}
+													<small>{m.id}</small>
+												</li>
+											))}
+										</ul>
+									</details>
 								</div>
 							)}
 						</div>
-					</div>
-				)}
+					);
+				})}
 			</div>
 		</div>
 	);
+}
+
+export function providerStatus({
+	checked,
+	connected,
+	keyed,
+	subscription,
+	verification,
+}: {
+	checked: boolean;
+	connected: boolean;
+	keyed: boolean;
+	subscription: boolean;
+	verification?: string;
+}) {
+	if (!checked) return "Checking";
+	if (keyed)
+		return (
+			(
+				{
+					ok: "Key works",
+					checking: "Checking",
+					invalid: "Key rejected",
+					error: "Couldn't verify",
+				} as Record<string, string>
+			)[verification ?? ""] ?? "Not verified"
+		);
+	if (connected) return "Connected";
+	return subscription ? "Not connected yet" : "Needs a key";
 }

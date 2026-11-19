@@ -1,0 +1,239 @@
+{
+  "slug": "companion",
+  "title": "Keating the companion",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study"
+  ],
+  "ready": [
+    {
+      "label": "Study with Keating"
+    },
+    {
+      "text": "The first call waits at the line"
+    },
+    {
+      "condition": "matchMedia(\"(pointer: fine)\").matches && !!document.querySelector(\".chat-mascot-perch[data-expanded=true]\")",
+      "timeout": 4000
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat?session=11111111-2222-4333-8444-555555555555"
+    },
+    {
+      "kind": "chapter",
+      "id": "drop",
+      "title": "Drop Keating onto a reply",
+      "explanation": "Drop Keating onto a passage.",
+      "alt": "Drop Keating onto a reply"
+    },
+    {
+      "kind": "caption",
+      "text": "Drop Keating onto a passage."
+    },
+    {
+      "kind": "scroll",
+      "to": {
+        "selector": "p",
+        "label": "The first call waits at the line",
+        "contains": true
+      }
+    },
+    {
+      "kind": "pause",
+      "ms": 500
+    },
+    {
+      "kind": "drag",
+      "from": {
+        "label": "Study with Keating"
+      },
+      "to": {
+        "selector": "p",
+        "label": "The first call waits at the line",
+        "contains": true
+      },
+      "ms": 650,
+      "hold": 550
+    },
+    {
+      "kind": "wait-for",
+      "text": "Give me an example",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "drop"
+    },
+    {
+      "kind": "chapter",
+      "id": "quote",
+      "title": "Add the quote",
+      "explanation": "Choose a suggestion to quote the passage.",
+      "alt": "Add the quote"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose a suggestion to quote the passage."
+    },
+    {
+      "kind": "click",
+      "label": "Give me an example"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "quote"
+    },
+    {
+      "kind": "chapter",
+      "id": "throw",
+      "title": "Release Keating in the margin",
+      "explanation": "Try a quick release in the margin.",
+      "alt": "Release Keating in the margin"
+    },
+    {
+      "kind": "caption",
+      "text": "Try a quick release in the margin."
+    },
+    {
+      "kind": "drag",
+      "from": {
+        "label": "Study with Keating"
+      },
+      "to": [
+        1000,
+        280
+      ],
+      "ms": 290,
+      "throw": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "throw"
+    },
+    {
+      "kind": "chapter",
+      "id": "settings",
+      "title": "Find companion settings",
+      "explanation": "Find Keating’s companion setting.",
+      "alt": "Find companion settings"
+    },
+    {
+      "kind": "caption",
+      "text": "Find Keating’s companion setting."
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Settings"
+    },
+    {
+      "kind": "click",
+      "label": "Interface",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Companion and sound",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Lively",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "settings"
+    },
+    {
+      "kind": "chapter",
+      "id": "calm",
+      "title": "Choose Calm",
+      "explanation": "Calm keeps Keating in place.",
+      "alt": "Choose Calm"
+    },
+    {
+      "kind": "caption",
+      "text": "Calm keeps Keating in place."
+    },
+    {
+      "kind": "click",
+      "label": "Calm"
+    },
+    {
+      "kind": "pause",
+      "ms": 1300
+    },
+    {
+      "kind": "click",
+      "label": "Close settings"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "calm"
+    },
+    {
+      "kind": "chapter",
+      "id": "off",
+      "title": "Choose Off",
+      "explanation": "Choose Off to turn the companion off.",
+      "alt": "Choose Off"
+    },
+    {
+      "kind": "caption",
+      "text": "Choose Off to turn the companion off."
+    },
+    {
+      "kind": "click",
+      "label": "More menu",
+      "contains": false
+    },
+    {
+      "kind": "click",
+      "label": "Settings",
+      "contains": false
+    },
+    {
+      "kind": "click",
+      "label": "Interface",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Companion and sound",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Off"
+    },
+    {
+      "kind": "pause",
+      "ms": 1300
+    },
+    {
+      "kind": "click",
+      "label": "Close settings"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "off"
+    }
+  ]
+}
