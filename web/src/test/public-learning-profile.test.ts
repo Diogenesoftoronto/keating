@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { LearningProfilePublisher, learningProfileRecord, readLearningProfile, LEARNING_PROFILE_COLLECTION, LEARNING_PROFILE_SCOPE } from "../keating/public-learning-profile";
-import { learningProfileOAuthLocation } from "../keating/learning-profile-oauth";
+import { learningProfileOAuthErrorMessage, learningProfileOAuthLocation } from "../keating/learning-profile-oauth";
 import metadata from "../../public/learning-profile-client-metadata.json";
 import { safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
 
@@ -86,6 +86,14 @@ describe("PDS publication", () => {
     const malformed = fixture(async () => Response.json({ value: { topics: [] } }));
     await expect(malformed.publisher.read()).rejects.toThrow();
   });
+  test("profile service failures use actionable messages without showing server details", async () => {
+    const denied = fixture(async () => Response.json({ message: "private provider detail" }, { status: 403 }));
+    await expect(denied.publisher.read()).rejects.toThrow("Reconnect your account");
+    const transport = fixture(async () => { throw new TypeError("private provider URL"); });
+    await expect(transport.publisher.read()).rejects.toThrow("Keating couldn’t read your profile.");
+    const malformedWrite = fixture(async (_path, init) => init?.method === "GET" ? missing() : new Response("private provider HTML"));
+    await expect(malformedWrite.publisher.publish({ topics: ["Latin"], consent: true })).rejects.toThrow("Keating couldn’t publish your profile.");
+  });
   test("aborted operations do not dispatch", async () => {
     const f = fixture(); const controller = new AbortController(); controller.abort();
     await expect(f.publisher.remove(controller.signal)).rejects.toThrow(); expect(f.calls).toHaveLength(0);
@@ -143,6 +151,7 @@ describe("PDS publication", () => {
 
 test("OAuth metadata grants only the profile collection and uses allowed app callback", () => {
   expect(metadata.scope).toBe(LEARNING_PROFILE_SCOPE);
+  expect(new URL(metadata.client_uri).origin).toBe(new URL(metadata.client_id).origin);
   const hosted = learningProfileOAuthLocation("https://chat.keating.help");
   expect(metadata.redirect_uris).toEqual([hosted.redirectUri]); expect(hosted.clientId).toBe(metadata.client_id);
   expect(safeAuthorizationReturnTo("/review/learning-profile")).toBe("/review/learning-profile");
@@ -151,4 +160,15 @@ test("OAuth metadata grants only the profile collection and uses allowed app cal
   expect(new URL(loopback.clientId).searchParams.get("redirect_uri")).toBe("http://127.0.0.1:5173/review/learning-profile");
   expect(() => learningProfileOAuthLocation("http://localhost:5173")).toThrow();
   expect(() => learningProfileOAuthLocation("https://evil.example")).toThrow();
+});
+
+test("OAuth errors explain recovery without disclosing provider descriptions", () => {
+  const invalidMetadata = Object.assign(new Error("private server response"), { error: "invalid_client_metadata" });
+  expect(learningProfileOAuthErrorMessage(new Error("callback failed", { cause: invalidMetadata })))
+    .toBe("Your account server couldn’t verify Keating’s sign-in setup. Try again later. If it keeps happening, contact Keating support.");
+  const cancelled = { params: new URLSearchParams({ error: "access_denied", error_description: "private provider text" }) };
+  expect(learningProfileOAuthErrorMessage(cancelled)).toContain("permission was declined");
+  expect(learningProfileOAuthErrorMessage(cancelled)).not.toContain("private provider text");
+  expect(learningProfileOAuthErrorMessage(new Error("private provider URL")))
+    .toBe("Keating couldn’t finish connecting your account. Check your connection and try again.");
 });

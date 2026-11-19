@@ -77,7 +77,9 @@ export class LearningProfilePublisher {
 
   private async request(method: "GET" | "POST", record?: PublicLearningProfile | FullLearningProfile | PrivateLearningProfile, signal?: AbortSignal, swapRecord?: string | null) {
     this.assertOwner();
-    const token = await this.session.getTokenInfo();
+    const token = await this.session.getTokenInfo().catch(() => {
+      throw new Error("Keating couldn’t check your account’s publishing permission. Try again or reconnect your account.");
+    });
     this.assertOwner();
     if (!token.scope.split(/\s+/u).includes(`repo:${LEARNING_PROFILE_COLLECTION}`)) {
       throw new Error("Reconnect your PDS to allow publishing and removing your learning profile.");
@@ -86,21 +88,33 @@ export class LearningProfilePublisher {
     const path = `/xrpc/com.atproto.repo.${method === "GET" ? "getRecord" : "putRecord"}${method === "GET" ? `?${new URLSearchParams(params)}` : ""}`;
     const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(25_000)]) : AbortSignal.timeout(25_000);
     requestSignal.throwIfAborted();
+    const action = record?.visibility === "private" ? "remove" : method === "POST" ? "publish" : "read";
+    const failure = () => new Error(`Keating couldn’t ${action} your profile. Its public status may be unchanged. Try again to confirm.`);
     const response = await this.session.fetchHandler(path, {
       method,
       signal: requestSignal,
       redirect: "error",
       ...(method === "POST" ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ ...params, record, swapRecord, validate: false }) } : {}),
-    });
+    }).catch(() => { throw failure(); });
     this.assertOwner();
-    const text = await response.text();
-    if (text.length > 32_000) throw new Error("The PDS returned an oversized response.");
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Your account server denied access. Reconnect your account and try again.");
+    }
+    const text = await response.text().catch(() => { throw failure(); });
     this.assertOwner();
-    const body = JSON.parse(text || "{}") as { error?: string; value?: unknown; cid?: string; uri?: string };
+    if (text.length > 32_000) throw failure();
+    let body: { error?: string; value?: unknown; cid?: string; uri?: string };
+    try {
+      const parsed: unknown = JSON.parse(text || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw failure();
+      body = parsed;
+    } catch {
+      throw failure();
+    }
     // Only a confirmed missing record is private. Network/permission failures are unknown.
     if ([400, 404].includes(response.status) && body.error === "RecordNotFound" && method === "GET") return null;
     if (!response.ok && body.error === "InvalidSwap") throw new Error("Your public profile changed in another tab or app. Reload its status and review your choice before retrying.");
-    if (!response.ok) throw new Error(`The PDS could not ${record?.visibility === "private" ? "remove" : method === "POST" ? "publish" : "read"} your profile (${response.status}). Its public status may be unchanged; retry to confirm.`);
+    if (!response.ok) throw failure();
     if (body.uri !== `at://${this.session.sub}/${LEARNING_PROFILE_COLLECTION}/self` || typeof body.cid !== "string" || !body.cid.trim() || body.cid.length > 200) {
       throw new Error(method === "GET" ? "The PDS returned an invalid record reference. No changes were sent." : "The PDS did not confirm the expected profile revision. Its public status is unknown; reload its status or make it private.");
     }
