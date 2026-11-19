@@ -1,0 +1,25 @@
+{
+  "project": 473463,
+  "hosts": [
+    "keating.help",
+    "chat.keating.help"
+  ],
+  "appVersion": null,
+  "fromUtc": "2026-11-18T18:30:00Z",
+  "untilExclusiveUtc": "2026-11-19T02:05:00Z",
+  "source": "PostHog execute-sql against the Keating project; all app versions",
+  "query": "SELECT count() AS captured_events, uniqExact(tuple(JSONExtractString(properties, 'conversation_id'), JSONExtractString(properties, 'turn_id'))) AS distinct_turns FROM events WHERE event = 'openui_turn_observed' AND JSONExtractString(properties, '$host') IN ('keating.help', 'chat.keating.help') AND timestamp >= toDateTime('2026-11-18 18:30:00', 'UTC') AND timestamp < toDateTime('2026-11-19 02:05:00', 'UTC')",
+  "columns": [
+    "captured_events",
+    "distinct_turns"
+  ],
+  "results": [
+    [
+      0,
+      0
+    ]
+  ],
+  "taxonomy": "PostHog reported that openui_turn_observed was absent from the project taxonomy.",
+  "productionInterfaceRate": null,
+  "scope": "The interval starts at the cutoff in the earlier 4.2.0 query. No eligible production events were available to estimate real-learner usage. The instrumented synthetic classroom sessions have their own Settings and wire receipts."
+}

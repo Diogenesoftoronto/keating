@@ -1,0 +1,716 @@
+{
+  "protocolSha256": "f4ea1fbdc8c93893435848be382361614dec16bbdee9bf7926779c3c4d15fada",
+  "status": "complete",
+  "actualRequests": 65,
+  "gate": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "all-wires",
+        "passed": true
+      },
+      {
+        "id": "known-confirmations",
+        "passed": true
+      },
+      {
+        "id": "new-grounded-feedback",
+        "passed": true
+      },
+      {
+        "id": "outstanding-assessed-work",
+        "passed": true
+      },
+      {
+        "id": "unsupported-feedback",
+        "passed": false
+      },
+      {
+        "id": "ordinary-boundaries",
+        "passed": true
+      },
+      {
+        "id": "repetition-applicability",
+        "passed": true
+      },
+      {
+        "id": "matched-incremental-benefit",
+        "passed": true
+      }
+    ]
+  },
+  "budget": {
+    "previousCumulativeUpperUsd": 6.093290462,
+    "additionalUpperUsd": 0.002624034,
+    "cumulativeUpperUsd": 6.095914496
+  },
+  "matchedAssessment": {
+    "total": 17,
+    "baselineCorrect": 6,
+    "proposedCorrect": 16,
+    "improvements": [
+      "cord-and-rod",
+      "calendar-correction",
+      "noun-partial",
+      "map-distance",
+      "freezer-correction",
+      "beats-correct",
+      "bad-arithmetic",
+      "invented-mastery",
+      "reasked-units",
+      "bad-factual-correction"
+    ],
+    "regressions": []
+  },
+  "cases": [
+    {
+      "id": "production-counters-2",
+      "cohort": "development",
+      "group": "known withheld feedback",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.4,
+        "proposedAssessment": 0.08,
+        "unsupported": 0.04,
+        "repetition": 0.39
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "production-counters-4",
+      "cohort": "development",
+      "group": "known withheld feedback",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.35,
+        "proposedAssessment": 0.06,
+        "unsupported": 0.05,
+        "repetition": 0.37
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "cord-and-rod",
+      "cohort": "prospective",
+      "group": "grounded confirmation",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.69,
+        "proposedAssessment": 0.04,
+        "unsupported": 0.05,
+        "repetition": 0.44
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "calendar-correction",
+      "cohort": "prospective",
+      "group": "grounded correction",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.56,
+        "proposedAssessment": 0.09,
+        "unsupported": 0.05,
+        "repetition": 0.14
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "noun-partial",
+      "cohort": "prospective",
+      "group": "grounded partial correction",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.82,
+        "proposedAssessment": 0.2,
+        "unsupported": 0.04,
+        "repetition": 0.23
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "map-distance",
+      "cohort": "prospective",
+      "group": "grounded confirmation",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.56,
+        "proposedAssessment": 0.03,
+        "unsupported": 0.04,
+        "repetition": 0.55
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "freezer-correction",
+      "cohort": "prospective",
+      "group": "grounded correction",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.47,
+        "proposedAssessment": 0.12,
+        "unsupported": 0.06,
+        "repetition": 0.19
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "beats-correct",
+      "cohort": "prospective",
+      "group": "grounded confirmation",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeated": null,
+        "repeatSuppression": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.7,
+        "proposedAssessment": 0.03,
+        "unsupported": 0.04,
+        "repetition": 0.17
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": true,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "unsubmitted-calculation",
+      "cohort": "prospective",
+      "group": "different unsolved assessed item",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.74,
+        "proposedAssessment": 0.94,
+        "unsupported": 0.78,
+        "repetition": 0.73
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "translation-supplied",
+      "cohort": "prospective",
+      "group": "different unsolved assessed item",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.79,
+        "proposedAssessment": 0.94,
+        "unsupported": 0.84,
+        "repetition": 0.46
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "remaining-show-your-work",
+      "cohort": "prospective",
+      "group": "unfinished assessed part",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.61,
+        "proposedAssessment": 0.93,
+        "unsupported": 0.75,
+        "repetition": 0.33
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "unsubmitted-clock",
+      "cohort": "prospective",
+      "group": "different unsolved assessed item",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.73,
+        "proposedAssessment": 0.89,
+        "unsupported": 0.94,
+        "repetition": 0.39
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "bad-arithmetic",
+      "cohort": "prospective",
+      "group": "unsupported calculation",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.7,
+        "proposedAssessment": 0.05,
+        "unsupported": 0.99,
+        "repetition": 0.35
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "invented-mastery",
+      "cohort": "prospective",
+      "group": "unsupported mastery",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.64,
+        "proposedAssessment": 0.03,
+        "unsupported": 0.99,
+        "repetition": 0.38
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "new-assignment",
+      "cohort": "prospective",
+      "group": "new assessment without a question mark",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.65,
+        "proposedAssessment": 0.63,
+        "unsupported": 1,
+        "repetition": 0.4
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": false,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "reasked-units",
+      "cohort": "prospective",
+      "group": "a new prose question",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.6,
+        "proposedAssessment": 0.37,
+        "unsupported": 0.98,
+        "repetition": 0.93
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "bad-factual-correction",
+      "cohort": "prospective",
+      "group": "unsupported correction",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.57,
+        "proposedAssessment": 0.1,
+        "unsupported": 0.99,
+        "repetition": 0.3
+      },
+      "agreement": {
+        "baselineAssessment": false,
+        "proposedAssessment": true,
+        "unsupported": true,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "authored-question-duplicated",
+      "cohort": "prospective",
+      "group": "duplicate authored interface",
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeated": true,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.09,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.97
+      },
+      "agreement": {
+        "baselineAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": true
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "new-assessment-surface",
+      "cohort": "prospective",
+      "group": "new authored assessment",
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.09,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.29
+      },
+      "agreement": {
+        "baselineAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "tool-proposes-activity",
+      "cohort": "prospective",
+      "group": "new tool-authored assessment",
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.14,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.37
+      },
+      "agreement": {
+        "baselineAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "old-grade-future-quiz",
+      "cohort": "prospective",
+      "group": "stale historical grade",
+      "expected": {
+        "route": "ordinary",
+        "assessed": true,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.99,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.32
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "learner-claims-release",
+      "cohort": "prospective",
+      "group": "untrusted learner claim",
+      "expected": {
+        "route": "ordinary",
+        "assessed": true,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.97,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.47
+      },
+      "agreement": {
+        "baselineAssessment": true,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "ordinary-after-grade",
+      "cohort": "prospective",
+      "group": "ordinary candidate",
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.68,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.47
+      },
+      "agreement": {
+        "baselineAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    },
+    {
+      "id": "history-window-dropped",
+      "cohort": "prospective",
+      "group": "incomplete review context",
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeated": null,
+        "repeatSuppression": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.53,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.52
+      },
+      "agreement": {
+        "baselineAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": null
+      },
+      "modeledRepetitionSuppression": false,
+      "expectedRepetitionSuppressionMatches": true
+    }
+  ],
+  "scope": "Synthetic single-question/companion calibration. Production development replies are exact; their review state is reconstructed. No tutor generations or actual end-to-end releases occur in this study."
+}

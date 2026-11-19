@@ -1,0 +1,61 @@
+{
+  "studyArm": "unguided",
+  "scope": "First public response only. No form submission or second learner turn.",
+  "asked": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "release": {
+    "sha": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+    "version": "4.2.4",
+    "entry": "/assets/index-vBGnYejY.js",
+    "entrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+    "observedEntrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd"
+  },
+  "confirmedSettingsAfterReload": {
+    "choice": "off",
+    "keys": {
+      "minimax": true,
+      "google": false,
+      "typesafe": false
+    }
+  },
+  "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+  "teacherTextOutsideMountedControls": "",
+  "intercepted": {
+    "unrelated-origin": 8,
+    "unrelated-or-disallowed-app-api": 25,
+    "unrelated-tutor-request": 2,
+    "provider-outside-registered-turn": 1
+  },
+  "interceptedTutorCategories": [
+    {
+      "purpose": "categorization",
+      "registeredUserExactly": false,
+      "inputUserMessages": 1,
+      "originalMax": 800
+    }
+  ],
+  "requests": [
+    {
+      "stage": "generation",
+      "provider": "minimax",
+      "requestedModel": "MiniMax-M3.1-Flash",
+      "returnedModel": "MiniMax-M3.1-Flash",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "providerModelEvidence": null,
+      "http": 200,
+      "startedAt": 1795053436023,
+      "finishedAt": 1795053439483,
+      "usage": null,
+      "status": "transport-failure",
+      "sentWireSha256": "2c0568b07fd91fab616885469248b4023ad4f6d090ca2d9d32ef107186f52447",
+      "accountedUsd": 0.1549152,
+      "reservedUsd": 0.1549152,
+      "providerRequestIdSha256": null,
+      "browserRequestObserved": true
+    }
+  ],
+  "end": "error",
+  "failure": null,
+  "sourceOperatorSha256": "c0218b219e289a6e15f70fcd173c09d6c662a3945939d3fe003bba8166d6ba89"
+}

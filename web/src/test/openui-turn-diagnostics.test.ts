@@ -23,6 +23,7 @@ import { createOpenUIActionLearnerResponse, serializeLearnerResponse } from "../
 import { createDraftGateJudgementCaller, withTeachingDraftGate } from "../keating/judgement/draft-gate";
 import { parseReviewNotice, withheldSummary, withReviewNotice } from "../keating/judgement/review-notice";
 import { answerDraftGateReview } from "./helpers/teaching-draft-judge";
+import { MemoryStorage } from "./helpers/memory-storage";
 
 const source = [
   'root = LearningSurface([q], "Bayes", "", "ephemeral")',
@@ -42,6 +43,52 @@ const row = (index: number): OpenUiDiagnosticTurn => ({ schemaVersion: 1, conver
   reply: "pending", attempted: null, compiled: null, selected: null, rendered: null, guidance: null });
 
 describe("durable content-free OpenUI turn observation", () => {
+  test("an interrupted unguided generation remains filterable by the tutor actually requested", async () => {
+    const prior = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const settings = new MemoryStorage();
+    settings.setItem("keating:judgement-model", JSON.stringify({ backend: "off" }));
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: settings });
+    const store = createOpenUIDiagnosticStore(() => undefined);
+    const messages: Array<AssistantMessage | ReturnType<typeof learner>> = [];
+    const sessionId = "unguided-interruptions";
+    const observer = observeOpenUITurns({ sessionId, store, messages: () => messages, mode: () => "baseline", capture() {} });
+    try {
+      let calls = 0;
+      const gate = withTeachingDraftGate(() => {
+        const error = assistant("private transport detail", "error");
+        if (++calls === 2) error.responseModel = "returned-snapshot";
+        const stream = createAssistantMessageEventStream();
+        stream.push({ type: "error", reason: "error", error });
+        stream.end(error);
+        return stream;
+      }, { sessionId, basePrompt: () => "Tutor" });
+      for (const signal of [undefined, undefined, AbortSignal.abort()]) {
+        const prompt = learner("Let me try it first.");
+        messages.push(prompt);
+        observer.observe({ type: "agent_start" });
+        const response = await (await gate(model, { messages: [prompt] }, { signal })).result();
+        messages.push(response);
+        observer.observe({ type: "agent_end" });
+      }
+      await store.settled();
+      const rows = store.getRows();
+      expect(calls).toBe(2);
+      expect(rows.map(r => [r.reply, r.requestedModel, r.model, r.rendered])).toEqual([
+        ["error", "fixture/fixture-tutor", null, null],
+        ["error", "fixture/fixture-tutor", "fixture/returned-snapshot", null],
+        ["cancelled", undefined, null, null],
+      ]);
+      expect(queryOpenUiDiagnosticTurns(rows, { model: "fixture/fixture-tutor" })).toMatchObject({ coverage: { includedTurns: 2, missingModel: 1 } });
+      expect(queryOpenUiDiagnosticTurns(rows, { view: "error", model: "fixture/fixture-tutor", limit: 1 })).toMatchObject({
+        matchingTurns: 2, turns: [rows[0]],
+      });
+    } finally {
+      observer.dispose();
+      if (prior) Object.defineProperty(globalThis, "localStorage", prior);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
+
   test("a failed generation keeps the requested tutor and ignores late events from a previous round", async () => {
     const store = createOpenUIDiagnosticStore(() => undefined);
     const sessionId = "no-completed-generation";

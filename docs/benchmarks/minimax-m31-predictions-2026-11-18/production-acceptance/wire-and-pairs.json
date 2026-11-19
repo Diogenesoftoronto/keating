@@ -1,0 +1,1340 @@
+{
+  "scope": "Only the anonymous synthetic production trial is represented.",
+  "rounds": [
+    {
+      "round": 1,
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2
+      },
+      "observedProviderModels": {
+        "jev-1.14.0": 7,
+        "MiniMax-M3.1-Flash": 4
+      },
+      "generationHttpOverlapMs": 1599,
+      "pairHttpOverlapMs": 106,
+      "teachingReceipt": {
+        "phase": "released",
+        "reason": null,
+        "selectedAttempt": 2,
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              1,
+              2
+            ],
+            "finalistAttempt": 2,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "direct_answer_missing",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 11079.504999998957,
+            "finishedAtMs": 11206.214999999851
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "artifact_placeholder",
+                  "direct_answer_missing",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "feedback_invented",
+                  "improvement_interrupts",
+                  "profile_evidence_invented",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              }
+            ],
+            "startedAtMs": 11083.179999999702,
+            "finishedAtMs": 11235.734999999404
+          }
+        ]
+      },
+      "requests": [
+        {
+          "provider": "typesafe",
+          "stage": "planning",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053098627,
+          "finishedAt": 1795053098786,
+          "usage": {
+            "input": 4475,
+            "output": 748
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00018795,
+          "originalWireHash": "75d7ebe4c3cd38674a998a6fed19afb37ff38aac7ef52004089d76f48a34b5c4",
+          "sentWireHash": "75d7ebe4c3cd38674a998a6fed19afb37ff38aac7ef52004089d76f48a34b5c4",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-1",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053098832,
+          "finishedAt": 1795053103779,
+          "usage": {
+            "input": 16702,
+            "uncachedInput": 16574,
+            "cacheRead": 128,
+            "output": 82
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00253722,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "506a70cf3962da0722fff2de8bbcb2c9d4a7a8ee630352966c91ea2d98cdbb78",
+          "sentWireHash": "b9550ef5a87ebc0f28fca54179410f01c13a00e6c7e916f0af214f6df9ac01ea",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-2",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053099314,
+          "finishedAt": 1795053101914,
+          "usage": {
+            "input": 16702,
+            "uncachedInput": 16702,
+            "cacheRead": 0,
+            "output": 248
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.0026541,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "6cc25cdc06e54467cdd21080362b48cca97610c94e962ab97fc0f58360f768cb",
+          "sentWireHash": "c06574a10ea54ad27da0821b7c66bddd06ea092551efaa9e9349e26e8bf921d0",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-3",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053099814,
+          "finishedAt": 1795053102743,
+          "usage": {
+            "input": 16701,
+            "uncachedInput": 16189,
+            "cacheRead": 512,
+            "output": 289
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00260943,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "f4eb1cae71a7b413fae9c7b24948f2c0e622273c52e4dd1088f2a2a8ccaf7fe4",
+          "sentWireHash": "40a37767576099f963fb97b2020c49b4f5a3d18350651056636cc3fa8995b438",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-4",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053100315,
+          "finishedAt": 1795053109473,
+          "usage": {
+            "input": 16702,
+            "uncachedInput": 16574,
+            "cacheRead": 128,
+            "output": 860
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00300402,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "47c9ffbe56bc63ba3976711dee1d226b4659eed2f1c067a5e02b2955a9989f7f",
+          "sentWireHash": "2e6ab17b519c9fe559cab8123c1c4f603955a4eb657687e73638996d5aa16dd3",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053101929,
+          "finishedAt": 1795053102069,
+          "usage": {
+            "input": 6291,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000264222,
+          "originalWireHash": "baa1eb5381c09f2af8b05470e1ddbe4886aa96d48915f11c56d973c252315405",
+          "sentWireHash": "baa1eb5381c09f2af8b05470e1ddbe4886aa96d48915f11c56d973c252315405",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053102761,
+          "finishedAt": 1795053102911,
+          "usage": {
+            "input": 6245,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00026229,
+          "originalWireHash": "868a5b71b0aa32f0b0d4802918dc944045a34077c361744e7839e66271441d31",
+          "sentWireHash": "868a5b71b0aa32f0b0d4802918dc944045a34077c361744e7839e66271441d31",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053103786,
+          "finishedAt": 1795053103967,
+          "usage": {
+            "input": 6148,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000258216,
+          "originalWireHash": "597783d6c7c2bdbd3b5013a0f63d7d6255994424efbae7dc9f6fa07025f91be4",
+          "sentWireHash": "597783d6c7c2bdbd3b5013a0f63d7d6255994424efbae7dc9f6fa07025f91be4",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053109482,
+          "finishedAt": 1795053109651,
+          "usage": {
+            "input": 6656,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000279552,
+          "originalWireHash": "450a50bf041420d54944f94a7970878b559e5bd4cc45e49fa466154815c38d9b",
+          "sentWireHash": "450a50bf041420d54944f94a7970878b559e5bd4cc45e49fa466154815c38d9b",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 1,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053109679,
+          "finishedAt": 1795053109790,
+          "usage": {
+            "input": 1351,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 5.6742e-05,
+          "preferredAttempt": 2,
+          "originalWireHash": "f7147e6d86ce0edcd92d86f63de059f87b13b0ab6c6994ea01250c7a008597cb",
+          "sentWireHash": "f7147e6d86ce0edcd92d86f63de059f87b13b0ab6c6994ea01250c7a008597cb",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 2,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053109684,
+          "finishedAt": 1795053109817,
+          "usage": {
+            "input": 1813,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 7.6146e-05,
+          "preferredAttempt": 4,
+          "originalWireHash": "085ef5577c7a28f9365c9e3e0509293c1edfb947c1b377e975e7c578cae767d6",
+          "sentWireHash": "085ef5577c7a28f9365c9e3e0509293c1edfb947c1b377e975e7c578cae767d6",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2,
+        "final-choice": 1
+      },
+      "observedProviderModels": {
+        "jev-1.14.0": 8,
+        "MiniMax-M3.1-Flash": 4
+      },
+      "generationHttpOverlapMs": 1359,
+      "pairHttpOverlapMs": 109,
+      "teachingReceipt": {
+        "phase": "released",
+        "reason": null,
+        "selectedAttempt": 2,
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              1,
+              2
+            ],
+            "finalistAttempt": 2,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              2
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": []
+              }
+            ],
+            "startedAtMs": 11821.115000000224,
+            "finishedAtMs": 11959.330000000075
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 3,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              3,
+              4
+            ],
+            "finalistAttempt": 3,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              4
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": []
+              },
+              {
+                "attempt": 4,
+                "issues": []
+              }
+            ],
+            "startedAtMs": 11825.830000000075,
+            "finishedAtMs": 11982.294999999925
+          }
+        ],
+        "finalComparison": {
+          "candidateAttempts": [
+            3,
+            2
+          ],
+          "preferredAttempt": 2,
+          "probabilities": {
+            "draft_3": 0.47,
+            "draft_2": 0.53
+          },
+          "confidence": 0.06,
+          "model": "jev-1.14.0"
+        }
+      },
+      "requests": [
+        {
+          "provider": "typesafe",
+          "stage": "planning",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053111412,
+          "finishedAt": 1795053111577,
+          "usage": {
+            "input": 6490,
+            "output": 748
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00027258,
+          "originalWireHash": "85fb1d4dc9fd9220f8c9242316829d80fc4c0fbbbd9062ae811a828f23f236dc",
+          "sentWireHash": "85fb1d4dc9fd9220f8c9242316829d80fc4c0fbbbd9062ae811a828f23f236dc",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-1",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053111662,
+          "finishedAt": 1795053122910,
+          "usage": {
+            "input": 18240,
+            "uncachedInput": 17728,
+            "cacheRead": 512,
+            "output": 2322
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00406008,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "50018998f584cee576113ed635ff2dcc46bc7d5845da6ec823901e5c1bd6619a",
+          "sentWireHash": "92e757f3c048619ae1f859d425909efe690fa277d5bd62bc04a7359d17539055",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "grade_question_checks",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "grade-2",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053112154,
+          "finishedAt": 1795053114512,
+          "usage": {
+            "input": 11569,
+            "uncachedInput": 11569,
+            "cacheRead": 0,
+            "output": 208
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00186015,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "006d00322be3ce911b1edc85ac1070427b476821ee48ad3e2a8b6c0ab23e6bde",
+          "sentWireHash": "4194ae05dd8081fd323c3346ed0ea6572573dbe26bca18d8b359d7f903dd1b28",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": true,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "grade_question_checks"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-3",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053112659,
+          "finishedAt": 1795053117155,
+          "usage": {
+            "input": 18239,
+            "uncachedInput": 18051,
+            "cacheRead": 188,
+            "output": 408
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00295527,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "1693bbcc02ccfe54ca9abd58423a8ffa595ae32b18505b7b764382aa9e0938e4",
+          "sentWireHash": "540a4525dd59fc2a975cdd407a810eaa99922052cb969b953c35f68f4702cb06",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "grade_question_checks",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "grade-4",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053113153,
+          "finishedAt": 1795053115153,
+          "usage": {
+            "input": 11572,
+            "uncachedInput": 2100,
+            "cacheRead": 9472,
+            "output": 138
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00053988,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "31d52cd37dcad4014a891babc0b361a68f99224c7b5796bb69958af04b7a4877",
+          "sentWireHash": "6d459a45a36fad65bb268cfd9a4117c063113412bee7eb712c646db290860f76",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": true,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "grade_question_checks"
+            ]
+          }
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053114527,
+          "finishedAt": 1795053114655,
+          "usage": {
+            "input": 8318,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000349356,
+          "originalWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "sentWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053115167,
+          "finishedAt": 1795053115307,
+          "usage": {
+            "input": 8318,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000349356,
+          "originalWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "sentWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053117166,
+          "finishedAt": 1795053117330,
+          "usage": {
+            "input": 8318,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000349356,
+          "originalWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "sentWireHash": "57fc0d2d44315b10c6e12ec3f0fd9aa01f01c581c4ef3b823ffac87183f1fb3b",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053122921,
+          "finishedAt": 1795053123121,
+          "usage": {
+            "input": 10189,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000427938,
+          "originalWireHash": "88d05bad5bd906d3fdd3350353fd8fd50b5987e14cc03114a5f770beff477ca6",
+          "sentWireHash": "88d05bad5bd906d3fdd3350353fd8fd50b5987e14cc03114a5f770beff477ca6",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 1,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053123153,
+          "finishedAt": 1795053123269,
+          "usage": {
+            "input": 5190,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00021798,
+          "preferredAttempt": 2,
+          "originalWireHash": "65003e987b168f0d2cf5293e4a9c7a3f51778e6a92f8b8affeedc7b66d28388a",
+          "sentWireHash": "65003e987b168f0d2cf5293e4a9c7a3f51778e6a92f8b8affeedc7b66d28388a",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 2,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053123160,
+          "finishedAt": 1795053123292,
+          "usage": {
+            "input": 3319,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000139398,
+          "preferredAttempt": 3,
+          "originalWireHash": "b03f43b0a572e48bd79ca5cb5157a1e5f58875b3d621941046c17c7af0f5d036",
+          "sentWireHash": "b03f43b0a572e48bd79ca5cb5157a1e5f58875b3d621941046c17c7af0f5d036",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "final-choice",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053123314,
+          "finishedAt": 1795053123433,
+          "usage": {
+            "input": 3332,
+            "output": 38
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000139944,
+          "originalWireHash": "c981029cc99c8a09b24a3ce22d4247f8c85c1f30a27f4588a0affd27c834d625",
+          "sentWireHash": "c981029cc99c8a09b24a3ce22d4247f8c85c1f30a27f4588a0affd27c834d625",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2
+      },
+      "observedProviderModels": {
+        "jev-1.14.0": 7,
+        "MiniMax-M3.1-Flash": 4
+      },
+      "generationHttpOverlapMs": 3471,
+      "pairHttpOverlapMs": 131,
+      "teachingReceipt": {
+        "phase": "withheld",
+        "reason": "no-approved-draft",
+        "selectedAttempt": null,
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              2
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_answer_leaked",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16129.620000001043,
+            "finishedAtMs": 16297.480000000447
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              4
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_continued",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16134.865000000224,
+            "finishedAtMs": 16290.59500000067
+          }
+        ]
+      },
+      "requests": [
+        {
+          "provider": "typesafe",
+          "stage": "planning",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053123694,
+          "finishedAt": 1795053123871,
+          "usage": {
+            "input": 6470,
+            "output": 748
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00027174,
+          "originalWireHash": "5a92a2683d1d3b2522df5454ca698a08590fc60f1eb9bedfd367f24eb76005f8",
+          "sentWireHash": "5a92a2683d1d3b2522df5454ca698a08590fc60f1eb9bedfd367f24eb76005f8",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-1",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053125028,
+          "finishedAt": 1795053139315,
+          "usage": {
+            "input": 18216,
+            "uncachedInput": 18088,
+            "cacheRead": 128,
+            "output": 2347
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00412332,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "e010220704671750142144932d2ce93f6c47c53d0b20eaee98bc673b57a509f4",
+          "sentWireHash": "02c238d2e3c075933866e57425b43cfe6f09487cb9e6f971c2eee75d386e32bf",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "post-feedback-2",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053125525,
+          "finishedAt": 1795053130344,
+          "usage": {
+            "input": 11180,
+            "uncachedInput": 11052,
+            "cacheRead": 128,
+            "output": 70
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00170172,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "af50bc2ed714054a496cad79eef82c905911aa681ebf9bb87a158181fb94a576",
+          "sentWireHash": "ebe2793b608ecec9a1e46f11a5fe05ede8c7b718a6210eed2b9e0cc739edb839",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": true,
+            "hostedSearchOff": true,
+            "offeredNames": []
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "ordinary-3",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053126018,
+          "finishedAt": 1795053129992,
+          "usage": {
+            "input": 18215,
+            "uncachedInput": 18215,
+            "cacheRead": 0,
+            "output": 532
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00305145,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "b411b66555690737de980bf4fb4c5d825785c81cc04fa6673b0b41d64bdc3e89",
+          "sentWireHash": "f1560a4efa432fb9800b26536ffccd7418e4ad51ca64a13fb10076f025129f1b",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": false,
+            "hostedSearchOff": true,
+            "offeredNames": [
+              "client-web-search",
+              "animate",
+              "interactive_page",
+              "generate_image",
+              "feedback",
+              "remember_learner_profile",
+              "set_learner_goal",
+              "update_goal_step",
+              "revise_study_plan",
+              "knowledge_sources",
+              "knowledge_read_resource",
+              "knowledge_call_tool",
+              "evaluate_teaching",
+              "request_teaching_improvement",
+              "keating_activate_skill",
+              "keating_task"
+            ]
+          }
+        },
+        {
+          "provider": "minimax",
+          "stage": "generation",
+          "slot": "post-feedback-4",
+          "requestModel": "MiniMax-M3.1-Flash",
+          "reportedModel": "MiniMax-M3.1-Flash",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053126521,
+          "finishedAt": 1795053130967,
+          "usage": {
+            "input": 11182,
+            "uncachedInput": 1710,
+            "cacheRead": 9472,
+            "output": 84
+          },
+          "reservedUsd": 0.1549152,
+          "accountedUsd": 0.00044898,
+          "maxOutputTokens": 8192,
+          "originalWireHash": "2cc55c40e33b6d0f8ce9e41409e9c6cfcaae605091cddf7150fe6bd77a2290cd",
+          "sentWireHash": "5586e3b5b5b1753934b58922b803cbcc74b014a975cb208bda2b61757fab1ad2",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": {
+            "gradeOnly": false,
+            "postGradeFeedback": true,
+            "hostedSearchOff": true,
+            "offeredNames": []
+          }
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053130008,
+          "finishedAt": 1795053130184,
+          "usage": {
+            "input": 8633,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000362586,
+          "originalWireHash": "781b9c388f09df7be9050c1168652ea33ba3c7ec83dc5c11c380165e86aa943a",
+          "sentWireHash": "781b9c388f09df7be9050c1168652ea33ba3c7ec83dc5c11c380165e86aa943a",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053130356,
+          "finishedAt": 1795053130500,
+          "usage": {
+            "input": 8131,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000341502,
+          "originalWireHash": "df2067bb12d940b7007ba9d8e1b35a00b69416a4bec5ae57b2133f4c02702dd6",
+          "sentWireHash": "df2067bb12d940b7007ba9d8e1b35a00b69416a4bec5ae57b2133f4c02702dd6",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053130976,
+          "finishedAt": 1795053131184,
+          "usage": {
+            "input": 8128,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000341376,
+          "originalWireHash": "6b28cd21e69d6619c6b99bf3cf3cf8b29004295abefd59364f8fd34e992a0ffe",
+          "sentWireHash": "6b28cd21e69d6619c6b99bf3cf3cf8b29004295abefd59364f8fd34e992a0ffe",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "review",
+          "slot": null,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053139331,
+          "finishedAt": 1795053139700,
+          "usage": {
+            "input": 10452,
+            "output": 896
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000438984,
+          "originalWireHash": "1d18a98ac729ef86c23da0a8a383f45f16d1621a59679e6c574f0e9fb59a6a06",
+          "sentWireHash": "1d18a98ac729ef86c23da0a8a383f45f16d1621a59679e6c574f0e9fb59a6a06",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 1,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053139732,
+          "finishedAt": 1795053139878,
+          "usage": {
+            "input": 5560,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.00023352,
+          "preferredAttempt": 2,
+          "originalWireHash": "a97a02314f088a1b469f48c6a70611a13b66b8d8412acbf3fc3882dd001e3a88",
+          "sentWireHash": "a97a02314f088a1b469f48c6a70611a13b66b8d8412acbf3fc3882dd001e3a88",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        },
+        {
+          "provider": "typesafe",
+          "stage": "pair",
+          "slot": 2,
+          "requestModel": "jev-1.14.0",
+          "reportedModel": "jev-1.14.0",
+          "reportedIdentityMatchesRequest": true,
+          "http": 200,
+          "status": "metered",
+          "startedAt": 1795053139740,
+          "finishedAt": 1795053139871,
+          "usage": {
+            "input": 3738,
+            "output": 39
+          },
+          "reservedUsd": 0.003,
+          "accountedUsd": 0.000156996,
+          "preferredAttempt": 4,
+          "originalWireHash": "47168165d717d25eceaef64d70fae68f1703bd3cd08419d756cd1f1efddcab01",
+          "sentWireHash": "47168165d717d25eceaef64d70fae68f1703bd3cd08419d756cd1f1efddcab01",
+          "browserRequestObserved": true,
+          "providerRequestIdSha256": null,
+          "tutorToolScope": null
+        }
+      ]
+    }
+  ]
+}

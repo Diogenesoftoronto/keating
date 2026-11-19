@@ -1,0 +1,23 @@
+{
+  "conversationId": "1504c16b-b931-4e28-9976-5a33d86baee9",
+  "learner": {
+    "role": "user",
+    "text": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+    "timestamp": 1795053371175
+  },
+  "selected": {
+    "role": "assistant",
+    "model": "MiniMax-M3.1-Flash",
+    "provider": "minimax",
+    "responseModel": null,
+    "timestamp": 1795053375082,
+    "stopReason": "stop",
+    "content": [
+      {
+        "type": "text",
+        "text": "Great instinct to commit to a prediction first — let's lock that in before I say anything about the numbers.\n\n```openui lifecycle=ephemeral id=counter-prediction\n\nroot = LearningSurface([predict], \"Make your prediction\", \"Commit to an answer now — then we'll test it against the actual chances.\", \"ephemeral\")\npredict = Question([\n  { header: \"Your prediction\", question: \"You draw one counter at random from a cup holding four yellow counters and one blue counter. Which colour is more likely to come out?\", type: \"choice\", choices: [\"Yellow\", \"Blue\", \"Both are equally likely\"], allowText: true, hint: \"Try counting how many counters of each colour are actually in the cup, and what that means for one random draw.\" }\n], \"ephemeral\", \"Probability prediction\", \"Pick the most likely colour, and tell me your reasoning if you can.\")\n```"
+      }
+    ]
+  },
+  "nonTextParts": []
+}

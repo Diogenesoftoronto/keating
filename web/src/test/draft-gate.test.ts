@@ -31,7 +31,7 @@ import type {
 } from "@keating/learner-contracts";
 import { projectActiveWork } from "@keating/learner-contracts";
 import { buildActivityLearningBatch } from "../../../packages/learner-contracts/src/judgement/activity-learning";
-import { withReviewNotice } from "../keating/judgement/review-notice";
+import { parseReviewNotice, SAVED_GRADE_EXPLANATION_NOTICE, withheldSummary, withReviewNotice } from "../keating/judgement/review-notice";
 import { createDraftGateJudgementCaller, withTeachingDraftGate, type TeachingDraftReceipt } from "../keating/judgement/draft-gate";
 import { DEFAULT_TEACHER_PERSONA } from "../keating/persona";
 import operationalProtocolMarkdown from "../keating/prompts/operational-protocol.md?raw";
@@ -807,7 +807,7 @@ describe("private teaching draft stream", () => {
     }
   });
 
-  test("a committed classroom form offers only the exact grading tool to two candidates and grades only on publication", async () => {
+  test.each([false, true])("a committed classroom form grades on publication and distinguishes withheld feedback (%s)", async withholdFeedback => {
     const prior = Object.getOwnPropertyDescriptor(globalThis, "indexedDB");
     Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() });
     try {
@@ -839,7 +839,7 @@ describe("private teaching draft stream", () => {
         if (privateContext.systemPrompt!.includes("Explain the grade just recorded for this answer.")) {
           feedbackWires.push({ system: privateContext.systemPrompt!, tools: privateContext.tools!.map(t => t.name),
             search: (options as { hostedWebSearch?: boolean })?.hostedWebSearch });
-          return streamOf(message("Blue is correct because two of the three socks are blue."));
+          return streamOf(message(withholdFeedback ? "REJECTED unrelated response." : "Blue is correct because two of the three socks are blue."));
         }
         projections.push({ focused, tools: privateContext.tools!.map(t => t.name), search: (options as { hostedWebSearch?: boolean })?.hostedWebSearch });
         const reply = message(focused ? "Blue is more likely because two of the three socks are blue." : "REJECTED unrelated response.", focused);
@@ -880,7 +880,14 @@ describe("private teaching draft stream", () => {
       const continuation: Context = { ...input, messages: [...input.messages, result, { role: "toolResult", toolCallId: authorized.id,
         toolName: authorized.name, content: [{ type: "text", text: "Recorded one check." }], isError: false, timestamp: 3 }] };
       const feedback = await collect(await call(MODEL, continuation, { signal: new AbortController().signal }));
-      expect(text(feedback.result)).toBe("Blue is correct because two of the three socks are blue.");
+      if (withholdFeedback) {
+        const notice = parseReviewNotice(text(feedback.result))!;
+        expect(notice.kind).toBe("withheld");
+        expect(withheldSummary(notice.text)).toBe(SAVED_GRADE_EXPLANATION_NOTICE);
+        expect(notice.text).toContain("Failure:");
+      } else {
+        expect(text(feedback.result)).toBe("Blue is correct because two of the three socks are blue.");
+      }
       expect(feedbackWires.map(w => w.tools)).toEqual([[], []]);
       expect(feedbackWires.map(w => w.search)).toEqual([false, false]);
       expect(feedbackWires.map(w => w.system.includes("Lead with the recorded result."))).toEqual([true, false]);

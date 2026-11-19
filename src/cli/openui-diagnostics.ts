@@ -5,7 +5,7 @@ import {
 } from "../../packages/learner-contracts/src/openui-diagnostics.js";
 
 const usage = [
-  "keating openui-diagnostics <export.json|-> [--model ID] [--decision-model ID] [--mode MODE] [--cue KIND] [--experiment ID] [--view summary|unmet|combined-unmet|action-unmet|native|editable-code|draft-loss|render-loss|withheld|released-drafts|assessment-opt-out|pair-reviews] [--limit N]",
+  "keating openui-diagnostics <export.json|-> [--model ID] [--decision-model ID] [--mode MODE] [--cue KIND] [--experiment ID] [--view summary|unmet|combined-unmet|action-unmet|native|editable-code|draft-loss|render-loss|withheld|error|released-drafts|assessment-opt-out|pair-reviews] [--limit N]",
   "keating openui-diagnostics schema",
   "",
   "Print JSON describing interface use, matched trigger-to-response delays and declared experiment pairs.",

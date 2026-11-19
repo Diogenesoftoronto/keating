@@ -43,7 +43,7 @@ import { markDiagnosticOperation, unmarkDiagnosticOperation } from "./diagnostic
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
 import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
-import { withReviewNotice } from "./review-notice";
+import { SAVED_GRADE_EXPLANATION_NOTICE, withReviewNotice } from "./review-notice";
 import { activeOpenUIDiagnosticTurn } from "../openui/turn-observer";
 import { currentGradeFeedback, matchesSubmittedGrade, releaseSubmittedGrade, type CommittedGrade } from "./submitted-grade-execution";
 import type { DraftSubmissionEvidence } from "./draft-evidence";
@@ -307,11 +307,14 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     precedingGrade = undefined;
     const roundId = ++round;
     const startedAt = Date.now();
+    const diagnosticTurn = activeOpenUIDiagnosticTurn(options.sessionId);
+    const requestedTutor = model.id.startsWith(model.provider + "/") ? model.id : model.provider + "/" + model.id;
     const observation = (() => {
-      try { return baseline ? undefined : activeOpenUIDiagnosticTurn(options.sessionId)?.beginRound(); }
+      try { return baseline ? undefined : diagnosticTurn?.beginRound(); }
       catch { return undefined; }
     })();
     let planningReviewer: { backend: string; model: string } | null = null;
+    let explainingSavedGrade = false;
     const captureDraftContent = options.captureDraftContent?.() === true;
     const clearDraftContent = () => {
       if (options.isCurrent?.() ?? true) {
@@ -349,6 +352,11 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       stopReason: stopped ? "aborted" : "stop", ...(stopped ? { errorMessage: "Response stopped" } : {}),
       timestamp: Date.now(), usage: structuredClone(usage),
     });
+    const withheldFailure = () => {
+      const reason = describeDraftFailure(lastProgress);
+      const text = explainingSavedGrade ? SAVED_GRADE_EXPLANATION_NOTICE + "\n\n" + reason : reason;
+      return safeMessage(withReviewNotice("withheld", text));
+    };
     let reviewedActiveWork: ActiveWork | undefined;
     const publish = (message: AssistantMessage, activitySelection?: ReleasedActivitySelection) => {
       if (message.stopReason !== "aborted" && message.stopReason !== "error") {
@@ -424,6 +432,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       const draftContext: Context = { ...snapshot,
         tools: snapshot.tools?.filter(tool => teachingToolHasRequiredSubmission(tool.name, evidence?.pendingSubmissions)) };
       if (baseline) {
+        diagnosticTurn?.unguidedGenerationRequested(requestedTutor);
         const result = await Promise.race([Promise.resolve(stream(model, draftContext, { ...streamOptions, signal: controller.signal }))
           .then(response => response.result()), interrupted]);
         if (!current() || result.stopReason === "aborted") { publish(safeMessage("", true)); return; }
@@ -460,6 +469,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             ?? (hosted ? JEV_STATE_QUESTION_TOKEN_LIMIT : null) };
       })();
       const confirmedQuestionGrade = priorGrade && currentGradeFeedback(priorGrade.committed, priorGrade.submittedAt, snapshot.messages, evidence?.recordedComprehension);
+      explainingSavedGrade = Boolean(confirmedQuestionGrade);
       const turn = { ...projectedTurn(snapshot, evidence ?? {}, options.domain, options.sessionId), ...(confirmedQuestionGrade ? { confirmedQuestionGrade } : {}) };
       reviewedActiveWork = turn.activeWork;
       // Tutor and judge read the same record-derived view of the lesson plan.
@@ -530,7 +540,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             } };
           if (reasoning === "off") delete generationOptions.reasoning;
           else generationOptions.reasoning = reasoning;
-          observation?.generationRequested(model.id.startsWith(model.provider + "/") ? model.id : model.provider + "/" + model.id);
+          observation?.generationRequested(requestedTutor);
           const privateStream = await stream(model, privateContext, generationOptions);
           // result() observes the private terminal result; its event queue is
           // never forwarded to the app, tool executor, or learner transcript.
@@ -579,7 +589,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           catch { /* Follow-up checks cannot change publication. */ }
         }
       } else {
-        publish(safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
+        publish(withheldFailure());
       }
     })().catch(() => {
       if (baseline) {
@@ -589,7 +599,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         return;
       }
       progress({ ...lastProgress, phase: stopped() ? "cancelled" : "withheld", reason: stopped() ? "cancelled" : timedOut ? "time-budget" : loadingEvidence ? "evidence-unavailable" : "review-unavailable" });
-      publish(stopped() ? safeMessage("", true) : safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
+      publish(stopped() ? safeMessage("", true) : withheldFailure());
     }).finally(() => {
       clearTimeout(timer);
       detachEvidenceAbort?.();

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "1504c16b-b931-4e28-9976-5a33d86baee9",
+      "turnId": "learner-0",
+      "turnIndex": 0,
+      "model": "minimax/MiniMax-M3.1-Flash",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "reply": "released",
+      "replyElapsedMs": 8683,
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": [
+        "question-group"
+      ],
+      "rendered": [
+        "question-group"
+      ],
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "question"
+        ]
+      },
+      "outsideWords": 20,
+      "nativePageRequested": false,
+      "assessment": {
+        "optOut": false,
+        "checkpoints": [
+          "question-interface"
+        ]
+      },
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "decisionModel": "gemini-decision-1",
+      "requestedModel": "minimax/MiniMax-M3.1-Flash",
+      "selection": {
+        "attempt": 1,
+        "review": "verified",
+        "rule": "none"
+      },
+      "codingChallengeLanguages": [],
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePage": {
+        "succeeded": false,
+        "failed": false,
+        "attached": false,
+        "saved": false,
+        "mounted": false,
+        "ready": false,
+        "visible": false,
+        "opened": false,
+        "frameFailed": false
+      }
+    }
+  ]
+}

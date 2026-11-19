@@ -1,0 +1,637 @@
+{
+  "pair-reviews": {
+    "schemaVersion": 1,
+    "view": "pair-reviews",
+    "matchingTurns": 2,
+    "turnsWithoutPairRecords": 0,
+    "comparedPairs": 6,
+    "incompletePairs": 0,
+    "unavailablePairs": 0,
+    "roundsWithPairRecords": 3,
+    "unrecordedPairs": 0,
+    "turnsWithMeasuredOverlap": 2,
+    "turnsWithConcurrentReviews": 2,
+    "turns": [
+      {
+        "schemaVersion": 1,
+        "conversationId": "d342f807-2f6d-47c9-b3c7-62c29e9217ca",
+        "turnId": "learner-0",
+        "turnIndex": 0,
+        "model": "minimax/MiniMax-M3.1-Flash",
+        "mode": "guided",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "reply": "released",
+        "replyElapsedMs": 13409,
+        "attempted": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": [
+          "question-group"
+        ],
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question"
+          ]
+        },
+        "outsideWords": 13,
+        "nativePageRequested": false,
+        "assessment": {
+          "optOut": false,
+          "checkpoints": [
+            "question-interface"
+          ]
+        },
+        "draftAttempts": 4,
+        "gateIssues": [
+          "artifact_placeholder",
+          "checkpoint_repeated",
+          "direct_answer_missing",
+          "feedback_invented",
+          "improvement_interrupts",
+          "profile_evidence_invented",
+          "quality_progress",
+          "quality_scope"
+        ],
+        "decisionModel": "jev-1.14.0",
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              1,
+              2
+            ],
+            "finalistAttempt": 2,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "direct_answer_missing",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 11079.504999998957,
+            "finishedAtMs": 11206.214999999851
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "artifact_placeholder",
+                  "direct_answer_missing",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "feedback_invented",
+                  "improvement_interrupts",
+                  "profile_evidence_invented",
+                  "quality_progress",
+                  "quality_scope"
+                ]
+              }
+            ],
+            "startedAtMs": 11083.179999999702,
+            "finishedAtMs": 11235.734999999404
+          }
+        ],
+        "requestedModel": "minimax/MiniMax-M3.1-Flash",
+        "selection": {
+          "attempt": 2,
+          "review": "verified",
+          "rule": "none"
+        },
+        "codingChallengeLanguages": [],
+        "editableCode": [],
+        "editorOutsideWords": null,
+        "nativePage": {
+          "succeeded": false,
+          "failed": false,
+          "attached": false,
+          "saved": false,
+          "mounted": false,
+          "ready": false,
+          "visible": false,
+          "opened": false,
+          "frameFailed": false
+        }
+      },
+      {
+        "schemaVersion": 1,
+        "conversationId": "d342f807-2f6d-47c9-b3c7-62c29e9217ca",
+        "turnId": "learner-1",
+        "turnIndex": 1,
+        "model": "minimax/MiniMax-M3.1-Flash",
+        "mode": "guided",
+        "cue": {
+          "kind": "none",
+          "targets": []
+        },
+        "reply": "withheld",
+        "replyElapsedMs": 28830,
+        "attempted": true,
+        "compiled": [
+          "simulation"
+        ],
+        "selected": [],
+        "rendered": [],
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question",
+            "simulation"
+          ]
+        },
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "draftAttempts": 8,
+        "gateIssues": [
+          "activity_without_plan",
+          "assessed_work_completed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_last_node",
+          "checkpoint_not_interactive",
+          "checkpoint_repeated",
+          "one_activity",
+          "one_checkpoint",
+          "openui_valid",
+          "quality_scope",
+          "stop_after_checkpoint"
+        ],
+        "decisionModel": "jev-1.14.0",
+        "earlierPairReviewRounds": [
+          {
+            "round": 1,
+            "model": "minimax/MiniMax-M3.1-Flash",
+            "pairReviews": [
+              {
+                "pair": 1,
+                "candidateAttempts": [
+                  1,
+                  2
+                ],
+                "status": "compared",
+                "preferredAttempt": 2,
+                "model": "jev-1.14.0",
+                "eligibleAttempts": [
+                  1,
+                  2
+                ],
+                "finalistAttempt": 2,
+                "feedbackOnlyAttempts": [],
+                "policyVersion": "keating-teaching-policy/v2.4.5",
+                "predictionQuestionAttempts": [],
+                "gradeOnlyAttempts": [
+                  2
+                ],
+                "candidateIssueIds": [
+                  {
+                    "attempt": 1,
+                    "issues": [
+                      "quality_scope"
+                    ]
+                  },
+                  {
+                    "attempt": 2,
+                    "issues": []
+                  }
+                ],
+                "startedAtMs": 11821.115000000224,
+                "finishedAtMs": 11959.330000000075
+              },
+              {
+                "pair": 2,
+                "candidateAttempts": [
+                  3,
+                  4
+                ],
+                "status": "compared",
+                "preferredAttempt": 3,
+                "model": "jev-1.14.0",
+                "eligibleAttempts": [
+                  3,
+                  4
+                ],
+                "finalistAttempt": 3,
+                "feedbackOnlyAttempts": [],
+                "policyVersion": "keating-teaching-policy/v2.4.5",
+                "predictionQuestionAttempts": [],
+                "gradeOnlyAttempts": [
+                  4
+                ],
+                "candidateIssueIds": [
+                  {
+                    "attempt": 3,
+                    "issues": []
+                  },
+                  {
+                    "attempt": 4,
+                    "issues": []
+                  }
+                ],
+                "startedAtMs": 11825.830000000075,
+                "finishedAtMs": 11982.294999999925
+              }
+            ],
+            "finalComparison": {
+              "candidateAttempts": [
+                3,
+                2
+              ],
+              "preferredAttempt": 2,
+              "probabilities": {
+                "draft_3": 0.47,
+                "draft_2": 0.53
+              },
+              "confidence": 0.06,
+              "model": "jev-1.14.0"
+            },
+            "releasedAttempt": 2
+          }
+        ],
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              2
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_answer_leaked",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16129.620000001043,
+            "finishedAtMs": 16297.480000000447
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              4
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_continued",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16134.865000000224,
+            "finishedAtMs": 16290.59500000067
+          }
+        ],
+        "requestedModel": "minimax/MiniMax-M3.1-Flash",
+        "nativePage": {
+          "succeeded": null,
+          "failed": null,
+          "attached": null,
+          "saved": null,
+          "mounted": null,
+          "ready": null,
+          "visible": null,
+          "opened": null,
+          "frameFailed": null
+        }
+      }
+    ]
+  },
+  "withheld": {
+    "schemaVersion": 1,
+    "view": "withheld",
+    "matchingTurns": 1,
+    "turns": [
+      {
+        "schemaVersion": 1,
+        "conversationId": "d342f807-2f6d-47c9-b3c7-62c29e9217ca",
+        "turnId": "learner-1",
+        "turnIndex": 1,
+        "model": "minimax/MiniMax-M3.1-Flash",
+        "mode": "guided",
+        "cue": {
+          "kind": "none",
+          "targets": []
+        },
+        "reply": "withheld",
+        "replyElapsedMs": 28830,
+        "attempted": true,
+        "compiled": [
+          "simulation"
+        ],
+        "selected": [],
+        "rendered": [],
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question",
+            "simulation"
+          ]
+        },
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "draftAttempts": 8,
+        "gateIssues": [
+          "activity_without_plan",
+          "assessed_work_completed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_last_node",
+          "checkpoint_not_interactive",
+          "checkpoint_repeated",
+          "one_activity",
+          "one_checkpoint",
+          "openui_valid",
+          "quality_scope",
+          "stop_after_checkpoint"
+        ],
+        "decisionModel": "jev-1.14.0",
+        "earlierPairReviewRounds": [
+          {
+            "round": 1,
+            "model": "minimax/MiniMax-M3.1-Flash",
+            "pairReviews": [
+              {
+                "pair": 1,
+                "candidateAttempts": [
+                  1,
+                  2
+                ],
+                "status": "compared",
+                "preferredAttempt": 2,
+                "model": "jev-1.14.0",
+                "eligibleAttempts": [
+                  1,
+                  2
+                ],
+                "finalistAttempt": 2,
+                "feedbackOnlyAttempts": [],
+                "policyVersion": "keating-teaching-policy/v2.4.5",
+                "predictionQuestionAttempts": [],
+                "gradeOnlyAttempts": [
+                  2
+                ],
+                "candidateIssueIds": [
+                  {
+                    "attempt": 1,
+                    "issues": [
+                      "quality_scope"
+                    ]
+                  },
+                  {
+                    "attempt": 2,
+                    "issues": []
+                  }
+                ],
+                "startedAtMs": 11821.115000000224,
+                "finishedAtMs": 11959.330000000075
+              },
+              {
+                "pair": 2,
+                "candidateAttempts": [
+                  3,
+                  4
+                ],
+                "status": "compared",
+                "preferredAttempt": 3,
+                "model": "jev-1.14.0",
+                "eligibleAttempts": [
+                  3,
+                  4
+                ],
+                "finalistAttempt": 3,
+                "feedbackOnlyAttempts": [],
+                "policyVersion": "keating-teaching-policy/v2.4.5",
+                "predictionQuestionAttempts": [],
+                "gradeOnlyAttempts": [
+                  4
+                ],
+                "candidateIssueIds": [
+                  {
+                    "attempt": 3,
+                    "issues": []
+                  },
+                  {
+                    "attempt": 4,
+                    "issues": []
+                  }
+                ],
+                "startedAtMs": 11825.830000000075,
+                "finishedAtMs": 11982.294999999925
+              }
+            ],
+            "finalComparison": {
+              "candidateAttempts": [
+                3,
+                2
+              ],
+              "preferredAttempt": 2,
+              "probabilities": {
+                "draft_3": 0.47,
+                "draft_2": 0.53
+              },
+              "confidence": 0.06,
+              "model": "jev-1.14.0"
+            },
+            "releasedAttempt": 2
+          }
+        ],
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 2,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              2
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_answer_leaked",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16129.620000001043,
+            "finishedAtMs": 16297.480000000447
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [
+              4
+            ],
+            "policyVersion": "keating-teaching-policy/v2.4.5",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_continued",
+                  "checkpoint_not_interactive",
+                  "checkpoint_repeated",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "assessed_work_completed",
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 16134.865000000224,
+            "finishedAtMs": 16290.59500000067
+          }
+        ],
+        "requestedModel": "minimax/MiniMax-M3.1-Flash",
+        "nativePage": {
+          "succeeded": null,
+          "failed": null,
+          "attached": null,
+          "saved": null,
+          "mounted": null,
+          "ready": null,
+          "visible": null,
+          "opened": null,
+          "frameFailed": null
+        }
+      }
+    ]
+  }
+}

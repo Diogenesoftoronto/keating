@@ -1,0 +1,68 @@
+{
+  "scope": "Recorded subset of the actual Jev planning request and response, plus the following application teaching-draft receipt, on the post-grade round of the synthetic hosted Yellow submission.",
+  "applicationRound": 3,
+  "roundAfterFormSubmission": 2,
+  "sourceOperatorReceiptSha256": "86a634e2ab1562f819cfb5c7da9567bef82fe45120bb352913fdaabe9f8010cc",
+  "nativePlanningBodySha256": "5a92a2683d1d3b2522df5454ca698a08590fc60f1eb9bedfd367f24eb76005f8",
+  "returnedDecisionModel": "jev-1.14.0",
+  "http": 200,
+  "requestState": {
+    "turn.pendingSubmissions": [],
+    "turn.toolResults": [
+      {
+        "name": "grade_question_checks",
+        "status": "success",
+        "content": "Recorded 1 graded diagnostic check for \"Probability prediction\".\nStructured tool result: {\"tool\":\"grade_question_checks\"}"
+      }
+    ]
+  },
+  "actualResponseAnswers": {
+    "learner_response_due": {
+      "type": "noul",
+      "noul": 0.33
+    },
+    "attempt_present": {
+      "type": "noul",
+      "noul": 0.95
+    },
+    "direct_answer_requested": {
+      "type": "noul",
+      "noul": 0.39
+    },
+    "explanation_requested": {
+      "type": "noul",
+      "noul": 0.03
+    },
+    "practice_requested": {
+      "type": "noul",
+      "noul": 0.08
+    }
+  },
+  "applicationInteractionFromDurableRoundReceipt": {
+    "action": "create",
+    "paired": false,
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      },
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ]
+      }
+    ],
+    "features": [
+      "variable_relationship",
+      "ordered_procedure"
+    ]
+  },
+  "related": [
+    "post-grade-candidates.json",
+    "summary.json",
+    "wire-and-pairs.json"
+  ]
+}

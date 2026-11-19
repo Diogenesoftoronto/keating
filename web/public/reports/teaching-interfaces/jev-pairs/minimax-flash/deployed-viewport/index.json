@@ -1,0 +1,210 @@
+{
+  "scope": "The actual hosted classroom code rendered the same archived sock-draw Question on each visit. A controlled local response supplied the archived draft and all inference was intercepted. Geometry is measured before intentional scrolling. These captures exercise first-view placement.",
+  "draftAuthor": "MiniMax-M2.7-highspeed",
+  "displayedModelContext": "The new disposable browser selected the MiniMax M3.1 Flash catalog row. The archived draft identifies its original author separately.",
+  "syntheticPredictionProductionStudy": "../production-acceptance/summary.json",
+  "cases": [
+    {
+      "role": "previous hosted classroom",
+      "record": "before-4-2-3-guided.json",
+      "recordSha256": "940694899c04a35252d441248aba03fc5c60e638b3352ed5a38c5f35364e33b3",
+      "image": "before-4-2-3-guided.png",
+      "imageSha256": "016917d88ad6964c048652c95d022a4859f031b828b32061ca5de32bb35c7ceb",
+      "appSource": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+      "release": "4.2.3",
+      "servedUrl": "https://chat.keating.help",
+      "servedEntry": "/assets/index-BxmZoxBm.js",
+      "servedEntrySha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc",
+      "storedDraft": {
+        "ledger": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+        "index": 15,
+        "author": "MiniMax-M2.7-highspeed",
+        "sha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50"
+      },
+      "visibleModelPicker": "Change model. Current model: MiniMax M3.1 Flash",
+      "firstQuestionFullyReadable": false,
+      "geometry": {
+        "screen": [
+          1200,
+          850
+        ],
+        "viewport": {
+          "top": 141,
+          "bottom": 850,
+          "height": 709
+        },
+        "stickyComposer": {
+          "top": 639,
+          "bottom": 819,
+          "height": 180
+        },
+        "reading": {
+          "top": 141,
+          "bottom": 639
+        },
+        "legend": {
+          "top": -252,
+          "bottom": -142,
+          "height": 110
+        },
+        "firstOption": {
+          "top": -122,
+          "bottom": -49,
+          "height": 73
+        },
+        "legendVisible": false,
+        "firstOptionVisible": false,
+        "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+        "firstOptionText": "A\nBlue",
+        "selectedOptions": 0,
+        "fieldsets": 1,
+        "scrollTop": 1021,
+        "scrollHeight": 1730,
+        "header": "Change model. Current model: MiniMax M3.1 Flash",
+        "headerBounds": {
+          "top": 18,
+          "bottom": 54,
+          "height": 36
+        },
+        "composerFocused": true
+      },
+      "actualInferenceRequests": 0,
+      "costUsd": 0
+    },
+    {
+      "role": "candidate staging classroom",
+      "record": "after-4-2-4-staging.json",
+      "recordSha256": "fcc7f14a5a14af76af234abe02e74c46250db517c7c0ff81746b5e9ed0fba1fa",
+      "image": "after-4-2-4-staging.png",
+      "imageSha256": "819509727946c47ba1e6b0ed6f6aadf7c2531ead5907bcf6809846672d644b9d",
+      "appSource": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+      "release": "4.2.4",
+      "servedUrl": "https://keating-staging.up.railway.app",
+      "servedEntry": "/assets/index-CYTDj37N.js",
+      "servedEntrySha256": "e4c469c757f7c985653ade3a67510b28a7a1ce864fcb3a83236504509bdad7a2",
+      "storedDraft": {
+        "ledger": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+        "index": 15,
+        "author": "MiniMax-M2.7-highspeed",
+        "sha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50"
+      },
+      "visibleModelPicker": "Change model. Current model: MiniMax M3.1 Flash",
+      "firstQuestionFullyReadable": true,
+      "geometry": {
+        "screen": [
+          1200,
+          850
+        ],
+        "viewport": {
+          "top": 141,
+          "bottom": 850,
+          "height": 709
+        },
+        "stickyComposer": {
+          "top": 639,
+          "bottom": 819,
+          "height": 180
+        },
+        "reading": {
+          "top": 141,
+          "bottom": 639
+        },
+        "legend": {
+          "top": 153,
+          "bottom": 263,
+          "height": 110
+        },
+        "firstOption": {
+          "top": 283,
+          "bottom": 356,
+          "height": 73
+        },
+        "legendVisible": true,
+        "firstOptionVisible": true,
+        "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+        "firstOptionText": "A\nBlue",
+        "selectedOptions": 0,
+        "fieldsets": 1,
+        "scrollTop": 616,
+        "scrollHeight": 1730,
+        "header": "Change model. Current model: MiniMax M3.1 Flash",
+        "headerBounds": {
+          "top": 18,
+          "bottom": 54,
+          "height": 36
+        },
+        "composerFocused": true
+      },
+      "actualInferenceRequests": 0,
+      "costUsd": 0
+    },
+    {
+      "role": "promoted production classroom",
+      "record": "after-4-2-4-production.json",
+      "recordSha256": "9b60d2ed7ff63de66ddbcd4677fb0b1600508ba96ce0ab5ae07306e846c904fd",
+      "image": "after-4-2-4-production.png",
+      "imageSha256": "22266de96b8cbe2da874d6b2b628964dd4bd34711d71b2817607fcfce2cf7271",
+      "appSource": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+      "release": "4.2.4",
+      "servedUrl": "https://chat.keating.help",
+      "servedEntry": "/assets/index-vBGnYejY.js",
+      "servedEntrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+      "storedDraft": {
+        "ledger": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+        "index": 15,
+        "author": "MiniMax-M2.7-highspeed",
+        "sha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50"
+      },
+      "visibleModelPicker": "Change model. Current model: MiniMax M3.1 Flash",
+      "firstQuestionFullyReadable": true,
+      "geometry": {
+        "screen": [
+          1200,
+          850
+        ],
+        "viewport": {
+          "top": 141,
+          "bottom": 850,
+          "height": 709
+        },
+        "stickyComposer": {
+          "top": 639,
+          "bottom": 819,
+          "height": 180
+        },
+        "reading": {
+          "top": 141,
+          "bottom": 639
+        },
+        "legend": {
+          "top": 153,
+          "bottom": 263,
+          "height": 110
+        },
+        "firstOption": {
+          "top": 283,
+          "bottom": 356,
+          "height": 73
+        },
+        "legendVisible": true,
+        "firstOptionVisible": true,
+        "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+        "firstOptionText": "A\nBlue",
+        "selectedOptions": 0,
+        "fieldsets": 1,
+        "scrollTop": 616,
+        "scrollHeight": 1730,
+        "header": "Change model. Current model: MiniMax M3.1 Flash",
+        "headerBounds": {
+          "top": 18,
+          "bottom": 54,
+          "height": 36
+        },
+        "composerFocused": true
+      },
+      "actualInferenceRequests": 0,
+      "costUsd": 0
+    }
+  ],
+  "humanLearningOutcome": null
+}

@@ -1,0 +1,161 @@
+{
+  "scope": "Deployed classroom with one archived tutor reply delivered by a local stream fixture; all inference and auxiliary requests intercepted.",
+  "started": "2026-11-19T00:24:48.101Z",
+  "origin": "https://chat.keating.help",
+  "release": "4.2.3",
+  "source": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+  "expectedEntry": {
+    "url": "https://chat.keating.help/chat",
+    "asset": "/assets/index-BxmZoxBm.js",
+    "entrySha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc",
+    "diagnosticMarkers": {
+      "keating.openui_diagnostics": "assets/AssistantChatPanel-CjuX5mz_.js",
+      "jev-pairs-first": "assets/AssistantChatPanel-CjuX5mz_.js",
+      "Jev pair reviews": "assets/AssistantChatPanel-CjuX5mz_.js"
+    },
+    "candidateChunksExamined": [
+      "assets/AssistantChatPanel-CjuX5mz_.js"
+    ]
+  },
+  "archived": {
+    "ledger": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+    "index": 15,
+    "author": "MiniMax-M2.7-highspeed",
+    "sha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50"
+  },
+  "transportModel": "MiniMax-M3.1-Flash",
+  "decisionSetting": "TypeSafe BYOK with local archived responses for planning and review of slot 3",
+  "realInferenceRequests": 0,
+  "paidUsd": 0,
+  "staticGets": 347,
+  "blockedOtherOrigin": 5,
+  "blockedWrites": 5,
+  "blockedSockets": 0,
+  "interceptedModelRequests": [
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": false,
+      "auxiliary": true,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 111,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 16,
+      "stream": true,
+      "systemChars": 43332,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 43308,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 16,
+      "stream": true,
+      "systemChars": 43339,
+      "regular": true
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 43325,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": false,
+      "auxiliary": true,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 111,
+      "regular": false
+    }
+  ],
+  "replayedJevEntries": [
+    12,
+    19
+  ],
+  "blockedDecisionShapes": [],
+  "returnedTutorReplies": 1,
+  "status": "verified",
+  "servedEntrySha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc",
+  "servedEntryPath": "/assets/index-BxmZoxBm.js",
+  "modelSelection": {
+    "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+    "initialTutor": "Change model. Current model: Inkling 2 Small",
+    "selectionAttempts": 1
+  },
+  "geometry": {
+    "screen": [
+      1200,
+      850
+    ],
+    "viewport": {
+      "top": 141,
+      "bottom": 850,
+      "height": 709
+    },
+    "stickyComposer": {
+      "top": 639,
+      "bottom": 819,
+      "height": 180
+    },
+    "reading": {
+      "top": 141,
+      "bottom": 639
+    },
+    "legend": {
+      "top": -252,
+      "bottom": -142,
+      "height": 110
+    },
+    "firstOption": {
+      "top": -122,
+      "bottom": -49,
+      "height": 73
+    },
+    "legendVisible": false,
+    "firstOptionVisible": false,
+    "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+    "firstOptionText": "A\nBlue",
+    "selectedOptions": 0,
+    "fieldsets": 1,
+    "scrollTop": 1021,
+    "scrollHeight": 1730,
+    "header": "Change model. Current model: MiniMax M3.1 Flash",
+    "headerBounds": {
+      "top": 18,
+      "bottom": 54,
+      "height": 36
+    },
+    "composerFocused": true
+  },
+  "screenshot": {
+    "file": "before-4-2-3-guided.png",
+    "sha256": "016917d88ad6964c048652c95d022a4859f031b828b32061ca5de32bb35c7ceb"
+  },
+  "untouchedFirstQuestionFullyReadable": false,
+  "finished": "2026-11-19T00:25:00.620Z"
+}

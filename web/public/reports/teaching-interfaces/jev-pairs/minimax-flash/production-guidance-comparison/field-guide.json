@@ -1,0 +1,138 @@
+{
+  "scope": "One identical synthetic prompt and one first reply per available arm. The saved grade below comes only from the separate Jev form submission.",
+  "method": "Real production, c4dc112985540f68ea3381d6e1d9264be46578e0",
+  "prompt": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "firstReplies": [
+    {
+      "arm": "jev",
+      "adjudicated": "prediction-question-before-answer",
+      "elapsedMs": 13941,
+      "applicationElapsedMs": 13409,
+      "wordsOutsideControls": 13,
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "requestedInterfaceFamilies": [
+        "question"
+      ],
+      "renderedInterfaces": [
+        "question-group"
+      ],
+      "requestedDecisionModel": "jev-1.14.0",
+      "requestedTutor": "MiniMax-M3.1-Flash",
+      "observedModelIdentities": {
+        "jev-1.14.0": 7,
+        "MiniMax-M3.1-Flash": 4
+      },
+      "paidCalls": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2
+      },
+      "firstReplyUpperUsd": 0.012189888,
+      "evidence": {
+        "fullTrial": "../production-acceptance/summary.json",
+        "settings": "../production-acceptance/settings.json",
+        "classroom": "../production-acceptance/first.png",
+        "publicReply": "../production-acceptance/first-public-reply.json",
+        "questionScreenshot": "../production-acceptance/question.png"
+      }
+    },
+    {
+      "arm": "gemini",
+      "adjudicated": "prediction-question-before-answer",
+      "elapsedMs": 9193,
+      "applicationElapsedMs": 8683,
+      "wordsOutsideControls": 20,
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "requestedInterfaceFamilies": [
+        "question"
+      ],
+      "renderedInterfaces": [
+        "question-group"
+      ],
+      "requestedDecisionModel": "gemini-decision-1",
+      "requestedTutor": "MiniMax-M3.1-Flash",
+      "observedModelIdentities": {
+        "not-returned": 2,
+        "MiniMax-M3.1-Flash": 1
+      },
+      "paidCalls": {
+        "planning": 1,
+        "generation": 1,
+        "review": 1
+      },
+      "firstReplyUpperUsd": 0.00404847,
+      "evidence": {
+        "settings": "gemini-settings.json",
+        "classroom": "gemini-classroom.png",
+        "questionScreenshot": "gemini-question.png",
+        "publicReply": "gemini-public-reply.json",
+        "webmcp": "gemini-webmcp.json",
+        "armReceipt": "gemini.json"
+      }
+    },
+    {
+      "arm": "unguided",
+      "adjudicated": "failed",
+      "elapsedMs": 6199,
+      "applicationElapsedMs": null,
+      "wordsOutsideControls": null,
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "requestedInterfaceFamilies": null,
+      "renderedInterfaces": null,
+      "requestedDecisionModel": null,
+      "requestedTutor": "MiniMax-M3.1-Flash",
+      "observedModelIdentities": {
+        "MiniMax-M3.1-Flash": 1
+      },
+      "paidCalls": {
+        "generation": 1
+      },
+      "firstReplyUpperUsd": 0.1549152,
+      "evidence": {
+        "settings": "unguided-settings.json",
+        "classroom": "unguided-classroom.png",
+        "webmcp": "unguided-webmcp.json",
+        "armReceipt": "unguided.json"
+      }
+    }
+  ],
+  "followUp": {
+    "arm": "jev",
+    "savedAnswer": {
+      "question": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+      "answer": "Yellow",
+      "grading": "model",
+      "score": 1
+    },
+    "visibleGrade": [
+      {
+        "ariaLabel": null,
+        "visibleGrade": "Your answer is correct."
+      }
+    ],
+    "explanationReleased": false,
+    "evidence": "../production-acceptance/summary.json"
+  },
+  "originalAllArmSettingsRows": "settings.json",
+  "fullJevSettings": "../production-acceptance/settings.json",
+  "totalCumulativeUpperUsd": 6.093290462
+}

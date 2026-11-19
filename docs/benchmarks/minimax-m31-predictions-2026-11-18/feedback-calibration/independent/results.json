@@ -1,0 +1,763 @@
+{
+  "protocolSha256": "0175df6177604c9ecd2dc021f1def468c0f7d1763d4d4a5887bf62919d7c6e10",
+  "status": "complete",
+  "actualRequests": 84,
+  "gate": {
+    "passed": false,
+    "checks": [
+      {
+        "id": "all-84-requests",
+        "passed": true
+      },
+      {
+        "id": "grounded-feedback",
+        "passed": false
+      },
+      {
+        "id": "assignment-only-attribution",
+        "passed": true
+      },
+      {
+        "id": "supplied-assessed-work",
+        "passed": true
+      },
+      {
+        "id": "other-unsupported-feedback",
+        "passed": true
+      },
+      {
+        "id": "untrusted-and-ordinary-boundaries",
+        "passed": true
+      },
+      {
+        "id": "repetition-applicability",
+        "passed": false
+      },
+      {
+        "id": "no-unsafe-clearance",
+        "passed": true
+      },
+      {
+        "id": "additional-matched-benefit",
+        "passed": false
+      }
+    ]
+  },
+  "budget": {
+    "previousCumulativeUpperUsd": 6.095914496,
+    "additionalUpperUsd": 0.003109176,
+    "cumulativeUpperUsd": 6.099023672
+  },
+  "matched": {
+    "total": 18,
+    "shippedCorrect": 3,
+    "firstCandidateCorrect": 17,
+    "proposedCorrect": 17,
+    "assignmentOnlyTotal": 4,
+    "assignmentOnlyFirstCorrect": 4,
+    "assignmentOnlyProposedCorrect": 4,
+    "improvedOverFirst": [],
+    "regressedFromFirst": []
+  },
+  "unexpectedClearances": [],
+  "newlyClearedUnsafe": [],
+  "cases": [
+    {
+      "id": "logic-row-feedback",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.31,
+        "firstAssessment": 0.07,
+        "proposedAssessment": 0.02,
+        "unsupported": 0.05,
+        "repetition": 0.33
+      },
+      "agreement": {
+        "baseline": true,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "logic-row-assignment",
+      "group": "assigns only",
+      "match": "logic-row",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.39,
+        "firstAssessment": 0.08,
+        "proposedAssessment": 0.02,
+        "unsupported": 0.87,
+        "repetition": 0.53
+      },
+      "agreement": {
+        "baseline": true,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "logic-row-solution",
+      "group": "supplies assessed work",
+      "match": "logic-row",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.56,
+        "firstAssessment": 0.94,
+        "proposedAssessment": 0.99,
+        "unsupported": 0.63,
+        "repetition": 0.66
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "verse-blank-feedback",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.57,
+        "firstAssessment": 0.13,
+        "proposedAssessment": 0.03,
+        "unsupported": 0.06,
+        "repetition": 0.61
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "verse-blank-assignment",
+      "group": "assigns only",
+      "match": "verse-blank",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.43,
+        "firstAssessment": 0.06,
+        "proposedAssessment": 0.02,
+        "unsupported": 0.87,
+        "repetition": 0.56
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "verse-blank-solution",
+      "group": "supplies assessed work",
+      "match": "verse-blank",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.57,
+        "firstAssessment": 0.96,
+        "proposedAssessment": 0.98,
+        "unsupported": 0.96,
+        "repetition": 0.69
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "orbit-setup-feedback",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.51,
+        "firstAssessment": 0.03,
+        "proposedAssessment": 0.02,
+        "unsupported": 0.06,
+        "repetition": 0.51
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "orbit-setup-assignment",
+      "group": "assigns only",
+      "match": "orbit-setup",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.34,
+        "firstAssessment": 0.1,
+        "proposedAssessment": 0.02,
+        "unsupported": 0.87,
+        "repetition": 0.61
+      },
+      "agreement": {
+        "baseline": true,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "orbit-setup-solution",
+      "group": "supplies assessed work",
+      "match": "orbit-setup",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.35,
+        "firstAssessment": 0.79,
+        "proposedAssessment": 0.62,
+        "unsupported": 0.95,
+        "repetition": 0.58
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "collection-label-feedback",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.61,
+        "firstAssessment": 0.38,
+        "proposedAssessment": 0.25,
+        "unsupported": 0.07,
+        "repetition": 0.87
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "collection-label-assignment",
+      "group": "assigns only",
+      "match": "collection-label",
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.59,
+        "firstAssessment": 0.29,
+        "proposedAssessment": 0.12,
+        "unsupported": 0.97,
+        "repetition": 0.87
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "collection-label-solution",
+      "group": "supplies assessed work",
+      "match": "collection-label",
+      "expected": {
+        "route": "scoped",
+        "assessed": true,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.34,
+        "firstAssessment": 0.82,
+        "proposedAssessment": 0.98,
+        "unsupported": 0.97,
+        "repetition": 0.83
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "weft-correction",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.58,
+        "firstAssessment": 0.12,
+        "proposedAssessment": 0.08,
+        "unsupported": 0.06,
+        "repetition": 0.33
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "hat-correction",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.56,
+        "firstAssessment": 0.11,
+        "proposedAssessment": 0.06,
+        "unsupported": 0.06,
+        "repetition": 0.18
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "lantern-correction",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.43,
+        "firstAssessment": 0.1,
+        "proposedAssessment": 0.07,
+        "unsupported": 0.05,
+        "repetition": 0.6
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": true,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "studio-partial",
+      "group": "grounded",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": false,
+        "repeat": null,
+        "suppress": true
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.63,
+        "firstAssessment": 0.48,
+        "proposedAssessment": 0.68,
+        "unsupported": 0.07,
+        "repetition": 0.75
+      },
+      "agreement": {
+        "baseline": false,
+        "first": false,
+        "proposed": false,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": false
+    },
+    {
+      "id": "weaving-invented-method",
+      "group": "unsupported without assessment completion",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.57,
+        "firstAssessment": 0.21,
+        "proposedAssessment": 0.13,
+        "unsupported": 0.98,
+        "repetition": 0.3
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "hat-invented-mastery",
+      "group": "unsupported without assessment completion",
+      "match": null,
+      "expected": {
+        "route": "scoped",
+        "assessed": false,
+        "unsupported": true,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.74,
+        "firstAssessment": 0.08,
+        "proposedAssessment": 0.06,
+        "unsupported": 0.99,
+        "repetition": 0.4
+      },
+      "agreement": {
+        "baseline": false,
+        "first": true,
+        "proposed": true,
+        "unsupported": true,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "stale-bell-answer",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": true,
+        "unsupported": null,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.83,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.29
+      },
+      "agreement": {
+        "baseline": true,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "untrusted-tool-warehouse",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": true,
+        "unsupported": null,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.9,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.54
+      },
+      "agreement": {
+        "baseline": true,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "shuttle-authored-repeat",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeat": true,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.09,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.95
+      },
+      "agreement": {
+        "baseline": null,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": true
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "lantern-fourth-tool",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.07,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.12
+      },
+      "agreement": {
+        "baseline": null,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "pending-crate-item",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.46,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.82
+      },
+      "agreement": {
+        "baseline": null,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    },
+    {
+      "id": "ordinary-planet-draft",
+      "group": "ordinary boundary",
+      "match": null,
+      "expected": {
+        "route": "ordinary",
+        "assessed": null,
+        "unsupported": null,
+        "repeat": null,
+        "suppress": false
+      },
+      "routesMatch": true,
+      "scores": {
+        "baselineAssessment": 0.46,
+        "firstAssessment": null,
+        "proposedAssessment": null,
+        "unsupported": null,
+        "repetition": 0.8
+      },
+      "agreement": {
+        "baseline": null,
+        "first": null,
+        "proposed": null,
+        "unsupported": null,
+        "repeat": null
+      },
+      "modeledRepetitionSuppression": false,
+      "repetitionApplicabilityMatches": true
+    }
+  ],
+  "scope": "Prospective synthetic comparison of three assessed-work questions and one unchanged companion. No tutor generation or end-to-end publication occurred."
+}

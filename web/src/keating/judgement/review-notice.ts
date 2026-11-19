@@ -5,6 +5,8 @@
  */
 export type ReviewNoticeKind = "unverified" | "withheld";
 
+export const SAVED_GRADE_EXPLANATION_NOTICE = "Your grade is saved on the original question. The tutor could not finish the explanation.";
+
 const MARKER = /^<!--keating:review=(unverified|withheld)-->\n?/;
 
 export function withReviewNotice(kind: ReviewNoticeKind, text: string): string {

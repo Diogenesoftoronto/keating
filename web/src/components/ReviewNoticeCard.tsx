@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { DECISION_PLANNING_NOTICE, TUTOR_RATE_LIMIT_MESSAGE } from "@keating/learner-contracts";
 import { ShieldAlert, ShieldQuestion } from "lucide-react";
 import { css } from "../../styled-system/css";
-import type { ReviewNoticeKind } from "../keating/judgement/review-notice";
+import { SAVED_GRADE_EXPLANATION_NOTICE, type ReviewNoticeKind } from "../keating/judgement/review-notice";
 
 const UNVERIFIED_TIP =
 	"Not fully verified: none of Keating's drafts passed every review check. Double-check facts and steps that matter.";
@@ -87,7 +87,8 @@ export function ReviewNoticeCard({ kind, children, reason }: { kind: ReviewNotic
 		);
 	}
 	const tip = reason?.trim() || WITHHELD_FALLBACK;
-	const label = tip.startsWith(DECISION_PLANNING_NOTICE) ? "Decision planning failed"
+	const label = tip === SAVED_GRADE_EXPLANATION_NOTICE ? "Grade saved · explanation unavailable"
+		: tip.startsWith(DECISION_PLANNING_NOTICE) ? "Decision planning failed"
 		: tip === TUTOR_RATE_LIMIT_MESSAGE ? "Reply provider rate limit reached" : "Couldn't produce a reply";
 	return (
 		<span role="alert" aria-label={`${label}. ${tip}`} tabIndex={0} className={withheldBadgeClass}>
