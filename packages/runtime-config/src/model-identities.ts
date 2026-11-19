@@ -18,6 +18,7 @@ export const MODEL_IDS = {
   claude_sonnet_5: "claude-sonnet-5",
   deepseek_deepseek_v4_flash_free: "deepseek/deepseek-v4-flash:free",
   default: "default",
+  gemini_decision_1: "gemini-decision-1",
   gemini_2_0_flash_live_001: "gemini-2.0-flash-live-001",
   gemini_2_5_flash: "gemini-2.5-flash",
   gemini_2_5_flash_image: "gemini-2.5-flash-image",

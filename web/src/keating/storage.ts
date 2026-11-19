@@ -2304,7 +2304,11 @@ export class KeatingStorage {
 		}
 		await complete;
 		if (updated) {
-			if (typeof window !== "undefined") window.dispatchEvent(new window.CustomEvent(QUESTION_JUDGEMENT_CHANGED_EVENT, { detail: { id } }));
+			try {
+				if (typeof window !== "undefined" && typeof window.CustomEvent === "function" && typeof window.dispatchEvent === "function") {
+					window.dispatchEvent(new window.CustomEvent(QUESTION_JUDGEMENT_CHANGED_EVENT, { detail: { id } }));
+				}
+			} catch { /* An optional card refresh cannot change a committed grade. */ }
 			await this.refreshDerivedLearnerProfile();
 		}
 		return updated;

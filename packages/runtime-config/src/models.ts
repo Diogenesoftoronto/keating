@@ -35,7 +35,7 @@ export const DEFAULT_MODELS = {
     steering: MODEL_IDS.default,
   },
   image: { openai: MODEL_IDS.gpt_image_2_5_flare, google: MODEL_IDS.gemini_3_1_flash_image, notorganic: MODEL_IDS.image },
-  judgement: { systemOne: MODEL_IDS.jev_latest, tabular: MODEL_IDS.tabular },
+  judgement: { systemOne: MODEL_IDS.jev_latest, google: MODEL_IDS.gemini_decision_1, tabular: MODEL_IDS.tabular },
 } as const;
 
 export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced] as const;

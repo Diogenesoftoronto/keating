@@ -111,6 +111,27 @@ describe("canonical OpenUI learner-record materialization", () => {
 		expect((await storage.getQuestionChecks())[0]).toMatchObject({ id: target.id, grading: "model", score: 0.5 });
 	});
 
+	test("returns a committed grade when this host cannot deliver the optional card event", async () => {
+		const prior = Object.getOwnPropertyDescriptor(globalThis, "window");
+		const storage = new KeatingStorage();
+		const hosts = [new EventTarget(), { CustomEvent }, { CustomEvent, dispatchEvent() { throw Error("No DOM event target"); } }];
+		const ids = hosts.map((_, index) => "no-card-event-" + index);
+		for (const id of ids) {
+			await storage.recordQuestionCheck({ id, question: "Which colour?", answer: "Blue", topic: "Socks", grading: "pending" });
+		}
+		try {
+			for (const [index, host] of hosts.entries()) {
+				const id = ids[index]!;
+				Object.defineProperty(globalThis, "window", { configurable: true, value: host });
+				expect(await storage.gradeQuestionCheck(id, { score: 1 })).toMatchObject({ id, score: 1, grading: "model" });
+				expect((await storage.getQuestionChecks()).find(check => check.id === id)?.score).toBe(1);
+			}
+		} finally {
+			if (prior) Object.defineProperty(globalThis, "window", prior);
+			else Reflect.deleteProperty(globalThis, "window");
+		}
+	});
+
 	test("replays the exact action without duplicate learner records", async () => {
 		const storage = new KeatingStorage();
 		const source = sourceDocument();

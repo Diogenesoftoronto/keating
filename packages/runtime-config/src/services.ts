@@ -1,4 +1,6 @@
 /** Public service locations and provider API versions. Never put credentials here. */
+export const GOOGLE_DECISION_PROVIDER = "gemini-decision";
+
 export const API_VERSIONS = {
   anthropic: "2023-06-01",
   google: "v1beta",
