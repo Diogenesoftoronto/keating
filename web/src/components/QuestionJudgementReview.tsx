@@ -4,12 +4,25 @@ import "./question-judgement-review.css";
 
 const reviewStorage = new KeatingStorage();
 
-export function QuestionJudgementReviewView({ checks }: { checks: readonly QuestionCheckRecord[] }) {
-  const reviewed = checks.filter(check => check.judgement);
+function recordedVerdict(check: QuestionCheckRecord): string | null {
+  if (check.grading !== "model" || typeof check.score !== "number" || !Number.isFinite(check.score) || check.score < 0 || check.score > 1) return null;
+  if (check.score === 1) return "Your answer is correct.";
+  if (check.score === 0.5) return "Your answer is partly correct.";
+  if (check.score === 0) return "Your answer is incorrect.";
+  return null;
+}
+
+export function QuestionJudgementReviewView({ checks, multiple = checks.length > 1 }: { checks: readonly QuestionCheckRecord[]; multiple?: boolean }) {
+  const reviewed = checks.filter(check => check.judgement || check.grading === "model" && typeof check.score === "number" && Number.isFinite(check.score) && check.score >= 0 && check.score <= 1);
   if (!reviewed.length) return null;
   return <div className="question-judgement-review" aria-live="polite">
     {reviewed.map(check => {
-      const review = check.judgement!;
+      const verdictText = recordedVerdict(check);
+      const review = check.judgement;
+      if (!review) return <section key={check.id} aria-label={`Recorded grade for ${check.question}`}>
+        {multiple && <p className="question-judgement-review__question">{check.question}</p>}
+        <p className="question-judgement-review__grade">{verdictText ?? `Recorded grade: ${Math.round(check.score! * 100)}%.`}</p>
+      </section>;
       const estimate = review.proposal;
       const quote = estimate?.evidenceQuote ?? review.final.evidenceQuote;
       const model = estimate?.backend.model ?? review.final.attempts.find(attempt => attempt.outcome === "decided")?.backend.model;
@@ -18,7 +31,8 @@ export function QuestionJudgementReviewView({ checks }: { checks: readonly Quest
       const verdict = estimate?.verdict;
       return <section key={check.id} aria-label={`${label}: ${check.question}`}>
         <h4>{label}</h4>
-        {reviewed.length > 1 && <p className="question-judgement-review__question">{check.question}</p>}
+        {multiple && <p className="question-judgement-review__question">{check.question}</p>}
+        {verdictText && <p className="question-judgement-review__grade">{verdictText}</p>}
         {estimate && <p>{verdict === "correct" ? "The review suggests the answer is correct."
           : verdict === "partial" ? "The review suggests the answer is partly correct."
             : verdict === "incorrect" ? "The review suggests the answer needs correction."
@@ -42,10 +56,12 @@ export function QuestionJudgementReview({ recordIds }: { recordIds: readonly str
     const ids = new Set<string>(JSON.parse(identity));
     setChecks([]);
     if (!ids.size || typeof indexedDB === "undefined") return;
+    let latestRead = 0;
     const refresh = async () => {
+      const read = ++latestRead;
       try {
         const saved = await reviewStorage.getQuestionChecks();
-        if (active) setChecks(saved.filter(check => ids.has(check.id)));
+        if (active && read === latestRead) setChecks(saved.filter(check => ids.has(check.id)));
       } catch { /* A display read failure never changes or hides the saved answer. */ }
     };
     const changed = (event: Event) => {
@@ -57,5 +73,5 @@ export function QuestionJudgementReview({ recordIds }: { recordIds: readonly str
     void refresh();
     return () => { active = false; window.removeEventListener(QUESTION_JUDGEMENT_CHANGED_EVENT, changed); window.removeEventListener("focus", refresh); };
   }, [identity]);
-  return <QuestionJudgementReviewView checks={checks} />;
+  return <QuestionJudgementReviewView checks={checks.filter(check => recordIds.includes(check.id))} multiple={recordIds.length > 1} />;
 }

@@ -42,6 +42,7 @@ export interface ActivityHandle {
 
 /** Mutated while the round is prepared and released, so a failure part-way still leaves cleanup state. */
 export interface ActivityRound {
+  reviewedGrade?: import("@/lib/judgement/submitted-question").NativeQuestionGrade;
   privateRound?: ReturnType<typeof createMobileTeachingDraftRound>;
   activity: ActivityHandle | null;
   released?: ReleasedActivitySelection;
@@ -136,6 +137,8 @@ export async function prepareActivityRound(env: ActivityEnv, turn: TurnIdentity,
     activityLearningMode: activityMode, backgroundActivityPolicy,
     learnerContext: env.learnerContextRef.current,
     activeDocument, questionJournal: id => repository.uiActions.getJournal(id),
+    sessionMessages: () => env.stateRef.current.sessions.find(session => session.id === sessionId)?.messages,
+    onReviewedGrade: grade => { round.reviewedGrade = grade; },
     evidence: async () => {
       await drainRepositoryWrites(env.repo.writeTail);
       const snapshot = await repository.records.snapshot();

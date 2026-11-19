@@ -1,0 +1,154 @@
+{
+  "scope": "Four genuine MiniMax candidates each reviewed by Jev in one synthetic form submission. Pair membership was matched using the actual candidate text and proposed tool arguments on the pair and individual review requests.",
+  "candidateIssueIdsMeaning": "A recorded issue can reflect a failed or uncertain check. Eligibility is the gate’s independent decision for the candidate.",
+  "sourceRawReceiptSha256": "947f863a9d8009592db65cb98a15c7374e6b2c9feadbe489960ed898e2e4dce7",
+  "sourceOperatorSummarySha256": "47179ab344462847d8482f04716b54aa053687a2845cea590b21bec0e2e86f05",
+  "drafts": [
+    {
+      "attempt": 1,
+      "pair": 1,
+      "eligible": false,
+      "reviewRequestSha256": "9326eb2115b39030058312d674dc13ee6c2d9e428ecabbedea32e6bbed60849c",
+      "pairRequestSha256": "ef73e9b9dfa079730d78c3991f69c92f212c2461356514e96fd68c6371daf2f4",
+      "scopedRuleApplied": true,
+      "preferenceGradedProbability": 0.06,
+      "candidateIssueIds": [
+        "checkpoint_continued",
+        "feedback_invented"
+      ],
+      "issueAnswers": {
+        "checkpoint_continued": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "feedback_invented": {
+          "type": "noul",
+          "noul": 0.87
+        }
+      },
+      "writtenReplyPresent": false,
+      "openUiFencePresent": false,
+      "proposedTools": [
+        {
+          "name": "grade_question_checks",
+          "grades": [
+            {
+              "submittedQuestionMatches": true,
+              "verdict": "correct"
+            }
+          ]
+        },
+        {
+          "name": "feedback",
+          "signal": "up"
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "pair": 1,
+      "eligible": false,
+      "reviewRequestSha256": "aa7a41c55d90cab61afbd935b5909c94dcf4e6febf6c90ed14e0b97bd287528a",
+      "pairRequestSha256": "ef73e9b9dfa079730d78c3991f69c92f212c2461356514e96fd68c6371daf2f4",
+      "scopedRuleApplied": true,
+      "preferenceGradedProbability": 0.05,
+      "candidateIssueIds": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "checkpoint_repeated",
+        "quality_scope"
+      ],
+      "issueAnswers": {
+        "checkpoint_answer_leaked": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "checkpoint_continued": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "checkpoint_repeated": {
+          "type": "noul",
+          "noul": 0.67
+        },
+        "quality_scope": {
+          "type": "noul",
+          "noul": 0.43
+        }
+      },
+      "writtenReplyPresent": true,
+      "openUiFencePresent": true,
+      "proposedTools": []
+    },
+    {
+      "attempt": 3,
+      "pair": 2,
+      "eligible": false,
+      "reviewRequestSha256": "08a7fcd3d005311c0817daa7e424037d5d2797d0e8230ce820c32118efc48f2f",
+      "pairRequestSha256": "2ee587d45ceb0530d931fe856b46dc038a235bd5e2cb7db5ff74dbc4617ad666",
+      "scopedRuleApplied": true,
+      "preferenceGradedProbability": 0.13,
+      "candidateIssueIds": [
+        "feedback_invented",
+        "quality_progress",
+        "quality_scope"
+      ],
+      "issueAnswers": {
+        "feedback_invented": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "quality_progress": {
+          "type": "noul",
+          "noul": 0.38
+        },
+        "quality_scope": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      },
+      "writtenReplyPresent": false,
+      "openUiFencePresent": false,
+      "proposedTools": [
+        {
+          "name": "remember_learner_profile"
+        },
+        {
+          "name": "feedback",
+          "signal": "up"
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "pair": 2,
+      "eligible": false,
+      "reviewRequestSha256": "249b61b53c81b6fbec70a27d74bb2c9790aa81df94459351c5bda6fa46b75a30",
+      "pairRequestSha256": "2ee587d45ceb0530d931fe856b46dc038a235bd5e2cb7db5ff74dbc4617ad666",
+      "scopedRuleApplied": true,
+      "preferenceGradedProbability": 0.05,
+      "candidateIssueIds": [
+        "checkpoint_answer_leaked",
+        "mastery_overclaimed",
+        "unsolicited_assessment"
+      ],
+      "issueAnswers": {
+        "checkpoint_answer_leaked": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "mastery_overclaimed": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "unsolicited_assessment": {
+          "type": "noul",
+          "noul": 0.56
+        }
+      },
+      "writtenReplyPresent": true,
+      "openUiFencePresent": true,
+      "proposedTools": []
+    }
+  ]
+}

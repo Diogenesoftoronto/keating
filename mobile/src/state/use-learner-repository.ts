@@ -12,6 +12,7 @@ import type { PortableLearnerData } from "@keating/learner-contracts";
 import type { LearnerRepository } from "@/lib/learner-repository";
 import { MobileJudgementReviewStore, type MobileJudgementReviewRecord } from "@/lib/learner-repository/judgement-reviews";
 import { saveNativeState } from "@/lib/account-sync/local-save";
+import type { NativeQuestionGrade } from "@/lib/judgement/submitted-question";
 import { reviewMobileQuestionChecks, type MobileQuestionReviewInput } from "@/lib/judgement/grading";
 import { savePersistedState } from "@/lib/storage";
 import type { PersistedAppState } from "@/lib/types";
@@ -41,7 +42,7 @@ export interface LearnerRepositoryState {
   setLearnerData: Dispatch<SetStateAction<PortableLearnerData | null>>;
   judgementReviews: MobileJudgementReviewRecord[];
   setJudgementReviews: Dispatch<SetStateAction<MobileJudgementReviewRecord[]>>;
-  persistLearnerState(next: PersistedAppState, required?: boolean): Promise<void>;
+  persistLearnerState(next: PersistedAppState, required?: boolean, reviewedGrade?: NativeQuestionGrade): Promise<void>;
   queueLearnerState(next: PersistedAppState): void;
   mutateLearnerRecords<Result>(
     mutation: (current: PortableLearnerData, now: string) => { data: PortableLearnerData; result: Result },
@@ -71,14 +72,14 @@ export function useLearnerRepository(setStorageError: (message: string) => void)
     [],
   );
 
-  const persistLearnerState = useCallback(async (next: PersistedAppState, required = false) => {
+  const persistLearnerState = useCallback(async (next: PersistedAppState, required = false, reviewedGrade?: NativeQuestionGrade) => {
     const repository = refs.repository.current;
     if (!repository || refs.clearing.current) {
       if (required) throw new Error("The local learner repository is unavailable, so Keating did not apply the tool effect.");
       return;
     }
     await saveNativeState({
-      records: repository.records, state: next, account: () => accountRef.current,
+      records: repository.records, state: next, account: () => accountRef.current, reviewedGrade,
       crypto: { ...webSyncCrypto, sha256: async bytes => new Uint8Array(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, new Uint8Array(bytes))) },
       enqueue: task => enqueueRepositoryWrite(refs.writeTail, task),
       beforeWrite: () => {

@@ -32,6 +32,7 @@ import { scopeDebuggingExpectedOutput } from "../debugging-expected-output.js";
 import { proveDebuggingExample, provenDebuggingFailures } from "../debugging-example-proof.js";
 import { nominateTeachingDraftPairs, observedPairCandidateIssues, reviewTeachingDraftPair, type TeachingDraftPair, type TeachingDraftPairReview } from "./pair-review.js";
 import { isTutorRateLimit, TUTOR_RATE_LIMIT_REASON } from "./generation-failure.js";
+import { canFocusSubmittedGrade, isScopedGradeReply } from "./policy.js";
 import { makeDecisionPlanningFailure, type DecisionPlanningFailure } from "./planning-failure.js";
 
 interface DraftContext<T> {
@@ -144,10 +145,11 @@ type DraftPlan = {
   readonly targetCandidates: number;
   readonly feedbackAlternatives: boolean;
   readonly predictionAlternatives: boolean;
+  readonly gradingAlternatives: boolean;
   readonly reviewScope: { readonly domain: TeachingPolicyTurn["domain"]; readonly researchRequired: boolean };
   readonly variantOrder: readonly TeachingDraftVariant[];
 };
-type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestionOnly" | "synthesisSourceAttempts" | "trimmedCheckpointSuffix" | "repairedAssessmentBrief">;
+type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestionOnly" | "gradeOnly" | "synthesisSourceAttempts" | "trimmedCheckpointSuffix" | "repairedAssessmentBrief">;
 /** A private worker may slide its own review window without changing a sibling's evidence. */
 type DraftStep = Pick<DraftContext<unknown>, "attempt" | "phase" | "turn" | "reason">;
 
@@ -342,11 +344,14 @@ export class TeachingDraftSession<T> {
     this.context.interaction = interactionSummary(plan, paired);
     const variantOrder: readonly TeachingDraftVariant[] = !paired ? ["default"]
       : (this.options.random ?? Math.random)() < 0.5 ? ["interactive", "prose"] : ["prose", "interactive"];
-    const feedbackAlternatives = !!this.pairReviews && !!decisionRequest?.questions.checkpoint_reply_mode && allowsQuestionFeedback(plan, decision);
+    const feedbackAlternatives = !!this.pairReviews && (!!this.context.turn.confirmedQuestionGrade
+      || !!decisionRequest?.questions.checkpoint_reply_mode && allowsQuestionFeedback(plan, decision));
     const predictionAlternatives = !!this.pairReviews && !feedbackAlternatives && allowsNewQuestion(this.options.turn, plan)
       && (!followsSingleFeedbackQuestion(this.options.turn) || Boolean(decisionRequest?.questions.checkpoint_reply_mode)
         && selected(decision, "checkpoint_reply_mode", checkpointReplyMode) === "new_action");
-    return { plan, observations, targetCandidates, feedbackAlternatives, predictionAlternatives, reviewScope, variantOrder };
+    const gradingAlternatives = !!this.pairReviews && !this.context.turn.confirmedQuestionGrade
+      && canFocusSubmittedGrade(this.options.turn, plan, this.options.submittedComprehension);
+    return { plan, observations, targetCandidates, feedbackAlternatives, predictionAlternatives, gradingAlternatives, reviewScope, variantOrder };
   }
 
   /** Fill the two fixed pairs independently, then dispatch the two comparisons together. */
@@ -358,9 +363,10 @@ export class TeachingDraftSession<T> {
     await Promise.all(steps.map(async step => {
       this.context.attempt = step.attempt;
       const firstInPair = step.attempt === 1 || step.attempt === 3;
-      const feedbackOnly = planned.feedbackAlternatives && firstInPair;
+      const feedbackOnly = planned.feedbackAlternatives && (step.turn.confirmedQuestionGrade ? !firstInPair : firstInPair);
       const predictionQuestionOnly = planned.predictionAlternatives && !firstInPair;
-      const provenance: Provenance = { ...(feedbackOnly ? { feedbackOnly: true } : {}),
+      const gradeOnly = planned.gradingAlternatives && !firstInPair;
+      const provenance: Provenance = { ...(gradeOnly ? { gradeOnly: true } : {}), ...(feedbackOnly ? { feedbackOnly: true } : {}),
         ...(predictionQuestionOnly ? { predictionQuestionOnly: true } : {}) };
       const variant = planned.feedbackAlternatives ? (feedbackOnly ? "prose" : "default")
         : planned.predictionAlternatives ? (predictionQuestionOnly ? "interactive" : "default")
@@ -407,7 +413,9 @@ export class TeachingDraftSession<T> {
       this.context.attempts.some(entry => entry.attempt === attempt && entry.feedbackOnly));
     const predictionQuestionAttempts = review.candidateAttempts.filter(attempt =>
       this.context.attempts.some(entry => entry.attempt === attempt && entry.predictionQuestionOnly));
-    return { ...review, policyVersion: TEACHING_POLICY_VERSION, feedbackOnlyAttempts, predictionQuestionAttempts,
+    const gradeOnlyAttempts = review.candidateAttempts.filter(attempt =>
+      this.context.attempts.some(entry => entry.attempt === attempt && entry.gradeOnly));
+    return { ...review, policyVersion: TEACHING_POLICY_VERSION, feedbackOnlyAttempts, predictionQuestionAttempts, gradeOnlyAttempts,
       candidateIssueIds: observedPairCandidateIssues(review.candidateAttempts, this.context.attempts),
       ...(startedAtMs === undefined ? {} : { startedAtMs, finishedAtMs }) };
   }
@@ -498,10 +506,12 @@ export class TeachingDraftSession<T> {
     let generated: { reply: TeachingPolicyReply; value: T };
     try {
       generated = structuredClone(await this.bounded(() => this.options.generate({ attempt: step.attempt, variant, reasoning: this.context.reasoning,
-        systemPrompt: this.pairReviews ? pairedCandidatePrompt(plan, variant, this.context.standard, step.attempt, provenance)
+        systemPrompt: this.pairReviews ? pairedCandidatePrompt(plan, variant, this.context.standard, step.attempt, provenance,
+          this.options.submittedComprehension, step.turn.confirmedQuestionGrade)
           : `${variantPrompt(plan, variant)}\n\nResponse scope: ${standardInstructions[this.context.standard]}`,
         ...(provenance.feedbackOnly ? { feedbackOnly: true as const } : {}),
         ...(provenance.predictionQuestionOnly ? { predictionQuestionOnly: true as const } : {}),
+        ...(provenance.gradeOnly ? { gradeOnly: true as const } : {}),
         feedback: structuredClone(feedback),
         ...(textOnlyRecovery ? { textOnlyRecovery: true as const } : {}), ...(synthesis ? { synthesis: structuredClone(synthesis) } : {}), signal: this.context.controller.signal })));
     } catch (error) {
@@ -533,6 +543,7 @@ export class TeachingDraftSession<T> {
       && !reply.toolCalls.length && Boolean(reply.text.trim()) && !/[`~]{3}/u.test(reply.text) && followsSingleFeedbackQuestion(this.options.turn);
     const required = hasCheckpoint ? ["checkpoint_answer_leaked", "checkpoint_repeated", "checkpoint_continued"]
       : scope === "ordinary" ? [] : ["checkpoint_answer_leaked"];
+    if (provenance.gradeOnly) required.push("preference_graded");
     if (optOut) required.push("declined_assessment_imposed");
     if (followup) required.push(...Object.keys(remainingCheckpointQuestions), "gap_ignored");
     const candidateScope = optOut ? { ...reviewScope, assessmentDeclined: true } : reviewScope;
@@ -543,7 +554,11 @@ export class TeachingDraftSession<T> {
         ...(codePractice ? debuggingExerciseQuestions : {}),
         ...(followup && currentTurn.conversation.length === this.options.turn.conversation.length
           ? feedbackReviewQuestions(Boolean(currentTurn.previousQuestionPresentation)) : {}),
-        ...(scope === "review-context" ? directAnswerContextQuestions : {}) } } : null;
+        ...(scope === "review-context" ? directAnswerContextQuestions : {}),
+        ...(currentTurn.confirmedQuestionGrade ? Object.fromEntries(Object.entries(remainingCheckpointQuestions)
+          .filter(([id]) => id in adherence.questions)
+          .map(([id, question]) => [id, { ...question, instructions: "The host recorded the answer and verdict in confirmedQuestionGrade. "
+            + "Explaining that specific result is feedback on a completed item. Independently check every other or newly posed item. " + question.instructions }])) : {}) } } : null;
     }, step);
     const judged = request ? await this.judge(request, step) : null;
     // Keep infrastructure failures distinct from a completed review rejecting
@@ -558,15 +573,25 @@ export class TeachingDraftSession<T> {
         severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
       ...(provenance.predictionQuestionOnly && !isStandaloneCheckpointQuestion(reply) ? [{ id: "prediction_question_format", source: "deterministic" as const,
         severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
+      ...(provenance.gradeOnly && !isScopedGradeReply(reply, this.options.submittedComprehension) ? [{ id: "submitted_grade_scope", source: "deterministic" as const,
+        severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
       ...provenDebuggingFailures(staticProof),
       ...(optOut ? [{ id: "declined_assessment_structure", source: "deterministic" as const, severity: "major" as const,
         status: optOut.imposed ? "fail" as const : "pass" as const, probability: optOut.imposed ? 1 : 0 }] : []),
       ...(textOnlyRecovery && reply.toolCalls.length ? [{ id: "text_only_recovery", source: "deterministic" as const,
         severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
     ];
+    // This rule concerns learner-visible text after an unanswered checkpoint. Keep Jev's observed finding and score.
+    const submittedGradeWithoutText = provenance.gradeOnly && reply.toolCalls.length === 1 && !reply.text.trim()
+      && hostChecks.every(check => check.status === "pass");
     const checks: TeachingPolicyCheck[] = [
-      ...assessment.checks.map(check => step.turn.assessment === "assessed" && check.id === "checkpoint_answer_leaked"
-        ? { ...check, severity: "critical" as const } : check),
+      ...assessment.checks.map(check => {
+        if (step.turn.assessment === "assessed" && check.id === "checkpoint_answer_leaked") return { ...check, severity: "critical" as const };
+        if (submittedGradeWithoutText && check.id === "checkpoint_continued" && check.source === "jev"
+          && typeof check.probability === "number" && Number.isFinite(check.probability))
+          return { ...check, applicability: "submitted-grade-without-text" as const };
+        return check;
+      }),
       ...hostChecks,
       ...(debugging?.checks ?? []),
     ];
@@ -584,6 +609,7 @@ export class TeachingDraftSession<T> {
     const blocking = checks.filter(check => blocksRelease(check) || this.context.extended && uncertainCheckpointRepetition(check));
     const keepUnverified = (!this.pairReviews || judged?.ok === true)
       && (scope === "ordinary" || !checks.some(check => check.id === "checkpoint_answer_leaked" && check.status !== "pass"))
+      && (!(provenance.gradeOnly || step.turn.confirmedQuestionGrade) || blocking.length === 0)
       && (!attemptedFeedback || blocking.length === 0)
       && (!optOut || checks.some(check => check.id === "declined_assessment_imposed" && check.status === "pass"))
       && (!debugging || Boolean(debugging.evidence.example && debugging.evidence.disclosure

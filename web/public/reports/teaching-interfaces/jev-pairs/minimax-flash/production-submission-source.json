@@ -1,0 +1,23 @@
+{
+  "conversationId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+  "learner": {
+    "role": "user",
+    "text": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+    "timestamp": 1795047513539
+  },
+  "selected": {
+    "role": "assistant",
+    "model": "MiniMax-M3.1-Flash",
+    "provider": "minimax",
+    "responseModel": null,
+    "timestamp": 1795047517250,
+    "stopReason": "stop",
+    "content": [
+      {
+        "type": "text",
+        "text": "Good instinct to guess first — let's lock it in before any math.\n\n```openui lifecycle=ephemeral id=sock-draw-guess\n\nroot = LearningSurface([guess], \"Before I explain\", \"Two blue socks, one yellow sock, one random draw.\", \"ephemeral\")\nguess = Question([{ header: \"Your guess\", question: \"Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.\", type: \"choice\", choices: [\"Blue\", \"Yellow\"], allowText: true, hint: \"Just say which one you think is more likely — no explanation needed.\" }], \"ephemeral\", \"Random draw\", \"Trust your gut first; we'll check it against the probabilities after.\")\n\n```"
+      }
+    ]
+  },
+  "nonTextParts": []
+}

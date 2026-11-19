@@ -13,7 +13,7 @@ const modelId = new RegExp(modelPattern);
 const policyPattern = "^keating-teaching-policy/v[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}$";
 const policyId = new RegExp(policyPattern);
 const pairFields = ["pair", "candidateAttempts", "status", "preferredAttempt", "model", "error",
-  "eligibleAttempts", "feedbackOnlyAttempts", "predictionQuestionAttempts", "candidateIssueIds", "finalistAttempt", "startedAtMs", "finishedAtMs", "policyVersion"];
+  "eligibleAttempts", "feedbackOnlyAttempts", "predictionQuestionAttempts", "gradeOnlyAttempts", "candidateIssueIds", "finalistAttempt", "startedAtMs", "finishedAtMs", "policyVersion"];
 
 function members(value: unknown, allowed: readonly number[]): value is number[] {
   return Array.isArray(value) && value.every(n => allowed.includes(n)) && new Set(value).size === value.length;
@@ -37,7 +37,10 @@ function validReview(value: unknown): value is OpenUiPairReview {
   const predictions = r.predictionQuestionAttempts;
   if (feedback !== undefined && !members(feedback, r.candidateAttempts)) return false;
   if (predictions !== undefined && !members(predictions, r.candidateAttempts)) return false;
-  if (feedback && predictions && predictions.some(id => feedback.includes(id))) return false;
+  const grading = r.gradeOnlyAttempts;
+  if (grading !== undefined && !members(grading, r.candidateAttempts)) return false;
+  const scoped = [...feedback ?? [], ...predictions ?? [], ...grading ?? []];
+  if (new Set(scoped).size !== scoped.length) return false;
   if (r.candidateIssueIds !== undefined) {
     if (!Array.isArray(r.candidateIssueIds) || r.candidateIssueIds.length > 2) return false;
     const seen = new Set<number>();
@@ -63,12 +66,13 @@ export function validOpenUiPairReviews(value: unknown): value is OpenUiPairRevie
 /** Project only closed fields. Never store draft text, tool arguments or an upstream error body. */
 export function projectOpenUiPairReviews(source?: readonly TeachingDraftPairReview[]): OpenUiPairReview[] | undefined {
   if (!Array.isArray(source) || source.length > 2 || source.some(row => !row || typeof row !== "object")) return;
-  const rows = source.map(({ pair, policyVersion, candidateAttempts, status, preferredAttempt, model, error, eligibleAttempts, feedbackOnlyAttempts, predictionQuestionAttempts, candidateIssueIds, finalistAttempt, startedAtMs, finishedAtMs }) =>
+  const rows = source.map(({ pair, policyVersion, candidateAttempts, status, preferredAttempt, model, error, eligibleAttempts, feedbackOnlyAttempts, predictionQuestionAttempts, gradeOnlyAttempts, candidateIssueIds, finalistAttempt, startedAtMs, finishedAtMs }) =>
     ({ pair, candidateAttempts, status, preferredAttempt, model, ...(error === undefined ? {} : { error }),
       ...(eligibleAttempts === undefined ? {} : { eligibleAttempts }), ...(finalistAttempt === undefined ? {} : { finalistAttempt }),
       ...(feedbackOnlyAttempts === undefined ? {} : { feedbackOnlyAttempts }),
       ...(policyVersion === undefined ? {} : { policyVersion }),
       ...(predictionQuestionAttempts === undefined ? {} : { predictionQuestionAttempts }),
+      ...(gradeOnlyAttempts === undefined ? {} : { gradeOnlyAttempts }),
       ...(candidateIssueIds === undefined ? {} : { candidateIssueIds }),
       ...(startedAtMs === undefined ? {} : { startedAtMs }), ...(finishedAtMs === undefined ? {} : { finishedAtMs }) }));
   return validOpenUiPairReviews(rows) ? structuredClone(rows).sort((a, b) => a.pair - b.pair) : undefined;
@@ -86,7 +90,7 @@ function pairSchema(pair: number, attempts: number[]) {
   const idOrNull = { enum: [...attempts, null] };
   return {
     type: "object", additionalProperties: false, required: ["pair", "candidateAttempts", "status", "preferredAttempt", "model"],
-    properties: { pair: { const: pair }, candidateAttempts: list, eligibleAttempts: list, feedbackOnlyAttempts: list, predictionQuestionAttempts: list, preferredAttempt: idOrNull, finalistAttempt: idOrNull,
+    properties: { pair: { const: pair }, candidateAttempts: list, eligibleAttempts: list, feedbackOnlyAttempts: list, predictionQuestionAttempts: list, gradeOnlyAttempts: list, preferredAttempt: idOrNull, finalistAttempt: idOrNull,
       model: { anyOf: [{ type: "string", pattern: modelPattern }, { type: "null" }] },
       policyVersion: { type: "string", pattern: policyPattern },
       candidateIssueIds: { type: "array", maxItems: 2, items: {

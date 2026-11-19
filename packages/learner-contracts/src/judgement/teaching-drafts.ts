@@ -45,6 +45,8 @@ export interface TeachingDraftAttempt {
   readonly feedbackOnly?: true;
   /** This candidate was asked to collect the learner's next answer in one OpenUI Question. */
   readonly predictionQuestionOnly?: true;
+  /** One saved comprehension item, with grade_question_checks as the sole available tool. */
+  readonly gradeOnly?: true;
   /** Content-free provenance; the merged response receives its own full review. */
   readonly synthesisSourceAttempts?: readonly number[];
   /** Only the text ending at the checkpoint was reviewed for publication. */
@@ -154,6 +156,8 @@ export interface TeachingDraftGenerationInput {
   readonly feedbackOnly?: true;
   /** One new, ungraded OpenUI Question. Hosts keep the OpenUI grammar and omit tools for this candidate. */
   readonly predictionQuestionOnly?: true;
+  /** One saved comprehension item, with grade_question_checks as the sole available tool. */
+  readonly gradeOnly?: true;
   /** Last-budget recovery when no usable response exists; hosts must disable tool dispatch. */
   readonly textOnlyRecovery?: true;
   /** Private, untrusted source material. Never publish or copy into diagnostics. */
@@ -175,7 +179,17 @@ export interface TeachingDraftCandidateText {
   readonly variant: TeachingDraftVariant;
   readonly text: string;
 }
+/** The current host joined a completed learner form action to this exact pending local record. */
+export interface SubmittedComprehensionAnswer {
+  readonly id: string;
+  readonly topic: string;
+  readonly question: string;
+  readonly answer: string;
+}
+
 export interface TeachingDraftOptions<T> {
+  /** Host-only input. Never reconstructed from learner prose or a teaching decision. */
+  readonly submittedComprehension?: SubmittedComprehensionAnswer;
   /** Ephemeral developer inspection only; never copied into snapshots or receipts. */
   readonly onDraftContent?: (candidate: TeachingDraftCandidateText) => void;
   /** Hosted reply comparison is experimental and must be explicitly selected. */

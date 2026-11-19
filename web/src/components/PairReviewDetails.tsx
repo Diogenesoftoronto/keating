@@ -10,13 +10,17 @@ export function PairReviewDetails({ reviews, finalComparison }: { reviews: reado
       {" · "}{review.status === "compared" ? `${review.model} preferred draft ${review.preferredAttempt}.`
         : review.status === "incomplete" ? (review.candidateAttempts.length ? `Only draft ${review.candidateAttempts[0]} completed.` : "Neither draft completed.")
         : `Comparison unavailable${review.error ? " (" + review.error + ")" : ""}.`}
-      {review.eligibleAttempts && <> {review.eligibleAttempts.length ? `Eligible for release · ${review.eligibleAttempts.join(", ")}.` : "Neither draft was eligible for release."}</>}
       {review.finalistAttempt != null && <> Draft {review.finalistAttempt} advanced.</>}
       {Boolean(review.feedbackOnlyAttempts?.length) && <> Feedback-only prompt · {review.feedbackOnlyAttempts?.join(", ")}.</>}
       {Boolean(review.predictionQuestionAttempts?.length) && <> Prediction Question prompt · {review.predictionQuestionAttempts?.join(", ")}.</>}
-      {review.candidateIssueIds?.map(({ attempt, issues }) => <div key={attempt}>
-        Draft {attempt} review · {issues.length ? issues.join(", ") : "no issues recorded"}.
-      </div>)}
+      {Boolean(review.gradeOnlyAttempts?.length) && <> Grading tool only · {review.gradeOnlyAttempts?.join(", ")}.</>}
+      {review.candidateAttempts.map(attempt => {
+        const eligible = review.eligibleAttempts?.includes(attempt);
+        const release = eligible === undefined ? "Release eligibility unknown" : eligible ? "Eligible for release" : "Held from release";
+        const issues = review.candidateIssueIds?.find(member => member.attempt === attempt)?.issues;
+        const findings = issues === undefined ? "Findings unrecorded" : issues.length ? `Findings · ${issues.join(", ")}` : "No findings observed";
+        return <div key={attempt}>{`Draft ${attempt} review · ${release}. ${findings}.`}</div>;
+      })}
     </li>)}</ul>
     {overlap !== null && <p>{overlap > 0 ? `The pair reviews overlapped for ${Math.round(overlap)} ms.` : "The recorded review intervals did not overlap."}</p>}
     {finalComparison && <p><strong>Final comparison</strong> · {finalComparison.model} preferred draft {finalComparison.preferredAttempt}.

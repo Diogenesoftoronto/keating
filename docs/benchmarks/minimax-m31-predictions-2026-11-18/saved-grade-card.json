@@ -1,0 +1,50 @@
+{
+  "scope": "Local Chromium classroom replay of the genuine saved Blue verdict and actual withheld final tutor message from the v2.4.4 trial. First-party Vite assets only. Grade written by the real browser grading storage method. No new inference.",
+  "sourceHash": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+  "providerCalls": 0,
+  "allowedRequests": {
+    "GET": 3167,
+    "HEAD": 4
+  },
+  "blockedRequests": 67,
+  "source": {
+    "importer": "Keating /training-data ChatML import",
+    "originalPublicFileSha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+    "actualRestoredPublicTextSha256": "79fbd9c0cdff5a13942517bcc1483779732c6698b5dd12020483b0452a5c8f92",
+    "originalSelectedPublicTextSha256": "79fbd9c0cdff5a13942517bcc1483779732c6698b5dd12020483b0452a5c8f92",
+    "sessionId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070-import-0",
+    "provider": "minimax",
+    "model": "MiniMax-M3.1-Flash",
+    "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence."
+  },
+  "updated": {
+    "id": "openui:question-check:openui-1sbwclh-sock-draw-guess:web-ui-1by2b4l:guess-question-1",
+    "grading": "model",
+    "score": 1
+  },
+  "beforeReload": "Your response\n\n1 question answered about Random draw.\n\nYour guess\nBlue\n\nYour answer is correct.",
+  "afterReload": "Your response\n\n1 question answered about Random draw.\n\nYour guess\nBlue\n\nYour answer is correct.",
+  "header": "MiniMax M3.1 Flash",
+  "notice": 1,
+  "boxes": {
+    "verdict": {
+      "x": 749,
+      "y": 235.390625,
+      "width": 337.234375,
+      "height": 25.359375
+    },
+    "retry": {
+      "x": 385.984375,
+      "y": 467.078125,
+      "width": 145.21875,
+      "height": 41.59375
+    },
+    "readingArea": {
+      "x": 563.75,
+      "y": 737.625,
+      "width": 546.875,
+      "height": 47
+    }
+  },
+  "result": "verified"
+}

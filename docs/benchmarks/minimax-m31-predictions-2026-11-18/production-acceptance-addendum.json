@@ -1,0 +1,13 @@
+{
+  "registeredAt": "2026-11-19T01:09:23.169592+00:00",
+  "originalProtocol": "production-acceptance-protocol.json",
+  "originalProtocolSha256": "e91892dda2ef7864d69f6255471d705f26a52ee77adf5164c3c8e7d07039fef5",
+  "scope": "Prospective amendment recorded before any paid or production acceptance request. The original registration and all earlier outcomes remain archived.",
+  "publication": "Keating 4.2.4",
+  "originalTeachingPolicy": "keating-teaching-policy/v2.4.4",
+  "expectedTeachingPolicy": "keating-teaching-policy/v2.4.5",
+  "changedBehavior": "After a real grading tool successfully saves the grade for the currently bound submitted answer, two candidate lanes generate concise feedback using that recorded outcome. The other two candidates keep their ordinary capabilities. The classroom may also display the stored verdict on the original Question.",
+  "measurements": "Record the observed policy on both Jev pairs, tool availability on each real tutor request, authoritative saved grade and score, any verdict on the original Question and whether the next tutor reply reaches the learner. Report the terminal outcome and any failed or unknown observation.",
+  "unchanged": "The first turn uses the identical four-yellow/one-blue prompt from the original protocol in one new anonymous production classroom. Submit Yellow once only on a genuine matching Question. Maximum three four-candidate rounds, 8,192 output tokens per candidate, USD 0.65 per round and USD 1.95 overall. No paid retries. Use the real configured MiniMax M3.1 Flash tutor and Jev 1.14.0 reviewer after verification of the public release.",
+  "priorCumulativeUpperBoundUsd": 5.899003442
+}

@@ -1,7 +1,7 @@
 import type { NoulQuestion } from "./contracts.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
-export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.4.1";
+export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.4.5";
 export const CHECKPOINT_FEEDBACK_ISSUE = "checkpoint_feedback_unsupported";
 export const POLICY_PROTOCOL_SOURCE = "web/src/keating/prompts/operational-protocol.md";
 const persona = "web/src/keating/persona.ts#DEFAULT_TEACHER_PERSONA";
@@ -114,6 +114,10 @@ function rule(id: string, source: string, proposition: string, severity: Teachin
   return { id, source, severity, global, ...(domain ? { domain } : {}), question: { type: "noul", instructions: `${proposition}${boundary}`,
     criteria: { true: "The described violation is present in the reply or proposed tool call.", false: "The described violation is absent. A condition that does not arise is not a violation." } } };
 }
+
+/** The host has an actual submitted stem against which to identify what the tutor is scoring. */
+export const SUBMITTED_PREFERENCE_GRADE_QUESTION = rule("preference_graded", protocol("Tools"),
+  "Read the saved question in `turn.pendingSubmissions`, the learner’s answer and the proposed feedback or grading call. Does the reply mark the learner’s personal preference as correct or incorrect? A preference asks what the learner likes, values, or wants to do next. A question whose answer can be checked against the stated facts is a comprehension item, even if it says ‘pick one’, asks for a prediction, or has no stored answer key. Scoring an answer to such an item does not grade a preference. For a mixed item, return true if the personal preference itself receives a correctness verdict. Judge the subject of the score, independently of whether the score is accurate.").question;
 
 /** P(violation), one observable failure per question. Never average away a serious violation. */
 export const TEACHING_POLICY_RULES: readonly TeachingPolicyRule[] = [

@@ -1,0 +1,549 @@
+{
+  "production": "https://chat.keating.help",
+  "release": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+  "conversationId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+  "firstReceiptSha256": "40677e73017c1d1947667a2dc264f448c2b59feebf7edbb0199197f8b93e71c7",
+  "priorBoundUsd": 5.662499929999999,
+  "maximumAdditionalUsd": 1.3,
+  "expectedTeachingPolicy": "keating-teaching-policy/v2.4.1",
+  "physicalLimits": {
+    "tutors": 8,
+    "jev": 16,
+    "rounds": 2
+  },
+  "status": "withheld",
+  "intercepted": {
+    "unrecognized-candidate-instructions": 2,
+    "foreign-origin": 1,
+    "other-background": 10,
+    "provider-before-or-after-turn": 2,
+    "unrelated-api": 11
+  },
+  "dispatched": [
+    {
+      "provider": "typesafe",
+      "stage": "planning",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000274092,
+      "startedAt": 1795047530111,
+      "finishedAt": 1795047530277,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6526,
+        "output": 748
+      },
+      "status": "metered",
+      "originalWireHash": "b29cd0b5623f8da944944d9dc2ed928221350b8a3cb0e62acd1c810d52b797d1",
+      "sentWireHash": "b29cd0b5623f8da944944d9dc2ed928221350b8a3cb0e62acd1c810d52b797d1",
+      "round": 1,
+      "browserRequestId": "273520.627",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-1",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00299835,
+      "startedAt": 1795047530400,
+      "finishedAt": 1795047534061,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 18261,
+        "uncachedInput": 18261,
+        "cacheRead": 0,
+        "output": 432
+      },
+      "status": "metered",
+      "originalWireHash": "a56c62647cc04a6665fcf1dbadfde8db978f20ff052e7f37786ba889b23d0e2a",
+      "sentWireHash": "975151ef9bf7add618b0580dc9be6cd85a801de6a1900a6c9becc023c0766abf",
+      "round": 1,
+      "toolCount": 17,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "medium",
+      "temperature": null,
+      "browserRequestId": "273520.628",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-2",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00289587,
+      "startedAt": 1795047530899,
+      "finishedAt": 1795047533483,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 18261,
+        "uncachedInput": 18133,
+        "cacheRead": 128,
+        "output": 290
+      },
+      "status": "metered",
+      "originalWireHash": "31aa63a52107b66871560d229d8b8137c5f2b1a4bb95a41f640b7bd9913e8b8b",
+      "sentWireHash": "da00ef01a5d0b0473864fb1229c043314be9a8cde4c741732e09874c54716bcb",
+      "round": 1,
+      "toolCount": 17,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "medium",
+      "temperature": null,
+      "browserRequestId": "273520.629",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-3",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00309828,
+      "startedAt": 1795047531401,
+      "finishedAt": 1795047536117,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 18260,
+        "uncachedInput": 17748,
+        "cacheRead": 512,
+        "output": 714
+      },
+      "status": "metered",
+      "originalWireHash": "0321d72e0fe46528ba4290a43d0a202b89b2556cc8078dffbf750ee1f98530a0",
+      "sentWireHash": "e0168c32a8b2205e192f89a3885615bc156d8785a068f1b24bbff493f2e4a7ed",
+      "round": 1,
+      "toolCount": 17,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "medium",
+      "temperature": null,
+      "browserRequestId": "273520.630",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-4",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00287727,
+      "startedAt": 1795047531901,
+      "finishedAt": 1795047537069,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 18261,
+        "uncachedInput": 18133,
+        "cacheRead": 128,
+        "output": 259
+      },
+      "status": "metered",
+      "originalWireHash": "1bc090474ebdf249b37d8212c75665b756b9fbdbc7c92fcf6b57866b7ea3432d",
+      "sentWireHash": "9b5b7b152de062951bfaf5a895e8c0290b6fad1356aa191ce9f65a3544f1c4c0",
+      "round": 1,
+      "toolCount": 17,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "medium",
+      "temperature": null,
+      "browserRequestId": "273520.631",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000346458,
+      "startedAt": 1795047533497,
+      "finishedAt": 1795047533635,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 8249,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "sentWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "round": 1,
+      "browserRequestId": "273520.632",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000346458,
+      "startedAt": 1795047534073,
+      "finishedAt": 1795047534266,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 8249,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "sentWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "round": 1,
+      "browserRequestId": "273520.633",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000366828,
+      "startedAt": 1795047536124,
+      "finishedAt": 1795047536283,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 8734,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "38bcb34ba1c5dc5d4500922ac886232fc7d4390e83ea087453abc33036d9cb2f",
+      "sentWireHash": "38bcb34ba1c5dc5d4500922ac886232fc7d4390e83ea087453abc33036d9cb2f",
+      "round": 1,
+      "browserRequestId": "273520.634",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000346458,
+      "startedAt": 1795047537082,
+      "finishedAt": 1795047537257,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 8249,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "sentWireHash": "506cd9ea1689b5965c6eea384d66289f4253eadb70cab4487f9fb26d78134585",
+      "round": 1,
+      "browserRequestId": "273520.635",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 1,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000141078,
+      "startedAt": 1795047537286,
+      "finishedAt": 1795047537383,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 3359,
+        "output": 39
+      },
+      "status": "metered",
+      "originalWireHash": "0825d06baefecc122df6d2e8c60e6647fad56e182f8e864d04b2ce0c76673bf9",
+      "sentWireHash": "0825d06baefecc122df6d2e8c60e6647fad56e182f8e864d04b2ce0c76673bf9",
+      "round": 1,
+      "browserRequestId": "273520.636",
+      "networkEvent": "requestfinished",
+      "preferredAttempt": 1,
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 2,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000161448,
+      "startedAt": 1795047537291,
+      "finishedAt": 1795047537420,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 3844,
+        "output": 39
+      },
+      "status": "metered",
+      "originalWireHash": "a5101fcf27792eed401050d8c69a2922f9d00adc59e4d3d666284c5ae690d85c",
+      "sentWireHash": "a5101fcf27792eed401050d8c69a2922f9d00adc59e4d3d666284c5ae690d85c",
+      "round": 1,
+      "browserRequestId": "273520.637",
+      "networkEvent": "requestfinished",
+      "preferredAttempt": 3,
+      "reportedIdentityMatchesRequest": true
+    }
+  ],
+  "startedUtc": "2026-11-19T00:18:49.471Z",
+  "authorization": "A single supplemental study includes one natural answer and up to two feedback rounds",
+  "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+  "action": "selected-known-blue-option",
+  "answerBeforeSubmit": {
+    "file": "chosen-answer.png",
+    "sha256": "a37a1904ee35c9bb401f8a72efb0d5e0b6d4b5f46b51a7baef7f683951d103a2"
+  },
+  "submittedAt": 1795047529730,
+  "firstObservedSavedAnswer": {
+    "id": "openui:question-check:openui-1po0pz1-sock-draw-guess:web-ui-ktzajq:guess-question-1",
+    "sessionId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+    "documentId": "openui-1po0pz1-sock-draw-guess",
+    "nodeId": "guess",
+    "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+    "answer": "Blue",
+    "grading": "pending",
+    "score": null,
+    "observedAt": 1795047529854
+  },
+  "interceptedTutorShapes": [
+    {
+      "reason": "unrecognized-candidate-instructions",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "slotMarker": null,
+      "maxOutput": 800,
+      "userCount": 1,
+      "containsRegisteredPrompt": false,
+      "sessionTitle": false,
+      "topicCategorization": true,
+      "auxiliaryWebSearch": false
+    }
+  ],
+  "afterCommitEvidence": {
+    "file": "committed-submission.png",
+    "sha256": "00f62eab7fa0793f62acd964add7d441a3ef5d6f62371d6112c296797dbf4764"
+  },
+  "committed": {
+    "id": "openui:question-check:openui-1po0pz1-sock-draw-guess:web-ui-ktzajq:guess-question-1",
+    "sessionId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+    "documentId": "openui-1po0pz1-sock-draw-guess",
+    "nodeId": "guess",
+    "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+    "answer": "Blue",
+    "grading": "pending",
+    "score": null
+  },
+  "observer": {
+    "schemaVersion": 1,
+    "conversationId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+    "turnId": "learner-1",
+    "turnIndex": 1,
+    "model": "minimax/MiniMax-M3.1-Flash",
+    "mode": "guided",
+    "cue": {
+      "kind": "none",
+      "targets": []
+    },
+    "reply": "withheld",
+    "replyElapsedMs": 7629,
+    "attempted": true,
+    "compiled": [
+      "simulation"
+    ],
+    "selected": [],
+    "rendered": [],
+    "guidance": {
+      "source": "jev",
+      "action": "grade-first",
+      "delivered": true,
+      "targets": []
+    },
+    "outsideWords": null,
+    "nativePageRequested": null,
+    "draftAttempts": 4,
+    "gateIssues": [
+      "checkpoint_answer_leaked",
+      "checkpoint_continued",
+      "checkpoint_repeated",
+      "preference_graded",
+      "quality_scope",
+      "unsolicited_assessment"
+    ],
+    "decisionModel": "jev-1.14.0",
+    "pairReviews": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "status": "compared",
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 1,
+            "issues": [
+              "preference_graded"
+            ]
+          },
+          {
+            "attempt": 2,
+            "issues": [
+              "preference_graded"
+            ]
+          }
+        ],
+        "startedAtMs": 7250.469999999739,
+        "finishedAtMs": 7368.93499999959
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "status": "compared",
+        "preferredAttempt": 3,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 3,
+            "issues": [
+              "checkpoint_answer_leaked",
+              "checkpoint_repeated",
+              "quality_scope",
+              "unsolicited_assessment"
+            ]
+          },
+          {
+            "attempt": 4,
+            "issues": [
+              "checkpoint_continued",
+              "preference_graded"
+            ]
+          }
+        ],
+        "startedAtMs": 7256.379999999888,
+        "finishedAtMs": 7406.674999999814
+      }
+    ],
+    "requestedModel": "minimax/MiniMax-M3.1-Flash",
+    "nativePage": {
+      "succeeded": null,
+      "failed": null,
+      "attached": null,
+      "saved": null,
+      "mounted": null,
+      "ready": null,
+      "visible": null,
+      "opened": null,
+      "frameFailed": null
+    }
+  },
+  "after": {
+    "id": "openui:question-check:openui-1po0pz1-sock-draw-guess:web-ui-ktzajq:guess-question-1",
+    "sessionId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+    "documentId": "openui-1po0pz1-sock-draw-guess",
+    "nodeId": "guess",
+    "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+    "answer": "Blue",
+    "grading": "pending",
+    "score": null
+  },
+  "visibleLastReply": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "finishedUtc": "2026-11-19T00:19:00.282Z",
+  "publicEvidence": {
+    "trace": {
+      "file": "after-feedback-trace.json",
+      "sha256": "58b3a2b1308aabbd8187b67f1257d2f72c4a94e8eac0cfedd15effe988eeb7be"
+    },
+    "queries": {
+      "file": "after-feedback-webmcp.json",
+      "sha256": "0f70154cb63c27b5e1bdaa89f432f2eff7b164d92f5bc1de5c3cb79e3786d4eb"
+    },
+    "screenshot": {
+      "file": "after-feedback-classroom.png",
+      "sha256": "a26659fbd8dcbc1e66491c49ebc2e87446a3e81cdfc3fed74e6c04083f78e8ec"
+    }
+  },
+  "settingsExport": {
+    "file": "final-settings-export.json",
+    "sha256": "58b3a2b1308aabbd8187b67f1257d2f72c4a94e8eac0cfedd15effe988eeb7be"
+  },
+  "additionalBoundUsd": 0.01385259,
+  "cumulativeBoundUsd": 5.67635252,
+  "isolatedContextClosed": true
+}

@@ -1,0 +1,1294 @@
+{
+  "schemaVersion": 1,
+  "registrationSha256": "80f87e064ce6ab4020531793712e13a18032f903caeec4d41ef3923205304980",
+  "previousCumulativeBoundUsd": 5.67635252,
+  "plannedPhysical": 40,
+  "registeredMaximumUsd": 0.15,
+  "rows": [
+    {
+      "caseId": "case-04",
+      "arm": "submitted",
+      "wireSha256": "4f9a779f6508624ff87cc7740455abe3b2e6cadf1cf91351c26e8217b186604b",
+      "probability": 0.01,
+      "http": 200,
+      "usage": {
+        "input": 1123,
+        "output": 24
+      },
+      "accountedUsd": 0.000047166,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:56.800Z",
+      "responseSha256": "600708e231322e4323ec069601e8b6da9625ef196d0dd20f5d9dabd514afb769",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1123,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.01
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.017Z"
+    },
+    {
+      "caseId": "case-04",
+      "arm": "original",
+      "wireSha256": "c04a3e1f569766bd2281fcbf68d08a834633073d0c42cb5370324e0a420bc72c",
+      "probability": 0.18,
+      "http": 200,
+      "usage": {
+        "input": 1016,
+        "output": 24
+      },
+      "accountedUsd": 0.000042672,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.031Z",
+      "responseSha256": "83d31d4af1aebea00fe09c6fa1d348af67fbc06eb3c218656fba369fbc8a8bb9",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1016,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.18
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.148Z"
+    },
+    {
+      "caseId": "case-02",
+      "arm": "submitted",
+      "wireSha256": "7345c8d05fc7f8d41e44882575293d35ff7bf29c30f55ae478a409363ef693d6",
+      "probability": 0.03,
+      "http": 200,
+      "usage": {
+        "input": 1396,
+        "output": 24
+      },
+      "accountedUsd": 0.000058632,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.162Z",
+      "responseSha256": "94620a78bec9f8b44c6aa24e6e5b2773a2998acd6bd2f8aac35814eb7d3fac40",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1396,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.03
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.287Z"
+    },
+    {
+      "caseId": "case-02",
+      "arm": "original",
+      "wireSha256": "a797118970bf864be4a591d9ce826bc0cdcbea6ef9f370262784f6fda7ef6d68",
+      "probability": 0.61,
+      "http": 200,
+      "usage": {
+        "input": 1289,
+        "output": 24
+      },
+      "accountedUsd": 0.000054138,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.300Z",
+      "responseSha256": "061d57c86aa879ccafa40ee8b06830310c20c1597ede7b437c5b08cc89c8737a",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1289,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.61
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.455Z"
+    },
+    {
+      "caseId": "case-20",
+      "arm": "submitted",
+      "wireSha256": "6ce622655761d686e01951be01fb848b9e4a3bfcbe0ab581b4886e1f21d59f46",
+      "probability": 0.02,
+      "http": 200,
+      "usage": {
+        "input": 1119,
+        "output": 24
+      },
+      "accountedUsd": 0.000046998,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.469Z",
+      "responseSha256": "432e7814065f7d742389a9b926620df262f0d62009a048a1925dc3df159e630a",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1119,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.575Z"
+    },
+    {
+      "caseId": "case-20",
+      "arm": "original",
+      "wireSha256": "7eba57153bea2476ecfb21ae6e9be9f05b8d4f98cf58f425fc999ca3e249aeae",
+      "probability": 0.14,
+      "http": 200,
+      "usage": {
+        "input": 1012,
+        "output": 24
+      },
+      "accountedUsd": 0.000042504,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.590Z",
+      "responseSha256": "14925fee8b3e8e65c6f581422ad9d675b051ac0b13099b35276ed07f1d595290",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1012,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.14
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.680Z"
+    },
+    {
+      "caseId": "case-18",
+      "arm": "submitted",
+      "wireSha256": "9a1412200fb9e68debfaa0eed8b66d67461d1ba50853ad2483bf13e4e433939b",
+      "probability": 0.91,
+      "http": 200,
+      "usage": {
+        "input": 1093,
+        "output": 24
+      },
+      "accountedUsd": 0.000045906,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.694Z",
+      "responseSha256": "1a60b562f6c5e2d7eeb8fd71a9d5d8271d8b0a108ef07d07dd4e6cb6629e193d",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1093,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.91
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.844Z"
+    },
+    {
+      "caseId": "case-18",
+      "arm": "original",
+      "wireSha256": "7d37b4725c6caad8b2e0e5790d338677d2a1f648f3254206cc5fbaa107129cef",
+      "probability": 0.9,
+      "http": 200,
+      "usage": {
+        "input": 986,
+        "output": 24
+      },
+      "accountedUsd": 0.000041412,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.859Z",
+      "responseSha256": "d932af93d44d2a22eaef0978b8a8c0a4343f4b9af0e8c2e2431f23bf26b58162",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 986,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.9
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:57.960Z"
+    },
+    {
+      "caseId": "case-06",
+      "arm": "submitted",
+      "wireSha256": "5eede35c0ac3c30b2420185bc61af8b634a058382e868e3eab6ba81dd15306ac",
+      "probability": 0.01,
+      "http": 200,
+      "usage": {
+        "input": 1130,
+        "output": 24
+      },
+      "accountedUsd": 0.00004746,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:57.975Z",
+      "responseSha256": "4e68d523de85731479f7d312af681bf0c11fa00e1f59e041b7153e9bb0219b62",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1130,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.01
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.090Z"
+    },
+    {
+      "caseId": "case-06",
+      "arm": "original",
+      "wireSha256": "af5f3e57e6f80247f67d64144de39ec7333a8864b736e6996b9f2af4896b970e",
+      "probability": 0.08,
+      "http": 200,
+      "usage": {
+        "input": 1023,
+        "output": 24
+      },
+      "accountedUsd": 0.000042966,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.104Z",
+      "responseSha256": "efe24d25a3366b2a1f5490053f10328a81c0ffd4df7a689d710909f366befbac",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1023,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.08
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.228Z"
+    },
+    {
+      "caseId": "case-01",
+      "arm": "original",
+      "wireSha256": "f3e01393e49903a84a2dcc173406d7540011f5566c6383051fd255ed3497e891",
+      "probability": 0.35,
+      "http": 200,
+      "usage": {
+        "input": 1270,
+        "output": 24
+      },
+      "accountedUsd": 0.00005334,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.243Z",
+      "responseSha256": "25d363d9936b07691b1048f5d71666a5fea636178e55a6db50cd76853001d597",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1270,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.35
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.357Z"
+    },
+    {
+      "caseId": "case-01",
+      "arm": "submitted",
+      "wireSha256": "04f8174f02bc9e74151cf12fb9bf8a8a66aa1b834404ebed4b771ecc464f2f9e",
+      "probability": 0.02,
+      "http": 200,
+      "usage": {
+        "input": 1377,
+        "output": 24
+      },
+      "accountedUsd": 0.000057834,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.373Z",
+      "responseSha256": "48df6e8e6b2184bd806c0f64011b61a46ad7a0c2225e03c5c9574abc4f42ebbd",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1377,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.475Z"
+    },
+    {
+      "caseId": "case-15",
+      "arm": "original",
+      "wireSha256": "2e7593c1289298def749409b8a238f918918dd5466f357203a64ad7dc4d93f30",
+      "probability": 0.03,
+      "http": 200,
+      "usage": {
+        "input": 1187,
+        "output": 24
+      },
+      "accountedUsd": 0.000049854,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.490Z",
+      "responseSha256": "866d55fca96cf275e91cbdc50585deb2269e0d5c6970e4bbc99b0d945c8765cf",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1187,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.03
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.599Z"
+    },
+    {
+      "caseId": "case-15",
+      "arm": "submitted",
+      "wireSha256": "2cf0ecf1a6ebcd8610af2068caba6145610e591b021233f1868c2a7a0c57e397",
+      "probability": 0.02,
+      "http": 200,
+      "usage": {
+        "input": 1294,
+        "output": 24
+      },
+      "accountedUsd": 0.000054348,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.614Z",
+      "responseSha256": "9043a188c0a306bfb0ddbd3e2d6249a6c4dfe61e100a7b8e7c6ab84056b7e6c8",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1294,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.744Z"
+    },
+    {
+      "caseId": "case-13",
+      "arm": "original",
+      "wireSha256": "197264c27e2fa1695930d8a0f67e851baba28b83bbfd1d5c46a0ea94021cdb60",
+      "probability": 0.02,
+      "http": 200,
+      "usage": {
+        "input": 940,
+        "output": 24
+      },
+      "accountedUsd": 0.00003948,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.758Z",
+      "responseSha256": "9db33c67368334db9d1c94701dd805dc168192a01af5f20bc44acd29c77b8db1",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 940,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:58.870Z"
+    },
+    {
+      "caseId": "case-13",
+      "arm": "submitted",
+      "wireSha256": "9854eb621398bb3b1967670f944ab191377fb4a8e03cc48812882c753ea91164",
+      "probability": 0.05,
+      "http": 200,
+      "usage": {
+        "input": 1047,
+        "output": 24
+      },
+      "accountedUsd": 0.000043974,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:58.886Z",
+      "responseSha256": "4e927f628177219be2e5924760061402186af3c0f1a9956ef261443134cce4ea",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1047,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.05
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.018Z"
+    },
+    {
+      "caseId": "case-05",
+      "arm": "original",
+      "wireSha256": "5c8fdb96ae7c89283879ea98e1e7829c7b302f16146607321629a9e4d708006d",
+      "probability": 0.07,
+      "http": 200,
+      "usage": {
+        "input": 1040,
+        "output": 24
+      },
+      "accountedUsd": 0.00004368,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.033Z",
+      "responseSha256": "7e01b685e99d086534c842767f5d812d42d5c3e08c59297a4bab69233d30ca72",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1040,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.07
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.141Z"
+    },
+    {
+      "caseId": "case-05",
+      "arm": "submitted",
+      "wireSha256": "1784a56e411f136accd0896d135ac66993e85682f5c1ec5742c638aec2744ab1",
+      "probability": 0.01,
+      "http": 200,
+      "usage": {
+        "input": 1147,
+        "output": 24
+      },
+      "accountedUsd": 0.000048174,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.156Z",
+      "responseSha256": "f963122deb5f235da073a8c2a245a0a95ef6110024d7911d4fa48b582e00d21e",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1147,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.01
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.258Z"
+    },
+    {
+      "caseId": "case-19",
+      "arm": "original",
+      "wireSha256": "043706f8e50981f9358781632bc743673c58ac48e87fb9dae82cf26d602b8cc0",
+      "probability": 0.8,
+      "http": 200,
+      "usage": {
+        "input": 989,
+        "output": 24
+      },
+      "accountedUsd": 0.000041538,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.274Z",
+      "responseSha256": "c3153369f5798792c79161382691caf3e500f5188ea9a9a87adb46e3973b0e38",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 989,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.8
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.396Z"
+    },
+    {
+      "caseId": "case-19",
+      "arm": "submitted",
+      "wireSha256": "f52f915a7af7855d81545f54e49a0915602e71591a8abf4f3c5fa1a62a24e0c3",
+      "probability": 0.5,
+      "http": 200,
+      "usage": {
+        "input": 1096,
+        "output": 24
+      },
+      "accountedUsd": 0.000046032,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.411Z",
+      "responseSha256": "f94697b22368ea1b5a77cd338e9a9b803e0ede90320eaf16ad5063cca5c19b24",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1096,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.5
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.544Z"
+    },
+    {
+      "caseId": "case-12",
+      "arm": "submitted",
+      "wireSha256": "98d164420c9233981286ac41662b7b8debe4a5a802bc715579ef2a0ebed322d6",
+      "probability": 0.91,
+      "http": 200,
+      "usage": {
+        "input": 1093,
+        "output": 24
+      },
+      "accountedUsd": 0.000045906,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.559Z",
+      "responseSha256": "1a60b562f6c5e2d7eeb8fd71a9d5d8271d8b0a108ef07d07dd4e6cb6629e193d",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1093,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.91
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.707Z"
+    },
+    {
+      "caseId": "case-12",
+      "arm": "original",
+      "wireSha256": "0ed585d7806bea5c4d2b4aca4f0c60378c17cce56ab58cc019182a96c737ce95",
+      "probability": 0.8,
+      "http": 200,
+      "usage": {
+        "input": 986,
+        "output": 24
+      },
+      "accountedUsd": 0.000041412,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.722Z",
+      "responseSha256": "0eb41426e2c393aadbabb02afb3ac9ea5cad77143d40bc2333a6a13ad9cfc1dc",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 986,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.8
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:26:59.883Z"
+    },
+    {
+      "caseId": "case-14",
+      "arm": "submitted",
+      "wireSha256": "da784c1cdc6765826fde6cddec796f1e0656874a0f3f780e8435793876f0751a",
+      "probability": 0.03,
+      "http": 200,
+      "usage": {
+        "input": 1055,
+        "output": 24
+      },
+      "accountedUsd": 0.00004431,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:26:59.898Z",
+      "responseSha256": "a003ee573ea9b126ba0ce3e8fee688e4a92e16fa0ad2431879bf4d45f8c7a047",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1055,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.03
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.008Z"
+    },
+    {
+      "caseId": "case-14",
+      "arm": "original",
+      "wireSha256": "da6c209368501d0e3849c5623c631730b5c044a060302bd1b01b63f25a539e40",
+      "probability": 0.02,
+      "http": 200,
+      "usage": {
+        "input": 948,
+        "output": 24
+      },
+      "accountedUsd": 0.000039816,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.022Z",
+      "responseSha256": "015b25c147c979ca9feb77d731a1fff65cab5b40e35818db925b2f627b0afffc",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 948,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.118Z"
+    },
+    {
+      "caseId": "case-08",
+      "arm": "submitted",
+      "wireSha256": "7ec9b8f36accd0ee6d0d4922cc0e788fbd834e8f0814025859bbe52607faf287",
+      "probability": 0.98,
+      "http": 200,
+      "usage": {
+        "input": 1107,
+        "output": 24
+      },
+      "accountedUsd": 0.000046494,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.133Z",
+      "responseSha256": "f1ed5b3395d5957144e5c6b82bc58cd6acfde75122714864010cb5d5b887aec9",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1107,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.98
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.266Z"
+    },
+    {
+      "caseId": "case-08",
+      "arm": "original",
+      "wireSha256": "010de6eee3e661fde8d564e57ebcc4e207f80f6ac062c7afd0d626b1786dd86c",
+      "probability": 0.95,
+      "http": 200,
+      "usage": {
+        "input": 1000,
+        "output": 24
+      },
+      "accountedUsd": 0.000042,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.280Z",
+      "responseSha256": "aa539332307428a93826bbf3f3e144bc41d9771138c7404a3a040ed699ae628e",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1000,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.95
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.404Z"
+    },
+    {
+      "caseId": "case-17",
+      "arm": "original",
+      "wireSha256": "a694dc6946c54d9ba5668f6b02d5829a68ad1bdd6267dc998be997fee27a54f9",
+      "probability": 0.91,
+      "http": 200,
+      "usage": {
+        "input": 1070,
+        "output": 24
+      },
+      "accountedUsd": 0.00004494,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.419Z",
+      "responseSha256": "fa66e8153769ce425589100d292b197a2b9507c41b86b13f720fe1667d5ac371",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1070,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.91
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.553Z"
+    },
+    {
+      "caseId": "case-17",
+      "arm": "submitted",
+      "wireSha256": "f80f590e607adc19877254446af24dc78ccf3956ff67fcdd258932008d0b02a4",
+      "probability": 0.98,
+      "http": 200,
+      "usage": {
+        "input": 1177,
+        "output": 24
+      },
+      "accountedUsd": 0.000049434,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.567Z",
+      "responseSha256": "282bd4c225e2f6c5b707c0c63b8d256984b2608d7cc4a39c4719433210beb47a",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1177,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.98
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.746Z"
+    },
+    {
+      "caseId": "case-10",
+      "arm": "submitted",
+      "wireSha256": "33e53bf41fe1515ce231ce4b4dd4b03505c97ba04c097982f668c6371c1d6e6a",
+      "probability": 0.95,
+      "http": 200,
+      "usage": {
+        "input": 1127,
+        "output": 24
+      },
+      "accountedUsd": 0.000047334,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.761Z",
+      "responseSha256": "94dc8b56b7a2670d02a717f8325064ea57e7f324dae1f13aeabd5e08cd2a0f34",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1127,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.95
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:00.898Z"
+    },
+    {
+      "caseId": "case-10",
+      "arm": "original",
+      "wireSha256": "9606265221aadd7286089e44a33e7812785ae5ff14e18e0df9ec97c29eb7696b",
+      "probability": 0.94,
+      "http": 200,
+      "usage": {
+        "input": 1020,
+        "output": 24
+      },
+      "accountedUsd": 0.00004284,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:00.914Z",
+      "responseSha256": "eecd1af763328bfce5ab290edb59ee43720f67bedb0f9787821cac58b43a328f",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1020,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.94
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.015Z"
+    },
+    {
+      "caseId": "case-07",
+      "arm": "original",
+      "wireSha256": "c050fea715d9f7a66ed46db4fbdb53c5e96cd2d0f1b046caaaf8d51d9ed20daf",
+      "probability": 0.04,
+      "http": 200,
+      "usage": {
+        "input": 1026,
+        "output": 24
+      },
+      "accountedUsd": 0.000043092,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.031Z",
+      "responseSha256": "0acb98068643a227e26a6f0fb442910a8df80330b04495b717bb96e3021d90d5",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1026,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.04
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.119Z"
+    },
+    {
+      "caseId": "case-07",
+      "arm": "submitted",
+      "wireSha256": "1c3f21a753a19bc7262b14a1fef62d296239fc091c30286b1821c890928246f9",
+      "probability": 0.01,
+      "http": 200,
+      "usage": {
+        "input": 1133,
+        "output": 24
+      },
+      "accountedUsd": 0.000047586,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.135Z",
+      "responseSha256": "317e28f1e83b74640b32fcabde2d6d1db30b84badfd6db45d9bc5eebf70a544b",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1133,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.01
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.250Z"
+    },
+    {
+      "caseId": "case-03",
+      "arm": "original",
+      "wireSha256": "e617bc25ebbd60031cf8e32c2f2ca1be9d2f7ceae5d51fbe47b762295e2c2770",
+      "probability": 0.35,
+      "http": 200,
+      "usage": {
+        "input": 1257,
+        "output": 24
+      },
+      "accountedUsd": 0.000052794,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.266Z",
+      "responseSha256": "d063e1cc49d7d4c94690edbaae846a3006eb2af1413630c17b011407a52747a0",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1257,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.35
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.388Z"
+    },
+    {
+      "caseId": "case-03",
+      "arm": "submitted",
+      "wireSha256": "36fbea24da4b7e4d58a493ba47b2acea47f2822b38938d82f5466d1e5617ee49",
+      "probability": 0.03,
+      "http": 200,
+      "usage": {
+        "input": 1364,
+        "output": 24
+      },
+      "accountedUsd": 0.000057288,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.403Z",
+      "responseSha256": "ebdf68d6488a8a4fe12bd285ed944284623479bffef6ea3b203958e0fdd84183",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1364,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.03
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.524Z"
+    },
+    {
+      "caseId": "case-09",
+      "arm": "original",
+      "wireSha256": "1bda1cb3c0f5b534dbd4b21d636a43b902c3a347a19899ef31f44142cdb5986a",
+      "probability": 0.91,
+      "http": 200,
+      "usage": {
+        "input": 1002,
+        "output": 24
+      },
+      "accountedUsd": 0.000042084,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.541Z",
+      "responseSha256": "17639933df0c871798bfe9693d4ca5201336621dacc3616cc60b771129c288c4",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1002,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.91
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.674Z"
+    },
+    {
+      "caseId": "case-09",
+      "arm": "submitted",
+      "wireSha256": "c5079df44a183924aee6a280472009acd25d732a8649024a76e93e415466b6d0",
+      "probability": 0.96,
+      "http": 200,
+      "usage": {
+        "input": 1109,
+        "output": 24
+      },
+      "accountedUsd": 0.000046578,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.690Z",
+      "responseSha256": "c5ee4db03f67f46e44221e69ab7f7f36bb7ff340ff5b261aee97a6f6a6a29637",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1109,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.96
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.789Z"
+    },
+    {
+      "caseId": "case-16",
+      "arm": "submitted",
+      "wireSha256": "17d33b506fa0f13aed40ad01054a1e7b7f48a494480c19f192c8f7cc69f2a58b",
+      "probability": 0.86,
+      "http": 200,
+      "usage": {
+        "input": 1175,
+        "output": 24
+      },
+      "accountedUsd": 0.00004935,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.804Z",
+      "responseSha256": "1c8357db5fcf9286ab09d30935030b73e3a8529e9d6414a1f1a22f191d12f568",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1175,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.86
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:01.946Z"
+    },
+    {
+      "caseId": "case-16",
+      "arm": "original",
+      "wireSha256": "a2cfac2f84bd4de390bbd366823f0bb354bd96577d1c807e2476f7544698cafe",
+      "probability": 0.64,
+      "http": 200,
+      "usage": {
+        "input": 1068,
+        "output": 24
+      },
+      "accountedUsd": 0.000044856,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:01.961Z",
+      "responseSha256": "45fbaccda83ea8bcb38ce3579b176800a4984d76c19276345f52db468df3b2cc",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1068,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.64
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:02.133Z"
+    },
+    {
+      "caseId": "case-11",
+      "arm": "original",
+      "wireSha256": "b2c5cffc52a5ab567dfda14f487ae5d7a86785ceed20cca6caf74044990f3a34",
+      "probability": 0.95,
+      "http": 200,
+      "usage": {
+        "input": 1001,
+        "output": 24
+      },
+      "accountedUsd": 0.000042042,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:02.149Z",
+      "responseSha256": "8cb73e77ab9cd7741e42cfe86d50187e4d0b7f8cb81de04bd7298a8c63a1f06d",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1001,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.95
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:02.249Z"
+    },
+    {
+      "caseId": "case-11",
+      "arm": "submitted",
+      "wireSha256": "947f12ebb0f190a0541d51215627f90db29ff42cefbf74643776bfeef9549594",
+      "probability": 0.97,
+      "http": 200,
+      "usage": {
+        "input": 1108,
+        "output": 24
+      },
+      "accountedUsd": 0.000046536,
+      "reservedUsd": 0.003,
+      "status": "received",
+      "startedUtc": "2026-11-19T00:27:02.265Z",
+      "responseSha256": "cf58e045b1d3a1ae2608c37f95f30dfa04f3260ea8f5d9d3e98c7dd7a5513045",
+      "returnedModel": "jev-1.14.0",
+      "response": {
+        "model": "jev-1.14.0",
+        "usage": {
+          "input_tokens": 1108,
+          "output_tokens": 24
+        },
+        "answers": {
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.97
+          }
+        }
+      },
+      "model": "jev-1.14.0",
+      "finishedUtc": "2026-11-19T00:27:02.362Z"
+    }
+  ],
+  "started": "2026-11-19T00:26:56.797Z",
+  "status": "complete",
+  "finishedUtc": "2026-11-19T00:27:02.377Z",
+  "additionalBoundUsd": 0.0018648,
+  "cumulativeBoundUsd": 5.67821732
+}

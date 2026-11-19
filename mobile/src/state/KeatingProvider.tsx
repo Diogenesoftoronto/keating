@@ -84,7 +84,7 @@ interface KeatingContextValue {
   /** The learner's own "about you" background, appended to the system prompt. */
   learnerContext: string;
   setLearnerContext: (text: string) => Promise<void>;
-  sendMessage: (content: string, attachments?: ChatAttachment[]) => Promise<void>;
+  sendMessage: (content: string, attachments?: ChatAttachment[], submittedTurnId?: string) => Promise<void>;
   /** Atomically cancels any active reply, creates a lesson, and sends its first turn. */
   startNewSessionWithMessage: (content: string) => Promise<string | null>;
   retryLastResponse: () => Promise<void>;

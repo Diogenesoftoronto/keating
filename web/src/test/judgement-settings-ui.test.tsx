@@ -16,6 +16,16 @@ function render(overrides: Partial<JudgementSettingsViewProps> = {}) {
 }
 
 describe("independent judgement settings UI", () => {
+  test("Google review has its own opt-in key control and pinned reviewer", () => {
+    const html = render({ settings: { ...initial.settings, hostedProvider: "gemini-decision" }, keySaved: true });
+    expect(html).toContain('value="gemini-decision" selected=""');
+    expect(html).toContain("Google API key saved on this device.");
+    expect(html).toContain("directly to Google");
+    expect(html).not.toContain("Enter your TypeSafe API key");
+    expect(html).not.toContain(">Model ID</span>");
+    expect(html).not.toContain("Connect Not Organic</button>");
+    expect(html).not.toContain("Local judgement model · fallback");
+  });
   test("is reachable from settings links and explains independence and local limitations", () => {
     const html = render();
     expect(MODELS_TAB_ALL_SECTION_IDS).toContain("judgement");

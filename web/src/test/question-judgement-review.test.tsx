@@ -51,3 +51,19 @@ test("canonical review lookup identifies the exact action, not another attempt w
   expect(first).toEqual(["openui:question-check:doc:attempt1:q"]);
   expect(first).not.toEqual(second);
 });
+
+
+test("the persisted tutor grade remains visible for the exact form even without an auxiliary review or lesson explanation", () => {
+  const saved = { ...check, answer: "Blue", grading: "model" as const, judgement: undefined };
+  for (const [score, verdict] of [[1, "Your answer is correct."], [.5, "Your answer is partly correct."], [0, "Your answer is incorrect."]] as const) {
+    const html = renderToStaticMarkup(<QuestionJudgementReviewView checks={[{ ...saved, score }]} multiple />);
+    expect(html).toContain(verdict);
+    expect(html).toContain(check.question);
+    expect(html).not.toContain("Review estimate");
+  }
+  expect(renderToStaticMarkup(<QuestionJudgementReviewView checks={[{ ...saved, score: .7 }]} />)).toContain("Recorded grade: 70%.");
+  for (const score of [undefined, NaN, 2]) {
+    expect(renderToStaticMarkup(<QuestionJudgementReviewView checks={[{ ...saved, score }]} />)).toBe("");
+  }
+  expect(renderToStaticMarkup(<QuestionJudgementReviewView checks={[{ ...saved, grading: "pending", score: 1 }]} />)).toBe("");
+});

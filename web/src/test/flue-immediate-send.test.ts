@@ -2,6 +2,9 @@ import { describe, expect, it } from "bun:test";
 import { FlueConversation } from "../keating/flue/conversation";
 import { FlueApiError } from "@flue/sdk";
 import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
+import type { AgentOptions } from "@earendil-works/pi-agent-core";
+import { createTool } from "../keating/browser-tools/shared";
+import { releaseSubmittedGrade, submittedGradeTarget } from "../keating/judgement/submitted-grade-execution";
 import { prepareMessagesForRetry } from "../hooks/session-recovery";
 
 function deferred() {
@@ -52,6 +55,36 @@ function fixture(admissionGate?: Promise<void>, missingHistory = false, modelErr
 const message = (text = "Show this immediately") => ({ role: "user" as const, content: text, timestamp: Date.now() });
 
 describe("immediate learner turns", () => {
+  it("carries the reviewed grade through the real Flue model and tool RPCs and discards it for the next ordinary turn", async () => {
+    const { chat } = fixture();
+    const rpc = chat as any;
+    const target = { id: "saved-1", topic: "Socks", question: "Which colour?", answer: "Blue", sessionId: "classroom" };
+    const proposal = { type: "toolCall" as const, id: "provider-returned-id", name: "grade_question_checks",
+      arguments: { topic: target.topic, results: [{ question: target.question, verdict: "correct" }] } };
+    const scopes: unknown[] = [];
+    chat.context.tools = [createTool(proposal.name, "Grade a result.", { topic: { type: "string" }, results: { type: "array" } },
+      async (args, signal) => { scopes.push(submittedGradeTarget(signal, args)); return "Checked"; }, ["topic", "results"])];
+    let scoped = true;
+    const stream: NonNullable<AgentOptions["streamFn"]> = (_model, _context, options) => {
+      if (scoped) releaseSubmittedGrade(options?.signal, proposal, target);
+      const response = { ...rpc.errorMessage("error", ""), errorMessage: undefined, content: [proposal], stopReason: "toolUse" };
+      const events = createAssistantMessageEventStream();
+      events.push({ type: "done", reason: "toolUse", message: response }); events.end(response);
+      return events;
+    };
+    rpc.streamFunction = stream;
+    rpc.client.read = async () => {
+      await rpc.modelTurn(() => {}, new AbortController().signal);
+      await rpc.executeTool({ name: proposal.name, toolCallId: proposal.id, args: structuredClone(proposal.arguments) }, new AbortController().signal);
+    };
+    try {
+      await chat.send(message("Submit my saved answer."));
+      scoped = false;
+      await chat.send(message("Ordinary call with a reused provider ID."));
+      expect(scopes).toEqual([target, undefined]);
+    } finally { await chat.dispose(); }
+  });
+
   it("actually submits a resume after restoring a turn interrupted by sign-in", async () => {
     const { chat, calls } = fixture(undefined, true);
     const sent = message("Preserve this through sign-in");

@@ -1,0 +1,534 @@
+{
+  "schemaVersion": 1,
+  "scope": "One prospectively registered production synthetic learner conversation with a real form click. Separate from the first production release smoke and offline calibration.",
+  "release": {
+    "sha": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+    "webVersion": "4.2.3",
+    "chatAsset": "/assets/index-BxmZoxBm.js",
+    "verifiedChatAssetSha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc"
+  },
+  "conversationId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+  "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+  "firstTurn": {
+    "stage": "learner typed a prediction request",
+    "turnId": "learner-0",
+    "reply": "released",
+    "appElapsedMs": 15304,
+    "guidance": {
+      "source": "jev",
+      "action": "create",
+      "delivered": true,
+      "targets": [
+        "question"
+      ]
+    },
+    "rendered": [
+      "question-group"
+    ],
+    "chosenAttempt": 4,
+    "httpByStage": {
+      "planning": 1,
+      "generation": 4,
+      "review": 4,
+      "pair": 2,
+      "final-choice": 0
+    },
+    "wireOverlapMs": {
+      "fourGenerations": 1329,
+      "bothPairs": 110
+    },
+    "runtimePairOverlapMs": 125.545,
+    "providerRows": {
+      "typesafe": {
+        "requests": 7,
+        "status200": 7,
+        "reportedModels": [
+          "jev-1.14.0"
+        ],
+        "reportedUsage": 7,
+        "costFromUsageUsd": 0.00137298
+      },
+      "minimax": {
+        "requests": 4,
+        "status200": 4,
+        "reportedModels": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "reportedUsage": 4,
+        "costFromUsageUsd": 0.01053261
+      }
+    },
+    "pairs": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "status": "compared",
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 1,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          },
+          {
+            "attempt": 2,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          }
+        ],
+        "startedAtMs": 13201.745000000112,
+        "finishedAtMs": 13329.705000000075
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "status": "compared",
+        "preferredAttempt": 4,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [
+          3,
+          4
+        ],
+        "finalistAttempt": 4,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 3,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          },
+          {
+            "attempt": 4,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          }
+        ],
+        "startedAtMs": 13204.160000000149,
+        "finishedAtMs": 13354.839999999851
+      }
+    ]
+  },
+  "submission": {
+    "stage": "learner clicked Blue",
+    "turnId": "learner-1",
+    "reply": "withheld",
+    "appElapsedMs": 7629,
+    "guidance": {
+      "source": "jev",
+      "action": "grade-first",
+      "delivered": true,
+      "targets": []
+    },
+    "rendered": [],
+    "chosenAttempt": null,
+    "httpByStage": {
+      "planning": 1,
+      "generation": 4,
+      "review": 4,
+      "pair": 2,
+      "final-choice": 0
+    },
+    "wireOverlapMs": {
+      "fourGenerations": 1582,
+      "bothPairs": 92
+    },
+    "runtimePairOverlapMs": 112.555,
+    "providerRows": {
+      "typesafe": {
+        "requests": 7,
+        "status200": 7,
+        "reportedModels": [
+          "jev-1.14.0"
+        ],
+        "reportedUsage": 7,
+        "costFromUsageUsd": 0.00198282
+      },
+      "minimax": {
+        "requests": 4,
+        "status200": 4,
+        "reportedModels": [
+          "MiniMax-M3.1-Flash"
+        ],
+        "reportedUsage": 4,
+        "costFromUsageUsd": 0.01186977
+      }
+    },
+    "pairs": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "status": "compared",
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 1,
+            "issues": [
+              "preference_graded"
+            ]
+          },
+          {
+            "attempt": 2,
+            "issues": [
+              "preference_graded"
+            ]
+          }
+        ],
+        "startedAtMs": 7250.469999999739,
+        "finishedAtMs": 7368.93499999959
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "status": "compared",
+        "preferredAttempt": 3,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [
+          {
+            "attempt": 3,
+            "issues": [
+              "checkpoint_answer_leaked",
+              "checkpoint_repeated",
+              "quality_scope",
+              "unsolicited_assessment"
+            ]
+          },
+          {
+            "attempt": 4,
+            "issues": [
+              "checkpoint_continued",
+              "preference_graded"
+            ]
+          }
+        ],
+        "startedAtMs": 7256.379999999888,
+        "finishedAtMs": 7406.674999999814
+      }
+    ]
+  },
+  "persistedAnswer": {
+    "id": "openui:question-check:openui-1po0pz1-sock-draw-guess:web-ui-ktzajq:guess-question-1",
+    "sessionId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+    "documentId": "openui-1po0pz1-sock-draw-guess",
+    "nodeId": "guess",
+    "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+    "answer": "Blue",
+    "grading": "pending",
+    "score": null
+  },
+  "learnerVisibleResult": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "recordedScore": null,
+  "teachingFeedbackReleased": false,
+  "firstViewport": {
+    "browser": {
+      "width": 1200,
+      "height": 850
+    },
+    "scrollViewport": {
+      "top": 141.359375,
+      "left": 360,
+      "bottom": 850,
+      "right": 1200,
+      "width": 840,
+      "height": 708.640625,
+      "scrollTop": 818,
+      "scrollHeight": 1527,
+      "clientHeight": 709
+    },
+    "legend": {
+      "text": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "box": {
+        "top": -80.09375,
+        "left": 409.46453857421875,
+        "bottom": 29.40625,
+        "right": 1153.902099609375,
+        "width": 744.4375610351562,
+        "height": 109.5
+      }
+    },
+    "options": [
+      {
+        "text": "A\nBlue",
+        "box": {
+          "top": 50.203125,
+          "left": 409.46453857421875,
+          "bottom": 123,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "B\nYellow",
+        "box": {
+          "top": 136,
+          "left": 409.46453857421875,
+          "bottom": 208.796875,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "",
+        "box": {
+          "top": 221.796875,
+          "left": 409.46453857421875,
+          "bottom": 346.59375,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 124.796875
+        }
+      }
+    ]
+  },
+  "evidenceViewport": {
+    "browser": {
+      "width": 1200,
+      "height": 850
+    },
+    "scrollViewport": {
+      "top": 70.359375,
+      "left": 360,
+      "bottom": 779,
+      "right": 1200,
+      "width": 840,
+      "height": 708.640625,
+      "scrollTop": 297,
+      "scrollHeight": 1527,
+      "clientHeight": 709
+    },
+    "legend": {
+      "text": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "box": {
+        "top": 369.90625,
+        "left": 407.78125,
+        "bottom": 479.40625,
+        "right": 1152.21875,
+        "width": 744.4375,
+        "height": 109.5
+      }
+    },
+    "options": [
+      {
+        "text": "A\nBlue",
+        "box": {
+          "top": 500.203125,
+          "left": 407.78125,
+          "bottom": 573,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "B\nYellow",
+        "box": {
+          "top": 586,
+          "left": 407.78125,
+          "bottom": 658.796875,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "",
+        "box": {
+          "top": 671.796875,
+          "left": 407.78125,
+          "bottom": 796.59375,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 124.796875
+        }
+      }
+    ]
+  },
+  "billing": {
+    "priorCumulativeBoundUsd": 5.65059434,
+    "firstUsageCostUsd": 0.01190559,
+    "submissionUsageCostUsd": 0.01385259,
+    "additionalCostFromUsageUsd": 0.02575818,
+    "newCumulativeBoundUsd": 5.67635252,
+    "invoiceUsd": null,
+    "abortedUnmeteredCandidateCalls": 0
+  },
+  "physicalRequests": {
+    "total": 22,
+    "fourCandidateRounds": 2,
+    "uniqueBrowserNetworkIds": 22,
+    "upstreamRequestIdsObserved": 0,
+    "allBodiesWithAppliedProviderOutputLimit8192": true
+  },
+  "privacyAndLimits": {
+    "persistedRowsMatchSettings": true,
+    "personalAccount": false,
+    "temporaryContextClosed": true,
+    "firstLessonBackground": [
+      {
+        "reason": "unrelated-tutor",
+        "requestModel": "MiniMax-M3.1-Flash",
+        "slotMarker": null,
+        "maxOutput": 800,
+        "userCount": 1,
+        "containsRegisteredPrompt": true,
+        "sessionTitle": false,
+        "topicCategorization": true,
+        "auxiliaryWebSearch": false
+      }
+    ],
+    "answerBackground": [
+      {
+        "reason": "unrecognized-candidate-instructions",
+        "requestModel": "MiniMax-M3.1-Flash",
+        "slotMarker": null,
+        "maxOutput": 800,
+        "userCount": 1,
+        "containsRegisteredPrompt": false,
+        "sessionTitle": false,
+        "topicCategorization": true,
+        "auxiliaryWebSearch": false
+      }
+    ],
+    "dispatchedPrivateReplyTextAvailable": false,
+    "dispatchedReviewToolArgumentsAvailable": false,
+    "fullPlannerAnswersAvailable": false,
+    "initialChosenSourceAvailable": true,
+    "candidate1Or2ActuallyProposedGradeTool": null,
+    "candidate1Or2ProposedNumericGrade": null,
+    "candidate1Or2ProposedSpecificReason": null,
+    "acceptedGradeObserved": false,
+    "upstreamInvoiceAvailable": false
+  },
+  "primaryProductionSmoke": {
+    "relationship": "The earlier primary smoke used the same synthetic prompt in a separate production conversation. It captured a three-choice Question. The two-turn supplement recorded here generated a new two-choice Question and submitted Blue.",
+    "files": [
+      {
+        "file": "production-after.json",
+        "sha256": "5a85dd48c3ec3c0344598d3153083ceeb9deec2fe88ca86ec4501f3715e79d51"
+      },
+      {
+        "file": "production-after-first.json",
+        "sha256": "2825e5c4acaf7ddb0a0fad4529a0885e14a15fe0e5687ab9abc915c45eb3623d"
+      },
+      {
+        "file": "production-after-settings.json",
+        "sha256": "8bd29244c74c46319e6f5594cfb5a60859f2e51e051f2482c894a5432eb50142"
+      },
+      {
+        "file": "production-after-classroom.png",
+        "sha256": "16f7648d4426b5b34c0d0cc1fe1737e60894367222c47ed827089689d25bc3bc"
+      }
+    ]
+  },
+  "publicFiles": {
+    "initialReceipt": {
+      "file": "production-submission-first.json",
+      "sha256": "40677e73017c1d1947667a2dc264f448c2b59feebf7edbb0199197f8b93e71c7",
+      "description": "The initial prediction request, its physical provider calls and its released Question."
+    },
+    "submissionReceipt": {
+      "file": "production-submission-feedback.json",
+      "sha256": "7be409673a0f9cef85842ffd63908f74c816b898d46f8772fa395413330c020e",
+      "description": "The submitted Blue response, its provider calls and the terminal decision to withhold feedback."
+    },
+    "settings": {
+      "file": "production-submission-settings.json",
+      "sha256": "58b3a2b1308aabbd8187b67f1257d2f72c4a94e8eac0cfedd15effe988eeb7be",
+      "description": "The two original turn records exported from the classroom’s Settings after submission."
+    },
+    "protocol": {
+      "file": "production-submission-protocol.json",
+      "sha256": "16991584c1a64fe9649ccc120fffd3071ae9b9854520f4ccc6994b56ce4e7773",
+      "description": "Prospective test instructions and the 8,192-token cap applied to real tutor requests."
+    },
+    "firstPublicReply": {
+      "file": "production-submission-source.json",
+      "sha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+      "description": "Exact released MiniMax reply, including the OpenUI source that authored the two-choice Question."
+    },
+    "questionScreenshot": {
+      "file": "production-submission-question.png",
+      "sha256": "151c1794b429d7cc26fb66784b92bf708b5fb5998896487bb7717c2f6a3e775c",
+      "description": "The recorder scrolled the production Question into view. firstViewport gives the initial coordinates and evidenceViewport gives the framed capture coordinates."
+    },
+    "savedAnswerScreenshot": {
+      "file": "production-submission-saved.png",
+      "sha256": "00f62eab7fa0793f62acd964add7d441a3ef5d6f62371d6112c296797dbf4764",
+      "description": "The learner’s Blue answer is saved while the tutor is processing the submitted form."
+    },
+    "terminalScreenshot": {
+      "file": "production-submission-feedback.png",
+      "sha256": "a26659fbd8dcbc1e66491c49ebc2e87446a3e81cdfc3fed74e6c04083f78e8ec",
+      "description": "The classroom shows the saved answer and retry notice after all four replies were withheld."
+    }
+  },
+  "relatedEvidence": {
+    "viewport": {
+      "file": "viewport-comparison.json",
+      "scope": "Local before/after replay of a separate four-choice MiniMax draft through the real classroom."
+    },
+    "calibration": {
+      "file": "calibration/summary.json",
+      "scope": "Independent prospective Jev rule comparison using newly authored candidates."
+    }
+  },
+  "sourceArchive": {
+    "summarySha256": "f547e8d8ff0d456689fd87e81dd5d82c3f63186f1a8daf3dc8d50a0b00d11b96",
+    "scope": "The basenames in this archive manifest and in the original receipts identify sealed recording files. publicFiles lists the downloadable copies. chatAsset identifies the historical build served to the browser.",
+    "sha256BySealedCaptureName": {
+      "production-paid-smoke.json": "40677e73017c1d1947667a2dc264f448c2b59feebf7edbb0199197f8b93e71c7",
+      "production-followup-smoke.json": "7be409673a0f9cef85842ffd63908f74c816b898d46f8772fa395413330c020e",
+      "first-public-message.json": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+      "first-trace.json": "57bedea9487a651f2946e4cfef34de6b00996542d438f41d5055c99c30565d6f",
+      "first-webmcp.json": "1a495cae8a933f32aa53cf5b45f87ba90e148bc1a14154ad34909bde0100c73f",
+      "after-feedback-trace.json": "58b3a2b1308aabbd8187b67f1257d2f72c4a94e8eac0cfedd15effe988eeb7be",
+      "after-feedback-webmcp.json": "0f70154cb63c27b5e1bdaa89f432f2eff7b164d92f5bc1de5c3cb79e3786d4eb",
+      "final-settings-export.json": "58b3a2b1308aabbd8187b67f1257d2f72c4a94e8eac0cfedd15effe988eeb7be",
+      "production-smoke-cleanup.json": "e0c3d3704553241688105e4db5185e0d60d398c6995d190b4254200516bdc668",
+      "protocol.json": "16991584c1a64fe9649ccc120fffd3071ae9b9854520f4ccc6994b56ce4e7773",
+      "release-followup-offline.json": "33ad8b8fb182cd8091ae14674c70c0ca5f1b6cff601ed669d34a7f0dafeadce1",
+      "wire-preflight.json": "8cf84466de2de57f286aeb128313e53e5eca336956eecaf9e43e1a48603f24df",
+      "first-classroom.png": "06de59dbe8c986b9418ef4709f5028d63010fa1373bf7b7cf7c17f70e908232d",
+      "framed-question.png": "151c1794b429d7cc26fb66784b92bf708b5fb5998896487bb7717c2f6a3e775c",
+      "chosen-answer.png": "a37a1904ee35c9bb401f8a72efb0d5e0b6d4b5f46b51a7baef7f683951d103a2",
+      "committed-submission.png": "00f62eab7fa0793f62acd964add7d441a3ef5d6f62371d6112c296797dbf4764",
+      "after-feedback-classroom.png": "a26659fbd8dcbc1e66491c49ebc2e87446a3e81cdfc3fed74e6c04083f78e8ec"
+    }
+  }
+}

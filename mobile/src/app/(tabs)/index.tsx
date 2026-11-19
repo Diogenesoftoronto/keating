@@ -310,7 +310,7 @@ export default function TutorScreen() {
               onSave={() => saveArtifact(item.id)}
               onFork={() => forkSession(activeSession.id, item.id)}
               forkDisabled={isGenerating}
-              onCardResult={(text) => sendMessage(text)}
+              onCardResult={(text, submittedTurnId) => sendMessage(text, undefined, submittedTurnId)}
             />
           )}
           ListEmptyComponent={(

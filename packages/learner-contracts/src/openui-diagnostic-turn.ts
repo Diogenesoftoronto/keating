@@ -37,6 +37,15 @@ export interface OpenUiAssessmentObservation {
   checkpoints: AssessmentCheckpointSignal[] | null;
 }
 
+export const MAX_EARLIER_PAIR_ROUNDS = 32;
+export interface OpenUiEarlierPairRound {
+  round: number;
+  model: string | null;
+  pairReviews: OpenUiPairReview[];
+  finalComparison?: OpenUiFinalComparison;
+  releasedAttempt?: number;
+}
+
 export interface OpenUiDiagnosticTurn {
   schemaVersion: 1;
   conversationId: string;
@@ -82,6 +91,8 @@ export interface OpenUiDiagnosticTurn {
   selection?: TeachingDraftSelection;
   /** Paired comparisons observed on the final tutor round. Earlier records omit this field. */
   pairReviews?: OpenUiPairReview[];
+  /** Earlier tutor rounds before a tool continuation, with their original one-based ordinal. */
+  earlierPairReviewRounds?: OpenUiEarlierPairRound[];
   finalComparison?: OpenUiFinalComparison;
   gateIssues?: string[];
   decisionModel?: string | null;
@@ -258,7 +269,7 @@ export function openUiMatchesTargets(components: readonly string[], targets: rea
 }
 
 const ROW_KEYS = ["schemaVersion", "conversationId", "turnId", "turnIndex", "model", "requestedModel", "mode", "cue", "reply",
-  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "decisionModel", "decisionFailure", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
+  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "earlierPairReviewRounds", "finalComparison", "gateIssues", "decisionModel", "decisionFailure", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
 type RecordValue = Record<string, unknown>;
 function fields(value: unknown, allowed: readonly string[]): value is RecordValue {
   return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
@@ -317,6 +328,22 @@ function validNativePage(value: unknown, requested: unknown): boolean {
   return value.ready !== false || (value.opened !== true && value.visible !== true);
 }
 
+export function validEarlierPairRounds(value: unknown): value is OpenUiEarlierPairRound[] {
+  if (!Array.isArray(value) || value.length > MAX_EARLIER_PAIR_ROUNDS) return false;
+  let previous = 0;
+  for (const item of value) {
+    if (!fields(item, ["round", "model", "pairReviews", "finalComparison", "releasedAttempt"])
+      || typeof item.round !== "number" || !Number.isSafeInteger(item.round) || item.round <= previous
+      || !(item.model === null || identifier(item.model)) || !validOpenUiPairReviews(item.pairReviews)
+      || (item.finalComparison !== undefined && !validOpenUiFinalComparison(item.finalComparison, item.pairReviews))) return false;
+    const released = item.releasedAttempt;
+    if (released !== undefined && (typeof released !== "number" || !item.pairReviews.some(pair =>
+      (pair.eligibleAttempts ?? pair.candidateAttempts).includes(released)))) return false;
+    previous = item.round;
+  }
+  return true;
+}
+
 export function isOpenUiDiagnosticTurn(value: unknown): value is OpenUiDiagnosticTurn {
   return fields(value, ROW_KEYS) && value.schemaVersion === 1 && identifier(value.conversationId) && identifier(value.turnId)
     && typeof value.turnIndex === "number" && Number.isSafeInteger(value.turnIndex) && value.turnIndex >= 0
@@ -339,6 +366,7 @@ export function isOpenUiDiagnosticTurn(value: unknown): value is OpenUiDiagnosti
     && validGuidance(value.guidance)
     && (value.selection === undefined || (value.reply === "released" && isTeachingDraftSelection(value.selection)))
     && (value.pairReviews === undefined || validOpenUiPairReviews(value.pairReviews))
+    && (value.earlierPairReviewRounds === undefined || validEarlierPairRounds(value.earlierPairReviewRounds))
     && (value.finalComparison === undefined || validOpenUiFinalComparison(value.finalComparison, value.pairReviews))
     && (value.draftAttempts === undefined || (Number.isSafeInteger(value.draftAttempts) && (value.draftAttempts as number) >= 0))
     && (value.decisionModel === undefined || value.decisionModel === null || identifier(value.decisionModel))
@@ -368,7 +396,7 @@ const targetsSchema = stringList([...COMPONENTS, "any"]);
 const measuredComponents = { anyOf: [stringList(COMPONENTS), { type: "null" }] };
 const recordSchema = (properties: Record<string, unknown>, required: string[] = Object.keys(properties)) =>
   ({ type: "object", additionalProperties: false, required, properties });
-const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "requestedModel", "decisionModel", "decisionFailure", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
+const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "requestedModel", "decisionModel", "decisionFailure", "draftAttempts", "selection", "pairReviews", "earlierPairReviewRounds", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
 const cueSchema = {
   ...recordSchema({ kind: { enum: OPENUI_DIAGNOSTIC_CUES }, targets: stringList([...COMPONENTS, "any", "editable-code"]),
     repeat: { type: "boolean" }, codeLanguage: { enum: EDITABLE_CODE_LANGUAGES } }, ["kind", "targets"]),
@@ -391,6 +419,10 @@ const turnSchema = recordSchema({
   fit: recordSchema({ source: identifierSchema, passed: measuredBoolean }),
   draftAttempts: { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER }, gateIssues: stringList(OPENUI_DIAGNOSTIC_GATE_ISSUES),
   pairReviews: OPENUI_PAIR_REVIEWS_SCHEMA,
+  earlierPairReviewRounds: { type: "array", maxItems: MAX_EARLIER_PAIR_ROUNDS, items: recordSchema({
+    round: { type: "integer", minimum: 1, maximum: Number.MAX_SAFE_INTEGER }, model: { anyOf: [identifierSchema, { type: "null" }] },
+    pairReviews: OPENUI_PAIR_REVIEWS_SCHEMA, finalComparison: OPENUI_FINAL_COMPARISON_SCHEMA, releasedAttempt: { enum: [1, 2, 3, 4] },
+  }, ["round", "model", "pairReviews"]) },
   finalComparison: OPENUI_FINAL_COMPARISON_SCHEMA,
   selection: { ...recordSchema({ attempt: { type: "integer", minimum: 1, maximum: 10 },
     review: { enum: ["verified", "best-effort"] }, rule: { enum: TEACHING_DRAFT_SELECTION_RULES } }, ["attempt", "review"]),

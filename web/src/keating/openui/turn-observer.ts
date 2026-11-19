@@ -1,6 +1,6 @@
 import { INTERACTION_REASONS, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import {
-  classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
+  MAX_EARLIER_PAIR_ROUNDS, classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
 } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { learningMessageId, learningMessageText } from "../learning-intelligence/source-navigation";
 import { isPrivateForkContextMessage } from "../private-fork-provenance";
@@ -62,6 +62,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
   let ended = false;
   let round = 0;
   let completedAttempts = 0;
+  const roundTutors = new Set<string>();
   let finalSelection: { tutor: string; evidence: NonNullable<Row["selection"]> } | undefined;
   const byTutor = new Map<string | null, { attempted: boolean; components: string[] }>();
   const nativeEvents = new Map<string, boolean>();
@@ -80,6 +81,15 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
       if (!publicMessageEnds.has(message)) publicMessageEnds.set(message, at);
     },
     beginRound() {
+      if (row.pairReviews !== undefined) {
+        const earlier = row.earlierPairReviewRounds ??= [];
+        earlier.push({ round, model: finalSelection?.tutor ?? (roundTutors.size === 1 ? [...roundTutors][0]! : null),
+          pairReviews: row.pairReviews,
+          ...(row.finalComparison ? { finalComparison: row.finalComparison } : {}),
+          ...(finalSelection ? { releasedAttempt: finalSelection.evidence.attempt } : {}) });
+        if (earlier.length > MAX_EARLIER_PAIR_ROUNDS) earlier.shift();
+      }
+      roundTutors.clear();
       const token = ++round;
       finalSelection = undefined;
       delete row.requestedModel;
@@ -134,6 +144,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
         candidate(message: Message, offered: boolean | null, attempt?: number) {
           if (ended || token !== round) return;
           const actual = tutorIdentity(message);
+          if (actual) roundTutors.add(actual);
           if (actual && attempt !== undefined) attemptTutors.set(attempt, actual);
           if (offered !== null) offers.set(actual, offers.get(actual) === true || offered);
           const observed = inspectOpenUIDiagnosticText(learningMessageText(message));

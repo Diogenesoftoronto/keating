@@ -51,8 +51,8 @@ desktop/release-offline/
 !web/public/tutorial/*.png
 !docs/assets/screenshots/
 !docs/assets/screenshots/*.png
-!docs/benchmarks/minimax-m31-predictions-2026-11-18/*.png
-!web/public/reports/teaching-interfaces/jev-pairs/minimax-flash/*.png
+!docs/benchmarks/minimax-m31-predictions-2026-11-18/**/*.png
+!web/public/reports/teaching-interfaces/jev-pairs/minimax-flash/**/*.png
 !mobile/assets/*.png
 !mobile/assets/brand/*.png
 

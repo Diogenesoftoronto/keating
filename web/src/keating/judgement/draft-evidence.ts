@@ -1,4 +1,6 @@
-import type { TeachingPolicyTurn } from "@keating/learner-contracts";
+import { canonicalUiAction, validateUiActionAgainstDocument, validateUiActionReceipt, type SubmittedComprehensionAnswer, type TeachingPolicyTurn } from "@keating/learner-contracts";
+import { parseLearnerResponse } from "../learner-response";
+import { answerText, questionCheckIdsForUiAction, questionGroupResponseText } from "../storage";
 import type { CompleteLearnerStartupContext } from "../session-start-hooks";
 import type { QuestionCheckRecord, QuizResultRecord } from "../storage";
 
@@ -23,12 +25,47 @@ const clippedQuiz = (result: QuizResultRecord): QuizResultRecord => result.answe
 
 const clippedCheck = (check: QuestionCheckRecord): QuestionCheckRecord => ({ ...check, question: clip(check.question), answer: clip(check.answer) });
 
+/** Join one completed form submission to its actual saved answer in this session. */
+function submittedComprehensionAnswer(sessionId: string, learnerMessage: string, checks: readonly QuestionCheckRecord[]): QuestionCheckRecord | undefined {
+  const response = parseLearnerResponse(learnerMessage.replace(/^\[Keating time note: [^\n]*\]\s*/u, ""));
+  const payload = response?.kind === "openui-action" ? response.payload : undefined;
+  if (payload?.kind !== "canonical" || payload.document?.sessionId !== sessionId
+    || !validateUiActionReceipt(payload.receipt) || payload.receipt.state !== "completed"
+    || !validateUiActionAgainstDocument(payload.action, payload.sourceDocument)
+    || payload.receipt.actionFingerprint !== canonicalUiAction(payload.action)) return;
+  const { action, sourceDocument } = payload;
+  if (action.type !== "submit-question-group" && action.type !== "submit-answer" && action.type !== "choose-option") return;
+  if (payload.document.id !== action.documentId || payload.document.revision !== action.documentRevision) return;
+  const ids = questionCheckIdsForUiAction(action);
+  if (ids.length !== 1) return;
+  const check = checks.find(row => row.id === ids[0] && row.sessionId === sessionId
+    && row.source?.documentId === action.documentId && row.source?.revision === action.documentRevision && row.source?.nodeId === action.nodeId);
+  if (!check?.answer.trim() || check.question.length > DRAFT_EVIDENCE_ANSWER_CHARS || check.answer.length > DRAFT_EVIDENCE_ANSWER_CHARS) return;
+  const node = sourceDocument.nodes.find(row => row.id === action.nodeId);
+  if (action.type === "submit-question-group" && node?.type === "question-group") {
+    const response = action.responses[0]!;
+    const item = node.questions.find(row => row.id === response.questionId);
+    if (!item || item.prompt !== check.question || questionGroupResponseText(response, item) !== check.answer) return;
+  } else if ((action.type === "submit-answer" || action.type === "choose-option") && node?.type === "question") {
+    if (node.prompt !== check.question || answerText(action, node) !== check.answer) return;
+  } else return;
+  return check;
+}
+
+export type DraftSubmissionEvidence = { submittedComprehension?: SubmittedComprehensionAnswer;
+  recordedComprehension?: SubmittedComprehensionAnswer & { score: number } };
+
 /** Project observed records, not assertions parsed from model instructions. */
-export function teachingDraftEvidence(context: CompleteLearnerStartupContext): Partial<TeachingPolicyTurn> {
+export function teachingDraftEvidence(context: CompleteLearnerStartupContext, sessionId?: string, learnerMessage?: string):
+  Partial<TeachingPolicyTurn> & DraftSubmissionEvidence {
   const quizzes = recent(context.evidence.quizResults);
   const checks = recent(context.evidence.questionChecks);
   const reviews = recent(context.evidence.cardReviews);
+  const check = sessionId && learnerMessage ? submittedComprehensionAnswer(sessionId, learnerMessage, context.evidence.questionChecks) : undefined;
+  const submitted = check && { id: check.id, topic: check.topic, question: check.question, answer: check.answer };
   return {
+    ...(submitted && check?.grading === "pending" && check.score === undefined ? { submittedComprehension: submitted } : {}),
+    ...(submitted && check?.grading === "model" && typeof check.score === "number" ? { recordedComprehension: { ...submitted, score: check.score } } : {}),
     learnerEvidence: [
       { kind: "recorded learner state; beliefs are tentative, not performance proof", content: JSON.stringify(context.learnerState) },
       { kind: "learner goals", content: JSON.stringify(context.goals) },

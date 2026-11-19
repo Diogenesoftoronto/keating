@@ -19,6 +19,8 @@ export interface TeachingDraftPairReview {
   readonly feedbackOnlyAttempts?: readonly number[];
   /** Completed members asked to author one fresh, tool-free prediction or checkpoint Question. */
   readonly predictionQuestionAttempts?: readonly number[];
+  /** Completed members offered only the saved comprehension grading tool. */
+  readonly gradeOnlyAttempts?: readonly number[];
   /** An empty issue list records a complete clean review. A missing member has no reportable evidence of findings or a clean review. */
   readonly candidateIssueIds?: readonly { readonly attempt: number; readonly issues: readonly string[] }[];
   readonly status: typeof TEACHING_DRAFT_PAIR_STATUSES[number];

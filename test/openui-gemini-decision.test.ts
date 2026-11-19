@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createGeminiDecisionCaller as sharedGeminiDecisionCaller } from "../packages/learner-contracts/src/index.js";
 import type { JudgementRequest } from "../packages/learner-contracts/src/judgement/contracts.js";
 import { projectTeachingPolicyDecision, teachingPolicyDecisionRequest, type TeachingPolicyTurn } from "../packages/learner-contracts/src/judgement/teaching-policy.js";
 import { createGeminiDecisionCaller, GEMINI_DECISION_ENDPOINT, GEMINI_DECISION_MODEL, readGeminiDecisionUsage,
@@ -26,6 +27,10 @@ async function recorded(payload: unknown, status = 200) {
 }
 
 describe("offline Google Decisions transport", () => {
+  test("the classroom and the original studies share one transport", () => {
+    expect(sharedGeminiDecisionCaller).toBe(createGeminiDecisionCaller);
+  });
+
   test("sends the original JSON and rubric to the named Google endpoint and preserves reported probabilities", async () => {
     const signal = new AbortController().signal;
     const receipts: GeminiDecisionReceipt[] = [];
@@ -34,7 +39,8 @@ describe("offline Google Decisions transport", () => {
       requests++;
       expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/decisions");
       expect(url).toBe(GEMINI_DECISION_ENDPOINT);
-      expect(init).toMatchObject({ method: "POST", redirect: "error", headers: { "x-goog-api-key": "credential-fixture", "content-type": "application/json" } });
+      expect(init).toMatchObject({ method: "POST", redirect: "error", credentials: "omit", referrerPolicy: "no-referrer",
+        headers: { "x-goog-api-key": "credential-fixture", "content-type": "application/json" } });
       expect(init.signal).toBe(signal);
       expect(JSON.parse(init.body)).toEqual({ model: "gemini-decision-1", input: JSON.stringify(request.state), questions: {
         yes: { type: "noul", instructions: questions.yes!.instructions, criteria: { true_description: "Broken", false_description: "Intact" } },
@@ -92,6 +98,13 @@ describe("offline Google Decisions transport", () => {
   });
 
   test("returns authored errors without sensitive payloads, retries, or free-call assumptions", async () => {
+    const reason = { "@type": "type.googleapis.com/google.rpc.ErrorInfo", domain: "googleapis.com", reason: "API_KEY_INVALID" };
+    const invalidKey = await recorded({ error: { details: [reason], message: "private provider detail" } }, 400);
+    expect(invalidKey.outcome).toMatchObject({ ok: false, error: { code: "backend-unauthorized", retryable: false } });
+    expect(invalidKey.receipt.errorCode).toBe("backend-unauthorized");
+    expect(JSON.stringify(invalidKey)).not.toContain("private provider detail");
+    const badRequest = await recorded({ error: { details: [{ ...reason, reason: "INVALID_ARGUMENT" }] } }, 400);
+    expect(badRequest.outcome).toMatchObject({ ok: false, error: { code: "request-invalid" } });
     for (const [status, code] of [[400,"request-invalid"],[401,"backend-unauthorized"],[429,"backend-rate-limited"],[503,"backend-overloaded"],[504,"backend-timeout"]] as const) {
       const { outcome, receipt } = await recorded({ error: { message: "private provider detail" }, usage }, status);
       expect(outcome).toMatchObject({ ok: false, error: { code } });

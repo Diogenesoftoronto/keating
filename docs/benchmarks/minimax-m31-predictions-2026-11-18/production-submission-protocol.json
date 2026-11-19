@@ -1,0 +1,22 @@
+{
+  "scope": "Separate prospectively registered production form-submission study, independent of the 4.2.3 release smoke.",
+  "release": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+  "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+  "tutor": "MiniMax-M3.1-Flash",
+  "decision": "jev-1.14.0",
+  "firstAction": "Send the synthetic prompt once in a fresh anonymous production classroom. Capture viewport, measured Question coordinates and a separate legend-centered image.",
+  "followUp": "On an authentic eligible Question about the most-likely colour, submit Blue exactly once using the form. Observe any naturally chosen grading and response; report pending or withheld outcomes.",
+  "roundLimits": {
+    "initial": 1,
+    "afterOneAnswer": 2,
+    "maximumTutorPerRound": 4,
+    "maximumJevPerRound": 8,
+    "perRoundUsd": 0.65,
+    "allRoundsUsd": 1.95,
+    "priorUsd": 5.65059434,
+    "worstSupplierReservationUsd": 1.9309824
+  },
+  "authorizedIntervention": "Limit only the normal real tutor max_completion_tokens / max_tokens parameter to 8192. All conversation, choices, tools and decision prompts retain actual app values.",
+  "streamEvidence": "Bounded independent reader on a clone of the same streaming response; no stream replay. Keep up to 2 MiB and retain only returned IDs/usage.",
+  "subjects": "Synthetic anonymous browser only. No real account entry, human learning outcomes or hidden quiz score inference."
+}

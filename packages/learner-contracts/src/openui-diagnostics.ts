@@ -539,15 +539,21 @@ export function queryOpenUiDiagnosticTurns(rows: readonly OpenUiDiagnosticTurn[]
   }
   if (view === "pair-reviews") {
     const scoped = selectRows(uniqueTurns(parseOpenUiDiagnosticExport(rows)), filter);
-    const observed = scoped.filter(row => row.pairReviews !== undefined);
-    const reviews = observed.flatMap(row => row.pairReviews!);
-    const intervals = observed.map(row => pairReviewOverlapMs(row.pairReviews!)).filter(ms => ms !== null);
+    const observed = scoped.filter(row => row.pairReviews !== undefined || row.earlierPairReviewRounds?.length);
+    const byTurn = observed.map(row => [
+      ...(row.earlierPairReviewRounds ?? []).map(round => round.pairReviews),
+      ...(row.pairReviews === undefined ? [] : [row.pairReviews]),
+    ]);
+    const rounds = byTurn.flat();
+    const reviews = rounds.flat();
+    const intervals = byTurn.map(turn => turn.map(pairReviewOverlapMs).filter(ms => ms !== null));
     return { schemaVersion: 1 as const, view, matchingTurns: observed.length, turnsWithoutPairRecords: scoped.length - observed.length,
       comparedPairs: reviews.filter(pair => pair.status === "compared").length,
       incompletePairs: reviews.filter(pair => pair.status === "incomplete").length,
       unavailablePairs: reviews.filter(pair => pair.status === "unavailable").length,
-      unrecordedPairs: 2 * observed.length - reviews.length,
-      turnsWithMeasuredOverlap: intervals.length, turnsWithConcurrentReviews: intervals.filter(ms => ms > 0).length,
+      roundsWithPairRecords: rounds.length, unrecordedPairs: 2 * rounds.length - reviews.length,
+      turnsWithMeasuredOverlap: intervals.filter(turn => turn.length > 0).length,
+      turnsWithConcurrentReviews: intervals.filter(turn => turn.some(ms => ms > 0)).length,
       turns: observed.slice(0, limit) };
   }
   if (view === "assessment-opt-out") {

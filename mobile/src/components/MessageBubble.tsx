@@ -28,7 +28,7 @@ export function MessageBubble({
   onFork: () => void;
   forkDisabled?: boolean;
   /** Sends a learner turn produced by an interactive card in this message. */
-  onCardResult: (text: string) => Promise<void>;
+  onCardResult: (text: string, submittedTurnId?: string) => Promise<void>;
 }) {
   const theme = useKeatingTheme();
   const styles = createStyles(theme);

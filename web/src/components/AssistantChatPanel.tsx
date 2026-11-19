@@ -26,6 +26,7 @@ import {
 import type { FlueConversationMessage } from "@flue/sdk";
 import "./keating-interaction-motion.css";
 import { chatMascotState } from "./chat-mascot-state";
+import { useQuestionViewport } from "./chat/question-viewport";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
@@ -3569,6 +3570,7 @@ function AssistantThread({
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const hasGoogleKey = useGoogleKeyForUrls(composerHasUrl);
   const isRunning = agent?.getSnapshot().running ?? false;
+  const { viewport, followNextQuestion } = useQuestionViewport(agent?.sessionId, isRunning);
   const loadingStep = useLoadingStep(isRunning);
   const draftStatus = useSyncExternalStore(subscribeTeachingDraftStatus,
     () => getTeachingDraftStatus(agent?.sessionId), () => null);
@@ -3669,7 +3671,7 @@ function AssistantThread({
     callbacks,
     isRunning,
     onLocalMessagesShown: () => setLocalVersion((current) => current + 1),
-    onSendStarted: () => setComposerHasUrl(false),
+    onSendStarted: () => { followNextQuestion(); setComposerHasUrl(false); },
   });
   useQuizConversationEvents({ agent, submitLearnerTurn });
   // "Plan around this" on a learner message sends their request in this chat.
@@ -3763,6 +3765,7 @@ function AssistantThread({
               })}
             >
               <ThreadPrimitive.Viewport
+                ref={viewport}
                 className={css({
                   display: "flex",
                   minHeight: 0,

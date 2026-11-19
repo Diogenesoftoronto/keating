@@ -15,6 +15,7 @@ import { providerDefinition } from "@/lib/provider-config";
 import { modelSupportsTemperature, modelSupportsToolCalls, resolveModelReasoningLevel, type CatalogModel } from "@/lib/model-catalog";
 import { applyMobileToolArtifactEffects, runMobileToolLoop, type CommittedMobileToolCall } from "@/lib/provider-tool-loop";
 import { unavailableMobileCapabilityPrompt } from "@/lib/mobile-tools";
+import { NATIVE_GRADE_TOOL, type NativeQuestionGrade } from "@/lib/judgement/submitted-question";
 import { restoreMobileToolReceipt } from "@/lib/mobile-tool-receipts";
 import { isMobileKnowledgeTool } from "@/lib/knowledge-tools";
 import { mobileKnowledgeAttemptReceipt } from "@/lib/knowledge-receipts";
@@ -58,7 +59,7 @@ export interface TurnEnv extends ActivityEnv {
   setStreamingMessageId: Dispatch<SetStateAction<string | null>>;
   updateSession(sessionId: string, update: (session: ChatSession) => ChatSession): PersistedAppState;
   commitState(next: PersistedAppState): void;
-  persistLearnerState(next: PersistedAppState, required?: boolean): Promise<void>;
+  persistLearnerState(next: PersistedAppState, required?: boolean, reviewedGrade?: NativeQuestionGrade): Promise<void>;
   refreshBackgroundActivity(): void;
   executeAgentTool(name: string, args: string | Readonly<Record<string, unknown>>, context: MobileToolExecutionContext): Promise<MobileToolExecutionResult>;
   hasOverlay(overlayId: string): boolean;
@@ -229,7 +230,11 @@ async function commitToolEffect(run: TurnRun, committed: CommittedMobileToolCall
     } : session),
   };
   try {
-    await env.persistLearnerState(next, true);
+    const grade = committed.call.name === NATIVE_GRADE_TOOL && committed.execution.ok && !committed.replayed
+      ? run.round.reviewedGrade : undefined;
+    if (grade && (grade.check.sessionId !== sessionId || run.controller.signal.aborted
+      || env.stateRef.current.activeSessionId !== sessionId)) throw new Error("The submitted answer is no longer active.");
+    await env.persistLearnerState(next, true, grade);
   } catch (error) {
     trace.restore(eventsBeforeResult);
     throw error;
@@ -267,6 +272,7 @@ async function runToolLoop(run: TurnRun, inputs: ToolLoopInputs) {
     // assistant placeholder timestamp would rewrite an exactly-once effect.
     createdAt: triggeringMessage.createdAt,
     advertiseTools: settings.provider !== "custom" && modelSupportsToolCalls(env.catalogRef.current, settings),
+    reviewedGrade: () => run.round.reviewedGrade,
     signal: controller.signal,
     systemPrompt: inputs.systemPrompt,
     reasoningLevel: resolveModelReasoningLevel(env.catalogRef.current, settings, env.uiSettingsRef.current.reasoningLevel),

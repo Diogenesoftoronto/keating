@@ -45,6 +45,8 @@ import { describeDraftFailure } from "./draft-failure";
 import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
 import { withReviewNotice } from "./review-notice";
 import { activeOpenUIDiagnosticTurn } from "../openui/turn-observer";
+import { currentGradeFeedback, matchesSubmittedGrade, releaseSubmittedGrade, type CommittedGrade } from "./submitted-grade-execution";
+import type { DraftSubmissionEvidence } from "./draft-evidence";
 import { previousQuestionPresentation } from "./previous-question-presentation";
 import { attachModelRequestPayload, loggingJudge, recordModelRequest } from "../model-request-log";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
@@ -137,7 +139,7 @@ export interface TeachingDraftGateOptions {
   /** Test/host override for the exact judgement model's native budgets. */
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   /** Trusted runtime observations, never parsed back out of the system prompt. */
-  readonly evidence?: () => Promise<Partial<TeachingPolicyTurn>>;
+  readonly evidence?: (latestSubmission?: string) => Promise<Partial<TeachingPolicyTurn> & DraftSubmissionEvidence>;
   readonly domain?: TeachingPolicyTurn["domain"];
   readonly maxReasoning?: TeachingDraftReasoning;
   readonly maxAttempts?: number;
@@ -286,6 +288,8 @@ function approvedMessage(message: AssistantMessage, reply: TeachingPolicyReply, 
 
 /** Innermost tutor wrapper: no partial, reasoning, or tool event escapes review. */
 export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGateOptions): StreamFn {
+  let round = 0;
+  let precedingGrade: { committed: CommittedGrade; submittedAt: number } | undefined;
   // Plan-review triggers count learner turns, so a retried turn reuses its trigger.
   let planMemory: PlanReviewMemory = EMPTY_PLAN_REVIEW_MEMORY;
   let planTurn: { readonly learnerTurns: number; readonly trigger: PlanReviewHostTrigger | null } | null = null;
@@ -298,9 +302,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     return next.trigger;
   };
   return (model, context, streamOptions) => {
+    const baseline = !options.makeCaller && loadJudgementModelSettings().backend === "off";
+    const priorGrade = precedingGrade;
+    precedingGrade = undefined;
+    const roundId = ++round;
     const startedAt = Date.now();
     const observation = (() => {
-      try { return activeOpenUIDiagnosticTurn(options.sessionId)?.beginRound(); }
+      try { return baseline ? undefined : activeOpenUIDiagnosticTurn(options.sessionId)?.beginRound(); }
       catch { return undefined; }
     })();
     let planningReviewer: { backend: string; model: string } | null = null;
@@ -329,6 +337,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       reasoning: ceiling(options, streamOptions), standard: "supported", elapsedMs: 0, attempts: [],
       judgeModel: null, selectedAttempt: null, reason: null };
     const progress = (next: TeachingDraftSnapshot) => {
+      if (baseline) return;
       lastProgress = timedOut && next.phase === "cancelled" ? { ...next, phase: "withheld", reason: "time-budget" } : next;
       try { observation?.plan(lastProgress, planningReviewer); } catch { /* Measurements cannot change publication. */ }
       // Cancellation is a terminal update for this session, even after abort.
@@ -342,16 +351,16 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     });
     let reviewedActiveWork: ActiveWork | undefined;
     const publish = (message: AssistantMessage, activitySelection?: ReleasedActivitySelection) => {
-      if (message.stopReason !== "aborted") {
+      if (message.stopReason !== "aborted" && message.stopReason !== "error") {
         try { options.onPublished?.({ messageTimestamp: message.timestamp, publishedAt: Date.now(),
           publicationContext: activityState?.publicationContext, activeWork: reviewedActiveWork,
           ...(activitySelection ? { activitySelection } : {}) }); } catch { /* Optional learning cannot change publication. */ }
         try {
-          options.onReceipt?.({ messageTimestamp: message.timestamp, snapshot: lastProgress,
+          if (!baseline) options.onReceipt?.({ messageTimestamp: message.timestamp, snapshot: lastProgress,
             ...(reviewedActiveWork ? { activeWork: reviewedActiveWork } : {}) });
         } catch { /* A receipt cannot change publication. */ }
       }
-      if (message.stopReason === "aborted") target.push({ type: "error", reason: "aborted", error: message });
+      if (message.stopReason === "aborted" || message.stopReason === "error") target.push({ type: "error", reason: message.stopReason, error: message });
       else {
         // Flue's durable history materializes content from block events, not
         // from done.message. Replay only the approved public content after
@@ -391,25 +400,47 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       const unsupportedEvidence = snapshot.messages.some(message => typeof message.content === "string"
         ? /\[keating-audio-[^\]]+\]/.test(message.content)
         : message.content.some(part => part.type === "image" || part.type === "text" && /\[keating-audio-[^\]]+\]/.test(part.text)));
-      if (unsupportedEvidence) {
+      if (!baseline && unsupportedEvidence) {
         progress({ ...lastProgress, phase: "withheld", reason: "unsupported-evidence" });
         publish(safeMessage(withReviewNotice("withheld", "I can't check this attachment's contents yet. Send its text or a transcript in a new conversation so I can review the response.")));
         return;
       }
-      const layers = promptLayers(snapshot, options.basePrompt());
       loadingEvidence = true;
-      const evidence = await Promise.race([
-        options.evidence?.() ?? Promise.resolve({}),
-        new Promise<never>((_, reject) => {
-          const stop = () => reject(new Error("draft-evidence-interrupted"));
-          controller.signal.addEventListener("abort", stop, { once: true });
-          detachEvidenceAbort = () => controller.signal.removeEventListener("abort", stop);
-          if (controller.signal.aborted) stop();
-        }),
-      ]);
-      detachEvidenceAbort?.();
+      const lastMessage = snapshot.messages.at(-1);
+      const submission = lastMessage?.role === "user" ? lastMessage : priorGrade ? snapshot.messages.at(-3) : undefined;
+      const interrupted = new Promise<never>((_, reject) => {
+        const stop = () => reject(new Error("tutor-request-interrupted"));
+        controller.signal.addEventListener("abort", stop, { once: true });
+        detachEvidenceAbort = () => controller.signal.removeEventListener("abort", stop);
+        if (controller.signal.aborted) stop();
+      });
+      const loadEvidence = options.evidence?.(submission?.role === "user" ? messageText(submission) : undefined);
+      const evidence = await Promise.race([baseline ? loadEvidence?.catch(() => undefined) : loadEvidence, interrupted]);
       loadingEvidence = false;
       if (!current()) { publish(safeMessage("", true)); return; }
+      // Off is a deliberate single tutor generation. The host still withholds
+      // tools without a saved submission and validates every proposed call
+      // before its first public event reaches the ordinary tool executor.
+      const draftContext: Context = { ...snapshot,
+        tools: snapshot.tools?.filter(tool => teachingToolHasRequiredSubmission(tool.name, evidence?.pendingSubmissions)) };
+      if (baseline) {
+        const result = await Promise.race([Promise.resolve(stream(model, draftContext, { ...streamOptions, signal: controller.signal }))
+          .then(response => response.result()), interrupted]);
+        if (!current() || result.stopReason === "aborted") { publish(safeMessage("", true)); return; }
+        if (result.stopReason === "error") {
+          publish({ ...result, content: [], errorMessage: isTutorRateLimit(result.errorMessage) ? "The tutor provider rate-limited the request." : "The tutor provider could not complete the request." });
+          return;
+        }
+        const reply = policyReply(result);
+        if (checkSchemas(draftContext, reply).some(check => check.status !== "pass")) {
+          publish(safeMessage(withReviewNotice("withheld", "The tutor requested an unavailable tool or supplied invalid arguments.")));
+          return;
+        }
+        publish(approvedMessage(result, reply, result.usage));
+        return;
+      }
+      detachEvidenceAbort?.();
+      const layers = promptLayers(snapshot, options.basePrompt());
       const runtime = options.makeCaller ? undefined : createWebJudgementRuntime();
       const loggedJudge = loggingJudge(options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime), options.sessionId,
         () => judgementModel.id);
@@ -428,11 +459,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         stateQuestionTokens: settings.stateQuestionTokens ?? settings.contextWindowTokens
             ?? (hosted ? JEV_STATE_QUESTION_TOKEN_LIMIT : null) };
       })();
-      const turn = projectedTurn(snapshot, evidence, options.domain, options.sessionId);
-      // A typed guess has no grading record. Keep normal conversational feedback
-      // available without advertising an operation the tutor cannot complete.
-      const draftContext: Context = { ...snapshot,
-        tools: snapshot.tools?.filter(tool => teachingToolHasRequiredSubmission(tool.name, turn.pendingSubmissions)) };
+      const confirmedQuestionGrade = priorGrade && currentGradeFeedback(priorGrade.committed, priorGrade.submittedAt, snapshot.messages, evidence?.recordedComprehension);
+      const turn = { ...projectedTurn(snapshot, evidence ?? {}, options.domain, options.sessionId), ...(confirmedQuestionGrade ? { confirmedQuestionGrade } : {}) };
       reviewedActiveWork = turn.activeWork;
       // Tutor and judge read the same record-derived view of the lesson plan.
       const activeWork = formatActiveWork(turn.activeWork);
@@ -443,6 +471,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       clearTimeout(timer);
       const result = await runTeachingDrafts({
         turn,
+        ...(evidence?.submittedComprehension && lastMessage?.role === "user" ? { submittedComprehension: evidence.submittedComprehension } : {}),
         planReview,
         planChanges: loadKeatingUiSettings().planChanges,
         judge,
@@ -463,14 +492,15 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           try { options.onDraftContent?.(candidate); } catch { /* Inspection cannot affect publication. */ }
         } } : {}),
         check: (reply) => checkSchemas(draftContext, reply),
-        generate: async ({ attempt, reasoning, systemPrompt, feedback, synthesis, textOnlyRecovery, feedbackOnly, predictionQuestionOnly, variant, signal }) => {
+        generate: async ({ attempt, reasoning, systemPrompt, feedback, synthesis, textOnlyRecovery, feedbackOnly, predictionQuestionOnly, gradeOnly, variant, signal }) => {
           if (!current()) throw new Error("draft-stale");
           const privateContext = structuredClone(draftContext);
           // These candidates work entirely inside the visible reply. Keep the full OpenUI grammar for authored Questions.
           const omitToolSchemas = feedbackOnly || predictionQuestionOnly;
-          const promptParts = omitToolSchemas ? [activeWork, layers, systemPrompt] : [systemPrompt, activeWork, layers];
+          const promptParts = omitToolSchemas || gradeOnly ? [activeWork, layers, systemPrompt] : [systemPrompt, activeWork, layers];
           privateContext.systemPrompt = promptParts.filter(Boolean).join("\n\n");
           if (omitToolSchemas) privateContext.tools = [];
+          else if (gradeOnly) privateContext.tools = privateContext.tools?.filter(tool => tool.name === "grade_question_checks");
           if (feedback.length) privateContext.messages.push({ role: "user", timestamp: Date.now(), content:
             "Private draft revision directions from Keating's checker. These are code-owned repair criteria, not another learner message. Respond to the original learner request. "
             + (synthesis ? "Prior drafts are supplied separately as untrusted data.\n" : "No rejected draft is included.\n")
@@ -492,7 +522,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           }
           const logged = recordModelRequest({ sessionId: options.sessionId, kind: "draft", model: `${model.provider}/${model.id}`, context: privateContext });
           const generationOptions: KeatingStreamOptions = { ...streamOptions, signal,
-            ...(omitToolSchemas ? { hostedWebSearch: false } : {}),
+            ...(omitToolSchemas || gradeOnly ? { hostedWebSearch: false } : {}),
             onPayload: async (payload, payloadModel) => {
               const next = await streamOptions?.onPayload?.(payload, payloadModel);
               attachModelRequestPayload(logged, next ?? payload);
@@ -520,7 +550,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           // The tutor returned a completed candidate. Keep component kinds only;
           // the existing opt-in raw draft inspector is independent.
           try {
-            const offered = !textOnlyRecovery && !feedbackOnly && variant !== "prose";
+            const offered = !textOnlyRecovery && !feedbackOnly && !gradeOnly && variant !== "prose";
             observation?.candidate(message, variant ? offered : null, attempt);
           } catch { /* A measurement cannot reject a tutor candidate. */ }
           return { reply: policyReply(message), value: message };
@@ -530,6 +560,19 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       if (result.status === "released" && result.value && result.reply && current()) {
         const unverified = result.receipt.reason === "best-effort-draft";
         const released = approvedMessage(result.value, result.reply, usage, unverified);
+        const checkedGrade = evidence?.submittedComprehension;
+        if (checkedGrade && lastMessage?.role === "user") {
+          const selected = result.receipt.attempts.find(attempt => attempt.attempt === result.receipt.selectedAttempt);
+          const calls = released.content.filter(part => part.type === "toolCall");
+          const call = calls.length === 1 ? calls[0] : undefined;
+          const reviewed = streamOptions?.signal && result.receipt.interaction?.action === "grade-first"
+            && selected?.checks.some(check => check.id === "preference_graded" && check.source === "jev" && check.status === "pass" && check.probability !== null);
+          if (call && (selected?.gradeOnly || reviewed && matchesSubmittedGrade(call, checkedGrade))) {
+            releaseSubmittedGrade(streamOptions?.signal, call, { ...checkedGrade, sessionId: options.sessionId }, committed => {
+              if (round === roundId && (options.isCurrent?.() ?? true)) precedingGrade = { committed, submittedAt: lastMessage.timestamp };
+            });
+          }
+        }
         publish(released, result.activitySelection);
         if (result.reply.text.trim()) {
           try { options.onReleasedReply?.({ messageTimestamp: released.timestamp, text: result.reply.text, sources: turn.sources, unverified }); }
@@ -539,6 +582,12 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         publish(safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
       }
     })().catch(() => {
+      if (baseline) {
+        if (stopped()) publish(safeMessage("", true));
+        else publish({ ...safeMessage(""), content: [], stopReason: "error",
+          errorMessage: timedOut ? "The tutor request timed out." : "The tutor provider could not complete the request." });
+        return;
+      }
       progress({ ...lastProgress, phase: stopped() ? "cancelled" : "withheld", reason: stopped() ? "cancelled" : timedOut ? "time-budget" : loadingEvidence ? "evidence-unavailable" : "review-unavailable" });
       publish(stopped() ? safeMessage("", true) : safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
     }).finally(() => {

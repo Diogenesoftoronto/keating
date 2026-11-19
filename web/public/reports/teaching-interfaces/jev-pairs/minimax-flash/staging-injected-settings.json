@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "43120e0a-b7dd-497b-b6c3-fddd15f12396",
+      "turnId": "learner-0",
+      "turnIndex": 0,
+      "model": null,
+      "mode": "unknown",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "reply": "withheld",
+      "replyElapsedMs": 1846,
+      "attempted": null,
+      "compiled": null,
+      "selected": [],
+      "rendered": [],
+      "guidance": null,
+      "outsideWords": null,
+      "nativePageRequested": null,
+      "assessment": {
+        "optOut": false,
+        "checkpoints": null
+      },
+      "draftAttempts": 0,
+      "gateIssues": [],
+      "decisionModel": null,
+      "decisionFailure": {
+        "stage": "planning",
+        "reason": "backend-unauthorized",
+        "detail": "relay-origin-denied",
+        "configuredModel": "jev-1.14.0"
+      },
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      }
+    }
+  ]
+}

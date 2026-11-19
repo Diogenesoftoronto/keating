@@ -1,0 +1,526 @@
+{
+  "production": "https://chat.keating.help",
+  "mode": "paid-release-verification",
+  "expectedTeachingPolicy": "keating-teaching-policy/v2.4.1",
+  "priorBoundUsd": 3.790884632,
+  "phaseMaximumUsd": 2,
+  "cumulativeMaximumUsd": 5.790884632,
+  "previousPaidTrialSha256": "4ac625425cf09a57008ca5674f4952669e53089e495616948b5dc806137035b3",
+  "rateCard": {
+    "model": "MiniMax-M3.1-Flash",
+    "usdPerMillion": {
+      "input": 0.15,
+      "cacheRead": 0.015,
+      "output": 0.6
+    },
+    "contextUpper": 1000000,
+    "outputUpper": 524288,
+    "pricingSource": "https://www.minimax.io/blog/minimax-m31f"
+  },
+  "startedUtc": "2026-11-19T00:09:04.590Z",
+  "settings": {
+    "typeSafeByokSaved": true,
+    "miniMaxByokSaved": true,
+    "personalAccount": false,
+    "entryAttempts": 1,
+    "keyPresence": {
+      "minimax": true,
+      "typesafeJudgement": true
+    },
+    "afterReload": {
+      "minimax": true,
+      "typesafeJudgement": true
+    },
+    "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+    "initialTutor": "Change model. Current model: Inkling 2 Small",
+    "selectionAttempts": 1,
+    "selectedBuiltinTutor": "MiniMax-M3.1-Flash",
+    "api": "openai-completions",
+    "beforeAuthoredTurn": {
+      "minimax": true,
+      "typesafeJudgement": true
+    }
+  },
+  "dispatched": [
+    {
+      "provider": "typesafe",
+      "stage": "planning",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000188244,
+      "startedAt": 1795046954028,
+      "finishedAt": 1795046954288,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 4482,
+        "output": 748
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-1",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.4645728,
+      "accountedUsd": 0.4645728,
+      "startedAt": 1795046954338,
+      "finishedAt": 1795046956803,
+      "http": 200,
+      "reportedModel": null,
+      "usage": null,
+      "status": "transport-failure",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 524288,
+      "outputBoundSource": "max_completion_tokens",
+      "reasoning": "low",
+      "temperature": null
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "prediction-2",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.4645728,
+      "accountedUsd": 0.4645728,
+      "startedAt": 1795046954819,
+      "finishedAt": 1795046957745,
+      "http": 200,
+      "reportedModel": null,
+      "usage": null,
+      "status": "transport-failure",
+      "toolCount": 0,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 524288,
+      "outputBoundSource": "max_completion_tokens",
+      "reasoning": "low",
+      "temperature": null
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-3",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.4645728,
+      "accountedUsd": 0.4645728,
+      "startedAt": 1795046955312,
+      "finishedAt": 1795046960060,
+      "http": 200,
+      "reportedModel": null,
+      "usage": null,
+      "status": "transport-failure",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 524288,
+      "outputBoundSource": "max_completion_tokens",
+      "reasoning": "low",
+      "temperature": null
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "prediction-4",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.4645728,
+      "accountedUsd": 0.4645728,
+      "startedAt": 1795046955817,
+      "finishedAt": 1795046957510,
+      "http": 200,
+      "reportedModel": null,
+      "usage": null,
+      "status": "transport-failure",
+      "toolCount": 0,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 524288,
+      "outputBoundSource": "max_completion_tokens",
+      "reasoning": "low",
+      "temperature": null
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000264222,
+      "startedAt": 1795046956818,
+      "finishedAt": 1795046957006,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6291,
+        "output": 896
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000260106,
+      "startedAt": 1795046957518,
+      "finishedAt": 1795046957655,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6193,
+        "output": 896
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00025977,
+      "startedAt": 1795046957750,
+      "finishedAt": 1795046957903,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6185,
+        "output": 896
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000264768,
+      "startedAt": 1795046960065,
+      "finishedAt": 1795046960235,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6304,
+        "output": 896
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 1,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000058002,
+      "startedAt": 1795046960244,
+      "finishedAt": 1795046960390,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 1381,
+        "output": 39
+      },
+      "status": "metered",
+      "preferredAttempt": 1,
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 2,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000058884,
+      "startedAt": 1795046960245,
+      "finishedAt": 1795046960366,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 1402,
+        "output": 39
+      },
+      "status": "metered",
+      "preferredAttempt": 3,
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "final-choice",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000064512,
+      "startedAt": 1795046960402,
+      "finishedAt": 1795046960569,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 1536,
+        "output": 38
+      },
+      "status": "metered",
+      "reportedIdentityMatchesRequest": true
+    }
+  ],
+  "intercepted": {
+    "foreign-origin": 6,
+    "other-background": 33,
+    "unrelated-api": 20,
+    "unrelated-tutor": 2,
+    "provider-before-or-after-turn": 1
+  },
+  "status": "observed",
+  "verifiedWorstCaseUsd": 1.8822912,
+  "release": {
+    "sha": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+    "webVersion": "4.2.3",
+    "chatAsset": "/assets/index-BxmZoxBm.js",
+    "verifiedChatAssetSha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc"
+  },
+  "progress": "learner-turn",
+  "initialPairTurns": 0,
+  "submittedAt": 1795046951352,
+  "interceptedTutorShapes": [
+    {
+      "reason": "unrelated-tutor",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "slotMarker": null,
+      "maxOutput": 800,
+      "userCount": 1,
+      "containsRegisteredPrompt": true,
+      "sessionTitle": false,
+      "topicCategorization": true,
+      "auxiliaryWebSearch": false
+    }
+  ],
+  "query": {
+    "rows": [
+      {
+        "schemaVersion": 1,
+        "conversationId": "0a750877-f698-487c-abd0-2652349969aa",
+        "turnId": "learner-0",
+        "turnIndex": 0,
+        "model": "minimax/MiniMax-M3.1-Flash",
+        "mode": "guided",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "reply": "released",
+        "replyElapsedMs": 9163,
+        "attempted": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": [
+          "question-group"
+        ],
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question"
+          ]
+        },
+        "outsideWords": 8,
+        "nativePageRequested": false,
+        "assessment": {
+          "optOut": false,
+          "checkpoints": [
+            "question-interface"
+          ]
+        },
+        "draftAttempts": 4,
+        "gateIssues": [
+          "checkpoint_repeated",
+          "direct_answer_missing"
+        ],
+        "decisionModel": "jev-1.14.0",
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 1,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              1,
+              2
+            ],
+            "finalistAttempt": 1,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.1",
+            "predictionQuestionAttempts": [
+              2
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_repeated",
+                  "direct_answer_missing"
+                ]
+              }
+            ],
+            "startedAtMs": 6262.429999999702,
+            "finishedAtMs": 6415.799999999814
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 3,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              3,
+              4
+            ],
+            "finalistAttempt": 3,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.1",
+            "predictionQuestionAttempts": [
+              4
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": []
+              }
+            ],
+            "startedAtMs": 6263.504999999888,
+            "finishedAtMs": 6391.6699999999255
+          }
+        ],
+        "requestedModel": "minimax/MiniMax-M3.1-Flash",
+        "finalComparison": {
+          "candidateAttempts": [
+            1,
+            3
+          ],
+          "preferredAttempt": 1,
+          "probabilities": {
+            "draft_1": 0.51,
+            "draft_3": 0.49
+          },
+          "confidence": 0.02,
+          "model": "jev-1.14.0"
+        },
+        "selection": {
+          "attempt": 1,
+          "review": "verified",
+          "rule": "none"
+        },
+        "codingChallengeLanguages": [],
+        "editableCode": [],
+        "editorOutsideWords": null,
+        "nativePage": {
+          "succeeded": false,
+          "failed": false,
+          "attached": false,
+          "saved": false,
+          "mounted": false,
+          "ready": false,
+          "visible": false,
+          "opened": false,
+          "frameFailed": false
+        }
+      }
+    ],
+    "comparedPairs": 2,
+    "matchingTurns": 1
+  },
+  "observedAt": 1795046960891,
+  "classroom": {
+    "observableReply": "Good — your guess first, then the reasoning.\n\nBefore we explain\n\nCommit to a prediction first — then we'll see whether your model of chance matches the arithmetic.\n\nQuick check\nBefore you start\n1 / 1\nIf you draw one sock at random from 2 blue and 1 yellow, which colour are you more likely to pick?\nA\nBlue\nB\nYellow\nC\nBoth are equally likely\nHint\nFinish check",
+    "observerReply": "released",
+    "questionCount": 1,
+    "questionPrompts": [
+      "If you draw one sock at random from 2 blue and 1 yellow, which colour are you more likely to pick?"
+    ],
+    "nativePageCount": 0,
+    "renderedKinds": [
+      "question-group"
+    ],
+    "selectedAfterUserTurns": 1
+  },
+  "publicEvidence": {
+    "trace": {
+      "file": "first-trace.json",
+      "sha256": "8bd29244c74c46319e6f5594cfb5a60859f2e51e051f2482c894a5432eb50142"
+    },
+    "queries": {
+      "file": "first-webmcp.json",
+      "sha256": "f6404e119edf407c6af5c9320173c27041dc602c823024c0dd52b17515726d53"
+    },
+    "screenshot": {
+      "file": "first-classroom.png",
+      "sha256": "16f7648d4426b5b34c0d0cc1fe1737e60894367222c47ed827089689d25bc3bc"
+    }
+  },
+  "finishedUtc": "2026-11-19T00:09:22.870Z",
+  "verification": {
+    "count": 12,
+    "knownUsageCount": 8,
+    "checkedAttempts": 4,
+    "fourCandidateHttpOverlapMs": 986,
+    "twoReviewHttpOverlapMs": 121,
+    "pairCounts": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "tutorReturnedIdentities": [],
+    "verifiedTutorIdentities": 0,
+    "policyMatches": true,
+    "learnerElapsedMs": 9539
+  },
+  "isolatedContextClosed": true,
+  "additionalBoundUsd": 1.859709708,
+  "cumulativeBoundUsd": 5.65059434,
+  "invoiceUsd": null,
+  "settingsExport": {
+    "file": "final-settings-export.json",
+    "sha256": "8bd29244c74c46319e6f5594cfb5a60859f2e51e051f2482c894a5432eb50142"
+  }
+}

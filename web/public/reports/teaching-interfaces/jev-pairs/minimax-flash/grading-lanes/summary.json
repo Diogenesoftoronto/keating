@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "study": "Grade-only candidate lanes for a saved comprehension answer",
+  "scope": "One fresh synthetic submitted-answer evaluation using the locally served built Keating 4.2.4 candidate, policy v2.4.3. The first Question was replayed byte-for-byte from genuine prior production through the normal ChatML importer. Only the Blue form submission and its natural tool continuation used fresh provider calls.",
+  "origin": "loopback Nitro, real TypeSafe Jev + MiniMax BYOK",
+  "release": "4.2.4",
+  "policyVersion": "keating-teaching-policy/v2.4.3",
+  "entryAsset": "/assets/index-BG_G9vQ5.js",
+  "entrySha256": "16b9ba35bb11340c9ddf43a8f8d6a82972459a8785c9336500cac841a3d5906f",
+  "synthetic": true,
+  "sourceFormFileSha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+  "restoredPublicTextSha256": "79fbd9c0cdff5a13942517bcc1483779732c6698b5dd12020483b0452a5c8f92",
+  "turnId": "learner-1",
+  "actualOpenUiFormSubmitted": true,
+  "submittedAnswer": "Blue",
+  "savedGrading": "pending",
+  "score": null,
+  "learnerVisible": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "observerOutcome": "withheld",
+  "applicationElapsedMs": 49598,
+  "executedToolResults": [],
+  "releasedTeachingFeedback": false,
+  "recordedInterfaceDuringFeedback": [],
+  "freshGenerationRounds": 1,
+  "newPhysicalRequests": 9,
+  "byStage": {
+    "planning": 1,
+    "generation": 4,
+    "review": 3,
+    "pair": 1
+  },
+  "requestsWithUsage": 8,
+  "confirmedProviderIdentities": {
+    "jev-1.14.0": 5,
+    "MiniMax-M3.1-Flash": 4
+  },
+  "costFromMeteredRowsUsd": 0.012867246,
+  "missingUsageReserveUsd": 0.1549152,
+  "upperAdditionalCostUsd": 0.167782446,
+  "previousCumulativeBoundUsd": 5.697530372,
+  "cumulativeBoundUsd": 5.865312818,
+  "invoiceUsd": null,
+  "contentFreeRoundProjection": {
+    "source": "Reconstructed from the immutable app teaching-draft receipts for each round. settings.json is the unmodified separate Settings download.",
+    "rounds": [
+      {
+        "round": 1,
+        "phase": "withheld",
+        "selectedAttempt": null,
+        "pairs": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              2
+            ],
+            "status": "incomplete",
+            "preferredAttempt": null,
+            "model": null,
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.3",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              2
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_continued"
+                ]
+              }
+            ]
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.3",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              4
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_continued",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "checkpoint_continued"
+                ]
+              }
+            ],
+            "startedAtMs": 46639.87999999989,
+            "finishedAtMs": 46780.985000000335
+          }
+        ]
+      }
+    ]
+  },
+  "sourceArchive": {
+    "receiptSha256": "2bdc681be466cf4b320a0acb2db3ba79969518735636eb1b6da670b7b4c4fede",
+    "operatorSummarySha256": "887305acc94d3cca7dc212485d68d259b0d99d59db32099f88fff134a64510bc"
+  },
+  "interceptedAuxiliaryShapes": {
+    "unrecognized-candidate-instructions": true
+  },
+  "related": [
+    {
+      "file": "../production-submission-source.json",
+      "sha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865"
+    },
+    {
+      "file": "../submission-replay/summary.json",
+      "sha256": "f1d625fd2e1d121215114dd0aea7e65c03e1098919e399693ed068fa2909f33d"
+    }
+  ],
+  "publicFiles": [
+    {
+      "file": "protocol.json",
+      "sha256": "f88a536923becb9c36c2b71eebcaa3d2fc8e588ebb7069064dc90066e6dacd42"
+    },
+    {
+      "file": "candidates.json",
+      "sha256": "0dad78e5a8882d5cc5525afc20985f526c88691ac20ebb2eebd17d5d8be4dee6"
+    },
+    {
+      "file": "settings.json",
+      "sha256": "138118167ad287a4e4c789cd8a6af93439ec4600971408b231790afa7ad8e379"
+    },
+    {
+      "file": "after.png",
+      "sha256": "bfb596097cb65277a230db4ea86f99364d5adb6d9baa54e85a932dbb3156cd99"
+    }
+  ],
+  "settingsMatchesStoredTrace": true,
+  "observedOutcome": "Both grade-only drafts correctly proposed grading the saved answer, with empty text and no other tool. They remained ineligible solely because Jev was uncertain whether their text advanced past an unanswered checkpoint. No grade executed, and Blue remained pending. One ordinary generation did not complete."
+}

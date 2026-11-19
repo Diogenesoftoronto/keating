@@ -9,6 +9,9 @@ import { OPENUI_TURN_VIEWS, OpenUiUsageView, type ObservationStage, type OpenUiT
 import "./openui-diagnostics.css";
 
 const recordings = {
+  "hosted-sock": { label: "Hosted classroom · sock prediction", stage: "rendered", load: () => import("../../keating/openui/examples/hosted-sock.json") },
+  "hosted-submission": { label: "Hosted classroom · submitted answer", stage: "rendered", load: () => import("../../keating/openui/examples/hosted-submission.json") },
+  "grade-only-replay": { label: "Submitted answer · grade and follow-up", stage: "rendered", load: () => import("../../keating/openui/examples/grade-only-replay.json") },
   "flash-prediction": { label: "MiniMax M3.1 Flash · two predictions", stage: "rendered", load: () => import("../../keating/openui/examples/flash-prediction.json") },
   "jev-pairs-review": { label: "Jev pair reviews · reconstructed final decisions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-review.json") },
   "jev-pairs-prediction": { label: "Jev pair reviews · two predictions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-prediction.json") },
@@ -49,6 +52,9 @@ export async function loadOpenUiRecordingLink(params: URLSearchParams, fallback?
   };
 }
 const descriptions: Record<Source, string> = {
+  "hosted-sock": "A synthetic learner wanted to guess which sock colour was more likely. In the production classroom, Jev reviewed four drafts and the first reply contained a Question. This is the original Settings export.",
+  "hosted-submission": "A synthetic learner chose Blue in the production classroom. The Question appeared on the first turn. On the next turn all four feedback drafts were held and the saved answer stayed pending.",
+  "grade-only-replay": "In a built classroom replay, draft 2 graded the saved Blue answer correctly. Jev held all four follow-up explanations. Expand the turn to see both rounds.",
   "jev-pairs-review": "The paper and sock classroom turns with each draft’s review issues and the final Jev scores reconstructed from their saved provider records. The original browser exports are available under Two predictions.",
   "flash-prediction": "Paper produced a free-text Question. All four sock generation requests returned HTTP 429. This example adds the requested tutor and the rate-limit finding from the saved provider requests to the original browser export.",
   "jev-pairs-prediction": "Two learners wanted to guess before hearing the explanation. Open a turn to see which drafts used the Question prompt and which answer reached the classroom.",

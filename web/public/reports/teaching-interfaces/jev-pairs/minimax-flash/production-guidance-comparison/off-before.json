@@ -1,0 +1,78 @@
+{
+  "scope": "Offline browser diagnostic on built Keating 4.2.4 policy v2.4.4 before fixing Off. All external inference was blocked. Local placeholder keys were used only to exercise normal Settings. The application failed before attempting a learner tutor or decision call.",
+  "registeredProductionObservation": false,
+  "entryAsset": "/assets/index-DNSPfY1i.js",
+  "entrySha256": "87938e499cefb9a4698786b32e3960b9ddb711a431be0841a327d7c6ded50c72",
+  "settingsAfterReload": {
+    "choice": "off",
+    "keys": {
+      "minimax": true,
+      "google": false,
+      "typesafe": false
+    }
+  },
+  "learnerTurn": {
+    "matchingTutorRequests": 0,
+    "matchingDecisionRequests": 0,
+    "externalCalls": 0,
+    "blockedAuxiliaryTutors": [
+      {
+        "purpose": "categorization",
+        "registeredUserExactly": false,
+        "inputUserMessages": 1,
+        "originalMax": 800
+      }
+    ],
+    "visible": "Decision planning failed\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+    "diagnostics": {
+      "schemaVersion": 1,
+      "conversationId": "d8f76ea2-db03-4107-bd47-40da1b3956d2",
+      "turnId": "learner-0",
+      "turnIndex": 0,
+      "model": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "reply": "withheld",
+      "replyElapsedMs": 2307,
+      "attempted": null,
+      "compiled": null,
+      "selected": [],
+      "rendered": null,
+      "guidance": null,
+      "outsideWords": null,
+      "nativePageRequested": null,
+      "assessment": {
+        "optOut": false,
+        "checkpoints": null
+      },
+      "draftAttempts": 0,
+      "gateIssues": [],
+      "decisionModel": null,
+      "decisionFailure": {
+        "stage": "planning",
+        "reason": "backend-unavailable"
+      },
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      }
+    }
+  },
+  "screenshot": "off-before.png",
+  "screenshotSha256": "ea8f2bc9b4196dbcb085c59cd357ea428d103e4fcc1b1fe9815be48446e1d2b5",
+  "sealedOperatorReceiptSha256": "0304ca7c2660a5247df657dce63252ce1f2caec0378915267ad18950e1cb78b1",
+  "originalSettingsDownloadSha256": "048d18a0374e4895f01fa0422562478fafd319b295147b7e8e35f6c6c33753a2"
+}

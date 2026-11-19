@@ -1,4 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { IDBFactory } from "fake-indexeddb";
+import { KeatingStorage } from "../keating/storage";
+import { createAssessmentTools } from "../keating/browser-tools/assessment";
+import { createOpenUIActionLearnerResponse, serializeLearnerResponse } from "../keating/learner-response";
+import { loadCompleteLearnerStartupContext } from "../keating/session-start-hooks";
+import { teachingDraftEvidence } from "../keating/judgement/draft-evidence";
+import { prepareSubmittedGradeExecution } from "../keating/judgement/submitted-grade-execution";
 import * as fc from "fast-check";
 import { getModels } from "@earendil-works/pi-ai/compat";
 import { hybridStreamFn } from "../hooks/keating-stream";
@@ -94,6 +101,40 @@ const text = (value: AssistantMessage) => value.content.filter((part) => part.ty
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
 describe("private teaching draft stream", () => {
+  test("explicit Off makes one ordinary tutor call with the current schemas and no private plan or receipt", async () => {
+    const old = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const settings = new MemoryStorage();
+    settings.setItem("keating:judgement-model", JSON.stringify({ backend: "off" }));
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: settings });
+    try {
+      const input = context();
+      input.tools = ["workspace_inspect", "grade_question_checks"].map(name => ({ name, description: name, parameters: {type:"object",properties:{}} }));
+      const seen: string[][] = [], progress: TeachingDraftSnapshot[] = [], receipts: TeachingDraftReceipt[] = [];
+      const run = (reply: AssistantMessage, signal?: AbortSignal) => withTeachingDraftGate((_model, draft) => {
+        expect(draft.systemPrompt).toBe(input.systemPrompt);
+        seen.push(draft.tools?.map(tool => tool.name) ?? []);
+        return streamOf(reply);
+      }, { sessionId: "explicit-off", basePrompt: () => BASE, onProgress: item => progress.push(item),
+        onReceipt: item => receipts.push(item), evidence: async () => ({pendingSubmissions:[]}) })(MODEL, input, {signal});
+      const good = await collect(await run(message("Four factorial is 24.")));
+      expect(text(good.result)).toBe("Four factorial is 24.");
+      expect(seen).toEqual([["workspace_inspect"]]);
+      expect(good.result.content.some(part => part.type === "thinking")).toBe(false);
+      const unintended = message("", true);
+      for (const part of unintended.content) if (part.type === "toolCall") part.name = "grade_question_checks";
+      const rejected = await collect(await run(unintended));
+      expect(text(rejected.result)).toContain("unavailable tool");
+      expect(rejected.events.some(e => e.type === "toolcall_end")).toBe(false);
+      const stopped = await collect(await run(message("Should not start"), AbortSignal.abort()));
+      expect(stopped.result.stopReason).toBe("aborted");
+      expect(seen).toHaveLength(2);
+      expect(receipts).toEqual([]);
+      expect(progress).toEqual([]);
+    } finally {
+      if (old) Object.defineProperty(globalThis, "localStorage", old);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
   test("passes the published feedback reply to the claim check exactly once", async () => {
     const checked: unknown[] = [];
     const output = await gate(() => streamOf(message("Four layers is correct.")), {
@@ -763,6 +804,96 @@ describe("private teaching draft stream", () => {
       expect(schemas.filter(body=>!focused.includes(body)).map(body=>body.names)).toEqual([
         ["workspace_inspect","web_search"],["workspace_inspect","web_search"]]);
       if (index===1) expect(focused.every(body=>body.system.includes("OPENUI GRAMMAR"))).toBe(true);
+    }
+  });
+
+  test("a committed classroom form offers only the exact grading tool to two candidates and grades only on publication", async () => {
+    const prior = Object.getOwnPropertyDescriptor(globalThis, "indexedDB");
+    Object.defineProperty(globalThis, "indexedDB", { configurable: true, value: new IDBFactory() });
+    try {
+      const sessionId = "fixture-session", at = "2026-11-18T10:00:00.000Z";
+      const question = "Two of three socks are blue. Which colour is most likely?";
+      const document: UiDocument = { schemaVersion: 1, id: "socks", revision: 0, lifecycle: "ready", supportedSurfaces: ["web"],
+        nodes: [{ type: "question-group", id: "socks-check", topic: "Socks", questions: [
+          { id: "colour", kind: "choice", prompt: question, choices: [{ id: "blue", label: "Blue" }, { id: "yellow", label: "Yellow" }] }] }],
+        createdAt: at, updatedAt: at };
+      const storage = new KeatingStorage();
+      storage.setCurrentSessionId(sessionId);
+      const action = { schemaVersion: 1, type: "submit-question-group", documentId: document.id, documentRevision: 0,
+        nodeId: "socks-check", idempotencyKey: "submitted-once", responses: [{ type: "choice", questionId: "colour", optionIds: ["blue"] }] } as const;
+      const { receipt } = await storage.materializeCanonicalOpenUiAction(structuredClone({ ...action, responses: [{ ...action.responses[0], optionIds: ["blue"] }] }), document, at);
+      const envelope = createOpenUIActionLearnerResponse({ kind: "canonical", type: action.type, action: receipt.action, sourceDocument: document, receipt,
+        document: { id: document.id, revision: 0, lifecycle: "ephemeral", sessionId }, humanFriendlyMessage: "Submitted one answer", params: {} });
+      const serialized = serializeLearnerResponse(envelope);
+      const profile = await loadCompleteLearnerStartupContext(storage);
+      const input = context(serialized);
+      const gradeTool = createAssessmentTools(storage, async () => []).find(t => t.name === "grade_question_checks")!;
+      input.tools = [gradeTool, { name: "feedback", description: "Record a learner rating", parameters: { type: "object", properties: {} } }];
+      const snapshots: TeachingDraftReceipt[] = [];
+      const projections: { focused: boolean; tools: string[]; search?: boolean }[] = [];
+      const feedbackWires: { system: string; tools: string[]; search?: boolean }[] = [];
+      const reviewedGrades: TeachingPolicyTurn["confirmedQuestionGrade"][] = [];
+      const protectedGrade = { topic: "Socks", results: [{ question, verdict: "correct" }] };
+      const call = gate((_model, privateContext, options) => {
+        const focused = privateContext.systemPrompt!.includes("Grade only the saved comprehension answer.");
+        if (privateContext.systemPrompt!.includes("Explain the grade just recorded for this answer.")) {
+          feedbackWires.push({ system: privateContext.systemPrompt!, tools: privateContext.tools!.map(t => t.name),
+            search: (options as { hostedWebSearch?: boolean })?.hostedWebSearch });
+          return streamOf(message("Blue is correct because two of the three socks are blue."));
+        }
+        projections.push({ focused, tools: privateContext.tools!.map(t => t.name), search: (options as { hostedWebSearch?: boolean })?.hostedWebSearch });
+        const reply = message(focused ? "Blue is more likely because two of the three socks are blue." : "REJECTED unrelated response.", focused);
+        if (focused) Object.assign(reply.content.find(part => part.type === "toolCall")!, { name: "grade_question_checks", arguments: protectedGrade });
+        return streamOf(reply);
+      }, { evidence: async latest => teachingDraftEvidence(await loadCompleteLearnerStartupContext(storage), sessionId, latest), onReceipt: receipt => snapshots.push(receipt),
+        makeCaller: () => async request => {
+          const turn = (request.state as { turn?: TeachingPolicyTurn }).turn;
+          if (request.questions.learning_task || request.questions.checkpoint_continued) reviewedGrades.push(turn?.confirmedQuestionGrade);
+          const judged = answer(request);
+          return judged.ok ? { ok: true, response: { ...judged.response, backend: { backend: "system-one", model: "jev-1.14.0", calibrationSha256: null } } } : judged;
+        } });
+      const modelSignal = new AbortController().signal;
+      const { result } = await collect(await call(MODEL, input, { hostedWebSearch: true, signal: modelSignal } as SimpleStreamOptions));
+      expect(projections.filter(p => p.focused)).toEqual(Array(2).fill({ focused: true, tools: ["grade_question_checks"], search: false }));
+      expect(projections.filter(p => !p.focused)).toEqual(Array(2).fill({ focused: false, tools: ["grade_question_checks","feedback"], search: true }));
+      expect(snapshots.at(-1)?.snapshot.pairReviews?.map(r => r.gradeOnlyAttempts)).toEqual([[2],[4]]);
+      expect(teachingDraftEvidence(profile, "another-session", serialized).submittedComprehension).toBeUndefined();
+      expect(teachingDraftEvidence(profile, sessionId, "Blue").submittedComprehension).toBeUndefined();
+      expect(teachingDraftEvidence({ ...profile, evidence: { ...profile.evidence, questionChecks: profile.evidence.questionChecks.map(c => ({ ...c, answer: "Yellow" })) } }, sessionId, serialized).submittedComprehension).toBeUndefined();
+      const published = result.content.filter(part => part.type === "toolCall");
+      expect(published.map(c => c.name)).toEqual(["grade_question_checks"]);
+      expect(text(result)).toContain("two of the three socks");
+      expect((await storage.getQuestionChecks())[0]).toMatchObject({ grading: "pending" });
+      const original = (await storage.getQuestionChecks())[0]!;
+      const sibling = await storage.recordQuestionCheck({ topic: original.topic, question, answer: "Yellow", grading: "pending", sessionId, createdAt: original.createdAt + 1 });
+      const authorized = published[0]!, execSignal = new AbortController().signal;
+      expect(authorized.arguments).toEqual(protectedGrade);
+      expect(() => prepareSubmittedGradeExecution(modelSignal, execSignal, "feedback", authorized.id, protectedGrade)).toThrow("differs");
+      expect(() => prepareSubmittedGradeExecution(modelSignal, execSignal, authorized.name, "different-call", protectedGrade)).toThrow("differs");
+      prepareSubmittedGradeExecution(modelSignal, execSignal, authorized.name, authorized.id, authorized.arguments);
+      const twoDispatches = await Promise.allSettled([gradeTool.execute(authorized.id, authorized.arguments, execSignal), gradeTool.execute(authorized.id, authorized.arguments, execSignal)]);
+      expect(twoDispatches.filter(r => r.status === "fulfilled")).toHaveLength(1);
+      const storageState = await storage.getQuestionChecks();
+      expect(storageState.find(c => c.id === original.id)).toMatchObject({ grading: "model", score: 1, answer: "Blue" });
+      expect(storageState.find(c => c.id === sibling.id)).toMatchObject({ grading: "pending", answer: "Yellow" });
+      await expect(gradeTool.execute(authorized.id, authorized.arguments, execSignal)).rejects.toThrow("no longer pending");
+      const continuation: Context = { ...input, messages: [...input.messages, result, { role: "toolResult", toolCallId: authorized.id,
+        toolName: authorized.name, content: [{ type: "text", text: "Recorded one check." }], isError: false, timestamp: 3 }] };
+      const feedback = await collect(await call(MODEL, continuation, { signal: new AbortController().signal }));
+      expect(text(feedback.result)).toBe("Blue is correct because two of the three socks are blue.");
+      expect(feedbackWires.map(w => w.tools)).toEqual([[], []]);
+      expect(feedbackWires.map(w => w.search)).toEqual([false, false]);
+      expect(feedbackWires.map(w => w.system.includes("Lead with the recorded result."))).toEqual([true, false]);
+      expect(feedbackWires[1]!.system).toContain("Lead with the reason for this result.");
+      expect(snapshots.at(-1)?.snapshot.pairReviews?.map(pair => pair.feedbackOnlyAttempts)).toEqual([[2], [4]]);
+      expect(reviewedGrades.at(-1)).toEqual({ topic: "Socks", question, answer: "Blue", score: 1, verdict: "correct" });
+      const wireCount = feedbackWires.length;
+      await collect(await call(MODEL, continuation, { signal: new AbortController().signal }));
+      expect(feedbackWires).toHaveLength(wireCount);
+      expect(reviewedGrades.at(-1)).toBeUndefined();
+    } finally {
+      if (prior) Object.defineProperty(globalThis, "indexedDB", prior);
+      else Reflect.deleteProperty(globalThis, "indexedDB");
     }
   });
 

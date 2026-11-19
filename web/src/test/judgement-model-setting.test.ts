@@ -116,6 +116,11 @@ describe("stored settings are normalized rather than trusted", () => {
 });
 
 describe("subscribers observe changes", () => {
+  test("a saved Google Decision 1 choice survives reloading without any key in the setting", () => {
+    saveJudgementModelSettings({ ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, hostedProvider: "gemini-decision" });
+    expect(loadJudgementModelSettings().hostedProvider).toBe("gemini-decision");
+    expect(JSON.parse(localStorage.getItem(KEY)!)).not.toHaveProperty("apiKey");
+  });
   test("saving notifies listeners with the normalized value", () => {
     const seen: string[] = [];
     const unsubscribe = subscribeJudgementModelSettings((settings) => seen.push(settings.backend));

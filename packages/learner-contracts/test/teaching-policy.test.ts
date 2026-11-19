@@ -205,4 +205,23 @@ describe("deterministic adherence", () => {
     expect(result.failed).toContain("available_tool");
     expect(result.failed).toContain("grading_requires_submission");
   });
+
+  test("a recorded comprehension stem scopes the preference question and keeps the submission and judgement gates", () => {
+    const item = { kind: "comprehension" as const, id: "c1", questionIds: ["c1"], topic: "Probability", questionText: "Which colour is more likely?" };
+    const submitted = { ...turn, pendingSubmissions: [item], availableTools: ["grade_question_checks"] };
+    const draft = { text: "", toolCalls: [{ name: "grade_question_checks", arguments: { topic: item.topic, results: [{ question: item.questionText, verdict: "correct" }] } }] };
+    const original = teachingPolicyAdherenceRequest(turn, draft, ["preference_graded"])!;
+    const scoped = teachingPolicyAdherenceRequest(submitted, draft, ["preference_graded"])!;
+    expect(Object.keys(scoped.questions)).toEqual(Object.keys(original.questions));
+    expect(scoped.questions.preference_graded).not.toEqual(original.questions.preference_graded);
+    expect(scoped.questions.mastery_overclaimed).toEqual(original.questions.mastery_overclaimed);
+    expect(judgementRequestProblem(scoped)).toBeNull();
+    expect(assessTeachingPolicyAdherence(submitted, draft, outcome(scoped, { preference_graded: 0.94 }), ["preference_graded"]).failed).toContain("preference_graded");
+    expect(assessTeachingPolicyAdherence(submitted, draft, null, ["preference_graded"]).uncertain).toContain("preference_graded");
+    const otherStem = { ...submitted, pendingSubmissions: [{ ...item, questionText: "How many socks?" }] };
+    expect(teachingPolicyDeterministicChecks(otherStem, draft).find(c => c.id === "grading_requires_submission")?.status).toBe("fail");
+    for (const record of [{ ...item, kind: "quiz" as const }, { ...item, questionText: "" }]) {
+      expect(teachingPolicyAdherenceRequest({ ...submitted, pendingSubmissions: [record] }, draft, ["preference_graded"])!.questions.preference_graded).toEqual(original.questions.preference_graded);
+    }
+  });
 });

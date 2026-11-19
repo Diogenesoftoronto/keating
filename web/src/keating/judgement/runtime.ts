@@ -3,6 +3,7 @@ import { guardCalibrationCall, webJudgementCalibrationStore, type WebJudgementCa
 /** Settings-to-runtime assembly. No inference, downloads, or learner activation. */
 import {
   thresholdKey,
+  GEMINI_DECISION_MODEL,
   isSha256Hex,
   type CalibrationTable,
   type JudgementBackendKey,
@@ -17,6 +18,7 @@ import { createDesktopLocalLabelScorer } from "./local-scorer";
 import { createWebJudgementCaller, WEB_JUDGEMENT_MODEL_ALIAS, type WebJudgementCallerOptions } from "./transport";
 import { createPublicAccountJudgementBackend, type JudgementAccountClient } from "./public-account";
 import { createStoredTypesafeJudgementBackend } from "./typesafe-key";
+import { createStoredGeminiDecisionBackend, GEMINI_DECISION_INPUT_LIMIT } from "./gemini-key";
 import { observeJudgementCaller } from "./diagnostics";
 import { JULIA_BROWSER_MODEL_ID, JULIA_MODEL, JULIA_MODEL_ID } from "../../../../shared/julia/manifest.js";
 import { createBrowserJuliaScorer, createDesktopJuliaScorer } from "./julia-scorer";
@@ -101,6 +103,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const settings: JudgementModelSettings = Object.freeze({
     backend: requested.backend === "hosted" || requested.backend === "off" ? requested.backend : "local",
     ...(requested.hostedProvider === "typesafe" ? { hostedProvider: "typesafe" as const, customModel: requested.customModel?.trim() || DEFAULT_MODELS.judgement.systemOne } : {}),
+    ...(requested.hostedProvider === "gemini-decision" ? { hostedProvider: "gemini-decision" as const } : {}),
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
     requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
@@ -116,8 +119,12 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const generation = installation?.state().generation;
   const tiers: JudgementTier[] = [];
   const entries: Record<string, JudgementThresholds> = {};
+  const google = settings.backend === "hosted" && settings.hostedProvider === "gemini-decision";
+  const hostedModel = google ? GEMINI_DECISION_MODEL
+    : settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
+    : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
 
-  if (settings.backend !== "off") {
+  if (settings.backend !== "off" && !google) {
     const key = calibrationKey("local", settings.localModelId, calibration?.local);
     const bridge = options.desktopBridge ?? desktopOfflineBridge();
     const supplied = options.localScorer;
@@ -136,10 +143,10 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     Object.assign(entries, calibratedEntries(key, calibration?.local));
   }
 
-  if (settings.backend === "hosted") {
-    const model = settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
-      : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
-    const key = calibrationKey("system-one", model, calibration?.hosted);
+  if (google) {
+    tiers.push(createStoredGeminiDecisionBackend());
+  } else if (settings.backend === "hosted") {
+    const key = calibrationKey("system-one", hostedModel, calibration?.hosted);
     const sameOrigin = import.meta.env?.VITE_KEATING_JUDGEMENT_SAME_ORIGIN === "true";
     const account = !sameOrigin && (!options.hosted?.fetch || options.hosted?.accountClient)
       ? createPublicAccountJudgementBackend({ client: options.hosted?.accountClient,
@@ -149,7 +156,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
       model: key.model, calibrationSha256: key.calibrationSha256,
       fetch: options.hosted?.fetch, sleep: options.hosted?.sleep,
     });
-    tiers.push(Object.freeze(settings.hostedProvider === "typesafe" ? createStoredTypesafeJudgementBackend(model) : account ?? { key, call: hosted.call }));
+    tiers.push(Object.freeze(settings.hostedProvider === "typesafe" ? createStoredTypesafeJudgementBackend(hostedModel) : account ?? { key, call: hosted.call }));
     if (settings.hostedProvider !== "typesafe") Object.assign(entries, calibratedEntries(key, calibration?.hosted));
   }
 
@@ -162,8 +169,6 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     calibration: Object.freeze({ entries: Object.freeze(entries) }),
     ...(options.pinnedBackend ? { pinnedBackend: Object.freeze({ ...options.pinnedBackend }) } : {}),
   });
-  const hostedModel = settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
-    : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
   const isJevModel = MODEL_PREFERENCES.judgement.aliases.some(alias => hostedModel === alias) || /^jev-\d/.test(hostedModel);
   const localNativeContextWindow = options.localScorer?.contextWindowTokens
     ?? (settings.localModelId === JULIA_MODEL_ID || settings.localModelId === JULIA_BROWSER_MODEL_ID ? JULIA_MODEL.contextTokens
@@ -172,17 +177,17 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const localRequestTokens = localNativeContextWindow ?? settings.requestTokens ?? null;
   const localStateQuestionTokens = localNativeContextWindow ?? settings.stateQuestionTokens ?? null;
   const hostedRequestTokens = options.hosted?.requestTokens ?? settings.requestTokens
-    ?? (isJevModel ? JEV_REQUEST_TOKEN_LIMIT : null);
+    ?? (isJevModel || google ? JEV_REQUEST_TOKEN_LIMIT : null);
   const hostedStateQuestionTokens = options.hosted?.stateQuestionTokens ?? options.hosted?.contextWindowTokens ?? settings.stateQuestionTokens
-    ?? (isJevModel ? JEV_STATE_QUESTION_TOKEN_LIMIT : null);
+    ?? (isJevModel || google ? JEV_STATE_QUESTION_TOKEN_LIMIT : null);
   const localFallbackAvailable = options.localScorer?.modelId === settings.localModelId
     || settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
     || settings.localModelId === JULIA_MODEL_ID && Boolean((options.desktopBridge ?? desktopOfflineBridge())?.supportedJudgementModels?.includes(JULIA_MODEL_ID))
     || settings.localModelId === JULIA_BROWSER_MODEL_ID && juliaBrowserModel.status().installed;
-  const activeRequestLimits = settings.backend === "hosted"
+  const activeRequestLimits = google ? [hostedRequestTokens, GEMINI_DECISION_INPUT_LIMIT] : settings.backend === "hosted"
     ? [hostedRequestTokens, ...(localFallbackAvailable ? [localRequestTokens] : [])]
     : settings.backend === "local" ? [localRequestTokens] : [];
-  const activeStateQuestionLimits = settings.backend === "hosted"
+  const activeStateQuestionLimits = google ? [hostedStateQuestionTokens, GEMINI_DECISION_INPUT_LIMIT] : settings.backend === "hosted"
     ? [hostedStateQuestionTokens, ...(localFallbackAvailable ? [localStateQuestionTokens] : [])]
     : settings.backend === "local" ? [localStateQuestionTokens] : [];
   const minimumKnown = (values: readonly (number | null)[]) => {

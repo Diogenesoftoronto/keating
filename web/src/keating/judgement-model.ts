@@ -32,7 +32,7 @@ export interface JudgementModelSettings {
    */
   readonly backend: JudgementBackendPreference;
   /** Direct BYOK is independent of Not Organic account authorization. */
-  readonly hostedProvider?: "notorganic" | "typesafe";
+  readonly hostedProvider?: "notorganic" | "typesafe" | "gemini-decision";
   readonly customModel?: string;
   /** Local model id used for judgement, independent of the tutor model. */
   readonly localModelId: string;
@@ -109,8 +109,8 @@ const judgementModelSetting = createLocalSetting<JudgementModelSettings>({
     if (!parsed) return defaults;
     return {
       backend: normalizeBackend(parsed.backend),
-      ...(parsed.hostedProvider === "typesafe" ? {
-        hostedProvider: "typesafe" as const,
+      ...(parsed.hostedProvider === "typesafe" || parsed.hostedProvider === "gemini-decision" ? {
+        hostedProvider: parsed.hostedProvider,
       } : {}),
       ...(parsed.customModel !== undefined || parsed.hostedProvider === "typesafe" ? { customModel: cleanString(parsed.customModel).slice(0, 200) || DEFAULT_MODELS.judgement.systemOne } : {}),
       localModelId: cleanString(parsed.localModelId) || defaults.localModelId,

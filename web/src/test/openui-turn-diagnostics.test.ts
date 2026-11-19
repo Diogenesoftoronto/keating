@@ -456,7 +456,9 @@ describe("durable content-free OpenUI turn observation", () => {
       const candidate = assistant(fence(source), "toolUse");
       first.plan(snapshot, { backend: "system-one", model: "jev-1.fixture" });
       first.candidate(candidate, true, 1);
-      first.plan({ ...snapshot, phase: "released", selectedAttempt: 1, reason: "best-effort-draft", selectionRule: "none" }, null);
+      first.plan({ ...snapshot, phase: "released", selectedAttempt: 1, reason: "best-effort-draft", selectionRule: "none",
+        pairReviews: [{ pair: 1, candidateAttempts: [1, 2], status: "compared", model: "jev-1.fixture", preferredAttempt: 1,
+          eligibleAttempts: [1], finalistAttempt: 1, gradeOnlyAttempts: [2] }] }, null);
       messages.push(candidate);
       const second = turn.beginRound();
       const reply = { ...assistant("PRIVATE selected prose"), model: finalModel };
@@ -473,6 +475,11 @@ describe("durable content-free OpenUI turn observation", () => {
       expect(turn.selection).toBeUndefined(); // A selected private tool round cannot identify the later public answer's winner.
       expect(turn.pairReviews).toBeUndefined();
       expect(turn.finalComparison).toBeUndefined();
+      expect(turn.earlierPairReviewRounds).toMatchObject([{ round: 1, releasedAttempt: 1, model: "fixture/fixture-tutor",
+        pairReviews: [{ pair: 1, gradeOnlyAttempts: [2] }] }]);
+      expect(queryOpenUiDiagnosticTurns([turn], { view: "pair-reviews" })).toMatchObject({
+        matchingTurns: 1, roundsWithPairRecords: 1, comparedPairs: 1, unrecordedPairs: 1,
+      });
       expect(turn).toMatchObject({ draftAttempts: 2, gateIssues: ["checkpoint_not_interactive", "prediction_question_format", "question_feedback_format"], decisionModel: "fixture-local-planner",
         guidance: { source: "other", action: "none", targets: [], delivered: true } });
     }

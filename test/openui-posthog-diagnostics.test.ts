@@ -85,13 +85,17 @@ describe("read-only Keating fleet diagnostics", () => {
   test("preserves measured zero and withheld duration, and reads both old events and saved pre-timing query results", () => {
     const observed = query([snapshot(row(0, { replyElapsedMs: 0 }), 2), snapshot(row(1, { reply: "withheld", model:null, requestedModel:"minimax/requested-tutor", replyElapsedMs: 1234 }), 4),
       snapshot(row(2), 1, { properties: { reply_elapsed_ms: undefined } })]);
-    expect(observed.columns).toHaveLength(43);
+    expect(observed.columns).toHaveLength(44);
     const rows = openUiFleetExport(observed, scope).turns;
     expect(rows[1]).toMatchObject({model:null, requestedModel:"minimax/requested-tutor"});
     expect(rows.map(r => r.replyElapsedMs)).toEqual([0, 1234, null]);
     expect(summarizeOpenUiDiagnostics(rows).overall.replyElapsedMs).toEqual({ observed: 2, unknown: 1, median: 617, p90: 1234 });
-    const omit = (...fields: string[]) => ({ columns: observed.columns.filter(key => !fields.includes(key)),
-      results: observed.results.map(r => r.filter((_, i) => !fields.includes(observed.columns[i]!))) });
+    const beforeRoundHistory = { columns: observed.columns.filter(key => key !== "draft_earlier_pair_rounds"),
+      results: observed.results.map(r => r.filter((_, i) => observed.columns[i] !== "draft_earlier_pair_rounds")) };
+    expect(beforeRoundHistory.columns).toHaveLength(43);
+    expect(openUiFleetExport(beforeRoundHistory, scope).turns.every(r => r.earlierPairReviewRounds === undefined)).toBe(true);
+    const omit = (...fields: string[]) => ({ columns: beforeRoundHistory.columns.filter(key => !fields.includes(key)),
+      results: beforeRoundHistory.results.map(r => r.filter((_, i) => !fields.includes(beforeRoundHistory.columns[i]!))) });
     const beforeDecisionFailure = omit("decision_failure");
     expect(beforeDecisionFailure.columns).toHaveLength(42);
     expect(openUiFleetExport(beforeDecisionFailure, scope).turns.every(r => r.decisionFailure === undefined)).toBe(true);
@@ -127,6 +131,15 @@ describe("read-only Keating fleet diagnostics", () => {
     const legacy = omit(...code, "native_page", "guidance_reason", "reply_elapsed_ms");
     expect(legacy.columns).toHaveLength(28);
     expect(openUiFleetExport(legacy, scope).turns.map(r => r.replyElapsedMs)).toEqual([null, null, null]);
+  });
+  test("fleet retains a prior tool round without counting a second learner or accepting private fields", () => {
+    const earlier = { round: 1, model: "first-tutor", pairReviews: [{ pair: 1 as const, candidateAttempts: [1, 2],
+      status: "compared" as const, model: "jev", preferredAttempt: 2, eligibleAttempts: [2], finalistAttempt: 2, gradeOnlyAttempts: [2] }], releasedAttempt: 2 };
+    const original = row(0, { earlierPairReviewRounds: [earlier] });
+    expect(openUiFleetExport(query([snapshot(original, 1)]), scope).turns).toMatchObject([{ earlierPairReviewRounds: [earlier] }]);
+    const malformed = { ...earlier, privateText: "PRIVATE" };
+    expect(openUIDiagnosticEvent({ ...original, earlierPairReviewRounds: [malformed] }, 1).draft_earlier_pair_rounds).toBeNull();
+    expect(() => openUiFleetExport(query([snapshot(original, 1, { properties: { draft_earlier_pair_rounds: [malformed] } })]), scope)).toThrow();
   });
   test("fleet preserves a planning denial separately from reviewer identity and rejects unrecognized details", () => {
     const failure = { stage: "planning", reason: "backend-unauthorized", configuredModel: "jev-test", detail: "relay-origin-denied" } as const;

@@ -1,5 +1,5 @@
 import { isDecisionPlanningFailure, learningSourceHash } from "@keating/learner-contracts";
-import { NATIVE_PAGE_STAGES, parseOpenUiDiagnosticExport, type NativePageEvidence, type OpenUiDiagnosticTurn } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
+import { NATIVE_PAGE_STAGES, parseOpenUiDiagnosticExport, validEarlierPairRounds, type NativePageEvidence, type OpenUiDiagnosticTurn } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { createSessionId } from "../../hooks/session-metadata";
 
 type Capture = (event: string, properties: Record<string, unknown>) => void;
@@ -60,6 +60,7 @@ export function openUIDiagnosticEvent(row: OpenUiDiagnosticTurn, revision: numbe
     decision_failure: isDecisionPlanningFailure(row.decisionFailure) ? { ...row.decisionFailure } : null,
     draft_selection: row.selection ?? null,
     draft_pair_reviews: row.pairReviews ?? null,
+    draft_earlier_pair_rounds: validEarlierPairRounds(row.earlierPairReviewRounds) ? row.earlierPairReviewRounds : null,
     draft_final_comparison: row.finalComparison ?? null,
     assessment_opt_out: row.assessment?.optOut ?? null, assessment_checkpoints: row.assessment?.checkpoints ?? null,
   };

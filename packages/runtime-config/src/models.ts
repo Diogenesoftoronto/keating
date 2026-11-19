@@ -19,6 +19,7 @@ export const DEFAULT_MODELS = {
     anthropic: MODEL_IDS.claude_sonnet_4_6,
     google: MODEL_IDS.gemini_3_5_flash,
     openrouter: MODEL_IDS.anthropic_claude_sonnet_4_6,
+    minimax: MODEL_IDS.minimax_m3_1_flash,
     custom: MODEL_IDS.default,
   },
   web: { notorganic: MODEL_IDS.inkling_2_small },

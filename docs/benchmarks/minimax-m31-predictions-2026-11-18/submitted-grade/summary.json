@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "study": "Submitted grade and feedback through the same recorded Question",
+  "scope": "One fresh synthetic submitted-answer evaluation using the locally served built Keating 4.2.4 candidate, policy v2.4.4. The first Question was replayed byte-for-byte from genuine prior production through the normal ChatML importer. Only the Blue form submission and its natural tool continuation used fresh provider calls.",
+  "origin": "loopback Nitro, real TypeSafe Jev + MiniMax BYOK",
+  "release": "4.2.4",
+  "policyVersion": "keating-teaching-policy/v2.4.4",
+  "entryAsset": "/assets/index-DNSPfY1i.js",
+  "entrySha256": "87938e499cefb9a4698786b32e3960b9ddb711a431be0841a327d7c6ded50c72",
+  "synthetic": true,
+  "sourceFormFileSha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+  "restoredPublicTextSha256": "79fbd9c0cdff5a13942517bcc1483779732c6698b5dd12020483b0452a5c8f92",
+  "turnId": "learner-1",
+  "actualOpenUiFormSubmitted": true,
+  "submittedAnswer": "Blue",
+  "savedGrading": "model",
+  "score": 1,
+  "learnerVisible": "Tool\ngrade_question_checks\nSUCCESS\nCouldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "observerOutcome": "withheld",
+  "applicationElapsedMs": 109658,
+  "executedToolResults": [
+    {
+      "name": "grade_question_checks",
+      "isError": false,
+      "content": [
+        {
+          "text": "Recorded 1 graded diagnostic check for \"Random draw\"."
+        }
+      ]
+    }
+  ],
+  "releasedTeachingFeedback": false,
+  "recordedInterfaceDuringFeedback": [],
+  "freshGenerationRounds": 2,
+  "newPhysicalRequests": 23,
+  "byStage": {
+    "planning": 2,
+    "generation": 8,
+    "review": 8,
+    "pair": 4,
+    "final-choice": 1
+  },
+  "requestsWithUsage": 23,
+  "confirmedProviderIdentities": {
+    "jev-1.14.0": 15,
+    "MiniMax-M3.1-Flash": 8
+  },
+  "costFromMeteredRowsUsd": 0.033690624,
+  "missingUsageReserveUsd": 0,
+  "upperAdditionalCostUsd": 0.033690624,
+  "previousCumulativeBoundUsd": 5.865312818,
+  "cumulativeBoundUsd": 5.899003442,
+  "invoiceUsd": null,
+  "contentFreeRoundProjection": {
+    "source": "Reconstructed from the immutable app teaching-draft receipts for each round. settings.json is the unmodified separate Settings download.",
+    "rounds": [
+      {
+        "round": 1,
+        "phase": "released",
+        "selectedAttempt": 2,
+        "pairs": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 1,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              2
+            ],
+            "finalistAttempt": 2,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.4",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              2
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "artifact_placeholder",
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope",
+                  "unsolicited_animation"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": []
+              }
+            ],
+            "startedAtMs": 28902.224999999627,
+            "finishedAtMs": 29089.455000000075
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 3,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              4
+            ],
+            "finalistAttempt": 4,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.4",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [
+              4
+            ],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": []
+              }
+            ],
+            "startedAtMs": 28906.665000000037,
+            "finishedAtMs": 29105.959999999963
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "phase": "withheld",
+        "selectedAttempt": null,
+        "pairs": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 1,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.4",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "openui_valid",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "quality_scope"
+                ]
+              }
+            ],
+            "startedAtMs": 77907.79499999993,
+            "finishedAtMs": 78099.21999999974
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 3,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.4",
+            "predictionQuestionAttempts": [],
+            "gradeOnlyAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "quality_scope"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "checkpoint_answer_leaked",
+                  "checkpoint_repeated",
+                  "quality_scope",
+                  "unsolicited_animation"
+                ]
+              }
+            ],
+            "startedAtMs": 77917.89499999955,
+            "finishedAtMs": 78143.08499999996
+          }
+        ]
+      }
+    ]
+  },
+  "sourceArchive": {
+    "receiptSha256": "e58c63d18cbccd3004564d9121ef2bce8ef684550fb8fc7093f36528f0c8e7c2",
+    "operatorSummarySha256": "ba6f16d0f629b6562745216f319200df374a6b6e18ce028fcc342e84eeb78f06"
+  },
+  "interceptedAuxiliaryShapes": {
+    "unrecognized-candidate-instructions": true
+  },
+  "related": [
+    {
+      "file": "../production-submission-source.json",
+      "sha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865"
+    },
+    {
+      "file": "../submission-replay/summary.json",
+      "sha256": "f1d625fd2e1d121215114dd0aea7e65c03e1098919e399693ed068fa2909f33d"
+    },
+    {
+      "file": "../grading-lanes/summary.json",
+      "sha256": "a03d353f8a6013f92713fe6ac84376838b581c5584236e31c6e0464f5c4fa073"
+    }
+  ],
+  "publicFiles": [
+    {
+      "file": "protocol.json",
+      "sha256": "23797cde0e282d1e91065cbc0c22fb96c423f01ac7e0ed5a6f046c36317edab9"
+    },
+    {
+      "file": "candidates.json",
+      "sha256": "7baf0680faadbbf3fb208cc090c864fb55cd487ff32d6143bfa9b409a83ab194"
+    },
+    {
+      "file": "settings.json",
+      "sha256": "b5784989ee4dc2dfd7c348ba6075d9283e97244ca169b6aa8f6975545f80aff4"
+    },
+    {
+      "file": "after.png",
+      "sha256": "69ef7ac6647ea166badc7ed6926e0115960204fed1a4036d29078007b3b842eb"
+    }
+  ],
+  "settingsMatchesStoredTrace": true,
+  "settingsRoundHistoryMatchesDurableReceipts": true,
+  "originalSettingsEarlierRoundCount": 1,
+  "propositionBoundary": "Jev’s raw probability for checkpoint_continued is retained. The recorded applicability applies only to a structurally verified, text-empty, single matching grade of the saved answer.",
+  "observedOutcome": "The recorded Blue answer received a real grade. The classroom withheld the response."
+}

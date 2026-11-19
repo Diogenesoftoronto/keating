@@ -22,7 +22,7 @@ export function AgentTrace({
   messageId: string;
   /** Render text and tools from sequence order; the caller must suppress duplicate message content. */
   ordered?: boolean;
-  onLearnerTurn: (text: string) => Promise<void>;
+  onLearnerTurn: (text: string, submittedTurnId?: string) => Promise<void>;
 }) {
   const { settings } = useUiSettings();
   const orderedItems = useMemo(() => ordered ? orderedAgentTraceItems(events) : [], [events, ordered]);
