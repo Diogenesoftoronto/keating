@@ -1,0 +1,185 @@
+{
+  "scope": "Actual private MiniMax candidates from the post-grade round on a synthetic production form. Only the two tool-free feedback candidates are quoted. The pupil saw the saved verdict and the withheld-reply notice. None of these candidates reached the learner.",
+  "sourceOperatorReceiptSha256": "86a634e2ab1562f819cfb5c7da9567bef82fe45120bb352913fdaabe9f8010cc",
+  "savedVerdict": {
+    "answer": "Yellow",
+    "grading": "model",
+    "score": 1
+  },
+  "learnerVisibleVerdict": "Your answer is correct.",
+  "learnerFacingResponse": "Tool\ngrade_question_checks\nSUCCESS\nCouldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "postGradeRound": 3,
+  "observedCandidates": [
+    {
+      "attempt": 1,
+      "scopedPostGradeFeedback": false,
+      "eligible": false,
+      "recordedBlockingIssues": [
+        "assessed_work_completed",
+        "checkpoint_answer_leaked",
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "openui_valid",
+        "quality_scope"
+      ],
+      "relevantChecks": [
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.49
+        },
+        {
+          "id": "checkpoint_repeated",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.59
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.63
+        },
+        {
+          "id": "assessed_work_completed",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.41
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.5900000000000001
+        }
+      ],
+      "submittedCandidateText": null,
+      "privateCandidateLength": 782,
+      "proposedToolNames": [
+        "interactive_page"
+      ],
+      "candidateTextSha256": "96f1d085dee5bb74d128b561b33c1aadb0c723b563a66f27b0f0d72d36fbc09b"
+    },
+    {
+      "attempt": 2,
+      "scopedPostGradeFeedback": true,
+      "eligible": false,
+      "recordedBlockingIssues": [
+        "assessed_work_completed",
+        "checkpoint_repeated"
+      ],
+      "relevantChecks": [
+        {
+          "id": "checkpoint_repeated",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.73
+        },
+        {
+          "id": "assessed_work_completed",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.56
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "status": "pass",
+          "probability": 0.12
+        }
+      ],
+      "submittedCandidateText": "**Correct — Yellow.** There are 4 yellow counters and only 1 blue counter, so drawing yellow has a probability of \\(4/5\\) (80%), compared with \\(1/5\\) (20%) for blue.",
+      "privateCandidateLength": 166,
+      "proposedToolNames": [],
+      "candidateTextSha256": "75d398738f52d3a7cbfc59551ceb1995b74359213b793c5692f80aded5d01b2c"
+    },
+    {
+      "attempt": 3,
+      "scopedPostGradeFeedback": false,
+      "eligible": false,
+      "recordedBlockingIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "quality_scope"
+      ],
+      "relevantChecks": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.75
+        },
+        {
+          "id": "checkpoint_repeated",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.55
+        },
+        {
+          "id": "checkpoint_continued",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.58
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.59
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.53
+        }
+      ],
+      "submittedCandidateText": null,
+      "privateCandidateLength": 1736,
+      "proposedToolNames": [],
+      "candidateTextSha256": "2318d77479e2ab6abf8bd5ac816ddcb717b6980d2c603c489e80990191b8e4a8"
+    },
+    {
+      "attempt": 4,
+      "scopedPostGradeFeedback": true,
+      "eligible": false,
+      "recordedBlockingIssues": [
+        "assessed_work_completed",
+        "checkpoint_repeated"
+      ],
+      "relevantChecks": [
+        {
+          "id": "checkpoint_repeated",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.64
+        },
+        {
+          "id": "assessed_work_completed",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.55
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "status": "pass",
+          "probability": 0.12
+        }
+      ],
+      "submittedCandidateText": "You were correct: **yellow** is more likely because 4 of the 5 counters are yellow, compared with only 1 blue counter. The probabilities are **4/5 for yellow** and **1/5 for blue**.",
+      "privateCandidateLength": 181,
+      "proposedToolNames": [],
+      "candidateTextSha256": "9a95f25a01e478529543115c0f9c262743b16daf444962e1d255cce573f9b3c8"
+    }
+  ]
+}

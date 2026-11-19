@@ -1,0 +1,33 @@
+{
+  "status": "unrun",
+  "disposition": "Both independently registered post-grade calibrations missed their release criteria. The conditional states-of-matter classroom trial ended before any teaching or reviewer request.",
+  "registeredProtocol": "protocol.json",
+  "registeredProtocolSha256": "cc3836141907bca60deae250d0daf136413a919be303930227e734bbc4def65d",
+  "calibrations": [
+    {
+      "results": "../feedback-calibration/results.json",
+      "resultsSha256": "6028bb1cb88dad37c65e121285d2758095489a35de87beb139f2213390d36862",
+      "passedRequiredChecks": 7,
+      "totalRequiredChecks": 8,
+      "gatePassed": false
+    },
+    {
+      "results": "../feedback-calibration/independent/results.json",
+      "resultsSha256": "9658098bb26bb65a8d2157e4581bf5849ce9c5dbd4f27fe0bab92707f4262680",
+      "passedRequiredChecks": 6,
+      "totalRequiredChecks": 9,
+      "gatePassed": false
+    }
+  ],
+  "learnerTurns": 0,
+  "formSubmissions": 0,
+  "genuineTutorRequests": 0,
+  "genuineDecisionRequests": 0,
+  "observedReply": null,
+  "renderedInterface": null,
+  "storedGrade": null,
+  "learnerFeedback": null,
+  "additionalUsd": 0,
+  "cumulativeAllWorkUpperUsd": 6.099023672,
+  "candidateActivated": false
+}

@@ -1,0 +1,189 @@
+{
+  "scope": "Deployed classroom with one archived tutor reply delivered by a local stream fixture; all inference and auxiliary requests intercepted.",
+  "started": "2026-11-19T01:50:47.357Z",
+  "origin": "https://chat.keating.help",
+  "release": "4.2.4",
+  "source": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+  "expectedEntry": {
+    "url": "https://chat.keating.help/chat",
+    "asset": "/assets/index-vBGnYejY.js",
+    "entrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+    "diagnosticMarkers": {
+      "keating.openui_diagnostics": "assets/AssistantChatPanel-oICS6zAh.js",
+      "jev-pairs-first": "assets/AssistantChatPanel-oICS6zAh.js",
+      "Jev pair reviews": "assets/AssistantChatPanel-oICS6zAh.js",
+      "hosted-sock": "assets/AssistantChatPanel-oICS6zAh.js",
+      "hosted-submission": "assets/AssistantChatPanel-oICS6zAh.js",
+      "gradeOnlyAttempts": "assets/AssistantChatPanel-oICS6zAh.js",
+      "Grading tool only": "assets/AssistantChatPanel-oICS6zAh.js",
+      "submitted-grade-without-text": "assets/AssistantChatPanel-oICS6zAh.js",
+      "earlierPairReviewRounds": "assets/AssistantChatPanel-oICS6zAh.js",
+      "The reviewed answer is no longer pending or has changed.": "assets/AssistantChatPanel-oICS6zAh.js",
+      "grade-only-replay": "assets/AssistantChatPanel-oICS6zAh.js",
+      "Your answer is correct.": "assets/AssistantChatPanel-oICS6zAh.js",
+      "google-decisions-judgement": "assets/AssistantChatPanel-oICS6zAh.js",
+      "keating-teaching-policy/v2.4.5": "assets/src-DwGjTQGv.js",
+      "Explain the grade just recorded for this answer.": "assets/src-DwGjTQGv.js",
+      "https://generativelanguage.googleapis.com/v1beta/decisions": "assets/src-DwGjTQGv.js"
+    },
+    "candidateChunksExamined": [
+      "assets/AssistantChatPanel-oICS6zAh.js",
+      "assets/Chat-CnaCkrw3.js",
+      "assets/OpenUIPreview-CeWY8mb8.js",
+      "assets/TurnJudgementSummary-js6c5J-r.js",
+      "assets/chat-sync-runtime-BCmjSOmJ.js",
+      "assets/chat-sync-status-CqyoUpwD.js",
+      "assets/course-submission-judgement-CPZdslqG.js",
+      "assets/diagnostics-BsVbaNHR.js",
+      "assets/diagnostics-bf0FwvNP.js",
+      "assets/jsx-runtime-BbDfbRii.js",
+      "assets/nodepod-runtime-mFnrFGB_.js",
+      "assets/pending-chat-turn-DhKH1CdC.js",
+      "assets/rolldown-runtime-BcKkbAw3.js",
+      "assets/runtime-yRk6iIk_.js",
+      "assets/src-Bnai9_dm.js",
+      "assets/src-DwGjTQGv.js"
+    ]
+  },
+  "archived": {
+    "ledger": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+    "index": 15,
+    "author": "MiniMax-M2.7-highspeed",
+    "sha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50"
+  },
+  "transportModel": "MiniMax-M3.1-Flash",
+  "decisionSetting": "TypeSafe BYOK with local archived responses for planning and review of slot 3",
+  "realInferenceRequests": 0,
+  "paidUsd": 0,
+  "staticGets": 345,
+  "blockedOtherOrigin": 5,
+  "blockedWrites": 5,
+  "blockedSockets": 0,
+  "interceptedModelRequests": [
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": false,
+      "auxiliary": true,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 111,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 16,
+      "stream": true,
+      "systemChars": 43332,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 43308,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 16,
+      "stream": true,
+      "systemChars": 43339,
+      "regular": true
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": true,
+      "auxiliary": false,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 43325,
+      "regular": false
+    },
+    {
+      "model": "MiniMax-M3.1-Flash",
+      "hasPrompt": true,
+      "hasOpenUi": false,
+      "auxiliary": true,
+      "tools": 0,
+      "stream": true,
+      "systemChars": 111,
+      "regular": false
+    }
+  ],
+  "replayedJevEntries": [
+    12,
+    19
+  ],
+  "blockedDecisionShapes": [],
+  "returnedTutorReplies": 1,
+  "status": "verified",
+  "servedEntrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+  "servedEntryPath": "/assets/index-vBGnYejY.js",
+  "modelSelection": {
+    "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+    "initialTutor": "Change model. Current model: Inkling 2 Small",
+    "selectionAttempts": 1
+  },
+  "geometry": {
+    "screen": [
+      1200,
+      850
+    ],
+    "viewport": {
+      "top": 141,
+      "bottom": 850,
+      "height": 709
+    },
+    "stickyComposer": {
+      "top": 639,
+      "bottom": 819,
+      "height": 180
+    },
+    "reading": {
+      "top": 141,
+      "bottom": 639
+    },
+    "legend": {
+      "top": 153,
+      "bottom": 263,
+      "height": 110
+    },
+    "firstOption": {
+      "top": 283,
+      "bottom": 356,
+      "height": 73
+    },
+    "legendVisible": true,
+    "firstOptionVisible": true,
+    "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+    "firstOptionText": "A\nBlue",
+    "selectedOptions": 0,
+    "fieldsets": 1,
+    "scrollTop": 616,
+    "scrollHeight": 1730,
+    "header": "Change model. Current model: MiniMax M3.1 Flash",
+    "headerBounds": {
+      "top": 18,
+      "bottom": 54,
+      "height": 36
+    },
+    "composerFocused": true
+  },
+  "screenshot": {
+    "file": "after-4-2-4-production.png",
+    "sha256": "22266de96b8cbe2da874d6b2b628964dd4bd34711d71b2817607fcfce2cf7271"
+  },
+  "untouchedFirstQuestionFullyReadable": true,
+  "finished": "2026-11-19T01:50:59.488Z"
+}

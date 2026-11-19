@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.5
+
+- Compare three production classroom sessions that used the same implicit prediction prompt and MiniMax M3.1 Flash. The inspector includes each original turn, the Jev grading round and its withheld follow-up. [Inspect the three sessions](https://chat.keating.help/chat?settings=diagnostics&source=hosted-guidance)
+- After a grade is saved, the classroom now tells the learner when the tutor could not finish the explanation. The original Question displays the grade.
+- If an unguided tutor request ends early, Settings, the CLI and WebMCP can find that turn by its requested tutor. The export records a returned model name when the provider supplies one.
+
 ## 4.2.4
 
 - Settings includes the original production recording of a learner asking to guess a sock colour. Inspect which of four drafts Jev chose, when the Question appeared and how the two pair reviews overlapped. [Open the recorded turn](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=hosted-sock&view=pair-reviews)

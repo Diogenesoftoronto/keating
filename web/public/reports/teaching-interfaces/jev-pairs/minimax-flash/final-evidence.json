@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "scope": "Terminal evidence for the November production counter comparison, hosted viewport replays and subsequent isolated post-grade calibrations. The cumulative upper bound also includes earlier study phases.",
+  "productionClassroom": {
+    "release": "4.2.4",
+    "sourceCommit": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+    "teachingPolicy": "keating-teaching-policy/v2.4.5",
+    "matchedFirstReplies": [
+      {
+        "arm": "jev",
+        "adjudicated": "prediction-question-before-answer",
+        "elapsedMs": 13941,
+        "applicationElapsedMs": 13409,
+        "wordsOutsideControls": 13,
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "requestedInterfaceFamilies": [
+          "question"
+        ],
+        "renderedInterfaces": [
+          "question-group"
+        ],
+        "requestedDecisionModel": "jev-1.14.0",
+        "requestedTutor": "MiniMax-M3.1-Flash",
+        "observedModelIdentities": {
+          "jev-1.14.0": 7,
+          "MiniMax-M3.1-Flash": 4
+        },
+        "paidCalls": {
+          "planning": 1,
+          "generation": 4,
+          "review": 4,
+          "pair": 2
+        },
+        "firstReplyUpperUsd": 0.012189888,
+        "evidence": {
+          "fullTrial": "production-acceptance/summary.json",
+          "settings": "production-acceptance/settings.json",
+          "classroom": "production-acceptance/first.png",
+          "publicReply": "production-acceptance/first-public-reply.json",
+          "questionScreenshot": "production-acceptance/question.png"
+        }
+      },
+      {
+        "arm": "gemini",
+        "adjudicated": "prediction-question-before-answer",
+        "elapsedMs": 9193,
+        "applicationElapsedMs": 8683,
+        "wordsOutsideControls": 20,
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "requestedInterfaceFamilies": [
+          "question"
+        ],
+        "renderedInterfaces": [
+          "question-group"
+        ],
+        "requestedDecisionModel": "gemini-decision-1",
+        "requestedTutor": "MiniMax-M3.1-Flash",
+        "observedModelIdentities": {
+          "not-returned": 2,
+          "MiniMax-M3.1-Flash": 1
+        },
+        "paidCalls": {
+          "planning": 1,
+          "generation": 1,
+          "review": 1
+        },
+        "firstReplyUpperUsd": 0.00404847,
+        "evidence": {
+          "settings": "production-guidance-comparison/gemini-settings.json",
+          "classroom": "production-guidance-comparison/gemini-classroom.png",
+          "questionScreenshot": "production-guidance-comparison/gemini-question.png",
+          "publicReply": "production-guidance-comparison/gemini-public-reply.json",
+          "webmcp": "production-guidance-comparison/gemini-webmcp.json",
+          "armReceipt": "production-guidance-comparison/gemini.json"
+        }
+      },
+      {
+        "arm": "unguided",
+        "adjudicated": "failed",
+        "elapsedMs": 6199,
+        "applicationElapsedMs": null,
+        "wordsOutsideControls": null,
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "requestedInterfaceFamilies": null,
+        "renderedInterfaces": null,
+        "requestedDecisionModel": null,
+        "requestedTutor": "MiniMax-M3.1-Flash",
+        "observedModelIdentities": {
+          "MiniMax-M3.1-Flash": 1
+        },
+        "paidCalls": {
+          "generation": 1
+        },
+        "firstReplyUpperUsd": 0.1549152,
+        "evidence": {
+          "settings": "production-guidance-comparison/unguided-settings.json",
+          "classroom": "production-guidance-comparison/unguided-classroom.png",
+          "webmcp": "production-guidance-comparison/unguided-webmcp.json",
+          "armReceipt": "production-guidance-comparison/unguided.json"
+        }
+      }
+    ],
+    "scheduledArms": 3,
+    "completedLearnerReplies": 2,
+    "actionablePredictionBeforeDisclosure": 2,
+    "failedFirstReplies": 1,
+    "productionRate": null,
+    "independentOutcome": {
+      "savedModelGrade": {
+        "question": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+        "answer": "Yellow",
+        "grading": "model",
+        "score": 1
+      },
+      "originalVerdict": [
+        {
+          "ariaLabel": null,
+          "visibleGrade": "Your answer is correct."
+        }
+      ],
+      "releasedPostGradeExplanation": false
+    }
+  },
+  "planningExcerpt": {
+    "evidence": "production-acceptance/post-grade-plan.json",
+    "actualLearnerResponseDue": 0.33,
+    "actualPendingSubmissions": [],
+    "previousTool": "grade_question_checks",
+    "previousToolStatus": "success",
+    "interfacePlan": {
+      "action": "create",
+      "paired": false,
+      "families": [
+        {
+          "family": "question",
+          "components": [
+            "Question"
+          ]
+        },
+        {
+          "family": "manipulable",
+          "components": [
+            "Simulation"
+          ]
+        }
+      ],
+      "features": [
+        "variable_relationship",
+        "ordered_procedure"
+      ]
+    }
+  },
+  "telemetryWindow": {
+    "file": "production-guidance-comparison/telemetry-window.json",
+    "fromUtc": "2026-11-18T18:30:00Z",
+    "untilExclusiveUtc": "2026-11-19T02:05:00Z",
+    "hosts": [
+      "keating.help",
+      "chat.keating.help"
+    ],
+    "observations": [
+      [
+        0,
+        0
+      ]
+    ],
+    "populationRate": null
+  },
+  "offArm": {
+    "file": "production-guidance-comparison/unguided-stream.json",
+    "browserOutcome": "error",
+    "browserObservedHttp": 200,
+    "returnedTutor": "MiniMax-M3.1-Flash",
+    "doneMarkerObserved": false,
+    "usageObserved": false,
+    "byteLimitReached": false,
+    "browserTrialMs": 25587,
+    "readerTimeoutMs": 90000,
+    "upstreamTerminalEvent": null,
+    "underlyingFault": null
+  },
+  "calibrations": [
+    {
+      "study": "feedback-calibration",
+      "protocol": "feedback-calibration/protocol.json",
+      "protocolSha256": "f4ea1fbdc8c93893435848be382361614dec16bbdee9bf7926779c3c4d15fada",
+      "results": "feedback-calibration/results.json",
+      "resultsSha256": "6028bb1cb88dad37c65e121285d2758095489a35de87beb139f2213390d36862",
+      "ledger": "feedback-calibration/ledger.json",
+      "ledgerSha256": "a30625cf17878818a4bb7c8843a22668e2038839bf6e5cd92fc1468647459791",
+      "readme": "feedback-calibration/README.md",
+      "externalJevRequests": 65,
+      "passedRequiredChecks": 7,
+      "totalRequiredChecks": 8,
+      "gatePassed": false,
+      "activatedInApp": false,
+      "upperAdditionalUsd": 0.002624034,
+      "cumulativeUpperUsd": 6.095914496
+    },
+    {
+      "study": "feedback-calibration/independent",
+      "protocol": "feedback-calibration/independent/protocol.json",
+      "protocolSha256": "0175df6177604c9ecd2dc021f1def468c0f7d1763d4d4a5887bf62919d7c6e10",
+      "results": "feedback-calibration/independent/results.json",
+      "resultsSha256": "9658098bb26bb65a8d2157e4581bf5849ce9c5dbd4f27fe0bab92707f4262680",
+      "ledger": "feedback-calibration/independent/ledger.json",
+      "ledgerSha256": "b87c85483136e8e185c10039710e038fee0619c4225c75caefe1c7439b32f600",
+      "readme": "feedback-calibration/independent/README.md",
+      "externalJevRequests": 84,
+      "passedRequiredChecks": 6,
+      "totalRequiredChecks": 9,
+      "gatePassed": false,
+      "activatedInApp": false,
+      "upperAdditionalUsd": 0.003109176,
+      "cumulativeUpperUsd": 6.099023672
+    }
+  ],
+  "statesOfMatter": {
+    "statusFile": "feedback-transfer/status.json",
+    "firstReply": null,
+    "grade": null,
+    "paidRequests": 0,
+    "additionalUsd": 0
+  },
+  "cost": {
+    "priorCumulativeUpperUsd": 5.899003442,
+    "productionJevIncludingSubmitUpperUsd": 0.03532335,
+    "productionGeminiUpperUsd": 0.00404847,
+    "productionOffUnknownReservationUsd": 0.1549152,
+    "postGradeCalibrationUpperUsd": 0.00573321,
+    "statesOfMatterAdditionalUsd": 0,
+    "thisGroupUpperUsd": 0.20002023,
+    "cumulativeAllWorkUpperUsd": 6.099023672,
+    "allWorkBudgetUsd": 10,
+    "invoiceUsd": null
+  },
+  "registrations": [
+    {
+      "file": "production-acceptance-protocol.json",
+      "sha256": "e91892dda2ef7864d69f6255471d705f26a52ee77adf5164c3c8e7d07039fef5"
+    },
+    {
+      "file": "production-acceptance-addendum.json",
+      "sha256": "1361d92793116b3474c6d212f70992472d421244673fa17980e6292a9e8f1d4c"
+    },
+    {
+      "file": "production-guidance-comparison/protocol.json",
+      "sha256": "3ea8e85e7ddcd79cc6c9e685646c39a10e3e33d9fc505f1bcd1111a11df4326a"
+    },
+    {
+      "file": "feedback-transfer/protocol.json",
+      "sha256": "cc3836141907bca60deae250d0daf136413a919be303930227e734bbc4def65d"
+    },
+    {
+      "file": "feedback-calibration/protocol.json",
+      "sha256": "f4ea1fbdc8c93893435848be382361614dec16bbdee9bf7926779c3c4d15fada"
+    },
+    {
+      "file": "feedback-calibration/independent/protocol.json",
+      "sha256": "0175df6177604c9ecd2dc021f1def468c0f7d1763d4d4a5887bf62919d7c6e10"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "production-acceptance/summary.json",
+      "sha256": "27d96c667b4902cf5773680f5646aeeb017f64ee6c2f968c295452e3ccf0078a"
+    },
+    {
+      "file": "production-acceptance/settings.json",
+      "sha256": "669c32e2574b38db68315c6fc41fb1d80b925e4011acdaee1f06c2c19545e1a5"
+    },
+    {
+      "file": "production-acceptance/post-grade-plan.json",
+      "sha256": "2eee2ee22dc8ad60cac37bcb00547ec736a3360de7ee7c603f8fbab383b10e22"
+    },
+    {
+      "file": "production-acceptance/post-grade-candidates.json",
+      "sha256": "ad8cce09b7f7e7258655bd6da25b555d87459db766aecf5c3ddd363be6aeea42"
+    },
+    {
+      "file": "production-acceptance/verdict.png",
+      "sha256": "d9ce601f52d3b5b44ee4845a9291ac6234770a4a2596256e28bafabc9d488463"
+    },
+    {
+      "file": "production-guidance-comparison/field-guide.json",
+      "sha256": "3cfd8ae7bb5b752c12e4ed7d4c9de4461a2cd501284936f430b8e7981f3a202d"
+    },
+    {
+      "file": "production-guidance-comparison/summary.json",
+      "sha256": "209760609e788596dd46595f956c6e16d77b87af32aece0ef990c0939f690d4e"
+    },
+    {
+      "file": "production-guidance-comparison/settings.json",
+      "sha256": "a8e565a2f047b038fbe292b2e4d14849dae337bc20bad5b4cad1714711bc3743"
+    },
+    {
+      "file": "production-guidance-comparison/telemetry-window.json",
+      "sha256": "08dd300cdf5e4c84b68ec1b8e766c859a2eba6c2be0c5aa962b59f6255adccd8"
+    },
+    {
+      "file": "production-guidance-comparison/unguided-stream.json",
+      "sha256": "b58c64bfd43654af4ffb11ad184039dfd5751c6ed293fe99ef50bf565cc251b8"
+    },
+    {
+      "file": "deployed-viewport/index.json",
+      "sha256": "91c8ab0727a7f4e74dc327cdb374c53042a6bf271a55d2a7875f2f4549b6f591"
+    },
+    {
+      "file": "feedback-transfer/status.json",
+      "sha256": "8c67d37eafd4275c8329770ef8fd546ab1e777b7f3d4346d409c2fedf6e53a9b"
+    }
+  ],
+  "humanLearningOutcome": null
+}

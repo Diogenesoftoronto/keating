@@ -84,8 +84,9 @@ const alongside = [
       .map(id=>"study/receipts/"+id+".json"),
   ].map(name=>"final-review/"+name),
 ];
-const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review","flash-prediction","hosted-sock","hosted-submission","grade-only-replay"];
+const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review","flash-prediction","hosted-sock","hosted-submission","grade-only-replay","hosted-guidance"];
 for (const [recording, filename] of [
+  ["hosted-guidance", "production-guidance-comparison/settings.json"],
   ["hosted-sock", "production-after-settings.json"],
   ["hosted-submission", "production-submission-settings.json"],
   ["grade-only-replay", "submitted-grade/settings.json"],
@@ -121,7 +122,13 @@ for (const name of [
   "submitted-grade/summary.json", "submitted-grade/protocol.json", "submitted-grade/candidates.json", "submitted-grade/settings.json", "submitted-grade/after.png",
   "production-acceptance-protocol.json", "production-acceptance-addendum.json",
   "saved-grade-card.json", "saved-grade-card.png",
-  "production-guidance-comparison/protocol.json", "production-guidance-comparison/off-before.json", "production-guidance-comparison/off-before.png",
+  "release-425/notice.json", "release-425/notice.png",
+  ...["field-guide.json", "gemini-classroom.png", "gemini-public-reply.json", "gemini-question.png", "gemini-settings.json", "gemini-webmcp.json", "gemini.json", "off-after.json", "off-after.png", "off-before.json", "off-before.png", "protocol.json", "settings.json", "summary.json", "unguided-classroom.png", "unguided-settings.json", "unguided-stream.json", "telemetry-window.json", "unguided-webmcp.json", "unguided.json"].map(name => "production-guidance-comparison/" + name),
+  "feedback-transfer/protocol.json", "feedback-transfer/status.json", "final-evidence.json",
+  ...["feedback-calibration", "feedback-calibration/independent"].flatMap(folder =>
+    ["README.md", "protocol.json", "register.ts", "run.ts", "results.json", "ledger.json"].map(name => `${folder}/${name}`)),
+  ...["after.png", "final-webmcp.json", "first-public-reply.json", "first-webmcp.json", "first.png", "post-grade-candidates.json", "post-grade-plan.json", "question.png", "saved.png", "settings.json", "summary.json", "verdict.png", "wire-and-pairs.json"].map(name => "production-acceptance/" + name),
+  ...["after-4-2-4-production.json", "after-4-2-4-production.png", "after-4-2-4-staging.json", "after-4-2-4-staging.png", "before-4-2-3-guided.json", "before-4-2-3-guided.png", "index.json"].map(name => "deployed-viewport/" + name),
   "paper-fold-classroom.png", "paper-fold-after-action.png", "sock-draw-classroom.png",
 ]) files.set(resolve(study, "../minimax-m31-predictions-2026-11-18", name), "jev-pairs/minimax-flash/" + name);
 if (!readFileSync(resolve(study, "../jev-paired-prediction-2026-11-18/review-projection.json")).equals(

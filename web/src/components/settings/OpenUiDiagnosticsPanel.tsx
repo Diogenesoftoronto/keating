@@ -9,6 +9,7 @@ import { OPENUI_TURN_VIEWS, OpenUiUsageView, type ObservationStage, type OpenUiT
 import "./openui-diagnostics.css";
 
 const recordings = {
+  "hosted-guidance": { label: "Hosted classroom · compare decision models", stage: "rendered", load: () => import("../../keating/openui/examples/hosted-guidance.json") },
   "hosted-sock": { label: "Hosted classroom · sock prediction", stage: "rendered", load: () => import("../../keating/openui/examples/hosted-sock.json") },
   "hosted-submission": { label: "Hosted classroom · submitted answer", stage: "rendered", load: () => import("../../keating/openui/examples/hosted-submission.json") },
   "grade-only-replay": { label: "Submitted answer · grade and follow-up", stage: "rendered", load: () => import("../../keating/openui/examples/grade-only-replay.json") },
@@ -52,6 +53,7 @@ export async function loadOpenUiRecordingLink(params: URLSearchParams, fallback?
   };
 }
 const descriptions: Record<Source, string> = {
+  "hosted-guidance": "Three production sessions used the same prediction prompt and MiniMax tutor. Jev and Gemini Decision each delivered a Question. The unguided stream ended early. The second Jev turn shows the saved grade and the withheld explanation.",
   "hosted-sock": "A synthetic learner wanted to guess which sock colour was more likely. In the production classroom, Jev reviewed four drafts and the first reply contained a Question. This is the original Settings export.",
   "hosted-submission": "A synthetic learner chose Blue in the production classroom. The Question appeared on the first turn. On the next turn all four feedback drafts were held and the saved answer stayed pending.",
   "grade-only-replay": "In a built classroom replay, draft 2 graded the saved Blue answer correctly. Jev held all four follow-up explanations. Expand the turn to see both rounds.",

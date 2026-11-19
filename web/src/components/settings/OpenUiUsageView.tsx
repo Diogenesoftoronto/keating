@@ -7,7 +7,7 @@ import { downloadTextFile } from "../../lib/browser-download";
 import { PairReviewDetails } from "../PairReviewDetails";
 
 export type ObservationStage = "compiled" | "selected" | "rendered";
-export const OPENUI_TURN_VIEWS = ["all", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "selection", "render", "withheld", "assessment-opt-out", "pair-reviews"] as const;
+export const OPENUI_TURN_VIEWS = ["all", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "selection", "render", "withheld", "error", "assessment-opt-out", "pair-reviews"] as const;
 export type OpenUiTurnView = typeof OPENUI_TURN_VIEWS[number];
 const STAGES: Record<ObservationStage, string> = { compiled: "In a draft", selected: "In the final reply", rendered: "Shown in chat" };
 const CUES = { "implicit-action": "Implicit learning cue", "explicit-interface": "Explicit interface request", "direct-text": "Direct text request", none: "No detected cue", unknown: "Unknown cue" };
@@ -244,7 +244,8 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
     if (loss === "assessment-opt-out") return openUiCheckpointAfterOptOut(row) === true;
     if (loss === "combined-unmet" || loss === "action-unmet") return (row.cue.kind === "explicit-interface" || row.cue.kind === "implicit-action")
       && (loss === "action-unmet" ? matchesSelectedLearnerAction(row) : matchesLearnerInterface(row, "selected", row.cue.targets)) === false;
-    return loss === "withheld" ? row.reply === "withheld" : openUiDiagnosticLoss(row, loss === "selection" ? "draftToSelection" : "selectionToRender") === true;
+    if (loss === "withheld" || loss === "error") return row.reply === loss;
+    return openUiDiagnosticLoss(row, loss === "selection" ? "draftToSelection" : "selectionToRender") === true;
   }));
   return <div className="ou-view">
     <div className="ou-filters">
@@ -323,6 +324,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
         <option value="editable-code">Final reply with editable code</option>
         <option value="action-unmet">Missed learner action</option>
         <option value="withheld">Reply withheld</option>
+        <option value="error">Reply ended with an error</option>
         <option value="pair-reviews">Jev pair reviews</option>
         <option value="assessment-opt-out">Checkpoint after an assessment opt-out</option>
         <option value="selection">Interface compiled, then dropped</option>

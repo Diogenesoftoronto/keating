@@ -1,0 +1,108 @@
+{
+  "studyArm": "gemini",
+  "scope": "First public response only. No form submission or second learner turn.",
+  "asked": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "release": {
+    "sha": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+    "version": "4.2.4",
+    "entry": "/assets/index-vBGnYejY.js",
+    "entrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+    "observedEntrySha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd"
+  },
+  "confirmedSettingsAfterReload": {
+    "choice": "gemini-decision",
+    "keys": {
+      "minimax": true,
+      "google": true,
+      "typesafe": false
+    }
+  },
+  "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+  "teacherTextOutsideMountedControls": "Great instinct to commit to a prediction first — let's lock that in before I say anything about the numbers.",
+  "intercepted": {
+    "unrelated-origin": 8,
+    "unrelated-or-disallowed-app-api": 25,
+    "unrelated-tutor-request": 2,
+    "provider-outside-registered-turn": 1
+  },
+  "interceptedTutorCategories": [
+    {
+      "purpose": "categorization",
+      "registeredUserExactly": false,
+      "inputUserMessages": 1,
+      "originalMax": 800
+    }
+  ],
+  "requests": [
+    {
+      "stage": "planning",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "returnedModel": null,
+      "reportedModels": [],
+      "providerModelEvidence": "documented-request-model",
+      "http": 200,
+      "startedAt": 1795053374389,
+      "finishedAt": 1795053375063,
+      "usage": {
+        "input": 5105,
+        "output": 0
+      },
+      "status": "metered",
+      "sentWireSha256": "fc5b68bb84491d7a1eea3d40daac1d7af604a69631430700aad2c242702a4aed",
+      "accountedUsd": 0.0005105,
+      "reservedUsd": 0.0262144,
+      "providerRequestIdSha256": null,
+      "browserRequestObserved": true
+    },
+    {
+      "stage": "generation",
+      "provider": "minimax",
+      "requestedModel": "MiniMax-M3.1-Flash",
+      "returnedModel": "MiniMax-M3.1-Flash",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "providerModelEvidence": null,
+      "http": 200,
+      "startedAt": 1795053375113,
+      "finishedAt": 1795053379506,
+      "usage": {
+        "input": 16647,
+        "uncachedInput": 16519,
+        "cacheRead": 128,
+        "output": 519
+      },
+      "status": "metered",
+      "sentWireSha256": "d45e766171c8bde15118d9184969188947447f65bb3e68f77921c09d226aa26f",
+      "accountedUsd": 0.00279117,
+      "reservedUsd": 0.1549152,
+      "providerRequestIdSha256": null,
+      "browserRequestObserved": true
+    },
+    {
+      "stage": "review",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "returnedModel": null,
+      "reportedModels": [],
+      "providerModelEvidence": "documented-request-model",
+      "http": 200,
+      "startedAt": 1795053379524,
+      "finishedAt": 1795053379848,
+      "usage": {
+        "input": 7468,
+        "output": 0
+      },
+      "status": "metered",
+      "sentWireSha256": "1b87baa9f6f4a51b776cc1ea1d350fe794a123da68f77bd35484a33227f462e0",
+      "accountedUsd": 0.0007468,
+      "reservedUsd": 0.0262144,
+      "providerRequestIdSha256": null,
+      "browserRequestObserved": true
+    }
+  ],
+  "end": "released",
+  "failure": null,
+  "sourceOperatorSha256": "6bf4c4589614e8bacb2e991e91330fa05dfcd9876209c53b0af2177257e99197"
+}

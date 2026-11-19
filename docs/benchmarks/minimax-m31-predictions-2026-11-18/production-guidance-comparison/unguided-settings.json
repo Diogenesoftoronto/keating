@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "fccee285-aaf8-44a1-9e58-fc18fabb7214",
+      "turnId": "learner-0",
+      "turnIndex": 0,
+      "model": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "reply": "error",
+      "replyElapsedMs": null,
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "guidance": null,
+      "outsideWords": null,
+      "nativePageRequested": null,
+      "assessment": {
+        "optOut": false,
+        "checkpoints": null
+      },
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      }
+    }
+  ]
+}

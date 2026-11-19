@@ -497,12 +497,12 @@ export function findUnmetOpenUiCues(input: readonly OpenUiDiagnosticTurn[], filt
 export const openUiDiagnosticQuerySchema = {
   type: "object",
   properties: {
-    model: { type: "string", description: "Exact tutor ID from the byModel summary." },
+    model: { type: "string", description: "Exact observed tutor ID or requested tutor ID on the turn." },
     decisionModel: { type: "string", description: "Exact observed decision model or configured model in a recorded planning failure. Use unknown for an unrecorded planning answer." },
     cue: { type: "string", enum: OPENUI_DIAGNOSTIC_CUES },
     mode: { type: "string", enum: OPENUI_DIAGNOSTIC_MODES },
-    view: { type: "string", enum: ["summary", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "draft-loss", "render-loss", "withheld", "released-drafts", "assessment-opt-out", "pair-reviews"], default: "summary",
-      description: "Pair-reviews lists recorded candidate pairs, preferences, finalists and review overlap. Assessment-opt-out lists released replies with a checkpoint signal after the learner explicitly declined assessment. Unmet finds same-turn fenced OpenUI misses. Combined-unmet includes native pages. Action-unmet also checks requested editable code languages. Native lists page proposals and stages. Editable-code lists replies with supported editor fences. Released-drafts lists recorded winners, review disposition and selection rule." },
+    view: { type: "string", enum: ["summary", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "draft-loss", "render-loss", "withheld", "error", "released-drafts", "assessment-opt-out", "pair-reviews"], default: "summary",
+      description: "Error lists turns that ended in a runtime error. Withheld lists replies held by review. Pair-reviews lists recorded candidate pairs, preferences, finalists and review overlap. Assessment-opt-out lists released replies with a checkpoint signal after the learner explicitly declined assessment. Unmet finds same-turn fenced OpenUI misses. Combined-unmet includes native pages. Action-unmet also checks requested editable code languages. Native lists page proposals and stages. Editable-code lists replies with supported editor fences. Released-drafts lists recorded winners, review disposition and selection rule." },
     limit: { type: "integer", minimum: 1, maximum: 50, default: 10, description: "Maximum returned turn examples." },
   },
   additionalProperties: false,
@@ -564,13 +564,14 @@ export function queryOpenUiDiagnosticTurns(rows: readonly OpenUiDiagnosticTurn[]
     return { schemaVersion: 1 as const, view, matchingTurns: pressed.length, observedOptOuts: declined.length - unknownOptOuts, unknownOptOuts,
       unobservedTurns: scoped.filter(row => !row.assessment).length, turns: pressed.slice(0, limit) };
   }
-  if (view !== "draft-loss" && view !== "render-loss" && view !== "withheld" && view !== "native" && view !== "editable-code") throw new Error("Unknown diagnostics view.");
+  if (view !== "draft-loss" && view !== "render-loss" && view !== "withheld" && view !== "error" && view !== "native" && view !== "editable-code") throw new Error("Unknown diagnostics view.");
   const stage = view === "draft-loss" ? "draftToSelection" : "selectionToRender";
   const unique = uniqueTurns(parseOpenUiDiagnosticExport(rows));
   const matches = selectRows(unique, filter).filter(row => {
     if (view === "native") return row.nativePageRequested === true || NATIVE_PAGE_STAGES.some(key => row.nativePage?.[key] === true);
     if (view === "editable-code") return !!row.editableCode?.length;
-    return view === "withheld" ? row.reply === "withheld" : openUiDiagnosticLoss(row, stage) === true;
+    if (view === "withheld" || view === "error") return row.reply === view;
+    return openUiDiagnosticLoss(row, stage) === true;
   });
   return { schemaVersion: 1 as const, view, matchingTurns: matches.length, turns: matches.slice(0, limit) };
 }

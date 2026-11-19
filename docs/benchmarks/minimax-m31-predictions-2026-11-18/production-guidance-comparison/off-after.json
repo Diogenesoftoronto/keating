@@ -1,0 +1,39 @@
+{
+  "scope": "Offline browser verification of the corrected production build. External model calls were blocked and the sole tutor reply was supplied by a local fixture. The actual Off setting and classroom rendering were exercised. The paid comparison is reported separately.",
+  "before": "off-before.json",
+  "screenshot": "off-after.png",
+  "screenshotSha256": "2ebf708747f6d6d6e21eda15ad2df9c8b085ed69625bde337257d6c79af66593",
+  "entryAsset": "/assets/index-Le3DLdBm.js",
+  "entrySha256": "8c05f45281bd5c9d9babb1159a255bd569af29932798bcc2f6273e3e3658b938",
+  "fullThreeArmOfflineReceiptSha256": "59edc383d1991ea1ae5f49e78cca60894d91066dd3a74f396b680a745a802e69",
+  "externalCalls": 0,
+  "confirmedSettings": {
+    "choice": "off",
+    "keys": {
+      "minimax": true,
+      "google": false,
+      "typesafe": false
+    }
+  },
+  "generationRequests": 1,
+  "judgementRequests": 0,
+  "status": "released",
+  "rendered": [
+    "question-group"
+  ],
+  "enabledControls": [
+    {
+      "prompt": "A cup holds four yellow counters and one blue counter. Which colour is more likely on the next draw?",
+      "kind": "choice",
+      "options": [
+        "A\nYellow",
+        "B\nBlue"
+      ],
+      "enabledInputs": [
+        "radio",
+        "radio"
+      ]
+    }
+  ],
+  "sealedOperatorSha256": "9ae56c98be5de8d331a515b412d874663fc0c7e61b032f15a41b3177886d343a"
+}

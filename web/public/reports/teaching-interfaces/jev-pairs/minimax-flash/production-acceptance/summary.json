@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "scope": "One preregistered synthetic anonymous transfer case through the actual deployed classroom, with a new session and no imported history.",
+  "expectedFirst": "An actionable prediction Question on the first public reply. Do not ask explicitly for a form.",
+  "realProduction": true,
+  "release": {
+    "sha": "c4dc112985540f68ea3381d6e1d9264be46578e0",
+    "webVersion": "4.2.4",
+    "chatAsset": "/assets/index-vBGnYejY.js",
+    "verifiedChatAssetSha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd",
+    "observedChatAssetSha256": "1dfd4b4931b317524583e4309308cb90ece5c4aa845d86c04b5c5f63b51868cd"
+  },
+  "teachingPolicy": "keating-teaching-policy/v2.4.5",
+  "registeredPrompt": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "summary": "The application saved Yellow with score 1. The next explanatory reply was not observed as released.",
+  "first": {
+    "status": "observed",
+    "observedTurn": {
+      "turnIndex": 0,
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "reply": "released",
+      "rendered": [
+        "question-group"
+      ],
+      "outsideWords": 13,
+      "draftAttempts": 4,
+      "replyElapsedMs": 13409,
+      "decisionModel": "jev-1.14.0",
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "question"
+        ]
+      },
+      "gateIssues": [
+        "artifact_placeholder",
+        "checkpoint_repeated",
+        "direct_answer_missing",
+        "feedback_invented",
+        "improvement_interrupts",
+        "profile_evidence_invented",
+        "quality_progress",
+        "quality_scope"
+      ]
+    },
+    "firstReachableForm": {
+      "observableReply": "Good instinct to predict first — let's lock that in before any reasoning.\n\nPredict before you explain\n\nCommit to a prediction, then we'll test it.\n\nQuick check\nBefore you start\n1 / 1\nA cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?\nA\nYellow\nB\nBlue\nC\nThey are equally likely\nHint\nFinish check",
+      "observerReply": "released",
+      "questionCount": 1,
+      "questionPrompts": [
+        "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?"
+      ],
+      "nativePageCount": 0,
+      "renderedKinds": [
+        "question-group"
+      ],
+      "selectedAfterUserTurns": 1
+    },
+    "publicNotice": null,
+    "untouchedGeometry": {
+      "browser": {
+        "width": 1200,
+        "height": 850
+      },
+      "scrollViewport": {
+        "top": 141.359375,
+        "left": 360,
+        "bottom": 850,
+        "right": 1200,
+        "width": 840,
+        "height": 708.640625,
+        "scrollTop": 616,
+        "scrollHeight": 1680,
+        "clientHeight": 709
+      },
+      "legend": {
+        "text": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+        "box": {
+          "top": 153.109375,
+          "left": 407.8105773925781,
+          "bottom": 299.109375,
+          "right": 1152.2480773925781,
+          "width": 744.4375,
+          "height": 146
+        }
+      },
+      "options": [
+        {
+          "text": "A\nYellow",
+          "box": {
+            "top": 319.90625,
+            "left": 407.8105773925781,
+            "bottom": 392.703125,
+            "right": 1152.2480773925781,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "B\nBlue",
+          "box": {
+            "top": 405.703125,
+            "left": 407.8105773925781,
+            "bottom": 478.5,
+            "right": 1152.2480773925781,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "C\nThey are equally likely",
+          "box": {
+            "top": 491.5,
+            "left": 407.8105773925781,
+            "bottom": 564.296875,
+            "right": 1152.2480773925781,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "",
+          "box": {
+            "top": 577.296875,
+            "left": 407.8105773925781,
+            "bottom": 702.09375,
+            "right": 1152.2480773925781,
+            "width": 744.4375,
+            "height": 124.796875
+          }
+        }
+      ]
+    },
+    "deliberateScreenshotGeometry": {
+      "browser": {
+        "width": 1200,
+        "height": 850
+      },
+      "scrollViewport": {
+        "top": 70.359375,
+        "left": 360,
+        "bottom": 779,
+        "right": 1200,
+        "width": 840,
+        "height": 708.640625,
+        "scrollTop": 346,
+        "scrollHeight": 1680,
+        "clientHeight": 709
+      },
+      "legend": {
+        "text": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+        "box": {
+          "top": 352.109375,
+          "left": 407.78125,
+          "bottom": 498.109375,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 146
+        }
+      },
+      "options": [
+        {
+          "text": "A\nYellow",
+          "box": {
+            "top": 518.90625,
+            "left": 407.78125,
+            "bottom": 591.703125,
+            "right": 1152.21875,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "B\nBlue",
+          "box": {
+            "top": 604.703125,
+            "left": 407.78125,
+            "bottom": 677.5,
+            "right": 1152.21875,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "C\nThey are equally likely",
+          "box": {
+            "top": 690.5,
+            "left": 407.78125,
+            "bottom": 763.296875,
+            "right": 1152.21875,
+            "width": 744.4375,
+            "height": 72.796875
+          }
+        },
+        {
+          "text": "",
+          "box": {
+            "top": 776.296875,
+            "left": 407.78125,
+            "bottom": 901.09375,
+            "right": 1152.21875,
+            "width": 744.4375,
+            "height": 124.796875
+          }
+        }
+      ]
+    },
+    "browserClickToDiagnosticMs": 13941
+  },
+  "followUp": {
+    "status": "withheld",
+    "submitted": true,
+    "actualQuestion": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+    "firstObservedAnswer": {
+      "question": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+      "answer": "Yellow",
+      "grading": "pending",
+      "score": null
+    },
+    "finalPersistedAnswer": {
+      "question": "A cup holds 4 yellow counters and 1 blue counter. One counter is drawn at random without looking. Which colour is more likely to come out?",
+      "answer": "Yellow",
+      "grading": "model",
+      "score": 1
+    },
+    "actualToolResults": [
+      {
+        "toolName": "grade_question_checks",
+        "isError": false,
+        "stopReason": null
+      }
+    ],
+    "originalQuestionGradePanels": [
+      {
+        "ariaLabel": null,
+        "visibleGrade": "Your answer is correct."
+      }
+    ],
+    "releasedTeachingFeedback": false,
+    "visibleLastReply": "Tool\ngrade_question_checks\nSUCCESS\nCouldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+    "selectedAssistantTextAfterGrade": null,
+    "observedTurn": {
+      "turnIndex": 1,
+      "cue": {
+        "kind": "none",
+        "targets": []
+      },
+      "reply": "withheld",
+      "rendered": [],
+      "outsideWords": null,
+      "draftAttempts": 8,
+      "replyElapsedMs": 28830,
+      "decisionModel": "jev-1.14.0",
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "question",
+          "simulation"
+        ]
+      },
+      "gateIssues": [
+        "activity_without_plan",
+        "assessed_work_completed",
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "checkpoint_last_node",
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "one_activity",
+        "one_checkpoint",
+        "openui_valid",
+        "quality_scope",
+        "stop_after_checkpoint"
+      ]
+    }
+  },
+  "physicalExternalRequests": 34,
+  "observedModelIdentities": {
+    "jev-1.14.0": 22,
+    "MiniMax-M3.1-Flash": 12
+  },
+  "physicalStageCounts": {
+    "planning": 3,
+    "generation": 12,
+    "review": 12,
+    "pair": 6,
+    "final-choice": 1
+  },
+  "anonymousConversations": 1,
+  "cost": {
+    "priorCumulativeUpperBoundUsd": 5.899003442,
+    "meteredFromObservedUsageUsd": 0.03532335,
+    "unobservedUsageReservedUsd": 0,
+    "additionalUpperBoundUsd": 0.03532335,
+    "cumulativeUpperBoundUsd": 5.934326792,
+    "utilityInvoiceUsd": null,
+    "requestsWithUsage": 34,
+    "requestsWithoutUsage": 0
+  },
+  "blockedTraffic": {
+    "initial": {
+      "foreign-origin": 5,
+      "other-background": 23,
+      "unrelated-api": 9,
+      "unrelated-tutor": 2,
+      "provider-before-or-after-turn": 1
+    },
+    "afterSubmit": {
+      "unrecognized-candidate-instructions": 5,
+      "unrelated-api": 12,
+      "provider-before-or-after-turn": 1,
+      "foreign-origin": 1,
+      "other-background": 10
+    },
+    "safeTutorCategories": [
+      {
+        "reason": "unrelated-tutor",
+        "requestModel": "MiniMax-M3.1-Flash",
+        "slotMarker": null,
+        "maxOutput": 800,
+        "userCount": 1,
+        "containsRegisteredPrompt": true,
+        "sessionTitle": false,
+        "topicCategorization": true,
+        "auxiliaryWebSearch": false
+      },
+      {
+        "reason": "unrecognized-candidate-instructions",
+        "requestModel": "MiniMax-M3.1-Flash",
+        "slotMarker": null,
+        "maxOutput": 800,
+        "userCount": 1,
+        "containsRegisteredPrompt": false,
+        "sessionTitle": false,
+        "topicCategorization": true,
+        "auxiliaryWebSearch": false
+      },
+      {
+        "reason": "unrecognized-candidate-instructions",
+        "requestModel": "MiniMax-M3.1-Flash",
+        "slotMarker": null,
+        "maxOutput": 32,
+        "userCount": 1,
+        "containsRegisteredPrompt": true,
+        "sessionTitle": true,
+        "topicCategorization": false,
+        "auxiliaryWebSearch": false
+      }
+    ]
+  },
+  "originalRegistration": {
+    "file": "../production-acceptance-protocol.json",
+    "sha256": "e91892dda2ef7864d69f6255471d705f26a52ee77adf5164c3c8e7d07039fef5"
+  },
+  "prospectiveAddendum": {
+    "file": "../production-acceptance-addendum.json",
+    "sha256": "1361d92793116b3474c6d212f70992472d421244673fa17980e6292a9e8f1d4c"
+  },
+  "operatorFirstSha256": "639e65720cf495f3f44b89df008a87f7f5cba06d4a6457f13057e03802786b5a",
+  "operatorFollowUpSha256": "86a634e2ab1562f819cfb5c7da9567bef82fe45120bb352913fdaabe9f8010cc",
+  "artifacts": {
+    "settings.json": "669c32e2574b38db68315c6fc41fb1d80b925e4011acdaee1f06c2c19545e1a5",
+    "first.png": "29254ef992c0af0c1cc17df729e1db3d23bb065eeb545f896898dc5243e1b786",
+    "first-public-reply.json": "25d60d3532a07b9c58bf5020d900d070a233b0eddbb26b4faf650eedd80d1642",
+    "question.png": "7508c847a53b438f1ffd343d51e352cd5856c822f6d325fd2a5990fd5aed8c14",
+    "saved.png": "eddeaa8544feb49c634f455f96653975901fa7152e1ad9f806050d62d1c63c02",
+    "after.png": "d9ce601f52d3b5b44ee4845a9291ac6234770a4a2596256e28bafabc9d488463",
+    "verdict.png": "d9ce601f52d3b5b44ee4845a9291ac6234770a4a2596256e28bafabc9d488463",
+    "first-webmcp.json": "3e382411ecf4faafedca7f8ab32070265b99e0c7317424b0fb93671a27e19523",
+    "final-webmcp.json": "80a17f204c4629a6d978cafced47e742312aeef6cd761da894586091a6b262e0",
+    "wire-and-pairs.json": "b7b489399579f73d779bd601ffde1d4b211ad63d9a85986c9b6a30f8ad9792f3"
+  },
+  "humanLearningOutcome": null
+}

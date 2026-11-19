@@ -1,0 +1,22 @@
+{
+  "pair-reviews": {
+    "schemaVersion": 1,
+    "view": "pair-reviews",
+    "matchingTurns": 0,
+    "turnsWithoutPairRecords": 1,
+    "comparedPairs": 0,
+    "incompletePairs": 0,
+    "unavailablePairs": 0,
+    "roundsWithPairRecords": 0,
+    "unrecordedPairs": 0,
+    "turnsWithMeasuredOverlap": 0,
+    "turnsWithConcurrentReviews": 0,
+    "turns": []
+  },
+  "withheld": {
+    "schemaVersion": 1,
+    "view": "withheld",
+    "matchingTurns": 0,
+    "turns": []
+  }
+}

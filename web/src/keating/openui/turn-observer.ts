@@ -74,8 +74,13 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
     row.compiled = candidates?.components ?? null;
     if (row.guidance) row.guidance.delivered = offers.get(model) ?? null;
   }
+  function recordRequestedTutor(tutor: string) {
+    const id = identity(tutor);
+    if (!ended && id) row.requestedModel = id;
+  }
   return {
     turnIndex,
+    unguidedGenerationRequested: recordRequestedTutor,
     nativeEvent(event: NativeResultEvent) { noteNativeToolEvent(nativeEvents, event); },
     publicMessageEnded(message: Message, at: number) {
       if (!publicMessageEnds.has(message)) publicMessageEnds.set(message, at);
@@ -109,9 +114,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
       row.decisionModel = null;
       return {
         generationRequested(tutor: string) {
-          if (ended || token !== round) return;
-          const id = identity(tutor);
-          if (id) row.requestedModel = id;
+          if (token === round) recordRequestedTutor(tutor);
         },
         plan(snapshot: TeachingDraftSnapshot, reviewer: Reviewer | null) {
           if (ended || token !== round) return;
@@ -191,6 +194,10 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
         }
       } else if (withheld) {
         row.selected = [];
+      } else if (row.reply === "error" && row.mode === "baseline" && message && identity(message.responseModel)) {
+        // The SDK also puts the requested model on locally synthesized errors.
+        // Only a separate response identity identifies the provider on this path.
+        useTutor(tutorIdentity(message));
       } else if (message?.stopReason === "toolUse") {
         useTutor(tutorIdentity(message));
       }

@@ -1,0 +1,32 @@
+{
+  "schema": "keating-post-grade-transfer/v1",
+  "registeredAt": "2026-11-19T01:59:19.842004+00:00",
+  "subject": "Independent states-of-matter transfer after a successful targeted post-grade calibration. The production counter comparison and its results stay separate.",
+  "executionEnvironment": "Fresh anonymous Chromium classroom against an independently frozen loopback full Vite + Nitro candidate. Record the exact app version, policy, entry URL and SHA-256 before any paid dispatch. Real Jev and MiniMax behind their normal application transports.",
+  "prompt": "I’m revising states of matter. A drop of water cools into ice. I want to try naming the change myself before you explain what happens.",
+  "tutor": "minimax/MiniMax-M3.1-Flash",
+  "decision": "jev-1.14.0",
+  "conditionalStart": "Only after the independently registered post-grade reviewer calibration passes its criteria, the rebuilt classroom passes an offline browser guard, the previous ledgers reconcile within the overall USD 10 limit, and explicit separate authorization is given. No new inference at registration.",
+  "firstTurn": "One new authored learner turn with no named interface. Record whether an enabled Question for the learner to name the phase change appears on the first reply without revealing the answer. If there is no relevant unambiguous actionable Question, stop and retain its actual first reply or failure.",
+  "submission": "Through the real rendered input, type Freezing once, or choose the unique equivalent named freezing or solidification. A generic question about a different state change or requiring an unrelated answer is ineligible. Never fabricate the response envelope, grade or tool result.",
+  "truth": "A liquid drop becoming solid ice is freezing (solidification). For the scored answer inspect the authoritative saved check, the actual numeric score and verdict, the on-screen verdict, and any independent released tutor explanation. A concise correct explanation may say the water lost thermal energy and became solid. A new task, an inaccurate explanation or a withheld reply must remain visible in the result.",
+  "endpoints": [
+    "Actual four private tutor requests and two concurrent Jev pair reviews per natural registered teaching round, plus review outcomes and selected public reply",
+    "Physical submission, committed stable item, grade execution and returned result, original Question verdict and independent post-grade reply",
+    "Visible outside text, mounted controls, elapsed time, candidate tool scopes, saved Settings/WebMCP export, raw tutor and decision model IDs versus missing echoes",
+    "Physical requests, token counters or full missing-usage reservations, and reconciled cumulative bound"
+  ],
+  "stopping": "One trial. Maximum three natural four-candidate teaching rounds including initial prediction and the one optional form submission. Stop on terminal feedback, withhold, failure, or registered limits. No reload, paid retries or unrelated actions. Other investigations and their synthetic evidence stay separate.",
+  "budget": {
+    "maxTutorPerRound": 4,
+    "maxJudgesPerRound": 8,
+    "maxOutputTokensPerTutor": 8192,
+    "maxPhysicalRequests": 36,
+    "maxPerRoundUsd": 0.65,
+    "maxAdditionalUsd": 1.95,
+    "preCalibrationCumulativeBoundUsd": 6.093290462,
+    "allWorkHardLimitUsd": 10,
+    "unknownUsage": "Charge the full pre-dispatch reserve."
+  },
+  "learnerSubjects": "Synthetic only; no human learning outcome."
+}

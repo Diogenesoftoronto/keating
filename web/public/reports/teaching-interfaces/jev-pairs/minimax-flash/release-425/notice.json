@@ -1,0 +1,25 @@
+{
+  "scope": "Controlled Chromium session through the locally served 4.2.5 Vite and Nitro application. All decision and tutor responses were synthetic fixtures intercepted in the browser. The product rendered and processed the form and committed the selected grading tool to its real local database.",
+  "version": "4.2.5",
+  "policy": "keating-teaching-policy/v2.4.5",
+  "entry": "/assets/index-pjta1Y8f.js",
+  "entrySha256": "4ad94784d64f97dd2c8e3bd2266b84b7dde8175d8ed92631dc55e8094d3ce748",
+  "setup": "The supplied tutor created the counter Question. The browser selected Yellow. After the grading transaction the fixture set assessed_work_completed to 0.65 on each feedback draft to exercise a withheld explanation.",
+  "firstQuestion": "A cup holds four yellow counters and one blue counter. Which colour is more likely on the next draw?",
+  "savedAnswer": "Yellow",
+  "gradeBefore": "pending",
+  "gradeAfter": "model",
+  "score": 1,
+  "textOnOriginalQuestion": "Your answer is correct.",
+  "postGradeOutcome": "withheld",
+  "visibleLastReply": "Tool\ngrade_question_checks\nSUCCESS\nGrade saved · explanation unavailable\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "roundsRetained": 3,
+  "screenshot": "notice.png",
+  "screenshotSha256": "ae564c887efa6502d0052cb4b94dd9b8982c85d75cab55e93598b684aea135dc",
+  "providerRequests": 0,
+  "providerCostUsd": 0,
+  "sourceReceiptsSha256": [
+    "67ccbf8933b8483dffbefd57e94364cb9f6d8ee23d41c77a528ac93db8d283fe",
+    "2f86fdc073c6aea22aa14b76b84882833970861d139f0834882b873bfed5b67b"
+  ]
+}

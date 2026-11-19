@@ -1,0 +1,51 @@
+{
+  "scope": "Transport observations from existing sealed browser recordings only. No new HTTP request was sent to recheck the stream.",
+  "sourceOperatorReceiptSha256": "c0218b219e289a6e15f70fcd173c09d6c662a3945939d3fe003bba8166d6ba89",
+  "recorderSourceSha256": "9957a0dc631d51cd8c47139fee6403788a77ac0dc87482369aec7be24d940475",
+  "endpointBoundary": "Browser response from its same-origin /api/chat-proxy/chat/completions route to the pinned MiniMax OpenAI-compatible service. No relay-to-provider network recording was retained.",
+  "off": {
+    "api": "openai-completions",
+    "requested": "MiniMax-M3.1-Flash",
+    "modelObservedInSse": "MiniMax-M3.1-Flash",
+    "http": 200,
+    "browserTransportStatus": "transport-failure",
+    "browserRequestDurationMs": 3460,
+    "completeBrowserTrialDurationMs": 25587,
+    "browserClone": {
+      "doneMarker": false,
+      "limitReached": false
+    },
+    "readerByteLimit": 2097152,
+    "readerTimeLimitMs": 90000,
+    "observedBilledUsage": null,
+    "capturedRawFrames": false,
+    "providerFinishReason": null,
+    "readerEndOrExceptionKind": null,
+    "upstreamCause": null,
+    "learnerOutcome": "error",
+    "visibleNoticeFromScreenshot": "This response did not finish",
+    "evidence": "unguided-classroom.png"
+  },
+  "sameRunControls": {
+    "jevTutorStreams": 12,
+    "jevWithObservedDoneAndBilledUsage": 12,
+    "geminiTutorObservedDone": true,
+    "geminiTutorUsageObserved": true
+  },
+  "earlierDistinctRecordings": [
+    {
+      "evidence": "../production-after-first.json",
+      "sourceOperatorSha256": "2825e5c4acaf7ddb0a0fad4529a0885e14a15fe0e5687ab9abc915c45eb3623d",
+      "recordedHttp200FailureRows": 4,
+      "clonedSseEvidenceCaptured": false,
+      "questionRendered": true
+    },
+    {
+      "evidence": "../grading-lanes/summary.json",
+      "sourceOperatorSha256": "2bdc681be466cf4b320a0acb2db3ba79969518735636eb1b6da670b7b4c4fede",
+      "http200WithoutObservedDoneOrUsage": 1,
+      "otherTutorStreamsWithUsage": 3
+    }
+  ],
+  "interpretation": "The browser observed a partial response and an unfinished learner turn. This recording excludes its response-clone size and time limits as causes. End-of-stream markers, a provider-side failure versus cancellation, and connection closure at the upstream relay boundary cannot be determined from the retained data."
+}
