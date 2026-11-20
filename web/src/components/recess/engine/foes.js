@@ -381,7 +381,7 @@ export const RecessArt = (function () {
     else if (revived) { row = rows.cheer; f = G.calm ? 1 : Math.max(0, Math.min(7, Math.floor((1.05 + G.T - moods.get(G).revive) * 8))); lean = -p.tilt; }
     else if (playing && p.anim === "hover") {
       const d = turn(p.aim - up);
-      const mood = moods.get(G), resting = !p.lock && G.control !== "twin";
+      const mood = moods.get(G), resting = !p.lock && !p.manual;
       if (p.focus && rows.focus !== undefined) {
         row = rows.focus;
       } else if (rows.blank !== undefined && mood && mood.until > G.T && !p.focus) {
@@ -419,7 +419,7 @@ export const RecessArt = (function () {
     }
     c.restore();
     // Bank and expression poses carry the gun upright. A short sight keeps the shot direction legible.
-    if (playing && (row === rows.bank || row === rows.focus || row === rows.blank) && (p.lock || G.control === "twin")) {
+    if (playing && (row === rows.bank || row === rows.focus || row === rows.blank) && (p.lock || p.manual)) {
       c.save(); c.rotate(p.aim - p.tilt - lean - (low && !revived ? .12 : 0)); c.strokeStyle = pal.deep; c.lineWidth = 2;
       c.beginPath(); c.moveTo(26, 0); c.lineTo(32, 0); c.stroke(); c.restore();
     }
@@ -458,7 +458,7 @@ export const RecessArt = (function () {
     if (!playing) return;
     // where he is aiming: a crosshair under the pointer, or brackets on the enemy he chose
     c.strokeStyle = env.dark ? pal.phos : pal.deep; c.lineWidth = 1.8; c.lineCap = "butt";
-    if (G.control === "twin") {
+    if (p.manual) {
       const x = G.inp.ax, y = G.inp.ay; c.beginPath();
       for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(x + ux * 4, y + uy * 4); c.lineTo(x + ux * 10, y + uy * 10); }
       c.stroke(); c.fillStyle = c.strokeStyle; c.fillRect(x - 1, y - 1, 2, 2);
