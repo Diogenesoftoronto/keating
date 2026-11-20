@@ -2,7 +2,9 @@ import { useAui } from "@assistant-ui/react";
 import { createPortal } from "react-dom";
 import { lazy, Suspense, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useMotionAllowed } from "../design-system/motion";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { useMediaQuery } from "../hooks/use-media-query";
+import { recessReviewDraft } from "../keating/habits/recess-review";
 import { addDraftQuote } from "../keating/passage-quote-draft";
 import { KeatingBot, type KeatingBotState } from "./KeatingBot";
 import { LearningReferenceScope } from "./LearningReferenceLink";
@@ -10,6 +12,7 @@ import { useCompanionMode } from "./companion/CompanionSetting";
 import { useCompanionDrag } from "./companion/useCompanionDrag";
 import { useLessonReactions } from "./companion/useLessonReactions";
 import type { StudyGameArea, StudyGameContext } from "./habits/StudyGameDialog";
+import type { RecessResult } from "./recess/types";
 import {
 	activityTargetSelector,
 	captureTarget,
@@ -30,12 +33,18 @@ const STUDY_CHOICES = [
 	["Make flashcards", "Make flashcards to help me review the current topic."],
 ] as const;
 const StudyGameDialog = lazy(() => import("./habits/StudyGameDialog"));
-type Props = { state: KeatingBotState; busy: boolean; onSeatedChange?: (seated: boolean) => void; games?: () => StudyGameContext };
+type Props = {
+	state: KeatingBotState;
+	busy: boolean;
+	onSeatedChange?: (seated: boolean) => void;
+	games?: () => StudyGameContext;
+	studyActionsHost?: HTMLSpanElement | null;
+};
 export function ChatMascotMenu(props: Props) {
 	const session = useContext(LearningReferenceScope);
 	return <Companion key={session} {...props} session={session} />;
 }
-function Companion({ state, busy, session, onSeatedChange, games }: Props & { session?: string }) {
+function Companion({ state, busy, session, onSeatedChange, games, studyActionsHost }: Props & { session?: string }) {
 	const composer = useAui().composer;
 	const anchor = useRef<HTMLDivElement>(null),
 		trigger = useRef<HTMLButtonElement>(null),
@@ -55,6 +64,7 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 	const [gesture, setGesture] = useState<KeatingBotState | null>(null);
 	const [position, setPosition] = useState({ left: 8, bottom: 8 });
 	const [activity, setActivity] = useState<{ area: StudyGameArea; context: StudyGameContext } | null>(null);
+	const [recap, setRecap] = useState<RecessResult | null>(null);
 	const expanded = desktop && room && mode !== "off";
 	useEffect(() => { onSeatedChange?.(expanded); }, [expanded, onSeatedChange]);
 	const lively = expanded && mode === "lively";
@@ -64,10 +74,11 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 		setError("");
 		trigger.current?.focus({ preventScroll: true });
 	};
-	const openActivity = (area: StudyGameArea) => {
+	const openActivity = (area: StudyGameArea, opener?: HTMLButtonElement) => {
 		if (!games) return;
 		const context = games();
 		close();
+		opener?.focus({ preventScroll: true });
 		setActivity({ area, context });
 	};
 	function selectTarget(t: DropTarget) {
@@ -260,7 +271,27 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 		);
 		return () => walk.cancel();
 	}, [pose, reaction, motion]);
+	const review = recap && recessReviewDraft(recap);
+	const studyActions = games && <>
+		<button type="button" className="ch-study-activity" aria-haspopup="dialog" data-glyph-host
+			onClick={event => openActivity("recess", event.currentTarget)}>
+			<KeatingGlyph name="play" size={13} />Recess
+		</button>
+		{mode !== "off" && <button type="button" className="ch-study-activity" aria-haspopup="dialog" data-glyph-host
+			onClick={event => openActivity("habits", event.currentTarget)}>
+			<KeatingGlyph name="trend" size={13} />Study progress
+		</button>}
+	</>;
 	return (
+		<>
+		{games && recap && <div className="ch-recess-recap" role="group" aria-label="Recess recap">
+			<span role="status">{recap.won ? "Recess cleared" : recap.quit ? "Recess stopped" : "Recess finished"} · {recap.score.toLocaleString()} points</span>
+			{review && <button type="button" onClick={() => { addDraft(review); setRecap(null); }}>Review in chat</button>}
+			<button type="button" aria-label="Dismiss Recess recap" onClick={() => {
+				setRecap(null);
+				trigger.current?.focus({ preventScroll: true });
+			}}><KeatingGlyph name="x" size={13} /></button>
+		</div>}
 		<div ref={anchor} className="chat-mascot-perch" data-expanded={expanded}>
 			<button
 				ref={trigger}
@@ -322,8 +353,10 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 						context={activity.context}
 						mode={mode}
 						onClose={() => setActivity(null)}
+						onRecessEnd={result => { if (!result.quit || result.gates.length || result.myths.length || result.wind) setRecap(result); }}
 						onDraft={draft => {
 							setActivity(null);
+							setRecap(null);
 							addDraft(draft);
 							requestAnimationFrame(() => chat()?.querySelector<HTMLTextAreaElement>(".composer-root textarea")?.focus());
 						}}
@@ -486,5 +519,7 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 					document.body,
 				)}
 		</div>
+		{studyActionsHost && createPortal(studyActions, studyActionsHost)}
+		</>
 	);
 }

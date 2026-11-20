@@ -7,6 +7,7 @@ import type { HabitLesson } from "../../keating/habits/lesson";
 import { compileLessonPack } from "../../keating/habits/director";
 import { HabitChallengeForm, type ChallengeGoal } from "./HabitChallengeForm";
 import { CarePanel, HabitsPanel, QuestsPanel } from "./HabitPanels";
+import type { RecessResult } from "../recess/types";
 import "./study-game.css";
 
 const RecessGame = lazy(() => import("../recess/RecessGame").then(module => ({ default: module.RecessGame })));
@@ -23,12 +24,13 @@ export interface StudyGameContext {
   model?: Model<Api>;
 }
 
-export default function StudyGameDialog({ initialArea, context, mode, onClose, onDraft }: {
+export default function StudyGameDialog({ initialArea, context, mode, onClose, onDraft, onRecessEnd }: {
   initialArea: StudyGameArea;
   context: StudyGameContext;
   mode: HabitsMode;
   onClose(): void;
   onDraft(prompt: string): void;
+  onRecessEnd?: (result: RecessResult) => void;
 }) {
   const [selected, setSelected] = useState(initialArea);
   const [state, setState] = useState<HabitsSnapshot | null>(null);
@@ -98,7 +100,10 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
         : area === "recess" ? <Suspense fallback={<p role="status">Opening Recess…</p>}><RecessGame
           lesson={context.lesson} condition={mode === "off" ? standard : snapshot?.condition ?? standard}
           kit={mode === "off" ? [] : Object.values(snapshot?.equippedKit ?? {})}
-          onEnd={result => { if (!result.quit) void act({ type: "runEnd", runId: crypto.randomUUID(), result }); }}
+          onEnd={result => {
+            if (!result.quit) void act({ type: "runEnd", runId: crypto.randomUUID(), result });
+            onRecessEnd?.(result);
+          }}
           onQuiz={onDraft}
           compilePack={context.model && context.lesson.length ? async (signal, base) => {
             const pack = await compileLessonPack(context.model, context.lesson, base, signal);

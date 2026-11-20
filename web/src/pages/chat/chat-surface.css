@@ -49,6 +49,36 @@ html[data-reply-typeface=mono] .keating-bubble .ch-reading {font-family:var(--mo
 .ch-study,.chat-page-panel .chat-mascot-perch {width:100%;max-width:var(--ch-column,29rem);margin-inline:auto}
 .ch-study {padding:.3rem 0;flex-wrap:wrap}
 .ch-study button {font-size:.55rem;padding:.12rem .32rem;min-height:1.35rem}
+.ch-study-activities { display: contents; }
+.ch-study .ch-study-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: .22rem;
+  border: 1px dashed var(--line);
+  border-radius: .24rem;
+  background: var(--paper);
+  color: var(--green-deep);
+  font-family: var(--mono-body);
+  cursor: pointer;
+}
+.ch-study .ch-study-activity:hover { background: var(--accent); color: var(--accent-foreground); }
+.ch-recess-recap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .22rem .55rem;
+  width: 100%;
+  max-width: var(--ch-column, 29rem);
+  margin: 0 auto .3rem;
+  padding: .18rem .4rem;
+  border-left: 2px solid var(--primary);
+  color: var(--ink-soft);
+  font: .59rem/1.4 var(--mono-body);
+}
+.ch-recess-recap button { color: var(--green-deep); cursor: pointer; }
+.ch-recess-recap button:last-child { display: grid; place-items: center; margin-inline-start: auto; }
+.ch-recess-recap button:not(:last-child) { text-decoration: underline; text-underline-offset: .15em; }
+.ch-study-activity:focus-visible, .ch-recess-recap button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .chat-mascot-perch:not([data-expanded=true]):has(+ .ch-study) {height:0}
 .chat-mascot-perch:not([data-expanded=true]):has(+ .ch-study) .chat-mascot-perch__bot {width:2.3rem;height:2.3rem;top:-.15rem}
 .chat-mascot-perch:not([data-expanded=true]) + .ch-study {padding-left:2.55rem;min-height:2.1rem}
@@ -149,6 +179,7 @@ html[data-reply-typeface=mono] .chat-page-panel .keating-bubble [data-chat-prose
 }
 @media(pointer:coarse){
   .ch-other,.ch-study button,.ch-toolbar :is(button,select),.ch-latest button {min-height:44px;min-width:44px}
+  .ch-recess-recap button { min-width: 44px; min-height: 44px; }
 }
 
 /* Session navigation */

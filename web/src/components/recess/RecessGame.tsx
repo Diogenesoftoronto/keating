@@ -1,7 +1,9 @@
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { flushSync } from "react-dom";
 import { useMotionAllowed } from "../../design-system/motion";
 import { HABIT_KIT } from "../../keating/habits/quest-catalog";
 import { useKeatingUiSettings } from "../../hooks/use-ui-settings";
+import { recessReviewDraft } from "../../keating/habits/recess-review";
 import { loadRecessArt, sittingBot } from "./assets";
 import { RecessAudio } from "./engine/audio.js";
 import { Recess } from "./engine/core.js";
@@ -44,6 +46,17 @@ function LessonPage({ pack, lesson }: { pack: RecessPack; lesson?: readonly Rece
     if ("code" in row) return <pre className="recess-code" key={index}>{practiceWords(row.code)}</pre>;
     return <p className="recess-prose" key={index}>{practiceWords(row.k)}</p>;
   });
+}
+
+function Icon({ name }: { name: "launch" | "stop" | "eureka" | "chat" | "gear" }) {
+  const paths = {
+    launch: "M7 1h2v2h2v6h2v4h-3v2H6v-2H3V9h2V3h2zM7 5v2h2V5z",
+    stop: "M3 3h10v10H3z",
+    eureka: "M5 1h6v2h2v5h-2v2h-1v2H6v-2H5V8H3V3h2zM6 13h4v2H6z",
+    chat: "M1 2h14v9H8l-4 3v-3H1z",
+    gear: "M7 0h2v2h2l1-1 2 2-1 1v2h2v2h-2v2l1 1-2 2-1-1h-2v2H7v-2H5l-1 1-2-2 1-1V9H1V7h2V5L2 4l2-2 1 1h2zM7 6v4h2V6z",
+  };
+  return <svg className="recess-icon" viewBox="0 0 16 16" aria-hidden="true" shapeRendering="crispEdges"><path d={paths[name]} fillRule="evenodd"/></svg>;
 }
 
 function Hud({ hud }: { hud: RecessHud }) {
@@ -114,18 +127,11 @@ function WindQuestion({ wind, answer, stop }: { wind: RecessWind; answer(index: 
   </section>;
 }
 
-function quizDraft(result: RecessResult): string {
-  const missed = result.gates.filter(item => !item.ok);
-  const prompts = (missed.length ? missed : result.gates).map(item => item.q);
-  if (result.wind && !result.wind.ok) prompts.unshift(result.wind.q);
-  const topics = [...prompts, ...result.myths.map(item => item.right)].slice(0, 3);
-  return "Quiz me on these topics from Recess, one question at a time." + topics.map(topic => "\n- " + topic).join("");
-}
-
 function RunResult({ result, onQuiz }: { result: RecessResult; onQuiz(draft: string): void }) {
   const headline = result.won ? "Wall cleared" : result.quit ? "Stopped early" : "Out of hearts";
-  const hasChecks = result.gates.length || result.myths.length || result.wind;
-  return <section className="recess-result" aria-label="Recess result">
+  const draft = recessReviewDraft(result);
+  return <section className="recess-result" aria-label="Recess result" data-outcome={result.won ? "won" : result.quit ? "quit" : "lost"}>
+    <small className="recess-kicker">Flight log</small>
     <div className="recess-result-heading">
       <h3>{headline}</h3><strong>{result.score.toLocaleString()} <small>points</small></strong>
     </div>
@@ -137,7 +143,7 @@ function RunResult({ result, onQuiz }: { result: RecessResult; onQuiz(draft: str
       </li>)}
     </ul>
     {result.tldr && <p className="recess-takeaway">{result.tldr}</p>}
-    {hasChecks ? <button type="button" onClick={() => onQuiz(quizDraft(result))}>
+    {draft ? <button type="button" className="recess-key" onClick={() => onQuiz(draft)}>
       {result.gates.some(check => !check.ok) || (result.wind && !result.wind.ok) ? "Quiz me on what I missed" : "Quiz me on these"}
     </button> : null}
   </section>;
@@ -253,6 +259,13 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
     try {
       audio.set(sound);
       audio.unlock();
+      // Apply the in-flight layout before the engine measures the arena.
+      flushSync(() => {
+        setFailure("");
+        setResult(null);
+        setHud({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2 });
+        setStatus("play");
+      });
       const game = Recess.create({
         ...prepared.assets,
         arena: playfield, thread: thread.current, dock: dock.current, bot: bot.current,
@@ -278,9 +291,6 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
       engine.current = game;
       soundEngine.current = audio;
       game.setCondition(condition);
-      setFailure("");
-      setResult(null);
-      setHud({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2 });
       game.start("start");
       playfield.focus({ preventScroll: true });
       if (typeof ResizeObserver !== "undefined") {
@@ -307,28 +317,36 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
 
   return <div className="recess-game" data-theme={dark ? "term" : "paper"} data-phase={status} data-calm={calm}>
     <div className="recess-toolbar">
-      <label>Practice lesson
-        <select value={subject} disabled={inFlight || compiling} onChange={event => {
-          setSubject(event.target.value); setPersonal(null); setCompileStatus("idle"); setResult(null); setFailure("");
-        }}>
-          {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
-        </select>
-      </label>
-      {compilePack && lesson.some(row => row.role === "tutor") && <button type="button" disabled={inFlight || compiling || !!personal} onClick={() => void prepareLesson()}>
-        {compiling ? "Preparing lesson…" : personal ? "Playing from your lesson" : "Use this chat lesson"}
-      </button>}
-      <button type="button" className="recess-start" ref={startControl}
-        disabled={status === "outro" || (!inFlight && (!prepared?.assets || compiling))}
-        onClick={() => inFlight ? engine.current?.stop() : start()}>
-        {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !prepared ? "Loading artwork…" : result ? "Play again" : "Start Recess"}
-      </button>
-      <button type="button" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
-        data-live-action="" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
-        Eureka{inFlight ? ` · ${hud.bombs}` : ""}
-      </button>
+      <div className="recess-plan">
+        <small className="recess-kicker">Flight plan</small>
+        <label className="recess-lesson"><span>Practice lesson</span>
+          <select value={subject} disabled={inFlight || compiling} onChange={event => {
+            setSubject(event.target.value); setPersonal(null); setCompileStatus("idle"); setResult(null); setFailure("");
+          }}>
+            {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+          </select>
+        </label>
+        {compilePack && lesson.some(row => row.role === "tutor") && <button type="button" className="recess-chat"
+          aria-pressed={!!personal} disabled={inFlight || compiling || !!personal} onClick={() => void prepareLesson()}>
+          <Icon name="chat"/>{compiling ? "Preparing lesson…" : personal ? "Playing from your lesson" : "Use this chat lesson"}
+        </button>}
+      </div>
+      <div className="recess-controls">
+        <button type="button" className="recess-start recess-key" ref={startControl} data-flight={inFlight}
+          disabled={status === "outro" || (!inFlight && (!prepared?.assets || compiling))}
+          onClick={() => inFlight ? engine.current?.stop() : start()}>
+          <Icon name={inFlight ? "stop" : "launch"}/>
+          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !prepared ? "Loading artwork…" : result ? "Play again" : "Start Recess"}
+        </button>
+        {inFlight && <button type="button" className="recess-eureka recess-key" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
+          data-live-action="" aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
+          <Icon name="eureka"/>Eureka<span className="recess-count"> · {hud.bombs}</span>
+          <span className="recess-pips" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <i key={index} data-empty={index >= hud.bombs}/>)}</span>
+        </button>}
+      </div>
     </div>
     <details className="recess-settings">
-      <summary>Flight settings</summary>
+      <summary><Icon name="gear"/>Flight settings</summary>
       <div className="recess-options">
         <label>Controls
           <select value={control} disabled={inFlight} onChange={event => setControl(event.target.value as RecessControl)}>
@@ -342,9 +360,9 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
             <option value="toy">Toys</option><option value="ink">Ink</option>
           </select>
         </label>
-        <label>Lesson behind <input type="range" min={8} max={70} step={2} value={opacity} onChange={event => setOpacity(Number(event.target.value))}/></label>
-        <label><input type="checkbox" checked={calm} disabled={inFlight || !settings.visualEffects || !motionAllowed} onChange={event => setCalmChoice(event.target.checked)} /> Calm effects</label>
-        <label><input type="checkbox" checked={sound} onChange={event => {
+        <label className="recess-range">Lesson behind <input type="range" min={8} max={70} step={2} value={opacity} onChange={event => setOpacity(Number(event.target.value))}/></label>
+        <label className="recess-check"><input type="checkbox" checked={calm} disabled={inFlight || !settings.visualEffects || !motionAllowed} onChange={event => setCalmChoice(event.target.checked)} /> Calm effects</label>
+        <label className="recess-check"><input type="checkbox" checked={sound} onChange={event => {
           setSound(event.target.checked);
           soundEngine.current?.set(event.target.checked);
         }} /> Sound</label>
@@ -373,8 +391,11 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
         {wind && <WindQuestion wind={wind.question} answer={wind.answer} stop={() => engine.current?.stop()}/>}
       </div>
     </div>
-    <p className="recess-note">Move or drag to fly. Arrow keys or WASD also move Keating. Hold Shift to focus, Space for Eureka, and Escape to stop.</p>
-    <p className="recess-note">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
+    <p className="recess-note recess-help">
+      <span className="recess-help-fine">Move or drag to fly. Arrow keys or WASD also move Keating. Hold Shift to focus, Space for Eureka, and Escape to stop.</span>
+      <span className="recess-help-touch">Drag anywhere on the page to fly. Keating fires on his own. Tap Eureka to clear the air.</span>
+    </p>
+    <p className="recess-note recess-condition">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
       {wornNames.length > 0 && ` · Wearing ${wornNames.join(", ")}`}
     </p>
     {result && <RunResult result={result} onQuiz={onQuiz}/>}

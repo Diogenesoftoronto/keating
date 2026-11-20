@@ -24,53 +24,153 @@
   --recess-red: #ff6b52;
 }
 
-.recess-toolbar, .recess-options {
+.recess-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.recess-plan, .recess-controls, .recess-options {
   display: flex;
   align-items: end;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
-.recess-game :is(button, select) {
-  min-height: 40px;
-  max-width: 100%;
-  padding: 5px 9px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--foreground);
-  background: var(--background);
-  font: inherit;
-  font-size: 0.84rem;
-}
+.recess-plan { flex: 1 1 18rem; }
+.recess-controls { flex: 0 1 auto; }
 
-.recess-toolbar > label, .recess-options > label:has(select) {
-  display: grid;
-  gap: 2px;
+.recess-kicker {
+  flex-basis: 100%;
+  color: var(--recess-green);
+  font: 700 .68rem/1.2 var(--recess-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
 }
+.recess-kicker::before { content: "▸ "; }
 
 .recess-game label, .recess-settings {
-  font-size: 0.8rem;
+  font-size: .8rem;
 }
+
+.recess-lesson, .recess-options > label:has(select) {
+  display: grid;
+  gap: 3px;
+  color: var(--recess-soft);
+  font: 600 .7rem var(--recess-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.recess-game select, .recess-chat {
+  min-height: 40px;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--recess-line);
+  border-radius: 3px;
+  color: var(--recess-ink);
+  background: var(--recess-card);
+  font: 500 .84rem var(--recess-mono);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.recess-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-style: dashed;
+  border-color: var(--recess-green);
+  color: var(--recess-green);
+}
+.recess-chat[aria-pressed="true"] { border-style: solid; background: var(--recess-wash); opacity: 1; }
+
+.recess-icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Game keys: hard ink edge and a stepped drop, like the HUD sprites. */
+.recess-key {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 6px 16px;
+  border: 2px solid var(--recess-ink);
+  border-radius: 3px;
+  color: var(--recess-ink);
+  background: var(--recess-card);
+  box-shadow: 0 3px 0 var(--recess-ink);
+  font: 700 .8rem/1.1 var(--recess-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.recess-key:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--recess-ink); }
+
+.recess-game .recess-start[data-flight="false"] {
+  border-color: var(--recess-ink);
+  color: var(--recess-paper);
+  background: var(--recess-green);
+}
+.recess-game[data-theme="term"] .recess-start[data-flight="false"] { color: #06110a; border-color: var(--recess-green); box-shadow: 0 3px 0 #1d6b3c; }
+.recess-start[data-flight="true"] .recess-icon { color: var(--recess-red); }
+
+.recess-eureka { border-color: var(--recess-green); background: var(--recess-wash); box-shadow: 0 3px 0 var(--recess-green); }
+.recess-eureka:not(:disabled):active { box-shadow: 0 1px 0 var(--recess-green); }
+.recess-eureka .recess-icon { color: var(--recess-green); }
+.recess-count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.recess-pips { display: inline-flex; gap: 3px; margin-left: 2px; }
+.recess-pips > i { width: 6px; height: 12px; background: var(--recess-green); }
+.recess-pips > i[data-empty="true"] { background: transparent; box-shadow: inset 0 0 0 1px var(--recess-soft); }
 
 .recess-game :is(button, summary) { cursor: pointer; }
-.recess-game button:not(:disabled):hover { border-color: var(--primary); }
-.recess-game :is(button, select):disabled { opacity: .58; cursor: default; }
+.recess-game :is(.recess-chat, .recess-answers button):not(:disabled):hover { border-color: var(--recess-green); }
+.recess-key:not(:disabled):hover { filter: brightness(1.04); }
+.recess-game :is(button, select):disabled { opacity: .55; cursor: default; }
 .recess-game :is(button, select, input, summary):focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: 2px solid var(--recess-green);
+  outline-offset: 3px;
 }
 
-.recess-game .recess-start {
-  border-color: var(--primary);
-  color: var(--primary-foreground);
-  background: var(--primary);
-  font-weight: 650;
+.recess-settings summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  width: fit-content;
+  padding-block: 5px;
+  color: var(--recess-soft);
+  font: 600 .72rem var(--recess-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  list-style: none;
 }
-
-.recess-settings summary { min-height: 32px; width: fit-content; padding-block: 5px; }
-.recess-options { padding-block: 4px 10px; }
-.recess-options > label { display: flex; align-items: center; gap: 5px; min-height: 36px; }
-.recess-options input { max-width: 90px; accent-color: var(--primary); }
+.recess-settings summary::-webkit-details-marker { display: none; }
+.recess-settings summary::after { content: "+"; color: var(--recess-green); }
+.recess-settings[open] summary::after { content: "−"; }
+.recess-options { gap: 8px 14px; padding-block: 2px 10px; }
+.recess-options > label:not(:has(select)) { display: flex; align-items: center; gap: 6px; min-height: 40px; }
+.recess-options input { accent-color: var(--recess-green); }
+.recess-options input[type="checkbox"] { width: 18px; height: 18px; }
+.recess-options input[type="range"] { width: 96px; }
 
 .recess-stage {
   overflow: hidden;
@@ -233,64 +333,95 @@
 
 .recess-gate {
   position: absolute;
-  inset: 36px auto auto 50%;
+  inset: 44px auto auto 50%;
   transform: translateX(-50%);
   display: grid;
   gap: 3px;
   max-width: calc(100% - 20px);
   width: max-content;
-  padding: 6px 9px;
-  border: 1px solid var(--recess-line);
-  border-radius: 5px;
+  padding: 7px 11px;
+  border: 2px solid var(--recess-ink);
+  border-radius: 3px;
   background: var(--recess-card);
-  font-size: .79rem;
+  box-shadow: 0 3px 0 var(--recess-ink);
+  font-size: .82rem;
   text-align: center;
   pointer-events: none;
 }
-.recess-gate span { color: var(--recess-soft); font-size: .72rem; }
+.recess-gate span { color: var(--recess-soft); font: .72rem/1.4 var(--recess-mono); }
 
 .recess-wind {
   position: absolute;
   inset: 50% auto auto 50%;
   display: grid;
-  gap: 7px;
+  gap: 8px;
   width: min(390px, calc(100% - 24px));
   max-height: calc(100% - 16px);
   overflow: auto;
-  padding: 11px;
+  padding: 12px;
   transform: translate(-50%, -50%);
   background: var(--recess-card);
-  border: 1px solid var(--recess-green);
-  border-radius: 7px;
+  border: 2px solid var(--recess-green);
+  border-radius: 3px;
+  box-shadow: 0 4px 0 var(--recess-green);
   color: var(--recess-ink);
-  font-size: .87rem;
+  font-size: .9rem;
   cursor: default;
 }
-.recess-wind small { color: var(--recess-green); font: 700 .7rem var(--recess-mono); }
-.recess-answers { display: grid; gap: 4px; }
-.recess-answers button { border-color: var(--recess-line); text-align: left; min-height: 36px; }
-.recess-answers button > span { margin-right: 7px; color: var(--recess-soft); font-family: var(--recess-mono); }
+.recess-wind small { color: var(--recess-green); font: 700 .7rem var(--recess-mono); letter-spacing: .14em; text-transform: uppercase; }
+.recess-answers { display: grid; gap: 5px; }
+.recess-answers button {
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--recess-line);
+  border-radius: 3px;
+  color: var(--recess-ink);
+  background: var(--recess-paper);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+}
+.recess-answers button > span { margin-right: 8px; color: var(--recess-green); font: 700 .8rem var(--recess-mono); }
 .recess-answers button[data-answer="correct"] { outline: 2px solid var(--recess-green); opacity: 1; }
 .recess-answers button[data-answer="incorrect"] { outline: 2px solid var(--recess-red); opacity: 1; }
 .recess-clock { width: 100%; height: 4px; accent-color: var(--recess-green); }
 
 .recess-note { margin: 0; color: var(--muted-foreground); font-size: .78rem; }
+.recess-condition { font-family: var(--recess-mono); font-size: .72rem; }
+.recess-help-touch { display: none; }
+@media (pointer: coarse) {
+  .recess-help-fine { display: none; }
+  .recess-help-touch { display: inline; }
+  .recess-game select, .recess-chat { min-height: 44px; }
+}
+
 .recess-result {
   display: grid;
   gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--recess-line);
-  border-radius: 6px;
+  padding: 12px 14px 14px;
+  border: 2px solid var(--recess-ink);
+  border-radius: 3px;
   background: var(--recess-card);
+  box-shadow: 0 3px 0 var(--recess-ink);
   color: var(--recess-ink);
-  font-size: .85rem;
+  font-size: .86rem;
 }
+.recess-result[data-outcome="won"] { border-color: var(--recess-green); box-shadow: 0 3px 0 var(--recess-green); }
 .recess-result :is(p, h3, ul) { margin: 0; }
+.recess-result h3 { font-size: 1.05rem; }
 .recess-result ul:empty { display: none; }
-.recess-result ul { padding-left: 1.2em; }
+.recess-result ul { display: grid; gap: 3px; padding-left: 1.2em; }
 .recess-result li span[data-correct="true"] { color: var(--recess-green); }
 .recess-result li span[data-correct="false"] { color: var(--recess-red); }
-.recess-result-heading { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.recess-result-heading small, .recess-result > p { color: var(--recess-soft); }
-.recess-result .recess-takeaway { color: var(--recess-green); }
-.recess-result button { width: fit-content; }
+.recess-result-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.recess-result-heading > strong { font: 700 1.25rem var(--recess-mono); color: var(--recess-green); }
+.recess-result-heading small, .recess-result > p { color: var(--recess-soft); font-family: var(--recess-mono); font-size: .75rem; }
+.recess-result .recess-takeaway { color: var(--recess-green); font-family: inherit; font-size: .86rem; }
+.recess-result .recess-key { width: fit-content; margin-top: 6px; }
+.recess-hud output { font-weight: 700; }
+@media (pointer: coarse) {
+  .recess-hud { min-height: 38px; padding-inline: 10px; font-size: .82rem; }
+  .recess-hud :is(.recess-hearts, .recess-energy) svg { width: 16px; height: 16px; }
+  .recess-power > i { width: 5px; height: 12px; }
+  .recess-hud :is(.recess-meter, .recess-boss) { height: 4px; }
+}
