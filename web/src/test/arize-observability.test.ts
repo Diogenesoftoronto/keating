@@ -3,7 +3,7 @@ import { ArizeTraceClient, publishArizeTraceStatus, subscribeArizeTraceStatus, t
 import type { AgentTraceEnvelopeV1 } from "../lib/agent-analytics";
 
 const envelope: AgentTraceEnvelopeV1 = {
-	schema_version: 1,
+	schema_version: 2,
 	run_id: "run-1", session_id: "session-1", turn_index: 0,
 	provider: "openai", model: "gpt-5", source: "provider", status: "success",
 	duration_ms: 10, generation_count: 0, tool_count: 0, app_version: "3.0.0", surface: "web",
