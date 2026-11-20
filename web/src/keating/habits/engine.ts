@@ -386,6 +386,7 @@ function makeQuestProgress(state: HabitsState, id: string, today: number): boole
   progress.completedAt = state.checkedAt;
   state.blueprints[quest.kitId] = (state.blueprints[quest.kitId] ?? 0) + quest.blueprints;
   state.inventory.parts += quest.parts;
+  state.inventory.sparks++;
   if (!state.ownedKit.includes("star")) state.ownedKit.push("star");
   const weekend = weekendBounty(today, state.zone);
   if (state.dailyBountyClaimed !== today) {
@@ -396,7 +397,7 @@ function makeQuestProgress(state: HabitsState, id: string, today: number): boole
     state.weekendBountyClaimed = weekend.id;
     state.inventory.parts += 4;
   }
-  return say(state, "Quest complete. Your blueprint pieces and parts are in the Workshop.");
+  return say(state, "Quest complete. You earned a spark, blueprint pieces, and parts.");
 }
 
 function useShortcut(state: HabitsState, grade: HabitsGrade, today: number): boolean {
@@ -543,8 +544,13 @@ export function applyHabitsCommand(state: HabitsState, command: HabitsCommand): 
     }
     case "runEnd": {
       const result = command.result;
-      state.overchargeUntil = null;
-      state.condition.charge = unit(state.condition.charge - Math.min(0.15, unit(result.care.used)));
+      const delta = result.care.chargeDelta;
+      const chargeChange = typeof delta === "number" && Number.isFinite(delta)
+        ? Math.max(-1, Math.min(1, delta))
+        : -Math.min(0.15, unit(result.care.used));
+      const change = result.quit ? Math.min(0, chargeChange) : chargeChange;
+      if (!result.quit || change < 0) state.overchargeUntil = null;
+      state.condition.charge = unit(state.condition.charge + change);
       if (result.quit) return true;
       state.recessBest = Math.max(state.recessBest, natural(result.score ?? 0, 1_000_000));
       if (!state.recessRewards || state.recessRewards.day !== day) state.recessRewards = { day, total: 0 };

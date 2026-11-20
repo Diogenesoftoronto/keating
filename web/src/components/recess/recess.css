@@ -425,3 +425,26 @@
   .recess-power > i { width: 5px; height: 12px; }
   .recess-hud :is(.recess-meter, .recess-boss) { height: 4px; }
 }
+
+/* Firing charge: one gauge vocabulary for the HUD, the flight plan and the result. */
+.recess-charge { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.recess-charge > b { color: var(--recess-soft); font: 700 .62rem var(--recess-mono); letter-spacing: .08em; text-transform: uppercase; }
+.recess-charge-bar { display: block; width: 44px; height: 7px; box-shadow: inset 0 0 0 1px var(--recess-ink); background: var(--recess-paper); }
+.recess-charge-bar > i { display: block; height: 100%; background: var(--recess-green); }
+.recess-charge > em { min-width: 3.5ch; font-style: normal; font-weight: 700; }
+[data-tone="low"] > .recess-charge-bar > i, [data-tone="low"] .recess-charge-bar > i { background: var(--recess-red); }
+.recess-charge[data-tone="low"] > em, .recess-charge[data-tone="empty"] > em, [data-tone="empty"] .recess-charge > em { color: var(--recess-red); }
+.recess-game[data-calm="false"] .recess-hud .recess-charge[data-tone="empty"] > b { animation: recess-blink 1s steps(2) infinite; }
+@keyframes recess-blink { 50% { color: var(--recess-red); } }
+
+.recess-preflight { display: grid; gap: 3px; flex: 1 1 14rem; min-width: 0; }
+.recess-preflight .recess-charge { font: .8rem var(--recess-mono); color: var(--recess-ink); }
+.recess-preflight .recess-charge-bar { width: 72px; height: 9px; }
+.recess-preflight small { color: var(--recess-soft); font-size: .72rem; line-height: 1.35; }
+.recess-result .recess-result-charge { color: var(--recess-ink); font-family: var(--recess-mono); font-size: .78rem; }
+
+@media (max-width: 380px) {
+  .recess-hud .recess-charge > b { display: none; }
+  .recess-hud .recess-charge-bar { width: 30px; }
+  .recess-hud .recess-meter { display: none; }
+}

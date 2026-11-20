@@ -110,6 +110,6 @@ export type HabitsCommand =
   | { type: "acceptQuest"; questId: string }
   | { type: "craft"; kitId: string }
   | { type: "equip"; kitId: string }
-  | { type: "runEnd"; runId: string; result: { quit: boolean; score?: number; care: { used: number; cogs: number; sparks: number } } }
+  | { type: "runEnd"; runId: string; scope?: string; result: { quit: boolean; score?: number; care: { used: number; cogs: number; sparks: number; chargeDelta?: number } } }
   | { type: "rankedStudy"; scope: string; receipt: RankedHabitReceipt }
   | HabitsGrade;

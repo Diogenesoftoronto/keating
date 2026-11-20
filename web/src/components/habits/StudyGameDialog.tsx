@@ -23,6 +23,7 @@ export interface StudyGameContext {
   lesson: HabitLesson;
   model?: Model<Api>;
 }
+type RunSettlement = Extract<HabitsCommand, { type: "runEnd" }>["result"];
 
 export default function StudyGameDialog({ initialArea, context, mode, onClose, onDraft, onRecessEnd }: {
   initialArea: StudyGameArea;
@@ -79,6 +80,12 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
     }
   }
 
+  function settleRun(result: RunSettlement) {
+    if (currentHabitsScope() !== scope) return;
+    if (result.quit && (result.care.chargeDelta ?? 0) >= 0) return;
+    void act({ type: "runEnd", runId: crypto.randomUUID(), scope, result });
+  }
+
   const snapshot = state?.scope === scope ? state : null;
   const panelProps = snapshot && { state: snapshot, pending, act: (command: HabitsCommand) => void act(command), solve: setGoal };
   return <Sheet open onClose={onClose} title="Study with Keating" className="study-game-dialog">
@@ -100,8 +107,11 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
         : area === "recess" ? <Suspense fallback={<p role="status">Opening Recess…</p>}><RecessGame
           lesson={context.lesson} condition={mode === "off" ? standard : snapshot?.condition ?? standard}
           kit={mode === "off" ? [] : Object.values(snapshot?.equippedKit ?? {})}
+          settlingCharge={pending || (mode !== "off" && snapshot === null && !error)}
+          onAbandon={chargeDelta => settleRun({ quit: true, care: { chargeDelta, used: 0, cogs: 0, sparks: 0 } })}
           onEnd={result => {
-            if (!result.quit) void act({ type: "runEnd", runId: crypto.randomUUID(), result });
+            if (currentHabitsScope() !== scope) return;
+            settleRun(result);
             onRecessEnd?.(result);
           }}
           onQuiz={onDraft}

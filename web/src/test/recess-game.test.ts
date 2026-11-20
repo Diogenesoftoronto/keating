@@ -86,11 +86,16 @@ test("flight owns only arena keys and disposal removes its frame and handlers", 
 type RunState = {
   state: string;
   control: string;
+  energy: number;
+  chargeTier(): number;
+  refill(amount: number): void;
+  care: { charge: number };
   P: { x: number; y: number; bombs: number };
   inp: { pid: number | null; aid: number | null; ax: number; ay: number; tx: number; ty: number };
 };
 
-function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playfield, win: EventTarget) => void) {
+type Run = ReturnType<typeof Recess.create>;
+function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playfield, win: EventTarget, game: Run) => void, charge = 0.75) {
   const rect = new Playfield();
   const canvas = () => ({ width: 300, height: 150, hidden: false, getContext: () => ({}) });
   const mocks = {
@@ -114,9 +119,10 @@ function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playf
       equipment: {}, keycapBoots: false,
       hud() {}, ask() {}, phase() {}, revive() {}, end() {},
     });
+    game.setCondition({ charge, tune: 0.75, shine: 0.75 });
     expect(game.start("start")).toBe(true);
     expect(run).not.toBeNull();
-    body(run!, rect, mocks.window);
+    body(run!, rect, mocks.window, game);
     game.dispose();
   } finally {
     RecessPatterns.script = script;
@@ -173,4 +179,28 @@ test("in twin controls a touch flight starts from where Keating is", () => {
     field.dispatchEvent(touch("pointermove", 7, 390, 40));
     expect(run.inp.tx).toBeCloseTo(153);
   });
+});
+
+test("firing charge starts at Care charge, tiers down, refills only in play and reports its delta", () => {
+  touchRun("follow", (run, _field, _win, game) => {
+    expect(run.energy).toBeCloseTo(0.6);
+    expect(game.chargeDelta).toBe(0);
+    expect(run.chargeTier()).toBe(3);
+    run.energy = 0.2; expect(run.chargeTier()).toBe(2);
+    run.energy = 0.08; expect(run.chargeTier()).toBe(1);
+    run.energy = 0; expect(run.chargeTier()).toBe(0);
+    run.refill(0.5);
+    expect(run.energy).toBe(0); // still in the intro: nothing is caught yet
+    run.state = "play";
+    run.refill(0.12);
+    expect(run.energy).toBeCloseTo(0.12);
+    expect(game.chargeDelta).toBeCloseTo(-0.48);
+    run.refill(5);
+    expect(run.energy).toBe(1);
+    expect(game.chargeDelta).toBeCloseTo(0.4);
+    run.state = "outro";
+    run.energy = 0.3;
+    run.refill(0.2);
+    expect(run.energy).toBe(0.3);
+  }, 0.6);
 });

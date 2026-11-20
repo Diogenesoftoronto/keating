@@ -48,6 +48,8 @@ export const Recess = (function () {
       // How well he has been looked after (lanes/CARE-design.md), each 0 to 1; 0.75 is the standard bot.
       // charge: top speed and how hard his jets burn. tune: how fast he fires and turns to aim. shine: a third Eureka at 0.9.
       care: { charge: 0.75, tune: 0.75, shine: 0.75 }, sparks: 0,
+      // Firing charge: starts at his Care charge, drains only when he fires, refills from pickups.
+      energy: 0.75, energy0: 0.75, cellT: 0,
       // 0 to 1. Rises quietly when he is hit twice in twenty seconds, eases back after thirty without a hit.
       // Core slows new bullets by up to 15% and softens new enemies by up to 12% with it. Never shown to the player.
       mercy: 0,
@@ -261,13 +263,41 @@ export const Recess = (function () {
       P.aim += clamp(angDiff(want, P.aim), -turn * dt, turn * dt);
     }
     function mkShot(x, y, a, d, hom) { const s = hom ? 520 : 980; return { x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, d, hom: !!hom, t: 0 }; }
+    // Charge tiers. Full: the authored volley. Low: no side pair or homing, slower. Reserve: one shot, slower still. Empty: no fire.
+    // Tuned so 0.75 lasts about 55 s of steady fire with no pickups (≈21 s full, 16 s low, 19 s reserve).
+    const CHARGE = { cost: 0.002, low: 0.25, reserve: 0.1, cell: 0.12, cellBelow: 0.15, cellEvery: 7, spark: 0.004, card: 0.03 };
+    G.chargeDelta = () => clamp(Math.round((G.energy - G.energy0) * 1000) / 1000, -1, 1);
+    G.chargeTier = () => G.energy <= 0 ? 0 : G.energy < CHARGE.reserve ? 1 : G.energy < CHARGE.low ? 2 : 3;
+    // Only pickups caught in play count: the outro's magnet sweep must not refund a run that was stopped.
+    G.refill = function (amount) { if (G.state === "play") G.energy = clamp(G.energy + amount, 0, 1); };
+    function drain(amount) {
+      const was = G.chargeTier(); G.energy = Math.max(0, G.energy - amount); const now = G.chargeTier();
+      if (now < was && now <= 2) G.emit(now === 0 ? "chargeEmpty" : "chargeLow", { energy: G.energy, tier: now });
+    }
+    // An emergency cell drifts down when he runs low: no kill needed, one at a time, on a fixed cadence.
+    function cellUpdate(dt) {
+      G.cellT = Math.max(0, G.cellT - dt);
+      if (G.energy >= CHARGE.cellBelow || G.cellT > 0 || G.picks.some((p) => p.k === "e")) return;
+      const x = clamp(P.x + (P.x < G.W / 2 ? 1 : -1) * rnd(70, 140), 40, G.W - 40);
+      const cell = G.addPick("e", x, 34); cell.vx = 0; cell.vy = 20;
+      G.cellT = CHARGE.cellEvery; G.emit("chargeCell", { x, y: 34 });
+    }
     function volley() {
+      const tier = G.chargeTier();
+      if (tier === 0) return; // fireT keeps counting, so no muzzle flash or firing pose
+      if (tier === 1) {
+        const a = P.aim, x = P.x + Math.cos(a) * 30, y = P.y - 6 + Math.sin(a) * 30;
+        G.shots.push(mkShot(x, y, a, P.focus ? 1.15 : 1)); drain(CHARGE.cost * 0.5);
+        P.fireT = 0; G.emit("shot", { x, y, aim: a, power: 1, focus: P.focus }); return;
+      }
+      const full = tier === 3;
       const f = P.focus, d = (P.power >= 4 ? 1.3 : 1) * (f ? 1.15 : 1), sp = f ? 2.5 : 5, a = P.aim, cs = Math.cos(a), sn = Math.sin(a);
       const x = P.x + cs * 30, y = P.y - 6 + sn * 30, nx = -sn, ny = cs; // muzzle, and the normal to the aim
       G.shots.push(mkShot(x - nx * sp, y - ny * sp, a, d), mkShot(x + nx * sp, y + ny * sp, a, d));
-      if (P.power >= 2) { const w = f ? 0.045 : 0.15; G.shots.push(mkShot(x - nx * (sp + 3), y - ny * (sp + 3), a - w, d * 0.8), mkShot(x + nx * (sp + 3), y + ny * (sp + 3), a + w, d * 0.8)); }
-      if (P.power >= 3 && ++P.vol % (P.power >= 4 ? 3 : 4) === 0) G.shots.push(mkShot(P.x - nx * 18, P.y - ny * 18, a - 0.7, 1.6, true), mkShot(P.x + nx * 18, P.y + ny * 18, a + 0.7, 1.6, true));
-      P.fireT = 0; G.emit("shot", { x, y, aim: a, power: P.power, focus: f });
+      if (full && P.power >= 2) { const w = f ? 0.045 : 0.15; G.shots.push(mkShot(x - nx * (sp + 3), y - ny * (sp + 3), a - w, d * 0.8), mkShot(x + nx * (sp + 3), y + ny * (sp + 3), a + w, d * 0.8)); }
+      if (full && P.power >= 3 && ++P.vol % (P.power >= 4 ? 3 : 4) === 0) G.shots.push(mkShot(P.x - nx * 18, P.y - ny * 18, a - 0.7, 1.6, true), mkShot(P.x + nx * 18, P.y + ny * 18, a + 0.7, 1.6, true));
+      drain(CHARGE.cost * (full ? 1 : 0.6));
+      P.fireT = 0; G.emit("shot", { x, y, aim: a, power: full ? P.power : 1, focus: f });
     }
     function player(dt) {
       const p = P, W = G.W, H = G.H, home = G.home; p.animT += dt; p.inv = Math.max(0, p.inv - dt); bombT = Math.max(0, bombT - dt);
@@ -317,7 +347,8 @@ export const Recess = (function () {
       if (p.y < 26) { p.y = 26; p.vy = Math.max(0, p.vy); } if (p.y > bot) { p.y = bot; p.vy = G.control === "thrust" && p.vy > 60 ? -p.vy * 0.3 : Math.min(0, p.vy); }
       p.tilt = lerp(p.tilt, clamp(p.vx / 620, -0.48, 0.48), 1 - Math.exp(-dt * 12));
       if ((p.anim === "hit" && p.animT > 0.8) || (p.anim === "eureka" && p.animT > 0.85) || (p.anim === "cheer" && p.animT > 0.9)) { p.anim = "hover"; p.animT = 0; }
-      p.shotT -= dt; if (p.shotT <= 0) { p.shotT = 0.085 * lerp(1.2, 1, ct); volley(); }
+      cellUpdate(dt);
+      p.shotT -= dt; if (p.shotT <= 0) { const tier = G.chargeTier(); p.shotT = 0.085 * lerp(1.2, 1, ct) * (tier === 3 ? 1 : tier === 2 ? 1.5 : tier === 1 ? 2.2 : 1); volley(); }
     }
     G.finish = function (w) {
       if (G.state !== "play") return;
@@ -335,7 +366,7 @@ export const Recess = (function () {
       v2.clearRect(0, 0, view.width, view.height);
       unbind();
       const r = { won: G.won, quit: G.quit, score: G.score, kills: G.kills, grazes: G.grazes, rattled: G.rattled, hearts: P.hearts, gates: G.res.gates, myths: G.res.myths, wind: G.res.wind || null, tldr: G.won ? G.pack.tldr : null,
-        care: { used: 0.1, cogs: G.res.gates.filter((q) => q.ok).length, sparks: Math.floor(G.sparks / 20) } }; // what the run took from him and gave back
+        care: { used: 0.1, chargeDelta: G.chargeDelta(), cogs: G.res.gates.filter((q) => q.ok).length, sparks: Math.floor(G.sparks / 20) } }; // what the run took from him and gave back
       G.emit("end", { result: r }); o.end(r);
     }
 
@@ -395,14 +426,16 @@ export const Recess = (function () {
       // pickups
       for (const p of G.picks) {
         p.t += dt; const dx = px - p.x, dy = py - p.y, d = Math.hypot(dx, dy) || 1;
-        if (p.mag || d < 96 || !playing) { const s = 380 + p.t * 900; p.vx = lerp(p.vx, (dx / d) * s, 1 - Math.exp(-dt * 10)); p.vy = lerp(p.vy, (dy / d) * s, 1 - Math.exp(-dt * 10)); }
+        if (p.mag || d < (p.k === "e" ? 150 : 96) || !playing) { const s = 380 + p.t * 900; p.vx = lerp(p.vx, (dx / d) * s, 1 - Math.exp(-dt * 10)); p.vy = lerp(p.vy, (dy / d) * s, 1 - Math.exp(-dt * 10)); }
+        else if (p.k === "e") { p.vy = Math.min(30, p.vy + 40 * dt); p.vx = Math.sin(p.t * 1.6) * 18; }
         else { p.vy = Math.min(72, p.vy + 190 * dt); p.vx *= Math.exp(-dt * 2); }
         p.x += p.vx * dt; p.y += p.vy * dt;
         if (d < 17) {
           p.dead = true;
-          if (p.k === "s") { G.score += 10 * G.mult; P.pw++; G.sparks++; pickN++; pickT = 0.5; G.emit("pickup", { p, streak: pickN }); while (P.power < 4 && P.pw >= PW[P.power]) { P.power++; G.emit("powerUp", { power: P.power, x: px, y: py }); } }
-          else if (p.k === "c") { if (P.bombs < 3) P.bombs++; G.emit("pickup", { p, streak: 0 }); }
-          else { if (P.hearts < 4) P.hearts++; G.emit("pickup", { p, streak: 0 }); }
+          if (p.k === "s") { G.score += 10 * G.mult; P.pw++; G.sparks++; G.refill(CHARGE.spark); pickN++; pickT = 0.5; G.emit("pickup", { p, streak: pickN }); while (P.power < 4 && P.pw >= PW[P.power]) { P.power++; G.emit("powerUp", { power: P.power, x: px, y: py }); } }
+          else if (p.k === "c") { if (P.bombs < 3) P.bombs++; G.refill(CHARGE.card); G.emit("pickup", { p, streak: 0 }); }
+          else if (p.k === "e") { G.refill(CHARGE.cell); G.cellT = CHARGE.cellEvery; G.emit("pickup", { p, streak: 0, amount: CHARGE.cell }); }
+          else { if (P.hearts < 4) P.hearts++; G.refill(CHARGE.card); G.emit("pickup", { p, streak: 0 }); }
         } else if (p.y > H + 20) p.dead = true;
       }
       if (G.picks.some((p) => p.dead)) G.picks = G.picks.filter((p) => !p.dead);
@@ -501,7 +534,7 @@ export const Recess = (function () {
       if (dt > 0) { G.T += dt; update(dt); }
       if (G.state === "idle") return;
       draw(); present();
-      o.hud({ hearts: P.hearts, bombs: P.bombs, score: G.score, mult: G.mult, combo: clamp(G.comboT / 2.8, 0, 1), power: P.power, meter: G.meter / 36, label: G.label, boss: G.boss ? Math.max(0, G.boss.hp) / G.boss.max : -1 });
+      o.hud({ hearts: P.hearts, bombs: P.bombs, score: G.score, mult: G.mult, combo: clamp(G.comboT / 2.8, 0, 1), power: P.power, charge: G.energy, meter: G.meter / 36, label: G.label, boss: G.boss ? Math.max(0, G.boss.hp) / G.boss.max : -1 });
     }
 
     // ── input ──
@@ -602,6 +635,7 @@ export const Recess = (function () {
       size(); G.pal = PAL[G.theme]; G.dark = G.theme === "term"; collect(); heap = new Float32Array(Math.ceil(G.W / 22) + 1);
       G.foes = []; G.shots = []; G.bul = []; G.picks = []; G.timers = []; fx.shocks = []; G.gates = null; G.boss = null; G.ring = null; G.tldr = null;
       G.score = 0; G.mult = 1; G.chain = 0; G.comboT = 0; G.kills = 0; G.grazes = 0; G.meter = 0; G.rattled = 0; G.won = false; G.quit = false; returned = false; G.res = { gates: [], myths: [] };
+      G.energy = G.energy0 = G.care.charge; G.cellT = 0;
       hitT = 0; lastHit = -99; calmT = 0; usedWind = false; G.mercy = 0; G.sparks = 0; G.T = 0; fx.slow = 1; fx.slowT = 0; fx.stop = 0; fx.shake = 0; fx.kx = 0; fx.ky = 0; fx.flash = 0; fx.hit = 0; fx.on = 0; fx.speed = 0.3; G.label = "";
       Object.assign(P, { scale: 0.62, x: G.home.x, y: G.home.y, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: G.care.shine >= 0.9 ? 3 : 2, power: scene === "boss" ? 3 : scene === "myth" ? 2 : 1, shotT: 0.5, vol: 0, anim: o.rows.launch === undefined ? "hover" : "launch", animT: 0, focus: false, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, mire: 0, manual: false, flick: 0, seed: Math.random() * TAU });
       P.pw = PW[P.power - 1]; inp.keys = {}; inp.held = false; inp.pid = null; inp.aid = null; inp.touch = false; inp.usingKeys = false; inp.tx = G.W / 2; inp.ty = G.H * 0.7; inp.ax = G.W / 2; inp.ay = 0;
@@ -623,6 +657,8 @@ export const Recess = (function () {
     return {
       start, stop, bomb: G.bomb,
       get state() { return G.state; },
+      /** Remaining firing charge minus the charge this run started with, in [-1, 1]. */
+      get chargeDelta() { return G.chargeDelta(); },
       setCalm(value) { G.calm = Boolean(value); },
       setCondition(condition) {
         G.care = {
