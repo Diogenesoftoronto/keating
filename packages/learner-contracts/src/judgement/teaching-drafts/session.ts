@@ -288,7 +288,8 @@ export class TeachingDraftSession<T> {
       return { ...window, outcome: { ok: false, error: { code: "request-invalid", retryable: false } } as const };
     }
     if (!window.fitsLimits) {
-      return { ...window, outcome: { ok: false, error: { code: "context-limit-exceeded", retryable: false } } as const };
+      const code = judgementRequestProblem(window.request) === null ? "context-limit-exceeded" : "request-invalid";
+      return { ...window, outcome: { ok: false, error: { code, retryable: false } } as const };
     }
     let outcome = await this.judge(window.request, step, onDispatch);
     const estimated = window.after.estimatedStateQuestionTokens;

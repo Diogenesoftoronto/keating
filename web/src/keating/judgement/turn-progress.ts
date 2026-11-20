@@ -130,7 +130,7 @@ export function turnSteps(snapshot: TeachingDraftSnapshot | null, calls: readonl
   if (phase === "released" && snapshot.attempts.length > 1 && snapshot.selectedAttempt) {
     const unresolved = snapshot.reason === "remaining-part-unresolved";
     steps.push({ id: "choose", state: unresolved ? "warn" : "done", title: `Showed draft ${snapshot.selectedAttempt}`,
-      ...(unresolved ? { detail: "A requested part remains unresolved. Keating kept the checked answer." } : {}) });
+      ...(unresolved ? { detail: "The reviewer flagged a possible omission. Keating kept the checked opening answer." } : {}) });
   }
   if (phase === "cancelled" && hasShownTurnReceipt(snapshot)) steps.push({
     id: "stopped", state: "done", title: `Showed draft ${snapshot.selectedAttempt} as the opening`,

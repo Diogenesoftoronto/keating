@@ -60,7 +60,7 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
     else entry.code = outcome.error.code;
     return outcome;
   };
-  const key = engines.mode === "preflight" ? DRAFT_GATE_JUDGE : { backend: "system-one" as const, model: REVIEW_MODEL, calibrationSha256: null };
+  const key = engines.reviewerKey ?? (engines.mode === "preflight" ? DRAFT_GATE_JUDGE : { backend: "system-one" as const, model: REVIEW_MODEL, calibrationSha256: null });
   const baseRuntime = createWebJudgementRuntime({ settings: { ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted" },
     hosted: { model: REVIEW_MODEL, fetch: async () => { throw new Error("unconfigured-review-transport"); } } });
   const configured = baseRuntime.teachingTiers![0]!;
