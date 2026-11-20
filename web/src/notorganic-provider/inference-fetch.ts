@@ -1,4 +1,5 @@
 import type { NotOrganicPublicClient } from "./public-client";
+import { hostedInklingBillingCode, isTinkerBillingBlock } from "./provider-billing";
 
 /** One logical inference request; each transport attempt gets a fresh DPoP proof. */
 export function createNotOrganicInferenceFetch(
@@ -25,6 +26,19 @@ export function createNotOrganicInferenceFetch(
 		for (const name of ["session_id", "x-client-request-id", "x-session-affinity", "x-session-id"]) {
 			headers.delete(name);
 		}
-		return fetcher(request, { headers });
+		const response = await fetcher(request, { headers });
+		if (response.status !== 402) return response;
+
+		// The chat SDK only reads the OpenAI error envelope. Tinker returns a
+		// top-level detail that also contains private billing-account metadata.
+		const body = await response.clone().json().catch(() => null);
+		if (typeof body?.detail !== "string" || !isTinkerBillingBlock(body.detail)) return response;
+		const responseHeaders = new Headers(response.headers);
+		for (const name of ["content-encoding", "content-length", "etag"]) responseHeaders.delete(name);
+		return Response.json({ error: {
+			code: hostedInklingBillingCode,
+			type: "provider_billing_error",
+			message: "Keating’s hosted Inkling provider account is blocked by a billing issue.",
+		} }, { status: response.status, statusText: response.statusText, headers: responseHeaders });
 	}) as typeof globalThis.fetch;
 }
