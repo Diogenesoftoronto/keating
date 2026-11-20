@@ -4,6 +4,7 @@ import {
 	createAssistantMessageEventStream,
 	type Api,
 	type AssistantMessage,
+	type AssistantMessageEventStream,
 	type Context,
 	type Model,
 	type SimpleStreamOptions,
@@ -16,11 +17,13 @@ import {
 	isNotOrganicProvider,
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_LUNA_MODEL,
 	NOTORGANIC_SOL_MODEL,
 	notOrganicPublicClient,
 } from "../notorganic-provider";
 import { createNotOrganicInferenceFetch } from "../notorganic-provider/inference-fetch";
-import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
+import { inklingFallbackModel, sameInferenceSession, withInklingFallback } from "../notorganic-provider/inkling-fallback";
+import { publicClientMaxCostMicrousd, type NotOrganicProviderSession } from "../notorganic-provider/public-client";
 import { searchNotOrganicWeb } from "../notorganic-provider/web";
 import {
 	isCodexSearchModel,
@@ -371,7 +374,7 @@ export function normalizeProviderStreamOptions(
 ): SimpleStreamOptions {
 	// The preview's native runtime currently accepts fixed greedy decoding only.
 	if (model.provider === "notorganic" && model.id === FLINT_PREVIEW_PROFILE.id) return { ...options, temperature: 0 };
-	if (model.api === "openai-responses" && model.id === NOTORGANIC_SOL_MODEL.id) {
+	if (model.api === "openai-responses" && (model.id === NOTORGANIC_SOL_MODEL.id || model.id === NOTORGANIC_LUNA_MODEL.id)) {
 		const { temperature: _temperature, samplingParams, ...solOptions } = options;
 		const supportedSampling = { ...samplingParams };
 		for (const key of ["temperature", "top_p", "top_logprobs"]) delete supportedSampling[key];
@@ -392,7 +395,12 @@ export function notOrganicInferenceRequestUrl(model: Pick<Model<Api>, "api" | "b
 	return `${model.baseUrl.replace(/\/+$/, "")}/${endpoint}`;
 }
 
-export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
+const hostedInklingModels = new Set([NOTORGANIC_DEFAULT_MODEL.id, "balanced", "inkling-small", "inkling", "fast", "reasoning"]);
+let inklingUnavailableUntil = 0;
+
+export async function hybridStreamFn(
+	model: Model<Api>, context: Context, options?: KeatingStreamOptions, requiredAccount?: NotOrganicProviderSession,
+): Promise<AssistantMessageEventStream> {
 	if (model.provider === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineStream(context, options, model);
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
 	const cleanOptions = normalizeProviderStreamOptions(model, requestOptions);
@@ -415,6 +423,7 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 
 	const apiKey = cleanOptions.apiKey ?? await getProviderApiKey(model.provider);
 	let streamOptions: SimpleStreamOptions | undefined = apiKey ? { ...cleanOptions, apiKey } : cleanOptions;
+	let recoverInkling: ((refresh: boolean) => Promise<AssistantMessageEventStream | null>) | undefined;
 	if (isNotOrganicProvider(model.provider)) {
 		const client = notOrganicPublicClient();
 		if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
@@ -424,12 +433,38 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 				(entry): entry is [string, string] => typeof entry[1] === "string",
 			),
 		);
-		const authenticated = await client.headersFor("POST", requestUrl, initialHeaders);
+		const headersFor = async (method: string, url: string, initial?: HeadersInit) => {
+			if (requiredAccount && !sameInferenceSession(requiredAccount, client.getSession())) throw new Error("The hosted account changed.");
+			const headers = await client.headersFor(method, url, initial);
+			if (requiredAccount && !sameInferenceSession(requiredAccount, client.getSession())) throw new Error("The hosted account changed.");
+			return headers;
+		};
+		const authenticated = await headersFor("POST", requestUrl, initialHeaders);
+		if (hostedInklingModels.has(model.id)) {
+			const account = client.getSession();
+			recoverInkling = async (refresh) => {
+				let current = client.getSession();
+				if (!current || !sameInferenceSession(account, current) || options?.signal?.aborted) return null;
+				let fallback = inklingFallbackModel(current.scope, context);
+				if (!fallback && refresh && current.id && current.refreshToken) {
+					current = await client.activeSession({ refresh: true });
+					if (!current || !sameInferenceSession(account, current)) return null;
+					fallback = inklingFallbackModel(current.scope, context);
+				}
+				if (!fallback || options?.signal?.aborted) return null;
+				recordDiagnostic("info", "stream", "Hosted model switched", { from_model: model.id, model: fallback.id });
+				return hybridStreamFn({ ...fallback, baseUrl: `${client.config.issuer}/v1` }, context, options, current);
+			};
+			if (Date.now() < inklingUnavailableUntil) {
+				const fallback = await recoverInkling(false).catch(() => null);
+				if (fallback) return fallback;
+			}
+		}
 		streamOptions = {
 			...streamOptions,
 			apiKey: undefined,
 			headers: Object.fromEntries(authenticated.entries()),
-			fetch: createNotOrganicInferenceFetch(client, requestUrl, {
+			fetch: createNotOrganicInferenceFetch({ headersFor }, requestUrl, {
 				fetch: streamOptions?.fetch,
 				idempotencyKey: `keating_${crypto.randomUUID()}`,
 				maxCostMicrousd: publicClientMaxCostMicrousd(),
@@ -495,7 +530,7 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 		hosted_web_search: hostedWebSearch,
 	});
 	let attempt = 0;
-	return normalizeToolCallStream(
+	const stream = normalizeToolCallStream(
 		streamWithApiRetry(model, context, mergedOptions, (nextOptions) => {
 			attempt += 1;
 			recordSessionRetryAttempt(model.provider, model.id, attempt);
@@ -503,4 +538,10 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 		}),
 		context,
 	);
+	if (!recoverInkling) return stream;
+	const recover = recoverInkling;
+	return withInklingFallback(stream, () => {
+		inklingUnavailableUntil = Date.now() + 60_000;
+		return recover(true);
+	}, options?.signal);
 }

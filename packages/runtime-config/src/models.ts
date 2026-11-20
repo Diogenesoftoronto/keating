@@ -38,7 +38,7 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, google: MODEL_IDS.gemini_decision_1, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2] as const;
+export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2, MODEL_IDS.gpt_6_luna] as const;
 /** The main tutor stays tool-capable; Ampersand Tutor is consulted separately. */
 export const TUTOR_CONSULTATION_MODEL_ID = MODEL_IDS.ampersand_tutor;
 /** Direct Inception Chat Completions. Costs are USD per million tokens. */
@@ -187,6 +187,7 @@ const TTS_MODEL_LABELS: Record<string, string> = {
 };
 const NOTORGANIC_MODEL_LABELS: Record<string, string> = {
   [MERCURY_2_PROFILE.id]: MERCURY_2_PROFILE.name,
+  [GPT_6_LUNA_PROFILE.id]: GPT_6_LUNA_PROFILE.name,
   [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.inkling_2_small]: "Inkling 2 Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
   [MODEL_IDS.flint]: FLINT_PREVIEW_PROFILE.name,
 };

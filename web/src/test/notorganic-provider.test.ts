@@ -3,6 +3,7 @@ import { mockEvent } from "h3";
 import {
 	NOTORGANIC_DEFAULT_MODEL,
 	NOTORGANIC_SOL_MODEL,
+	NOTORGANIC_LUNA_MODEL,
 	NOTORGANIC_FLINT_MODEL,
 	NOTORGANIC_MERCURY_2_MODEL,
 	getAvailableNotOrganicChatModels,
@@ -55,7 +56,7 @@ describe("Not Organic provider definition", () => {
 		expect(await models("infer:balanced", ["mercury-2"])).not.toContain("mercury-2");
 	});
 	it("makes Flint selectable only when the consented gateway advertises it", async () => {
-		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id, "balanced"];
+		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id, "balanced", NOTORGANIC_LUNA_MODEL.id];
 		let calls = 0;
 		const client = (scope: string, response: () => Response | Promise<Response>) => ({
 			getSession: () => ({ scope }), request: async (path: string) => { calls++; expect(path).toBe("/v1/models"); return response(); },
@@ -83,6 +84,13 @@ describe("Not Organic provider definition", () => {
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, { scope: "infer:gpt-6.1-sol-other" })).toBe(true);
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, null)).toBe(false);
 		expect(notOrganicModelNeedsConsent({ id: "gpt-6.1-sol", provider: "openai" }, existing)).toBe(false);
+	});
+	it("offers GPT-6 Luna as an ordinary hosted Responses model", async () => {
+		expect(await getAvailableNotOrganicChatModels(null)).toContainEqual(NOTORGANIC_LUNA_MODEL);
+		expect(NOTORGANIC_LUNA_MODEL).toMatchObject({ id: "gpt-6-luna", name: "GPT-6 Luna", provider: "notorganic",
+			api: "openai-responses", input: ["text", "image"], compat: { supportsLongCacheRetention: false } });
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_LUNA_MODEL, { scope: "infer:text" })).toBe(false);
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_LUNA_MODEL, { scope: "infer:inkling-2-small" })).toBe(true);
 	});
 	it("does not demand optional web permissions just to select an authorized model", () => {
 		for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
