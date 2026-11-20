@@ -28,7 +28,7 @@ The Flue host sent synthetic learner requests through Keating’s web draft gate
 
 The matrix used 34 provider requests with zero budget denials. Its two-draft check failed on the dense-history row because Google returned HTTP 429 to the second tutor. Keating still released the completed answer. For the four accepted controls around 32,000, subsequent draft reviews and selection kept the full history, too.
 
-The dense-history case was then rerun on its own. Across all 13 requests, Jev rejected the original state with both 39 questions and one question, accepted the smaller window, reviewed both completed drafts, and selected the answer that appeared in the learner’s conversation. Both tutor requests returned HTTP 200 and overlapped for **2,465 ms**. All nine checks passed. [Separate run, timings and answer hashes](receipts.json)
+The dense-history case was then rerun on its own. Across all 13 requests, Jev rejected the original state with both 39 questions and one question, accepted the smaller window, reviewed both completed drafts, and selected the answer that appeared in the learner’s conversation. Both tutor requests returned HTTP 200, overlapped for **2,465 ms**, and independently produced the same wording. All nine checks passed. The full-history browser test below also records a selection between two differently worded drafts. [Separate run, timings and answer hashes](receipts.json)
 
 An earlier test reservation also prevented two second drafts from being sent. The harness reported that run as failed and now checks real network overlap, both completed reviews, selection and delivery. The receipts preserve the operational 429 separately from the earlier reservation failures. [Application test](../../../web/scripts/jev-boundary-proof.ts) · [Request hashes, dispatch times and outcomes](receipts.json)
 
@@ -53,7 +53,9 @@ The accepted requests correctly read the synthetic opening and closing markers. 
 
 Railway matched the deployed BYOK success and rejection to request IDs `vaHWEYAASHyh-ur4c9o55Q` and `8PnlqVFGTa2GoIZAHn5Ytg`. It matched the signed account requests to `Iv3i00blR8SKpaztc9o55Q` and `tEBIs5UST6iy7sH9Aax-fw`. The dedicated account’s ledger recorded 731 µUSD for the success and `upstream_400` for the rejection. Its failure row had no billed amount. The ledger correlation uses the isolated account, timestamps and matching success usage. [Redacted production and local receipts](receipts.json)
 
-The signed application test connected Keating’s Flue draft gate to the browser account adapter and the patched Not Organic router in a single turn. A local test authority performed one PKCE exchange and the router verified a distinct DPoP proof on each of the 11 judgement requests. Jev rejected the dense history, then the application recovered automatically. Two live Gemini drafts overlapped for 1,027 ms, Jev compared them, and the learner received the correct answer. [Signed application receipts](receipts.json)
+The signed application test connected Keating’s Flue draft gate to the browser account adapter and the patched Not Organic router in a single turn. A local test authority performed one PKCE exchange. The router verified a distinct DPoP proof on each of the 11 judgement requests. Jev rejected the dense history, then the application recovered automatically. The first run had 1,027 ms of overlap between two live tutor requests.
+
+The final signed run also matched every state and question hash across the gateway. Seven reviewer requests returned the specific overflow and each released its reservation. Four succeeded and returned `judgement-jev/jev-1.14.0` through the signed response. Two successful tutor requests overlapped for **1,086 ms** and produced different answers. Jev selected draft 2, which contained the requested code and correct perimeter. All nine signed-path checks and all nine Flue checks passed. [Signed application receipts](receipts.json)
 
 ## The learner’s screen
 
@@ -65,8 +67,38 @@ In a second Chromium session, Keating estimated **33,627 tokens** for the first 
 
 The only failed review check in that session was `requested_part_missing`. Jev assigned it probability 0.86 even though the answer included both the code and perimeter. Keating showed the selected answer while it tried an addition. The resulting addition did not pass through review and the stored answer stayed intact. The screenshot and receipt record the outcome before any further reviewer tuning. [Per-check scores and answer hashes](receipts.json)
 
+### Testing a wording change
+
+A paired test gave Jev the same full review state and asked both the current and proposed versions of the omission question. The 72,183-character workshop state matched the browser fixture. The cutoff for flagging an omission was 0.60. [Locked comparison, request IDs and seven paired scores](receipts.json)
+
+| Answer | Current wording | Proposed wording |
+| --- | ---: | ---: |
+| Correct workshop code and perimeter | 0.94 | 0.91 |
+| Workshop code omitted | 0.94 | 0.89 |
+| Perimeter omitted | 0.69 | 0.69 |
+| Both present, value needs correction | 0.91 | 0.91 |
+| Complete price and time comparison | 0.04 | 0.06 |
+| Price omitted | 0.98 | 0.98 |
+| Time omitted | 0.93 | 0.95 |
+
+The proposed wording still flagged the complete workshop answer. Keating retains the existing review question and shows the answer that passed the release gate. These observed scores describe this synthetic set.
+
 ## The relay byte limit
 
 With an isolated upstream, the local Nitro relay accepted exactly 262,144 UTF-8 request bytes and returned HTTP 413 at 262,145. A separate web-gate test preserved an 86,000-character Chinese-language history by dividing the questions across requests. A protected current message too large to fit on its own caused zero provider dispatches. [Relay boundary test](../../../web/src/test/judgement-typesafe-relay.test.ts) · [Web draft gate tests](../../../web/src/test/draft-gate.test.ts)
 
 The gateway build, repository TypeScript check and all 707 gateway tests passed locally. The production observations describe the deployments serving traffic during the test.
+
+## Reproducing the tests
+
+The seven-case preflight runs from the Keating checkout with local model fixtures. Give each invocation a fresh output directory.
+
+```sh
+rtk bun web/scripts/jev-boundary-proof.ts --mode preflight --out /tmp/keating-jev-preflight
+```
+
+The signed-account test runs from the Not Organic repository. Its offline mode exercises the actual account client, authorization exchange, DPoP verification, gateway and Keating draft flow with deterministic model responses. Live mode uses `TYPESAFE_API_KEY` and `GEMINI_API_KEY` to send the same synthetic turn to the providers. The combined spend cap is in millionths of a US dollar.
+
+```sh
+rtk bun scripts/keating-managed-jev.ts --mode offline --keating-checkout /path/to/keating --out /tmp/notorganic-jev-preflight --max-microusd 75000
+```
