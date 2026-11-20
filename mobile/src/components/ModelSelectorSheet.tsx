@@ -331,7 +331,7 @@ function ModelRow({ model, selected, onPress }: { model: CatalogModel; selected:
     >
       <Ionicons name={selected ? "radio-button-on" : "radio-button-off"} size={20} color={selected ? colors.primaryText : colors.textFaint} />
       <View style={styles.modelCopy}>
-        <Text numberOfLines={1} style={styles.modelName}>{model.name}</Text>
+        <Text numberOfLines={2} style={styles.modelName}>{model.name}</Text>
         <Text numberOfLines={1} style={styles.modelId}>{model.providerLabel} · {model.id}</Text>
         {badges.length > 0 ? <Text numberOfLines={1} style={styles.badges}>{badges.join(" · ")}</Text> : null}
         {!model.callable ? (

@@ -3,26 +3,19 @@ import { useMediaQuery } from "../../hooks/use-media-query";
 import { KeatingGlyph } from "../../design-system/glyphs";
 import { categorize } from "../../components/session-card-visuals";
 /**
- * Chat page header: session panel toggle, brand, model button, toolbar actions
- * and the overflow menu. The overflow menu's open state lives here; everything
- * it acts on (sessions, sharing, speech, artifacts) is passed in by the page.
+ * Chat page header: session panel toggle, brand, title, model trigger, then
+ * Materials, Review, Share, the light/dark control and the More menu. The menu's
+ * open state lives here; everything it acts on (sessions, sharing, speech,
+ * artifacts) is passed in by the page. On phones the title block is the model
+ * trigger. Knowledge sources live in Settings › Connections.
  */
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { usePostHog } from "@posthog/react";
-
-import { useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { css, cx } from "../../../styled-system/css";
 import { AppLink as Link } from "../../components/AppLink";
-import { KnowledgeSourcesButton } from "../../components/settings/KnowledgeSources";
-import { NotOrganicAccountMenuItem } from "../../components/NotOrganicAccountMenuItem";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { applicationRootHref, WEBSITE_ORIGIN } from "../../lib/hosted-navigation";
-import { DOCUMENTATION_URL } from "../../lib/tutorial-links";
-import { BLOG_URL } from "../../lib/blog-links";
+import { applicationRootHref } from "../../lib/hosted-navigation";
+import { ChatActionsMenu } from "./ChatActionsMenu";
 import type { ShareState } from "./session-sharing";
-
-const GITHUB_ISSUE_URL =
-  "https://github.com/Diogenesoftoronto/keating/issues/new";
 
 const actionButtonPandaClass = css({
   display: "inline-flex",
@@ -44,22 +37,7 @@ const actionButtonPandaClass = css({
   },
 });
 
-const menuItemClass = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  borderRadius: "0.375rem",
-  paddingInline: "0.75rem",
-  paddingBlock: "0.5rem",
-  textAlign: "left",
-  fontSize: "0.875rem",
-  transitionProperty: "color, background-color, border-color",
-  transitionDuration: "150ms",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
-});
+
 
 
 export interface ChatHeaderProps {
@@ -67,6 +45,8 @@ export interface ChatHeaderProps {
   messageCount?: number;
   isPending: boolean;
   modelLabel: string;
+  /** Short extra for the model, such as the thinking level, shown after its name. */
+  modelDetail?: string;
   activeSessionId: string;
   mobileSidebarOpen: boolean;
   speechEnabled: boolean;
@@ -89,7 +69,7 @@ export interface ChatHeaderProps {
 
 export function ChatHeader({
   isPending,
-  modelLabel, sessionTitle, messageCount = 0,
+  modelLabel, modelDetail, sessionTitle, messageCount = 0,
   activeSessionId,
   mobileSidebarOpen,
   speechEnabled,
@@ -113,11 +93,16 @@ export function ChatHeader({
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close mobile menu on click outside or escape
+  const closeMenu = useCallback((restoreFocus = true) => {
+    setMobileMenuOpen(false);
+    if (restoreFocus) menuButtonRef.current?.focus();
+  }, []);
+
+  // Close the menu on click outside or Escape
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !mobileMenuRef.current?.querySelector("dialog[open]")) { setMobileMenuOpen(false); menuButtonRef.current?.focus(); }
+      if (e.key === "Escape" && !mobileMenuRef.current?.querySelector("dialog[open]")) closeMenu();
     };
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -133,10 +118,11 @@ export function ChatHeader({
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, closeMenu]);
 
   // Panda globalCss drives responsive visibility via `.chat-only-desktop` (header icons,
   // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
+  const modelText = modelDetail ? `${modelLabel} · ${modelDetail}` : modelLabel;
   const actionButtonClass = cx("chat-action-button", actionButtonPandaClass);
 
   return (
@@ -207,15 +193,24 @@ export function ChatHeader({
           })}
         />
       </Link>}
-      <div key={activeSessionId} className="ch-title">
+      {compact ? <button
+        key={activeSessionId}
+        type="button"
+        className="ch-title ch-title-model"
+        onClick={openModelSelector}
+        aria-label={`Change model. Current model: ${modelText}`}
+      >
         <strong>{sessionTitle || "New session"}</strong>
-        {compact ? <small>{modelLabel} · Socratic</small> : <small>Socratic{subject.key !== "general" && ` · ${subject.label}`} · {messageCount} {messageCount === 1 ? "message" : "messages"}</small>}
-      </div>
+        <small><StatusDot tone="ok" label="Model selected" /><span>{modelText}</span><KeatingGlyph name="chev" size={13} /></small>
+      </button> : <div key={activeSessionId} className="ch-title">
+        <strong>{sessionTitle || "New session"}</strong>
+        <small>Socratic{subject.key !== "general" && ` · ${subject.label}`} · {messageCount} {messageCount === 1 ? "message" : "messages"}</small>
+      </div>}
       {!compact && <button
         type="button"
         onClick={openModelSelector}
-        title={`Model: ${modelLabel}`}
-        aria-label={`Change model. Current model: ${modelLabel}`}
+        title={`Model: ${modelText}`}
+        aria-label={`Change model. Current model: ${modelText}`}
         className={cx(
           "chat-model-button",
           css({
@@ -251,7 +246,6 @@ export function ChatHeader({
         </span>
         <KeatingGlyph name="chev" size={15} className={css({ flexShrink: 0 })} />
       </button>}
-      {!compact && <HeaderSources />}
       {/* Actions */}
       <div
         className={cx(
@@ -282,13 +276,26 @@ export function ChatHeader({
           <KeatingGlyph name="pen" /><span className="ch-label">Review</span>
         </Link>}
         <button
+          type="button"
+          className={cx(actionButtonClass, "ch-share")}
+          aria-label={shareState === "sharing" ? "Share session, creating link" : "Share session"}
+          title="Share session"
+          data-share-state={shareState}
+          disabled={isPending || shareState === "sharing"}
+          onClick={() => void handleShare()}
+        >
+          <KeatingGlyph name="share" /><span className="ch-label">Share</span>
+        </button>
+        <ThemeToggle className="ch-theme" />
+        <button
+          type="button"
           className={actionButtonClass}
           ref={menuButtonRef}
-          title="Menu"
+          title="More"
           aria-label="More menu"
           aria-expanded={mobileMenuOpen}
-          aria-haspopup="true"
-          onClick={() => setMobileMenuOpen((o) => !o)}
+          aria-controls={mobileMenuOpen ? "chat-actions-menu" : undefined}
+          onClick={() => mobileMenuOpen ? closeMenu() : setMobileMenuOpen(true)}
         >
           <KeatingGlyph name={mobileMenuOpen ? "x" : "more"} />
         </button>
@@ -296,255 +303,21 @@ export function ChatHeader({
 
       {/* Overflow menu */}
       {mobileMenuOpen && (
-        <ChatOverflowMenu
-          compact={compact} reviewHref={reviewHref} openModelSelector={openModelSelector} modelLabel={modelLabel}
-          menuRef={mobileMenuRef}
+        <ChatActionsMenu
+          compact={compact} reviewHref={reviewHref} modelLabel={modelText}
+          menuRef={mobileMenuRef} buttonRef={menuButtonRef}
           isPending={isPending}
-          openSettings={openSettings}
           speechEnabled={speechEnabled}
           shareState={shareState}
-          onClose={() => setMobileMenuOpen(false)}
+          onClose={closeMenu}
+          openModelSelector={openModelSelector}
+          openSettings={openSettings}
           newSession={newSession}
-          handleShare={async () => { menuButtonRef.current?.focus(); await handleShare(); }}
+          handleShare={handleShare}
           toggleSpeech={toggleSpeech}
           onOpenOriginal={onOpenOriginal} onOpenNodePod={onOpenNodePod}
         />
       )}
     </nav>
-  );
-}
-
-function HeaderSources() {
-  return <div className="ch-sources" data-glyph-host>
-    <KnowledgeSourcesButton />
-    <KeatingGlyph name="book" size={15} className="ch-sources-glyph" />
-    <KeatingGlyph name="chev" size={13} className="ch-sources-caret" />
-  </div>;
-}
-
-/** Overflow menu entries. Every entry closes the menu before acting. */
-function ChatOverflowMenu({
-  compact, reviewHref, openModelSelector, modelLabel,
-  menuRef,
-  isPending,
-  openSettings,
-  speechEnabled,
-  shareState,
-  onClose,
-  newSession,
-  handleShare,
-  toggleSpeech,
-  onOpenOriginal, onOpenNodePod,
-}: {
-  compact: boolean; reviewHref: string; openModelSelector: () => void; modelLabel: string;
-  menuRef: RefObject<HTMLDivElement | null>;
-  isPending: boolean;
-  openSettings: () => void;
-  speechEnabled: boolean;
-  shareState: ShareState;
-  onClose: () => void;
-  newSession: () => void;
-  handleShare: () => Promise<void>;
-  toggleSpeech: () => void;
-  onOpenOriginal?: () => void;
-  onOpenNodePod: () => void;
-}) {
-  const posthog = usePostHog();
-  const navigate = useNavigate();
-  return (
-    <div
-      ref={menuRef}
-      role="navigation" aria-label="Chat actions"
-      className={cx(
-        "font-terminal",
-        css({
-          position: "absolute",
-          right: "0.5rem",
-          top: "100%",
-          zIndex: 50,
-          marginTop: "0.25rem",
-          width: "16rem",
-          maxHeight: "min(70dvh, 36rem)",
-          overflowY: "auto",
-          borderRadius: "0.375rem",
-          border: "1px solid var(--border)",
-          backgroundColor: "var(--background)",
-          boxShadow:
-            "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-          fontSize: "0.875rem",
-        }),
-      )}
-    >
-      <div
-        className={css({
-          display: "flex",
-          flexDirection: "column",
-          padding: "0.25rem",
-        })}
-      >
-        {compact && <>
-          <button type="button" className={menuItemClass} onClick={() => { onClose(); openModelSelector(); }}>Change model · {modelLabel}</button>
-          <HeaderSources />
-          <Link to={reviewHref} className={menuItemClass} onClick={onClose}><KeatingGlyph name="pen" size={16} />Review session</Link>
-          <Link to={applicationRootHref(globalThis.location?.hostname ?? "", import.meta.env.KEATING_WEB_BUILD_TARGET === "app")} className={menuItemClass} onClick={onClose}>Go to Keating chat</Link>
-        </>}
-        {onOpenOriginal && <button type="button" className={menuItemClass} onClick={() => { onClose(); onOpenOriginal(); }}>Open original</button>}
-        <NotOrganicAccountMenuItem className={menuItemClass} onSignIn={() => onClose()} />
-        <button
-          className={cx(menuItemClass, "")}
-          disabled={isPending}
-          onClick={() => {
-            onClose();
-            newSession();
-          }}
-        >
-
-          New session
-        </button>
-        <button
-          className={menuItemClass}
-          onClick={() => { onClose(); void handleShare(); }}
-          disabled={isPending || shareState === "sharing"}
-        >
-          <KeatingGlyph name="share" size={16} /> Share session
-        </button>
-        <button
-          className={cx(
-            menuItemClass,
-            "",
-            speechEnabled ? css({ color: "var(--primary)" }) : "",
-          )}
-          onClick={() => {
-            onClose();
-            posthog.capture("speech_toggled", {
-              enabled: !speechEnabled,
-            });
-            toggleSpeech();
-          }}
-        >
-
-          {speechEnabled ? "Disable speech" : "Enable speech"}
-        </button>
-        <ThemeToggle
-          className=""
-          variant="menu"
-          onToggled={() => onClose()}
-        />
-        <Link
-          to="/courses"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-
-          Courses
-        </Link>
-        <Link to="/labs/systems" className={menuItemClass} onClick={onClose}>
-          <KeatingGlyph name="terminal" size={16} />Systems lab
-        </Link>
-        {import.meta.env.DEV && (
-          <button
-            className={cx(menuItemClass, "")}
-            onClick={() => {
-              onClose();
-              onOpenNodePod();
-            }}
-          >
-
-            NodePod runtime
-          </button>
-        )}
-        <button
-          className={cx(menuItemClass, "")}
-          onClick={() => {
-            onClose();
-            navigate({ to: "/usage" });
-          }}
-        >
-
-          Learning usage
-        </button>
-        <Link
-          to="/bench"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Model benchmark
-        </Link>
-        <Link
-          to="/coming-up"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Coming up
-        </Link>
-        <Link
-          to="/live"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Live sessions
-        </Link>
-        <button className={menuItemClass} onClick={() => { onClose(); openSettings(); }}><KeatingGlyph name="gear" size={16}/>Settings</button>
-        <div
-          className={cx(
-            "",
-            css({
-              marginBlock: "0.25rem",
-              borderTop: "1px solid var(--border)",
-            }),
-          )}
-        />
-        <Link
-          to={`${WEBSITE_ORIGIN}/`}
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Keating website
-        </Link>
-        <a
-          href={DOCUMENTATION_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Documentation
-        </a>
-        <a
-          href={BLOG_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Blog
-        </a>
-        <Link
-          to="/paper"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          Paper
-        </Link>
-        <a
-          href="https://github.com/Diogenesoftoronto/keating"
-          target="_blank"
-          rel="noreferrer"
-          className={menuItemClass}
-          onClick={() => onClose()}
-        >
-          GitHub
-        </a>
-        <a
-          href={GITHUB_ISSUE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className={cx(menuItemClass, "")}
-          onClick={() => onClose()}
-        >
-          Report issue
-        </a>
-      </div>
-    </div>
   );
 }

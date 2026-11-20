@@ -10,19 +10,20 @@ import {
 
 test("every models destination has its own editor and the configuration aside", () => {
 	const { group } = resolveDestination("models");
-	expect(group.sections).toHaveLength(8);
-	expect(new Set(group.sections.map((s) => s.component)).size).toBe(8);
+	expect(group.sections).toHaveLength(9);
+	expect(new Set(group.sections.map((s) => s.component)).size).toBe(9);
 	expect(group.sections.every((s) => s.aside)).toBe(true);
 	for (const [alias, id] of [
 		["my-models", "providers"],
 		["custom-providers", "providers"],
-		["web-search", "sources"],
+		["knowledge-sources", "connections"],
 		["ui-reasoning", "jobs"],
 		["proxy", "build"],
 	]) {
 		expect(resolveDestination(alias).section.id).toBe(id);
 		expect(resolveDestination(alias).anchor).toBe("settings-section-" + alias);
 	}
+	expect(resolveDestination("web-search").section.id).toBe("web-search");
 });
 test("the build note describes both deployment environments without editable fields", () => {
 	const Pane = resolveDestination("proxy").section.component;

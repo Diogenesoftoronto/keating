@@ -1,5 +1,5 @@
 import { Button, Switch, SelectField, Loading } from "../../../design-system/kit";
-import { SavedHint, SettingRow, type Scope } from "../ui";
+import { SavedHint, SettingRow, activateSoleToggle, type Scope } from "../ui";
 import { requestGptLiveConsent, type GptLiveConsent } from "../../GptLiveConsentSettings";
 import { learningIntelligenceEnabled, setLearningIntelligenceEnabled, subscribeLearningIntelligence } from "../../../keating/learning-intelligence/account";
 import { turnJudgementSavingEnabled, setTurnJudgementSavingEnabled, subscribeTurnJudgementSaving } from "../../../keating/judgement/turn-ledger";
@@ -32,7 +32,7 @@ import "./data.css";
 function Destination({ id, label, help, to, scope = "this device", children }: {
 	id: string; label: string; help: string; to: string; scope?: Scope; children: ReactNode;
 }) {
-	return <tr>
+	return <tr onClick={activateSoleToggle}>
 		<td colSpan={2}>
 			<SettingRow id={id} label={label} help={help} scope={scope}>{null}</SettingRow>
 		</td>

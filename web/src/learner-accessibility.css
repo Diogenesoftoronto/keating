@@ -32,14 +32,13 @@ html[data-reduce-motion="true"] *::after {
 
 /* Text size --------------------------------------------------------------- */
 
-/* Panda sizes in rem, so scaling the root scales type and spacing together the
-   way browser zoom does. base.css pins body to 16px, so it is scaled in step. */
+/* Scale the default 130% root size by the same factor as the 16px body. */
 html[data-text-scale="large"] {
-  font-size: 115%;
+  font-size: 149.5%;
 }
 
 html[data-text-scale="larger"] {
-  font-size: 130%;
+  font-size: 169%;
 }
 
 html[data-text-scale="large"] body {

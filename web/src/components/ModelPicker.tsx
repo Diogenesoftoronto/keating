@@ -6,6 +6,8 @@ export interface PickerItem {
  id: string; name: string; group: string; summary?: string; details?: ReactNode;
  action?: ReactNode;
  pinnedLabel?: string;
+ /** Used recently; listed under its own heading after the selection while nothing is searched. */
+ recent?: boolean;
 }
 
 export function orderedPickerItems(items: PickerItem[], query: string, selected: string): PickerItem[] {
@@ -14,17 +16,22 @@ export function orderedPickerItems(items: PickerItem[], query: string, selected:
   (item.name + " " + item.group + " " + (item.summary ?? "") + " " + item.id).toLowerCase().includes(search));
  // Keep the provider default available while searching, without restoring items
  // already excluded by the caller's provider/capability filters.
- return [...items.filter(item => item.pinnedLabel), ...matches.filter(item => item.id === selected), ...matches.filter(item => item.id !== selected)];
+ const rest = matches.filter(item => item.id !== selected);
+ const recent = search ? [] : rest.filter(item => item.recent);
+ return [...items.filter(item => item.pinnedLabel), ...matches.filter(item => item.id === selected), ...recent, ...rest.filter(item => !recent.includes(item))];
 }
 
-function pickerItemHeading(item: PickerItem, selected: string): string {
- return item.pinnedLabel ?? (item.id === selected ? "Selected model" : item.group);
+function pickerItemHeading(item: PickerItem, selected: string, query = ""): string {
+ return item.pinnedLabel ?? (item.id === selected ? "Selected model" : item.recent && !query.trim() ? "Recently used" : item.group);
 }
 
-export function ModelPicker({ open, label, items, selected, onSelect, onClose, filters, notice, noticeLabel = "Models that run on this device", loading = false, error = "", errorAction }: {
+export function ModelPicker({ open, label, items, selected, onSelect, onClose, filters, controls, notice, noticeLabel = "Models that run on this device", loading = false, error = "", errorAction }: {
  open: boolean; label: string; items: PickerItem[]; selected: string;
  onSelect: (id: string) => void | Promise<void>; onClose: () => void;
- filters?: ReactNode; notice?: ReactNode; noticeLabel?: string; loading?: boolean; error?: string; errorAction?: ReactNode;
+ filters?: ReactNode;
+ /** Settings for the current choice (the chat's thinking level), shown above the list so they are not missed. */
+ controls?: ReactNode;
+ notice?: ReactNode; noticeLabel?: string; loading?: boolean; error?: string; errorAction?: ReactNode;
 }) {
  const dialog = useRef<HTMLDialogElement>(null);
  const searchRef = useRef<HTMLInputElement>(null);
@@ -73,6 +80,7 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
     </label>
     <button type="button" className="library-icon" aria-label="Close model picker" onClick={onClose}><KeatingGlyph name="x" size={18}/></button>
    </div>
+   {controls && <div className="model-picker__controls">{controls}</div>}
    {filters && <div className="model-picker__filters">{filters}</div>}
    <div className="model-picker__results" aria-label="Models" aria-busy={loading}>
     {(error || failure) && <>
@@ -82,8 +90,8 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
     {loading ? <p className="library-message" role="status">Finding available models…</p> :
      !ordered.length ? <p className="library-message">No matching models. Try another name or clear your filters.</p> :
      ordered.map((item, index) => <div key={item.id} className="model-picker__item">
-      {(index === 0 || pickerItemHeading(ordered[index - 1], selected) !== pickerItemHeading(item, selected)) &&
-       <div className="library-group">{pickerItemHeading(item, selected)}</div>}
+      {(index === 0 || pickerItemHeading(ordered[index - 1], selected, query) !== pickerItemHeading(item, selected, query)) &&
+       <div className="library-group">{pickerItemHeading(item, selected, query)}</div>}
       <button type="button" className="model-picker__option" aria-pressed={item.id === selected} aria-busy={busy === item.id}
        ref={node => { if (node) buttons.current.set(item.id, node); else buttons.current.delete(item.id); }}
        onClick={() => void choose(item.id)}

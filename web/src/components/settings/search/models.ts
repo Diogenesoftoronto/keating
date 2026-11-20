@@ -3,7 +3,8 @@ export const modelsKeywords: Record<string, string> = {
 	jobs: "your models reasoning level model roles",
 	providers: "Providers cloud providers My Models Custom Providers",
 	account: "Not Organic account chat sync avatar",
-	sources: "knowledge sources web search",
+	connections: "connect sources knowledge sources account mcp",
+	"web-search": "web search grounding",
 	checking: "judgement Julia calibration",
 	offline:
 		"offline tutor model download pause resume remove MiniCPM Gemma Bonsai local storage capability",
@@ -103,7 +104,7 @@ export const modelEntries = [
 		"avatar",
 	),
 	row(
-		"sources",
+		"connections",
 		"settings-section-knowledge-sources",
 		"Knowledge sources",
 		"Choose shared sources, tools and resources.",
@@ -111,7 +112,7 @@ export const modelEntries = [
 		"your account",
 	),
 	row(
-		"sources",
+		"connections",
 		"source-permissions",
 		"Source tools and resources",
 		"Choose individual tools and read permitted resources.",
@@ -141,7 +142,7 @@ export const modelEntries = [
 		"save remove key Jev custom model",
 	),
 	row(
-		"sources",
+		"web-search",
 		"settings-section-web-search",
 		"Automatic web search",
 		"Use native search or a configured search provider.",

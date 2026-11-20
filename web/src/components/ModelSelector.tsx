@@ -16,7 +16,9 @@ import {
 import type { ImageGeneratorOption } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
 import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../keating/model-prefs";
-import { addRecentModel } from "../keating/ui-settings";
+import { addRecentModel, getRecentModels } from "../keating/ui-settings";
+import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
+import { ThinkingLevelControl } from "./ThinkingLevelControl";
 import { promptKeatingApiKey } from "./KeatingApiKeyPromptDialog";
 import { ModelPicker } from "./ModelPicker";
 import { getModelCatalogStatus, refreshCloudModelCatalog } from "../lib/models-dev-catalog";
@@ -36,8 +38,15 @@ export interface ModelSelectorDialogProps {
  onSelect: (model: Model<Api>) => void;
  title?: string; description?: string; actionLabel?: string;
  excludeKeys?: readonly string[]; preloadBrowserModel?: boolean;
+ /** When given, the picker also shows and sets the chat's thinking level for the current model. */
+ thinkingLevel?: ThinkingLevel; onThinkingLevelChange?: (level: ThinkingLevel) => void; thinkingDisabled?: boolean;
 }
-export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, excludeKeys, preloadBrowserModel = true }: ModelSelectorDialogProps) {
+/** Recent models shown under their own heading: the last few, newest first in the stored list. */
+const RECENT_MODEL_LIMIT = 4;
+function compactTokens(tokens: number): string {
+ return tokens >= 1_000_000 ? `${Math.round(tokens / 100_000) / 10}M` : tokens >= 1000 ? `${Math.round(tokens / 1000)}K` : String(tokens);
+}
+export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, excludeKeys, preloadBrowserModel = true, thinkingLevel, onThinkingLevelChange, thinkingDisabled }: ModelSelectorDialogProps) {
  const [models, setModels] = useState<SelectableModel[]>([]);
  const [providerAvailability, setProviderAvailability] = useState<ModelProviderAvailability[]>([]);
  const [loading, setLoading] = useState(false);
@@ -50,6 +59,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
  const [capability, setCapability] = useState("");
  const [notice, setNotice] = useState("");
  const [local, setLocal] = useState(localModel.getState());
+ const [level, setLevel] = useState<ThinkingLevel | undefined>(thinkingLevel);
+ useEffect(() => { setLevel(thinkingLevel); }, [thinkingLevel, open]);
+ const recentKeys = useMemo(() => open ? new Set(getRecentModels().slice(0, RECENT_MODEL_LIMIT).map(entry => entry.key)) : new Set<string>(), [open]);
  useEffect(() => localModel.subscribe(setLocal), []);
  useEffect(() => { setSelected(currentModel ? modelKey(currentModel) : ""); }, [currentModel]);
  const loadModels = useCallback(async () => {
@@ -130,7 +142,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
  .map(({ key, model }) => ({
   id: key, name: model.name, group: displayModelProvider(model.provider),
   pinnedLabel: key === modelKey(NOTORGANIC_DEFAULT_MODEL) ? "Provider default" : undefined,
-  summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : ""].filter(Boolean).join(" · "),
+  recent: recentKeys.has(key),
+  summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : "",
+   model.provider !== "browser" && model.contextWindow ? `${compactTokens(model.contextWindow)} context` : ""].filter(Boolean).join(" · "),
   details: <div><p>Model ID: {model.id}</p>
    {model.provider === "browser" ? <p>{getBrowserModel(model.id)?.blurb} Downloads when selected.</p> : <p>Context: {model.contextWindow.toLocaleString()} tokens</p>}
    {model.provider === "browser" && local.modelId === model.id && local.loading &&
@@ -142,7 +156,10 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
    <button type="button" onClick={openProviderSettings}>Open settings</button>
   </span> : undefined,
  }));
+ const thinkingControl = onThinkingLevelChange && level ? <ThinkingLevelControl model={currentModel} level={level} disabled={thinkingDisabled}
+  onChange={next => { setLevel(next); onThinkingLevelChange(next); }}/> : undefined;
  return <ModelPicker open={open && !authenticating} label="Find a model" items={items} selected={selected} onClose={onClose} loading={loading} error={error}
+  controls={thinkingControl}
   errorAction={recoveryProvider ? <div>
    <button type="button" onClick={() => void requestProviderAccess(recoveryProvider)}>Add key or sign in for {displayModelProvider(recoveryProvider)}</button>{" "}
    <button type="button" onClick={openProviderSettings}>Open provider settings</button>

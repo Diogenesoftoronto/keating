@@ -193,6 +193,47 @@ test.each(["unavailable", "partial"] as const)("pair issues identify the affecte
   expect(result.value).toBe(1);
 });
 
+test.each([
+  { state: "awaiting", standalone: .99, reviewsContext: true, releases: true },
+  { state: "awaiting", standalone: .01, reviewsContext: true, releases: false },
+  { state: "pending-grade", standalone: .99, reviewsContext: false, releases: false },
+] as const)("scopes open checkpoint review against the current request (%j)", async fixture => {
+  let reviewedContext = false;
+  const result = await runTeachingDrafts({
+    turn: {
+      ...turn,
+      learnerMessage: "What is the symbol for copper?",
+      conversation: [{ role: "assistant", content: "Predict which of these cards shows a verb." }],
+      activeWork: {
+        plan: null, focus: null, truncated: false,
+        openInteractions: [{
+          documentId: "earlier-question", nodeId: "card-question", component: "question",
+          presentedAt: 1, itemId: null, state: fixture.state,
+        }],
+      },
+    },
+    maxAttempts: 1,
+    generate: async () => ({ value: 1, reply: { text: "The symbol for copper is Cu.", toolCalls: [] } }),
+    ruleIds: ["checkpoint_answer_leaked", "checkpoint_continued", "checkpoint_not_interactive",
+      "direct_answer_missing", "assessed_work_completed"],
+    judge: async request => {
+      if (request.questions.learning_task) {
+        return answers(request, { learning_task: .99, direct_answer_requested: .99, plain_reply_requested: .99 });
+      }
+      reviewedContext ||= Boolean(request.questions.standalone_direct_request);
+      return answers(request, {
+        checkpoint_answer_leaked: .89,
+        standalone_direct_request: fixture.standalone,
+        direct_answer_supported: .99,
+      });
+    },
+  });
+  expect(reviewedContext).toBe(fixture.reviewsContext);
+  expect(result.status).toBe(fixture.releases ? "released" : "withheld");
+  expect(result.receipt.attempts[0]?.checks.find(check => check.id === "checkpoint_answer_leaked")?.applicability)
+    .toBe(fixture.releases ? "standalone-direct-answer" : undefined);
+});
+
 test("uses the planning provider's returned identity, honors caller caps, and preserves research collection", async () => {
   for (const config of [
     { backend: gemini, configured: jev, cap: undefined, count: 1, paired: false, collectAll: false },

@@ -15,18 +15,22 @@ type Scope = "ordinary" | "protected" | "unresolved" | "standalone" | "review-co
 export function checkpointReviewScope(turn: TeachingPolicyTurn, plan: TeachingPolicyPlan, reply: TeachingPolicyReply): Scope {
   const { decisions, features, interaction } = plan;
   const work = turn.activeWork;
+  const hasOpenCheckpoint = work?.openInteractions.some(item => item.state !== "graded");
   if (turn.assessment === "practice" || turn.assessment === "assessed" || turn.pendingSubmissions?.length
-    || work?.focus?.evidence.pendingGrade || work?.openInteractions.some(item => item.state !== "graded")
+    || work?.focus?.evidence.pendingGrade || work?.openInteractions.some(item => item.state === "pending-grade")
     || turn.learnerEvidence.some(item => item.kind.startsWith("pending-"))
     || decisions.practice_requested === true || features.learner_response_due === true
     || interaction.action === "grade-first" || interaction.action === "continue") return "protected";
-  if (decisions.direct_answer_requested !== true || decisions.plain_reply_requested !== true) return "ordinary";
+  if (decisions.direct_answer_requested !== true || decisions.plain_reply_requested !== true) {
+    return hasOpenCheckpoint ? "protected" : "ordinary";
+  }
   if (plan.status !== "guided" || interaction.action !== "none" || decisions.practice_requested !== false
     || features.learner_response_due !== false || work?.truncated) return "unresolved";
   // A candidate that creates or asks something can itself introduce a checkpoint, even in a fresh chat.
   if (reply.toolCalls.length || !reply.text.trim() || /[`~]{3}|[?？]/u.test(reply.text)) return "protected";
   // A positive, explicit direct-answer plan and a self-contained wh-question on an empty teaching turn give a
-  // narrow fast path. References to an exercise, earlier exchange or outside assignment need semantic review.
+  // narrow fast path. A still-open question in the history needs semantic
+  // review to establish that this answer is unrelated and does not disclose it.
   const priorContext = turn.conversation.length || turn.learnerEvidence.length || turn.sources.length || turn.toolResults.length
     || work?.plan || work?.focus || work?.openInteractions.length;
   const standaloneQuestion = /\b(?:what|who|when|where|which|how)\b[^?？]+[?？]/iu.test(turn.learnerMessage);

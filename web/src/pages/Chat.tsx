@@ -7,6 +7,7 @@ import { useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { ChatHeader } from "./chat/ChatHeader";
+import { thinkingLevelSummary } from "../components/thinking-level";
 import { useSessionSharing } from "./chat/useSessionSharing";
 import { useChatActivationTracking } from "./chat/useChatActivationTracking";
 import {
@@ -944,6 +945,8 @@ function ChatContent() {
     isPending,
     openSettings,
     modelLabel,
+    activeModel,
+    activeThinkingLevel,
     openModelSelector,
     chooseKeatingModel,
     openSession,
@@ -1047,6 +1050,7 @@ function ChatContent() {
       {!showOnboarding && <ChatHeader
         isPending={isPending}
         modelLabel={modelLabel}
+        modelDetail={thinkingLevelSummary(activeModel, activeThinkingLevel)}
         activeSessionId={activeSessionId}
         sessionTitle={meta?.title} messageCount={meta?.messageCount}
         mobileSidebarOpen={isWideViewport ? !sessionSidebarCollapsed : mobileSidebarOpen}

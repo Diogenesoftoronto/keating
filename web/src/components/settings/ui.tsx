@@ -56,6 +56,7 @@ export function SettingRow({
 			tabIndex={-1}
 			role="group"
 			aria-labelledby={id + "-label"}
+			onClick={activateSoleToggle}
 		>
 			<div>
 				<strong id={id + "-label"}>{label}</strong> <ScopeTag scope={scope} />
@@ -65,6 +66,25 @@ export function SettingRow({
 			{why && <small className="st-why">{why}</small>}
 		</div>
 	);
+}
+const INTERACTIVE =
+	'a[href],button,input,select,textarea,summary,[role="switch"],[role="checkbox"],[tabindex]:not([tabindex="-1"])';
+/**
+ * A click on the label or help text of a row whose only control is a switch
+ * or checkbox flips that control, as a native label would. Rows that hold
+ * any other action keep clicks on text inert.
+ */
+export function activateSoleToggle(event: { target: EventTarget | null; currentTarget: HTMLElement }) {
+	const target = event.target as Element | null;
+	if (!target || target.closest(INTERACTIVE + ",label")) return;
+	if (window.getSelection?.()?.toString()) return;
+	const controls = event.currentTarget.querySelectorAll<HTMLElement>(INTERACTIVE);
+	if (controls.length !== 1) return;
+	const control = controls[0] as HTMLButtonElement | HTMLInputElement;
+	const toggle =
+		control.getAttribute("role") === "switch" ||
+		(control instanceof HTMLInputElement && control.type === "checkbox");
+	if (toggle && !control.disabled) control.click();
 }
 export function StatusLine({
 	tone,

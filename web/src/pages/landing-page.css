@@ -540,59 +540,25 @@
   line-height: 1.5;
   color: var(--ink-soft);
 }
-.lp-watch-header,
-.lp-watch-controls {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
 .lp-watch-header {
+  display: flex;
+  align-items: end;
   justify-content: space-between;
   flex-wrap: wrap;
-  align-items: end;
+  gap: .5rem;
 }
-.lp-watch-position {
-  color: var(--ink-soft);
-  font: .55rem/1.4 var(--mono-body);
-  font-variant-numeric: tabular-nums;
-}
-.lp-watch-controls .k-icon {
-  inline-size: max(44px, 1.7rem);
-  block-size: max(44px, 1.7rem);
-}
-.lp-watch-controls .k-icon[aria-disabled="true"] {
-  opacity: .45;
-  cursor: default;
-}
+/* All walkthroughs sit beside the first: two up on wide screens, stacked tight on phones. */
 .lp-clips {
-  --clip-width: 84%;
-  --clip-gap: .77rem;
-  position: relative;
-  display: flex;
-  gap: var(--clip-gap);
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scroll-snap-type: inline mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  margin-top: 1.1538rem;
-  padding-block-end: .5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem .9rem;
+  margin: 1.1538rem 0 0;
+  padding: 0;
+  list-style: none;
 }
-.lp-clips:focus-visible {
-  outline: 2px solid var(--green-deep);
-  outline-offset: .2rem;
-}
-.lp-clips:has(.lp-clip:nth-child(2))::after {
-  content: "";
-  flex: 0 0 calc(100% - var(--clip-width) - var(--clip-gap));
-}
+.lp-clips[data-count="1"] { grid-template-columns: minmax(0, 1fr); }
 .lp-clip {
-  flex: 0 0 var(--clip-width);
   min-width: 0;
-  scroll-snap-align: start;
-}
-.lp-clip:only-child {
-  flex-basis: 100%;
 }
 .lp-clip-caption {
   display: flex;
@@ -704,17 +670,16 @@
   .lp-pair:nth-of-type(even) > .lp-say { order: 0; }
   .lp-tiles > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .lp-chat .lp-th,.lp-chat .lp-dock { padding-inline: .65rem; }
-  .lp-clips { --clip-width: 91%; --clip-gap: .5rem; margin-top: .8rem; }
+  .lp-clips { grid-template-columns: minmax(0, 1fr); gap: .45rem; margin-top: .8rem; }
+  .lp-clip-caption { padding-block: .4rem .1rem; }
 }
 @media (pointer: coarse) {
   .lp :is(button,summary,.k-button,.lp-cta a,.lp-pair a,.lp-clip a) { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .lp-play * { animation: none; transition: none; }
-  .lp-clips { scroll-behavior: auto; }
 }
 html:is([data-reduce-motion=true],[data-fx=off]) .lp-play * { animation: none; transition: none; }
-html:is([data-reduce-motion=true],[data-fx=off]) .lp-clips { scroll-behavior: auto; }
 @media (forced-colors: active) {
   .lp-chart .lp-bar { border: 2px solid CanvasText; }
   .lp-beats button[aria-pressed=true] { outline: 2px solid Highlight; }
@@ -741,4 +706,66 @@ html:is([data-reduce-motion=true],[data-fx=off]) .lp-clips { scroll-behavior: au
 .landing-page.retro-layout .nav-mobile-toggle {
   min-height: 44px !important; padding: 0 12px !important; border: 1px solid var(--line) !important; border-radius: 4px; box-shadow: none;
   font: 500 12px/1 var(--mono-body) !important; letter-spacing: 0;
+}
+
+/* Desktop reads like the original design at 150% browser zoom. CSS zoom lays the subtree out the same way
+   browser zoom does; it steps down before the layout would cross the 800px single-column breakpoint, and
+   phones keep their own layout. */
+@media (min-width: 1000px) { .retro-layout.landing-page { zoom: 1.25; } }
+@media (min-width: 1200px) { .retro-layout.landing-page { zoom: 1.5; } }
+@media (min-width: 1000px) {
+  /* Popovers are portalled outside the zoomed subtree; size them with it so they match their trigger. */
+  html:has(.landing-page) .keating-select-menu { font-size: 1.25em; }
+}
+
+/* Dark theme: the secondary greens sat too close to the green-black paper. Pull them toward the neutral ink. */
+html.dark .landing-page {
+  --ink-soft: #c4d6c9;
+  --k-ink-faint: #a8bfaf;
+  --muted-foreground: #b6cbbc;
+}
+html.dark .landing-page .lp h2 em { color: #7cf0aa; }
+
+/* The landing's own Menu trigger: centre the label on both axes. */
+.landing-page.retro-layout .nav-mobile-toggle { align-items: center !important; justify-content: center !important; }
+
+/* Phones: every non-title text on this surface is two steps (2px) larger than the desktop scale. Titles
+   (h1-h4, tile names, the practice question) and the decorative hero demo keep their sizes. */
+@media (max-width: 600px) {
+  .lp { font-size: calc(.625rem + 2px); }
+  .lp .lead { font-size: calc(.793rem + 2px); }
+  .lp .lp-cta .k-button, .lp .lp-close .k-button { font-size: calc(.6rem + 2px); }
+  .lp .lp-beats button { font-size: calc(.481rem + 2px); }
+  .lp .lp-play-toggle, .lp-intro .landing-intro__scroll { font-size: calc(.5rem + 2px); }
+  .lp-proof .lp-chart strong, .lp .lp-chart .lp-row > span { font-size: calc(.625rem + 2px); }
+  .lp .lp-chart .lp-row > span small { font-size: calc(.457rem + 2px); }
+  .lp .lp-chart .lp-val:not(.lp-value-nil) { font-size: calc(.769rem + 2px); }
+  .lp .lp-chart p, .lp .lp-chart .lp-value-nil, .lp-chart .lp-ft, .lp-chart .lp-ft a { font-size: calc(.6rem + 2px); }
+  .lp-intro .k-button, .lp-intro .k-button span { font-size: calc(.553rem + 2px); }
+  .lp .lp-chat .k-chip { font-size: calc(.505rem + 2px); }
+  .lp-chat .lp-me, .lp-composer > span { font-size: calc(.625rem + 2px); }
+  .lp .lp-th > .k-prose { font-size: calc(.72rem + 2px); }
+  .lp .landing-practice { font-size: 15px; }
+  .lp .landing-practice__code, .lp .landing-practice__stimulus { font-size: 14px; }
+  .lp .landing-practice__hint, .lp .landing-practice__hint p, .lp .landing-practice__hint summary { font-size: 14px; }
+  .lp .landing-practice .activity-progress-count, .lp .landing-practice small { font-size: 12.4px; }
+  .lp .landing-practice [data-matching-bank-label] { font-size: 13px; }
+  .lp .landing-practice [data-matching-bank] button { font-size: 15px; }
+  .lp .landing-practice [data-matching-bank] button span:first-child { font-size: 12px; }
+  .lp .landing-practice [data-matching-row] > div { font-size: 15px; }
+  .lp .landing-practice [data-matching-row] > div:first-child { font-size: 13px; }
+  body .lp .landing-practice button.keating-select.keating-select { font-size: 14px; }
+  .lp .landing-practice .activity-game .activity-main-action, .lp .landing-practice__feedback p { font-size: 15px; }
+  .lp .landing-practice__reset, .lp .landing-practice__feedback summary, .lp .landing-practice .activity-review > summary,
+  .lp .landing-practice .activity-completion p { font-size: 14px; }
+  .lp-pair .lp-say p { font-size: calc(.649rem + 2px); }
+  .lp .lp-vig .k-dlist dt { font-size: calc(.481rem + 2px); }
+  .lp .lp-vig .k-dlist dd { font-size: calc(.577rem + 2px); }
+  .lp .lp-vig button, .lp .lp-vig .k-button { font-size: calc(.53rem + 2px); }
+  .lp .lp-vig .k-prose, .lp .lp-recall .k-prose { font-size: calc(.769rem + 2px); }
+  .lp .lp-path b { font-size: calc(.601rem + 2px); }
+  .lp .lp-path small { font-size: calc(.553rem + 2px); }
+  .lp .lp-vig :is(summary, legend, a) { font-size: calc(.625rem + 2px); }
+  .lp .lp-tiles p { font-size: calc(.625rem + 2px); }
+  .lp .lp-watch .landing-video__time, .lp .lp-watch .landing-video__captions { font-size: calc(.52rem + 2px); }
 }

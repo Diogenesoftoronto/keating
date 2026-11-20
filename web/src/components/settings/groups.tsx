@@ -17,7 +17,7 @@ import {
 } from "./interface/InterfaceSections";
 import { StartTab } from "./StartTab";
 import { LearningTab, TeachingSection, VoiceSection, RecallSection } from "./LearningTab";
-import { ModelsAside, SourcesAndSearch, useModelsAttention } from "./ModelsProvidersTab";
+import { Connections, ModelsAside, WebSearch, useModelsAttention } from "./ModelsProvidersTab";
 import { ProvidersModelsTab } from "../ProvidersModelsTab";
 import { ModelRolesPanel } from "./ModelRolesPanel";
 import { OfflineTutorSettings } from "../OfflineTutorSettings";
@@ -145,7 +145,8 @@ export const groups: Group[] = [
 			section("jobs", "Models for each job", ModelRolesPanel, ["model-roles", "your-models", "ui-reasoning"]),
 			section("providers", "Providers and keys", ProvidersModelsTab, ["cloud-providers", "my-models", "custom-providers"], {useStatus:useModelsAttention}),
 			section("account", "Your account", Account),
-			section("sources", "Sources and web search", SourcesAndSearch, ["knowledge-sources", "web-search"]),
+			section("connections", "Connections", Connections, ["sources", "knowledge-sources", "source-permissions", "connect-sources"]),
+			section("web-search", "Web search", WebSearch, []),
 			section("checking", "Checking replies", JudgementSettings, ["judgement"]),
 			section("offline", "Offline tutor", OfflineTutorSettings, ["offline-tutor"], {anchor:"offline-tutor",available:()=>!!desktopOfflineBridge()}),
 			section("images", "Images", ImageSettings, ["ui-images"]),

@@ -1,0 +1,119 @@
+/* Chat header actions (Share, theme, More) and the More menu.
+   Mockup pixels are app pixels: 1px = 0.04808rem (root font 20.8px).
+   Phones get 44px targets and 16px row text; the glyphs stay small inside. */
+
+/* ── Header: Share and the theme control ─────────────────────────────── */
+.chat-page-shell .chat-header .ch-share {gap:.1923rem}
+.chat-page-shell .chat-header .ch-share:disabled {opacity:.5}
+.chat-page-shell .chat-header .ch-share[data-share-state=ready] {color:var(--ink)}
+.chat-page-shell .chat-header .chat-actions .ch-theme {color:var(--ink-soft)}
+.chat-page-shell .chat-header .chat-actions .ch-theme:hover {color:var(--ink)}
+.chat-page-shell .chat-header .chat-actions > button[aria-expanded=true] {color:var(--ink);background:var(--k-wash)}
+
+/* ── The menu ────────────────────────────────────────────────────────── */
+.chat-header .ch-menu {
+  right:.3846rem; top:calc(100% + .1923rem); z-index:70;
+  width:min(13.4615rem, calc(100vw - .7692rem)); max-height:min(76dvh, 30rem);
+  overflow-y:auto; overscroll-behavior:contain; padding:.1923rem; gap:0;
+}
+.chat-header .ch-menu hr {margin:.1923rem .2885rem}
+.ch-menu-group {display:flex;flex-direction:column}
+.ch-menu-heading {padding:.2885rem .4808rem .0962rem;font:500 .5288rem/1.4 var(--mono-body);color:var(--k-ink-faint, var(--muted-foreground))}
+.chat-header .ch-menu .ch-menu-item {
+  min-height:1.5385rem; padding:.2885rem .4808rem; gap:.4808rem; border-radius:.1442rem;
+  font:500 .625rem/1.35 var(--font-ui); color:var(--ink); text-decoration:none;
+}
+.chat-header .ch-menu .ch-menu-item > svg[data-glyph] {flex:none;color:var(--ink-soft)}
+.chat-header .ch-menu .ch-menu-item:is(:hover,:focus-visible) > svg[data-glyph] {color:var(--ink)}
+.chat-header .ch-menu .ch-menu-item:focus-visible {outline:2px solid var(--ring, var(--ink));outline-offset:-2px}
+.chat-header .ch-menu .ch-menu-item:disabled {opacity:.5;cursor:not-allowed;background:transparent}
+.ch-menu-text {flex:1;min-width:0;overflow-wrap:anywhere}
+.ch-menu-text small {display:block;margin-top:.0481rem;font:400 .5288rem/1.35 var(--mono-body);color:var(--k-ink-faint, var(--muted-foreground))}
+.chat-header .ch-menu .ch-menu-ext {flex:none;color:var(--k-ink-faint, var(--muted-foreground))}
+/* Sharing leads the list: the one entry with a soft fill. */
+.chat-header .ch-menu .ch-menu-share {background:var(--k-wash)}
+.chat-header .ch-menu .ch-menu-share > svg[data-glyph] {color:var(--k-green, var(--primary))}
+/* Speech is a toggle: its state shows in the line under the label. */
+.chat-header .ch-menu .ch-menu-item[aria-pressed=true] small {color:var(--k-green, var(--primary))}
+
+/* ── Phones and touch: 44px targets, readable rows ───────────────────── */
+@media (pointer:coarse) and (min-width:781px) {
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-model-button,.chat-actions > :is(button,a)) {min-width:44px;min-height:44px}
+  html body .chat-header .ch-menu .ch-menu-item {min-height:44px}
+}
+@media (max-width:780px) {
+  html body .chat-page-shell .chat-header .chat-actions {gap:6px}
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button,.chat-actions > button.chat-action-button:not(:has(.ch-label)),.chat-actions > button.chat-action-button:has(.ch-label)) {width:44px;min-width:44px;height:44px;min-height:44px;padding:0}
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button) > svg[data-glyph] {width:18px;height:18px}
+  html body .chat-header .ch-menu .ch-menu-item {min-height:44px}
+}
+@media (max-width:780px) {
+  /* Full-width list under the header, so labels never need to clip. */
+  .chat-header .ch-menu {left:.3846rem;right:.3846rem;width:auto;max-height:calc(100dvh - 4.5rem);padding:4px}
+  .chat-header .ch-menu .ch-menu-item {min-height:48px;padding:6px 12px;gap:12px;font-size:.7692rem;line-height:1.3}
+  .chat-header .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
+  .ch-menu-text small {font-size:.625rem;margin-top:2px}
+  .ch-menu-heading {padding:10px 12px 4px;font-size:.5769rem}
+  .chat-header .ch-menu hr {margin:4px 12px}
+}
+/* Narrow phones: Share stays first in More, so the title and model get the room. */
+@media (max-width:419px) {
+  html body .chat-page-shell .chat-header .chat-actions .ch-share {display:none}
+  html body .chat-page-shell .chat-header .chat-actions::before {display:none}
+}
+
+/* ── Phones: the title block is the model trigger ────────────────────── */
+.chat-page-shell .chat-header .ch-title-model {
+  display:block; min-height:44px; padding:2px 6px; margin-inline:-2px 0; border:0; border-radius:.1923rem;
+  background:transparent; color:inherit; text-align:start; cursor:pointer;
+}
+.chat-page-shell .chat-header .ch-title-model:hover {background:var(--k-wash)}
+.chat-page-shell .chat-header .ch-title-model:focus-visible {outline:2px solid var(--ring, var(--ink));outline-offset:-2px}
+.chat-page-shell .chat-header .ch-title-model strong {font-size:.7212rem}
+.chat-page-shell .chat-header .ch-title-model small {display:flex;align-items:center;gap:4px;margin-top:1px;font:500 .625rem/1.3 var(--mono-body);color:var(--ink-soft)}
+.chat-page-shell .chat-header .ch-title-model small > span {min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chat-page-shell .chat-header .ch-title-model small > :is(.k-dot, svg) {flex:none}
+.chat-page-shell .chat-header .ch-title-model small .k-dot {border-radius:1px}
+
+/* ── Desktop scale: the old view at 150% zoom (owner, 2026-11-19) ────────
+   Header 64px, 40px controls, 15–16px labels; menu rows 44px with 16px text.
+   `html body` lifts these above the board-C1 header rules in chat-surface.css. */
+@media (min-width:781px) {
+  html body .chat-page-shell .chat-header {height:3.0769rem;min-height:3.0769rem;padding:0 .7692rem;gap:.5769rem}
+  html body .chat-page-shell .chat-header .ch-title strong {font-size:.8654rem;line-height:1.25}
+  html body .chat-page-shell .chat-header .ch-title small {font-size:.6731rem;line-height:1.4}
+  html body .chat-page-shell .chat-header .chat-brand img {height:1.7308rem}
+  html body .chat-page-shell .chat-header .chat-model-button {height:1.9231rem;max-width:15rem;padding:0 .5769rem;gap:.3846rem;font-size:.7212rem}
+  html body .chat-page-shell .chat-header .chat-actions {gap:.2885rem}
+  html body .chat-page-shell .chat-header .chat-actions::before {height:1.1538rem;margin-inline:.2885rem .1923rem}
+  html body .chat-page-shell .chat-header :is(.ch-review,[data-material-count],.ch-share,.chat-actions > button.chat-action-button:has(.ch-label)) {height:1.9231rem;padding:0 .4808rem;gap:.2885rem;font-size:.7212rem}
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))) {width:1.9231rem;height:1.9231rem}
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > :is(button,a)) > svg[data-glyph] {width:18px;height:18px}
+
+  html body .chat-header .ch-menu {width:min(17.3077rem, calc(100vw - .7692rem));max-height:min(80dvh, 40rem);padding:.1923rem}
+  html body .chat-header .ch-menu .ch-menu-item {min-height:2.1154rem;padding:.3846rem .5769rem;gap:.5769rem;font-size:.7692rem;line-height:1.3}
+  html body .chat-header .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
+  html body .chat-header .ch-menu .ch-menu-text small {font-size:.625rem;margin-top:.0962rem}
+  html body .chat-header .ch-menu .ch-menu-heading {padding:.4808rem .5769rem .1923rem;font-size:.625rem}
+  html body .chat-header .ch-menu hr {margin:.2885rem .5769rem}
+}
+/* Laptop widths: the action labels fold into their icons (names stay in aria-label and title). */
+@media (min-width:781px) and (max-width:1199px) {
+  html body .chat-page-shell .chat-header .chat-actions .ch-label {display:none}
+  html body .chat-page-shell .chat-header :is(.ch-review,[data-material-count],.ch-share,.chat-actions > button.chat-action-button:has(.ch-label)) {width:1.9231rem;padding:0}
+  html body .chat-page-shell .chat-header .chat-model-button {max-width:11rem}
+}
+
+/* ── Share sheet on phones and touch (opened from Share or More › Share session) ──
+   Scoped to `.h1-share`; the sheet itself lives in components/export/ShareSheet.tsx. */
+@media (max-width:780px), (pointer:coarse) {
+  html body .h1-share > header button {min-width:44px;min-height:44px}
+  html body .h1-share summary {padding-block:12px;line-height:20px}
+  html body .h1-share .h1-consent {min-height:44px;gap:12px;font-size:.7212rem;line-height:1.35}
+  html body .h1-share .h1-consent input {flex:none;width:22px;height:22px;margin:0}
+  html body .h1-share .rv-export-actions {gap:8px}
+  html body .h1-share .rv-export-actions > .k-button {min-height:44px;padding-inline:16px;font-size:.6731rem}
+}
+@media (max-width:379px) {
+  html body .h1-share .rv-export-actions > .k-button {flex:1 1 100%;margin-inline-start:0}
+}

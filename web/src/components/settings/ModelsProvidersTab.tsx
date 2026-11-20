@@ -16,15 +16,31 @@ import { useCheckingChoice } from "./ModelRolesPanel";
 import { KnowledgeSources } from "./KnowledgeSources";
 import { WebSearchSection } from "./WebSearchSection";
 
-export function SourcesAndSearch() {
+/** Settings › Connections: the Connect sources experience (account, sources, tool permissions). */
+export function Connections() {
+	return (
+		<div className="s2-pane" id="settings-section-knowledge-sources">
+			<KnowledgeSources />
+		</div>
+	);
+}
+
+export function WebSearch() {
 	const [settings, patch] = useKeatingUiSettings();
 	return (
 		<div className="s2-pane">
-			<div id="settings-section-knowledge-sources">
-				<KnowledgeSources />
-			</div>
 			<WebSearchSection settings={settings} onPatch={patch} />
 		</div>
+	);
+}
+
+/** Older mount: both panes together. Kept for stories and any external caller. */
+export function SourcesAndSearch() {
+	return (
+		<>
+			<Connections />
+			<WebSearch />
+		</>
 	);
 }
 
