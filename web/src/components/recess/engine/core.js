@@ -194,7 +194,7 @@ export const Recess = (function () {
     // the run, from the pack: no model call happens while the game is waiting.
     function secondWind() {
       if (usedWind || !o.revive || G.quit) return false;
-      const src = G.pack.revive || G.pack.myths.slice(1).map((m, i, all) => ({ q: "Which one is true?", a: [m.right, m.wrong, (all[(i + 1) % all.length] || G.pack.myths[0]).wrong] }));
+      const src = G.pack.revive?.length ? G.pack.revive : G.pack.myths.slice(1).map((m, i, all) => ({ q: "Which one is true?", a: [m.right, m.wrong, (all[(i + 1) % all.length] || G.pack.myths[0]).wrong] }));
       const pick = src[(Math.random() * src.length) | 0]; if (!pick) return false;
       usedWind = true; G.state = "down"; inp.keys = {}; inp.held = false;
       const order = [0, 1, 2].sort(() => Math.random() - 0.5), answers = order.map((j) => ({ t: pick.a[j], ok: j === 0 }));
@@ -217,7 +217,8 @@ export const Recess = (function () {
 
     // ── gates: three answers to a question from the lesson ──
     G.startGates = function (i) {
-      const q = G.pack.gates[i % G.pack.gates.length], order = [0, 1, 2].sort(() => Math.random() - 0.5);
+      const q = G.pack.gates?.[i]; if (!q) return; // a short chat may have fewer questions: skip, never repeat one
+      const order = [0, 1, 2].sort(() => Math.random() - 0.5);
       G.gates = { q: q.q, a: order.map((j) => ({ t: q.a[j], ok: j === 0 })), y: -30, st: 0, t: 0, pick: -1 };
       G.cancelBullets(true); if (o.ask) o.ask({ question: q.q, options: G.gates.a.map(a => a.t) }); G.emit("gateStart", { q: q.q });
     };

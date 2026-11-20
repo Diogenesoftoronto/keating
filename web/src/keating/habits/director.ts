@@ -2,17 +2,21 @@ import type { Api, Context, Model } from "@earendil-works/pi-ai/compat";
 import { z } from "zod";
 import { hybridStreamFn } from "../../hooks/keating-stream";
 import { getProviderApiKey } from "../../lib/provider-models";
-import type { RecessPack } from "../../components/recess/RecessGame";
+import { packs } from "../../components/recess/engine/packs.js";
+import type { RecessPack } from "../../components/recess/types";
 import type { HabitLesson } from "./lesson";
+import { buildChatRecessPack, recessSubjectStyle } from "./recess-lesson";
 
 const short = (limit: number) => z.string().trim().min(1).max(limit);
 const question = z.strictObject({
   q: short(115), a: z.tuple([short(60), short(60), short(60)]),
 }).refine(item => new Set(item.a.map(answer => answer.toLowerCase())).size === 3);
 const lessonPack = z.strictObject({
+  subject: short(16).refine(id => id === "general" || Object.hasOwn(packs, id)).optional(),
+  subjectLabel: short(24).optional(),
   title: short(56),
   tldr: short(145),
-  myths: z.array(z.strictObject({ wrong: short(40), right: short(40), tutorQuote: short(300) })).min(3).max(5),
+  myths: z.array(z.strictObject({ wrong: short(40), right: short(40), tutorQuote: short(300) })).max(5),
   gates: z.array(question).min(2).max(4),
   revive: z.array(question).min(1).max(2),
   wall: z.array(short(48)).length(6),
@@ -21,7 +25,7 @@ const lessonPack = z.strictObject({
   }) }),
 });
 const itemCheck = z.strictObject({ singleCorrect: z.boolean(), supported: z.boolean() });
-const packReview = z.strictObject({ mythsCorrected: z.boolean(), summaryAccurate: z.boolean(),
+const packReview = z.strictObject({ mythsCorrected: z.boolean(), summaryAccurate: z.boolean(), subjectAccurate: z.boolean(),
   questions: z.array(itemCheck).min(3).max(6) });
 const score = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 const assessment = z.strictObject({
@@ -55,22 +59,25 @@ export function checkLessonPack(value: unknown, lesson: HabitLesson) {
   const parsed = lessonPack.safeParse(value);
   if (!parsed.success) return null;
   const tutor = lesson.filter(turn => turn.role === "tutor");
-  return parsed.data.myths.every(myth => myth.wrong !== myth.right && myth.tutorQuote.includes(myth.right)
+  return tutor.some(turn => turn.text.trim()) && parsed.data.myths.every(myth => myth.wrong !== myth.right && myth.tutorQuote.includes(myth.right)
     && tutor.some(turn => turn.text.includes(myth.tutorQuote))) ? parsed.data : null;
 }
 
-export async function compileLessonPack(model: Model<Api> | undefined, transcript: HabitLesson, base: RecessPack, signal: AbortSignal): Promise<RecessPack | null> {
-  if (!model || !transcript.some(turn => turn.role === "tutor")) return null;
+export async function compileLessonPack(model: Model<Api> | undefined, transcript: HabitLesson, signal: AbortSignal): Promise<RecessPack | null> {
+  if (!model || signal.aborted) return null;
+  const base = buildChatRecessPack(transcript);
+  if (!base) return null;
   const deadline = AbortSignal.any([signal, AbortSignal.timeout(14_000)]);
   try {
-    const proposal = checkLessonPack(await complete(model, `Turn this tutoring exchange into one short arcade lesson. JSON shape: {title,tldr,myths:[{wrong,right,tutorQuote}],gates:[{q,a:[correct,wrong,wrong]}],revive:[{q,a:[correct,wrong,wrong]}],wall:[six lines],boss:{name,taunts:{intro,phase:[lines],low,defeat}}}.
-Return 3 to 5 misconceptions that the tutor explicitly corrected, each with a verbatim tutor quote containing the right form verbatim. Wrong and right max 40 characters. If there are too few, return {}. Write 2 to 4 distinct gates and 1 or 2 distinct revive questions. Put their sole correct choice first. Ground them in the tutor’s text. Limit each question to 115 characters and each choice to 60. Each boss line max 48 characters. The boss makes jokes about itself or its ideas, never about the learner.`, transcript, deadline), transcript);
+    const proposal = checkLessonPack(await complete(model, `Turn the latest completed tutoring in this exchange into one short arcade lesson. JSON shape: {subject,subjectLabel,title,tldr,myths:[{wrong,right,tutorQuote}],gates:[{q,a:[correct,wrong,wrong]}],revive:[{q,a:[correct,wrong,wrong]}],wall:[six lines],boss:{name,taunts:{intro,phase:[lines],low,defeat}}}.
+Choose the subject of the lesson from ${Object.keys(packs).join(", ")}, or general. For general, give a short subjectLabel reflecting the actual topic, such as Physics. Omit subjectLabel for a listed subject. Include only misconceptions the tutor explicitly corrected, up to five. Use an empty array when there are none. Each misconception needs a verbatim tutor quote containing the right form verbatim. Wrong and right max 40 characters. Write 2 to 4 distinct gates and 1 or 2 distinct revive questions. Put their sole correct choice first. Ground them in the tutor’s text. Limit each question to 115 characters and each choice to 60. Each boss line max 48 characters. The boss makes jokes about itself or its ideas, never about the learner.`, transcript, deadline), transcript);
     if (!proposal) return null;
-    const checked = packReview.parse(await complete(model, `Independently check this candidate arcade lesson against the tutor text. For each gate and revive item in order, check whether the first choice is uniquely correct, and whether the lesson text supports it. Reassess each misconception and the final summary. Return {mythsCorrected:boolean,summaryAccurate:boolean,questions:[{singleCorrect:boolean,supported:boolean}]}. When unsure return false.`, { transcript, proposal }, deadline));
+    const checked = packReview.parse(await complete(model, `Independently check this candidate arcade lesson against the tutor text. For each gate and revive item in order, check whether the first choice is uniquely correct, and whether the lesson text supports it. Reassess each misconception, the final summary and whether the subject (and subjectLabel for general) matches the latest lesson. Return {mythsCorrected:boolean,summaryAccurate:boolean,subjectAccurate:boolean,questions:[{singleCorrect:boolean,supported:boolean}]}. When unsure return false.`, { transcript, proposal }, deadline));
     if (!checked.mythsCorrected || !checked.summaryAccurate || checked.questions.length !== proposal.gates.length + proposal.revive.length
       || checked.questions.some(item => !item.singleCorrect || !item.supported)) return null;
-    const { myths, ...publicPack } = proposal;
-    return { ...base, ...publicPack, myths: myths.map(({ wrong, right }) => ({ wrong, right })) };
+    const { subject, subjectLabel, myths, ...publicPack } = proposal;
+    const style = subject && checked.subjectAccurate ? recessSubjectStyle(subject, subjectLabel) : {};
+    return { ...base, ...publicPack, ...style, myths: myths.map(({ wrong, right }) => ({ wrong, right })) };
   } catch {
     return null;
   }

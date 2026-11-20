@@ -65,7 +65,7 @@
   text-transform: uppercase;
 }
 
-.recess-game select, .recess-chat {
+.recess-game select {
   min-height: 40px;
   max-width: 100%;
   padding: 5px 10px;
@@ -77,16 +77,6 @@
   letter-spacing: 0;
   text-transform: none;
 }
-
-.recess-chat {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border-style: dashed;
-  border-color: var(--recess-green);
-  color: var(--recess-green);
-}
-.recess-chat[aria-pressed="true"] { border-style: solid; background: var(--recess-wash); opacity: 1; }
 
 .recess-icon {
   flex: none;
@@ -142,7 +132,7 @@
 .recess-pips > i[data-empty="true"] { background: transparent; box-shadow: inset 0 0 0 1px var(--recess-soft); }
 
 .recess-game :is(button, summary) { cursor: pointer; }
-.recess-game :is(.recess-chat, .recess-answers button):not(:disabled):hover { border-color: var(--recess-green); }
+.recess-game :is(.recess-source button, .recess-answers button):not(:disabled):hover { border-color: var(--recess-green); }
 .recess-key:not(:disabled):hover { filter: brightness(1.04); }
 .recess-game :is(button, select):disabled { opacity: .55; cursor: default; }
 .recess-game :is(button, select, input, summary):focus-visible {
@@ -392,7 +382,7 @@
 @media (pointer: coarse) {
   .recess-help-fine { display: none; }
   .recess-help-touch { display: inline; }
-  .recess-game select, .recess-chat { min-height: 44px; }
+  .recess-game select { min-height: 44px; }
 }
 
 .recess-result {
@@ -448,3 +438,33 @@
   .recess-hud .recess-charge-bar { width: 30px; }
   .recess-hud .recess-meter { display: none; }
 }
+
+/* Lesson source: the current chat first, Practice second. One ruled strip, not two boxes. */
+.recess-source {
+  display: inline-flex;
+  flex: 1 1 100%;
+  max-width: 22rem;
+  border: 2px solid var(--recess-ink);
+  border-radius: 3px;
+}
+.recess-source button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 5px 12px;
+  border: 0;
+  color: var(--recess-ink);
+  background: var(--recess-card);
+  font: 700 .74rem var(--recess-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  touch-action: manipulation;
+}
+.recess-source button + button { border-left: 2px solid var(--recess-ink); }
+.recess-source button[aria-pressed="true"] { color: var(--recess-paper); background: var(--recess-ink); }
+.recess-source button:not([aria-pressed="true"]) .recess-icon { color: var(--recess-green); }
+.recess-source-note { flex: 1 1 100%; margin: 0; color: var(--recess-soft); font-size: .78rem; line-height: 1.4; }
+.recess-page .recess-empty { color: var(--recess-soft); font-style: italic; }

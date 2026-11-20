@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
 import { Button, Sheet } from "../../design-system/kit";
 import { currentHabitsScope, dispatchHabits, readHabits, subscribeHabits } from "../../keating/habits/store";
@@ -42,6 +42,11 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
   const activity = useRef<HTMLDivElement>(null);
   const scope = useSyncExternalStore(subscribeHabits, currentHabitsScope, () => "device");
   const area = mode === "off" ? "recess" : selected;
+  const compileCurrentLesson = useCallback(async (signal: AbortSignal) => {
+    if (scope !== currentHabitsScope()) return null;
+    const pack = await compileLessonPack(context.model, context.lesson, signal);
+    return scope === currentHabitsScope() ? pack : null;
+  }, [context.model, context.lesson, scope]);
 
   useEffect(() => {
     let active = true;
@@ -105,6 +110,7 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
           ? { ...command, lesson: { sessionId: context.sessionId, title: context.lesson.find(turn => turn.role === "learner")?.text.slice(0, 72) || "Lesson review" } }
           : command)} onDraft={onDraft} onCancel={() => setGoal(null)} />
         : area === "recess" ? <Suspense fallback={<p role="status">Opening Recess…</p>}><RecessGame
+          key={scope}
           lesson={context.lesson} condition={mode === "off" ? standard : snapshot?.condition ?? standard}
           kit={mode === "off" ? [] : Object.values(snapshot?.equippedKit ?? {})}
           settlingCharge={pending || (mode !== "off" && snapshot === null && !error)}
@@ -115,10 +121,7 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
             onRecessEnd?.(result);
           }}
           onQuiz={onDraft}
-          compilePack={context.model && context.lesson.length ? async (signal, base) => {
-            const pack = await compileLessonPack(context.model, context.lesson, base, signal);
-            return scope === currentHabitsScope() ? pack : null;
-          } : undefined}
+          compilePack={context.model ? compileCurrentLesson : undefined}
         /></Suspense>
         : area === "rankings" ? <Suspense fallback={<p role="status">Opening rankings…</p>}><HabitRankings enabled
           onVerifiedStudy={receipt => { void act({ type: "rankedStudy", scope, receipt }); }} /></Suspense>
