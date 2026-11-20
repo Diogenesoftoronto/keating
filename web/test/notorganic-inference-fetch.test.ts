@@ -4,6 +4,7 @@ import { Type } from "typebox";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { normalizeProviderStreamOptions } from "../src/hooks/keating-stream";
+import { classifyLlmError } from "../src/core/api-retry";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
 import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
@@ -101,6 +102,26 @@ test("account Mercury sends exact chat parameters with a device-bound proof and 
 	expect(outbound?.headers.get("idempotency-key")).toBe("mercury-turn");
 	expect(await outbound?.json()).toMatchObject({ model: "mercury-2", stream: true, max_completion_tokens: 50, reasoning_effort: "low",
 		messages: [{ role: "system", content: "Teach fractions." }, { role: "user", content: "Hello" }] });
+});
+
+test("the hosted Inkling SDK preserves a Tinker billing block and attempts the request once", async () => {
+	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const context: Context = { messages: [{ role: "user", content: "Explain recursion", timestamp: 1 }] };
+	let attempts = 0;
+	const fetcher = createNotOrganicInferenceFetch({ async headersFor(_method, _target, initial) {
+		return new Headers(initial);
+	} }, url, { idempotencyKey: "billing-fixture", maxCostMicrousd: 100000, fetch: (async () => {
+		attempts++;
+		return Response.json({
+			detail: "Access is blocked due to billing status. Please add payment at https://tinker.thinkingmachines.ai/billing/balance",
+			provider: "openai",
+		}, { status: 402 });
+	}) as typeof fetch });
+	const result = await streamWithApiRetry(selected, context, { fetch: fetcher, apiKey: "test-key", maxRetries: 1 },
+		options => streamSimple(selected, context, options), { ...WEB_API_RETRY_POLICY, maxAttempts: 3, rateLimitIntervalMs: 0 }).result();
+	expect(attempts).toBe(1);
+	expect(result.stopReason).toBe("error");
+	expect(classifyLlmError(result.errorMessage)).toMatchObject({ category: "provider-billing", statusCode: 402 });
 });
 for (const sdkRetries of [0, 1]) {
 	test(`fresh proofs across retries (SDK retries ${sdkRetries})`, async () => {

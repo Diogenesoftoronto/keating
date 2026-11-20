@@ -4,6 +4,7 @@ import {
   type ApiRetryPolicy,
 } from "../../../shared/api-retry-policy";
 import { CourseApiError } from "../courses/client";
+import { hostedInklingBillingCode, isTinkerBillingBlock } from "../notorganic-provider/provider-billing";
 
 export { DEFAULT_API_RETRY_POLICY, sanitizeApiRetryPolicy, type ApiRetryPolicy };
 
@@ -18,6 +19,7 @@ export type LlmErrorCategory =
   | "model-unavailable"
   | "network"
   | "permission"
+  | "provider-billing"
   | "rate-limit"
   | "safety"
   | "server"
@@ -201,6 +203,14 @@ export function classifyLlmError(error: unknown): LlmErrorDetails {
       title: "Response stopped",
       description: "The request ended before the model finished responding.",
       recovery: "Retry the response when you are ready. Your conversation is still intact.",
+    };
+  }
+  if (message.includes(hostedInklingBillingCode) || isTinkerBillingBlock(message)) {
+    return {
+      category: "provider-billing", statusCode, retryAfterMs, automaticRetry: false,
+      title: "Inkling is temporarily unavailable",
+      description: "Thinking Machines has paused access for Keating’s provider account.",
+      recovery: "Inkling is unavailable because of a billing issue with Keating’s provider. Choose another model to continue.",
     };
   }
   if (BILLING_ERROR_PATTERN.test(message) || statusCode === 402) {

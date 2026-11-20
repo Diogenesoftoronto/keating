@@ -74,6 +74,20 @@ describe("web API retry", () => {
 		});
 	});
 
+	test("separates Tinker provider billing from a learner's Not Organic credit shortage", () => {
+		const upstream = '402 {"detail":"Access is blocked due to billing status. Please add payment at https://tinker.thinkingmachines.ai/billing/balance","provider":"openai"}';
+		expect(classifyLlmError(upstream)).toMatchObject({
+			category: "provider-billing",
+			statusCode: 402,
+			automaticRetry: false,
+		});
+		expect(classifyLlmError('402 {"error":{"code":"insufficient_funds"}}')).toMatchObject({
+			category: "billing",
+			statusCode: 402,
+			automaticRetry: false,
+		});
+	});
+
 	test("reads structured provider status and Retry-After values", () => {
 		const error = {
 			message: "request throttled",

@@ -2729,6 +2729,7 @@ function toAssistantMessage(
       status.type === "incomplete" &&
       llmFailure?.category !== "auth" &&
       llmFailure?.category !== "billing" &&
+      llmFailure?.category !== "provider-billing" &&
       llmFailure?.category !== "context-length" &&
       llmFailure?.category !== "invalid-request" &&
       llmFailure?.category !== "safety";

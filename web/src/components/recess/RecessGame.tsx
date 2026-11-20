@@ -5,6 +5,7 @@ import { HABIT_KIT } from "../../keating/habits/quest-catalog";
 import { useKeatingUiSettings } from "../../hooks/use-ui-settings";
 import { recessReviewDraft } from "../../keating/habits/recess-review";
 import { buildChatRecessPack } from "../../keating/habits/recess-lesson";
+import { RecessLessonMarkdown } from "./RecessLessonMarkdown";
 import { loadRecessArt, sittingBot } from "./assets";
 import { RecessAudio } from "./engine/audio.js";
 import { Recess } from "./engine/core.js";
@@ -52,7 +53,9 @@ interface RecessSelection { source: LessonSource; pack: RecessPack; lesson?: rea
 function LessonPage({ pack, lesson }: { pack: RecessPack | null; lesson?: readonly RecessLessonTurn[] }) {
   if (!pack && !lesson?.length) return <p className="recess-prose recess-empty">Nothing has been taught in this chat yet.</p>;
   if (lesson?.length) return lesson.map((row, index) => (
-    <p className={row.role === "learner" ? "recess-you" : "recess-prose"} key={index}>{words(row.text)}</p>
+    <div className={`recess-chat-turn ${row.role === "learner" ? "recess-you" : "recess-prose"}`} key={index}>
+      <RecessLessonMarkdown text={row.text} />
+    </div>
   ));
   return pack?.thread?.map((row, index) => {
     if ("me" in row) return <p className="recess-you" key={index}>{practiceWords(row.me)}</p>;

@@ -234,6 +234,31 @@
   font-size: .82rem;
 }
 .recess-prose { font: .92rem/1.5 "Literata", Georgia, serif; }
+.recess-chat-turn {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-width: 0;
+  gap: .35em;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.recess-chat-turn :is(h1, h2, h3, h4, h5, h6, ul, ol, blockquote, hr) { margin: 0; }
+.recess-chat-turn :is(h1, h2, h3) { font-size: 1.1em; font-weight: 700; }
+.recess-chat-turn :is(h4, h5, h6) { font-size: 1em; font-weight: 700; }
+.recess-chat-turn :is(ul, ol) { padding-inline-start: 1.5em; }
+.recess-chat-turn ul { list-style: disc; }
+.recess-chat-turn ol { list-style: decimal; }
+.recess-chat-turn ul.contains-task-list { list-style: none; }
+.recess-chat-turn .task-list-item input { margin-inline-end: .4em; }
+.recess-chat-turn blockquote { padding-inline-start: .65em; border-inline-start: 2px solid var(--recess-green); }
+.recess-chat-turn table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.recess-chat-turn :is(td, th) { padding: .18em .3em; border: 1px solid var(--recess-line); }
+.recess-chat-turn code { font-family: var(--recess-mono); }
+.recess-chat-turn :not(pre) > code { padding-inline: .2em; color: var(--recess-green); background: var(--recess-wash); }
+.recess-chat-turn .katex-display { margin: .2em 0; white-space: nowrap; }
+.recess-lesson-link { text-decoration: underline; text-underline-offset: .12em; }
+.recess-lesson-image { font-style: italic; }
 .recess-code {
   padding: 7px 10px;
   border-radius: 4px;
