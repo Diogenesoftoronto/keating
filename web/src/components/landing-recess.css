@@ -1,0 +1,182 @@
+.lp-recess {
+  border-top: 1px solid var(--line);
+}
+.lp-recess-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  margin: 0 0 .5rem;
+  padding: .12rem .4rem .12rem .3rem;
+  border: 1px dashed var(--k-strong-line, var(--ink));
+  border-radius: .19rem;
+  font: 600 .5rem/1.4 var(--mono-body);
+  color: var(--ink-soft);
+}
+.lp-recess-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+}
+.lp-recess-head .lead {
+  margin-top: .6731rem;
+  max-width: 40ch;
+}
+.lp-recess h3 {
+  font-size: .9rem;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+.lp-recess p:not(.lead, .lp-recess-tag) {
+  font-size: .649rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* Sprites: CSS steps over a 4 by 2 sheet, like the mascot. */
+.lp-recess-sprite {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--sprite, 3rem);
+  aspect-ratio: 1;
+  background-repeat: no-repeat;
+  background-size: 400% 200%;
+  background-position: 0 0;
+}
+.lp-recess-pilot { --sprite: 8.5rem; margin-right: .5rem; }
+.lp-recess-standin { --sprite: 55%; margin: auto; }
+
+/* Clips sit like the page's other silent clip: no frame, a soft ground. */
+.lp-recess-clip { margin: 0; min-width: 0; }
+.lp-recess-picture {
+  display: flex;
+  aspect-ratio: var(--recess-clip-ratio, 960 / 774);
+  overflow: hidden;
+  border-radius: .1923rem;
+  background: var(--paper-deep);
+}
+.lp-recess-picture :is(video:not([hidden]), img) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.lp-recess-clip figcaption {
+  padding: .35rem .1rem 0;
+  font: .5rem/1.4 var(--mono-body);
+  color: var(--k-ink-faint);
+}
+
+.lp-recess-play, .lp-recess-boss {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 1.6rem;
+  align-items: center;
+  margin-top: 1.6rem;
+}
+.lp-recess-boss { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.lp-recess-beats > article, article.lp-recess-beats {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  gap: .3846rem;
+  padding: .7rem 0;
+}
+.lp-recess-beats > article + article { border-top: 1px solid var(--line-soft); }
+.lp-recess-beats b {
+  padding-top: .18rem;
+  font: 500 .4808rem/1.4 var(--mono-body);
+  color: var(--green-deep);
+}
+.lp-recess-beats p { margin-top: .3rem; max-width: 40ch; }
+
+/* Every subject has its own cast: a strip of them bobbing, over the field shader the pointer can stir. */
+.lp-recess-cast {
+  position: relative;
+  isolation: isolate;
+  margin-top: 1.6rem;
+  border-block: 1px solid var(--line);
+}
+.lp-recess-cast ul {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 0;
+  padding: .7rem 0 .55rem;
+  list-style: none;
+}
+.lp-recess-cast li { display: flex; flex-direction: column; align-items: center; gap: .15rem; min-width: 0; }
+.lp-recess-cast .lp-recess-sprite { --sprite: min(3.4rem, 100%); }
+.lp-recess-subject {
+  padding: 0 .2rem;
+  background: var(--paper);
+  font: .48rem/1.5 var(--mono-body);
+  color: var(--ink-soft);
+}
+
+.lp-recess-more {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.6rem;
+  border-top: 1px solid var(--line);
+}
+.lp-recess-more > div { display: flex; align-items: start; gap: .7rem; padding: 1rem 1rem 0 0; }
+.lp-recess-more > div + div { padding-left: 1rem; border-left: 1px solid var(--line); }
+.lp-recess-more .lp-recess-sprite { --sprite: 5.4rem; margin-top: -.4rem; }
+.lp-recess-more h3 { font-size: .77rem; }
+.lp-recess-more p { margin-top: .3rem; }
+
+.lp-recess-note {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .3rem 1rem;
+  margin-top: 1.4rem;
+}
+.lp-recess .lp-recess-note p { font: .52rem/1.5 var(--mono-body); color: var(--k-ink-faint); max-width: 70ch; }
+
+/* Motion: only when allowed, only on screen, and only until the visitor pauses it. */
+@keyframes lp-recess-row { to { background-position-x: 133.333%; } }
+@keyframes lp-recess-sheet {
+  0% { background-position: 0% 0%; }
+  12.5% { background-position: 33.333% 0%; }
+  25% { background-position: 66.667% 0%; }
+  37.5% { background-position: 100% 0%; }
+  50% { background-position: 0% 100%; }
+  62.5% { background-position: 33.333% 100%; }
+  75% { background-position: 66.667% 100%; }
+  87.5%, 100% { background-position: 100% 100%; }
+}
+@keyframes lp-recess-bob { 50% { transform: translateY(-.22rem); } }
+@keyframes lp-recess-hover { 50% { transform: translateY(-.45rem) rotate(1.5deg); } }
+@keyframes lp-recess-arrive { from { opacity: 0; transform: translateY(.6rem); } }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-sprite[data-play="row"] { animation: lp-recess-row 1.1s steps(4) infinite; }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-sprite[data-play="sheet"] { animation: lp-recess-sheet 1.6s steps(1, end) infinite; }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-sprite[data-play="cycle"] { animation: lp-recess-sheet 9.6s steps(1, end) infinite; }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-pilot { animation: lp-recess-sheet 1.6s steps(1, end) infinite, lp-recess-hover 3.2s ease-in-out infinite; }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-cast li {
+    animation: lp-recess-bob 2.4s ease-in-out infinite;
+    animation-delay: calc(var(--i, 0) * -.3s);
+  }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess-cast li .lp-recess-sprite { animation-delay: calc(var(--i, 0) * -.17s); }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess[data-entered="true"] :is(.lp-recess-play, .lp-recess-cast, .lp-recess-boss, .lp-recess-more) {
+    animation: lp-recess-arrive 560ms cubic-bezier(.2, .8, .2, 1) both;
+  }
+  html:not([data-reduce-motion="true"], [data-fx="off"]) .lp-recess[data-entered="true"] .lp-recess-cast { animation-delay: 80ms; }
+}
+.lp-recess[data-paused="true"] :is(.lp-recess-sprite, .lp-recess-cast li) { animation-play-state: paused; }
+
+@media (max-width: 800px) {
+  .lp-recess-play, .lp-recess-boss { grid-template-columns: minmax(0, 1fr); gap: .6rem; }
+  .lp-recess-boss .lp-recess-clip { order: -1; }
+  .lp-recess-pilot { --sprite: 6.5rem; }
+}
+@media (max-width: 600px) {
+  .lp-recess-head { grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; align-items: start; }
+  .lp-recess-pilot { --sprite: 5.2rem; margin: 0; }
+  .lp-recess-cast ul { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: .5rem; }
+  .lp-recess-more { grid-template-columns: minmax(0, 1fr); }
+  .lp-recess-more > div { padding-right: 0; }
+  .lp-recess-more > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); margin-top: 1rem; }
+  .lp-recess-more .lp-recess-sprite { --sprite: 4.4rem; }
+  .lp .lp-recess-tag { font-size: calc(.5rem + 2px); }
+  .lp .lp-recess p:not(.lead, .lp-recess-tag) { font-size: calc(.649rem + 2px); }
+  .lp .lp-recess-subject, .lp .lp-recess-clip figcaption, .lp .lp-recess-beats b { font-size: calc(.48rem + 2px); }
+  .lp .lp-recess .lp-recess-note p { font-size: calc(.52rem + 2px); }
+}
