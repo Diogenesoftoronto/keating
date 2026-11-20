@@ -140,7 +140,7 @@ function SummaryChips({ snapshot, calls }: { snapshot: TeachingDraftSnapshot; ca
     {snapshot.phase === "cancelled"
       ? <span className="turn-chip"><KeatingGlyph name="stop" size={12} />You stopped after the opening</span>
       : snapshot.reason === "remaining-part-unresolved"
-      ? <span className="turn-chip"><KeatingGlyph name="alert" size={12} />Requested part still open</span>
+      ? <span className="turn-chip"><KeatingGlyph name="alert" size={12} />Opening answer kept</span>
       : summary.checked
       ? <span className="turn-chip" data-tone="ok"><KeatingGlyph name="check" size={12} />Checked</span>
       : summary.checks > 0

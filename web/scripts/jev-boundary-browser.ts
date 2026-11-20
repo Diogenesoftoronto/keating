@@ -16,16 +16,17 @@ const directory = join(out, (live ? "live-" : "dry-") + new Date().toISOString()
 const model = getModel("google", TUTOR_MODEL);
 const digest = (s: string) => createHash("sha256").update(s).digest("hex");
 const prompt = "Using our earlier workshop code, give the perimeter of a rectangle with sides 7 and 5. Include the code and numeric result in one sentence. Use only our conversation.";
-const code = "SAGE-" + randomUUID().slice(0, 8).toUpperCase();
 const id = randomUUID();
+const code = "SAGE-" + digest(id).slice(0, 8).toUpperCase();
 const ledgerPath = join(out, "spend.json");
-const cap = 100_000, maxReviews = 24, maxTutor = 4, maxOutput = 384;
+const cap = 140_000, maxReviews = 36, maxTutor = 7, maxOutput = 384;
 type Charge = { id: number; kind: "review" | "tutor"; reserved: number; charged: number; run: string; status: number | null;
   input: number | null; output: number | null; complete: boolean };
 type Evidence = { id: number | null; kind: Charge["kind"]; bytes: number; wireHash: string; questions?: number;
   historyMessages?: number; oldestPresent?: boolean; retainedCode?: boolean; historyHash?: string; currentPresent?: boolean;
   nativeToolGroupsRemoved?: number; outputLimit?: number; estimatedInputCeiling?: number; status?: number;
-  matchedCode?: string | null; responseModel?: string | null; input?: number | null; output?: number | null; proposedTools?: number };
+  matchedCode?: string | null; responseModel?: string | null; input?: number | null; output?: number | null;
+  selectedDraft?: string | null; proposedTools?: number };
 const calls: Evidence[] = [];
 const denied: string[] = [];
 const receipt: Record<string, unknown> = { sessionId: id, uniqueCode: code, question: prompt, origin: origin.origin,
@@ -57,11 +58,48 @@ function key(env: string, slot: string): string {
 }
 function safeCount(value: unknown): number | null { return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null; }
 
+// Runs inside Chromium using the same storage records read by production session restoration.
+async function browserReadback({ id, prompt }: { id: string; prompt: string }) {
+  async function read(dbName: string, store: string, key?: string) {
+    return new Promise<any>((resolve, reject) => {
+      const open = indexedDB.open(dbName);
+      open.onsuccess = () => {
+        const db = open.result;
+        const tx = db.transaction(store);
+        const req = key === undefined ? tx.objectStore(store).getAll() : tx.objectStore(store).get(key);
+        req.onsuccess = () => resolve(req.result); req.onerror = () => reject(Error("readback-failed"));
+        tx.oncomplete = () => db.close(); tx.onabort = () => { db.close(); reject(Error("readback-aborted")); };
+      };
+      open.onerror = () => reject(Error("readback-open-error"));
+    });
+  }
+  const text = (m: { content: string | { type: string; text?: string }[] }) =>
+    typeof m.content === "string" ? m.content : (m.content ?? []).filter(p => p.type === "text").map(p => p.text ?? "").join("");
+  const thread = await read("keating", "sessions", id);
+  const messages = thread?.messages ?? [];
+  const questionIndex = messages.findIndex((m: { role: string; content: string }) => m.role === "user" && text(m) === prompt);
+  const final = questionIndex < 0 ? undefined : messages.slice(questionIndex + 1).findLast((m: { role: string; content: string }) => m.role === "assistant" && text(m).trim());
+  const records = await read("keating-db", "teaching-draft-receipts");
+  const owner = records.filter((r: { sessionId: string }) => r.sessionId === id).sort((a: { createdAt: number }, b: { createdAt: number }) => b.createdAt - a.createdAt)[0];
+  const s = owner?.snapshot;
+  return { sessionId: thread?.id ?? null, messageCount: messages.length, questionIndex, assistantText: final ? text(final).slice(0, 4000) : null,
+    assistantTimestamp: final?.timestamp ?? null, stopReason: final?.stopReason ?? null, receiptTimestamp: owner?.messageTimestamp ?? null,
+    phase: s?.phase ?? null, selectedAttempt: s?.selectedAttempt ?? null, reason: s?.reason ?? null,
+    attempts: (s?.attempts ?? []).map((attempt: { attempt: number; status: string; repairSourceAttempt?: number;
+      checks: { id: string; source: string; status: string; probability: number | null; severity: string; applicability?: string }[] }) =>
+      ({ attempt: attempt.attempt, status: attempt.status, repairSourceAttempt: attempt.repairSourceAttempt ?? null,
+        checks: attempt.checks.map(({ id, source, status, probability, severity, applicability }) =>
+          ({ id, source, status, probability, severity, applicability: applicability ?? null })) })),
+    parallelAttempts: s?.parallelAttempts ?? [], slides: (s?.slides ?? []).map((slide: { reason?: string; phase?: string; turnsDropped: number }) =>
+      ({ reason: slide.reason ?? null, phase: slide.phase, turnsDropped: slide.turnsDropped })) };
+}
+
 async function execute() {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   if (live) {
     lock = openSync(join(out, "run.lock"), "wx", 0o600);
     if (existsSync(ledgerPath)) charges = JSON.parse(readFileSync(ledgerPath, "utf8"));
+    if (new Set(charges.map(row => row.run)).size >= 2) throw Error("live-session-limit-reached");
   }
   const reviewKey = live ? key("TYPESAFE_API_KEY", "typesafe_api_key@secrets") : "unsent-browser-fixture";
   const tutorKey = live ? key("GEMINI_API_KEY", "gemini@secrets") : "unsent-browser-fixture";
@@ -72,9 +110,27 @@ async function execute() {
     const page = await context.newPage();
     const pending = new Set<Promise<void>>();
     let submitted = false;
+    let offline = false;
+    const staticFiles = new Map<string, { status: number; body: Buffer; headers: Record<string, string> }>();
+    const caching = new Set<Promise<void>>();
+    page.on("response", response => {
+      const url = new URL(response.url());
+      if (offline || !response.ok() || response.request().method() !== "GET" || url.origin !== origin.origin || url.pathname.startsWith("/api/")) return;
+      const path = url.pathname === "/chat" ? "/chat" : url.pathname + url.search;
+      const capture = response.body().then(body => {
+        const headers = { ...response.headers() };
+        delete headers["content-encoding"]; delete headers["content-length"]; delete headers["transfer-encoding"];
+        staticFiles.set(path, { status: response.status(), body, headers });
+      }).catch(() => {});
+      caching.add(capture); void capture.finally(() => caching.delete(capture));
+    });
     const intercept = async (route: Route) => {
       const request = route.request(), url = new URL(request.url());
       const local = url.origin === origin.origin;
+      if (offline) {
+        const cached = local && request.method() === "GET" ? staticFiles.get(url.pathname === "/chat" ? "/chat" : url.pathname + url.search) : undefined;
+        return cached ? route.fulfill(cached) : route.abort("internetdisconnected");
+      }
       const review = local && url.pathname === "/api/judgement/typesafe";
       const tutor = url.origin === "https://generativelanguage.googleapis.com" &&
         url.pathname === "/v1beta/models/" + TUTOR_MODEL + ":streamGenerateContent";
@@ -133,6 +189,8 @@ async function execute() {
         let parsed: Record<string, any> = {}; try { parsed = JSON.parse(text); } catch { /* gateway may reject non-JSON */ }
         entry.matchedCode = parsed.error?.code === "context-limit-exceeded" ? "context-limit-exceeded" : null;
         entry.responseModel = typeof parsed.model === "string" && /^jev-[\d.]+$/.test(parsed.model) ? parsed.model : null;
+        const selected = parsed.answers?.draft_choice?.choice;
+        entry.selectedDraft = typeof selected === "string" && /^draft_\d+$/.test(selected) ? selected : null;
         entry.input = safeCount(parsed.usage?.input_tokens); entry.output = safeCount(parsed.usage?.output_tokens);
       } else {
         let usage, resolved: string | null = null, toolCalls = 0;
@@ -208,35 +266,59 @@ async function execute() {
     await composer.fill(prompt);
     submitted = true;
     await page.getByRole("button", { name: "Send message", exact: true }).click();
-    const deadline = Date.now() + (live ? 180_000 : 12_000);
+    const deadline = Date.now() + (live ? 300_000 : 12_000);
+    const stop = page.getByRole("button", { name: "Stop generating", exact: true });
+    let stored: Awaited<ReturnType<typeof browserReadback>> | undefined;
     while (Date.now() < deadline) {
       const latest = await bubbles.last().innerText({ timeout: 2_000 }).catch(() => "");
-      if (await bubbles.count() > initial && (latest.includes(code) && /\b24\b/.test(latest) || /review paused|reply withheld|couldn't|could not|review unavailable/i.test(latest))) break;
+      const correct = await bubbles.count() > initial && latest.includes(code) && /\b24\b/.test(latest);
+      if (correct && !receipt.firstVisibleAnswer) {
+        receipt.firstVisibleAnswer = latest;
+        receipt.stopVisibleAtOpening = await stop.isVisible();
+        await bubbles.last().scrollIntoViewIfNeeded();
+        await page.screenshot({ path: join(directory, "opening.png") });
+        save();
+      }
+      if (live && !(await stop.isVisible())) {
+        stored = await page.evaluate(browserReadback, { id, prompt });
+        if (stored.phase === "released" && stored.assistantText && correct) break;
+        if (stored.phase === "withheld" || stored.phase === "cancelled") break;
+      }
       if (!live && calls.some(c => c.kind === "review")) break;
       await page.waitForTimeout(300);
     }
     await Promise.allSettled([...pending]);
     const after = await bubbles.count();
     const visible = after > initial ? (await bubbles.last().innerText()).slice(0,2000) : "";
-    const persisted = await page.evaluate(async id => {
-      const db = await new Promise<IDBDatabase>(resolve => { const open = indexedDB.open("keating", 2); open.onsuccess = () => resolve(open.result); });
-      try { return await new Promise<{role: string; content: string}[]>((resolve, reject) => {
-        const get = db.transaction("sessions").objectStore("sessions").get(id);
-        get.onsuccess = () => resolve((get.result?.messages ?? []).map((m: {role: string; content: string | {type: string; text?: string}[]}) =>
-          ({role: m.role, content: (typeof m.content === "string" ? m.content : m.content.filter(x => x.type === "text").map(x => x.text).join("")).slice(0,2000)})));
-        get.onerror = () => reject(Error("readback-failed"));
-      }); } finally { db.close(); }
-    }, id);
-    const persistedText = persisted.length > history.length && persisted.at(-1)?.role === "assistant" ? persisted.at(-1)!.content : "";
-    receipt.persistedMessageCount = persisted.length; receipt.afterAssistantRows = after;
+    stored = await page.evaluate(browserReadback, { id, prompt });
+    const persistedText = stored.assistantText ?? "";
+    receipt.storage = stored; receipt.persistedMessageCount = stored.messageCount; receipt.afterAssistantRows = after;
     receipt.answerFromDom = visible; receipt.answerFromStorage = persistedText;
     receipt.pageStatus = (await page.locator("body").innerText()).slice(-1400);
+    if (after > initial) await bubbles.last().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(directory, "conversation.png") });
+    save();
+    let restored = "";
+    if (!live || (stored.phase === "released" && persistedText)) {
+      await Promise.allSettled([...caching]);
+      const dispatches = charges.length;
+      offline = true; submitted = false;
+      await context.setOffline(true);
+      await page.goto(origin.origin + "/chat?session=" + id, { waitUntil: "domcontentloaded" });
+      // All scripts, fonts and the shell come from bytes captured during the original navigation.
+      const restoredBubble = live ? bubbles.filter({ hasText: code }).last() : sentinels.first();
+      await restoredBubble.waitFor({ timeout: 30_000 });
+      await restoredBubble.scrollIntoViewIfNeeded();
+      restored = await restoredBubble.innerText();
+      receipt.offlineReload = { text: restored, newDispatches: charges.length - dispatches, staticAssetCount: staticFiles.size,
+        stopButtonVisible: await stop.isVisible(), stored: await page.evaluate(browserReadback, { id, prompt }) };
+      await page.screenshot({ path: join(directory, "reloaded.png") });
+    }
+    const normal = (s: string) => s.replace(/[*_`~]/g, "").replace(/\s+/g, " ").trim();
     receipt.passed = live && calls.some(c => c.status === 400 && c.matchedCode === "context-limit-exceeded") &&
       calls.some(c => c.kind === "review" && c.status === 200 && c.currentPresent && c.retainedCode) &&
       calls.some(c => c.kind === "tutor" && c.status === 200 && c.responseModel?.startsWith(TUTOR_MODEL) && c.proposedTools === 0) &&
-      visible.includes(code) && /\b24\b/.test(visible) && persistedText.includes(code) && /\b24\b/.test(persistedText);
-    if (after > initial) await bubbles.last().scrollIntoViewIfNeeded();
-    await page.screenshot({ path: join(directory, "conversation.png") });
+      visible.includes(code) && /\b24\b/.test(visible) && normal(restored).includes(normal(persistedText)) && persistedText.includes(code) && /\b24\b/.test(persistedText);
     save();
     console.log(JSON.stringify({ directory, passed: receipt.passed, review: calls.filter(c => c.kind === "review").length,
       tutor: calls.filter(c => c.kind === "tutor").length, denied, accountedMicroUsd: charges.reduce((sum, e) => sum + e.charged, 0) }));

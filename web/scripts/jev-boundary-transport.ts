@@ -1,6 +1,6 @@
 import { createAssistantMessageEventStream, type Api, type AssistantMessage, type Context, type Model, type SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { getModel, streamSimple } from "@earendil-works/pi-ai/compat";
-import { createSystemOneCaller, type JudgementCaller } from "@keating/learner-contracts";
+import { createSystemOneCaller, type JudgementBackendKey, type JudgementCaller } from "@keating/learner-contracts";
 import { JEV_REQUEST_TOKEN_LIMIT } from "@keating/runtime-config";
 import { CUSTOM_JUDGEMENT_ENDPOINT, createCustomJudgementBackend } from "../src/keating/judgement/custom-backend";
 import { answerDraftGateReview } from "../src/test/helpers/teaching-draft-judge";
@@ -95,7 +95,7 @@ export class ProofLedger {
   }
 }
 type Tutor = (context: Context, options?: SimpleStreamOptions) => Promise<AssistantMessage>;
-export type ProofModels = { mode: "preflight" | "live"; model: Model<Api>; tutor: Tutor; judge: JudgementCaller };
+export type ProofModels = { mode: "preflight" | "live"; model: Model<Api>; tutor: Tutor; judge: JudgementCaller; reviewerKey?: JudgementBackendKey };
 const emptyUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
 export function assistant(text: string, model: Model<Api> = gemini, timestamp = 1): AssistantMessage {
   return { role: "assistant", content: [{ type: "text", text }], api: model.api, provider: model.provider,

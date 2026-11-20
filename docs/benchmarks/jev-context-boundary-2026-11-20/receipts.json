@@ -1,0 +1,2397 @@
+{
+  "dateUTC": "2026-11-20",
+  "synthetic": true,
+  "production": {
+    "keatingDeployment": "c107b66e-548e-4289-966a-4b69dd4ec34a",
+    "notOrganicGatewayDeployment": "0653968b-16ce-4ab2-ba33-687a2cae8f20",
+    "byok": {
+      "transport": "Chromium, same-origin POST through deployed Keating BYOK relay",
+      "origin": "https://chat.keating.help",
+      "rootStatus": 200,
+      "rootRequestId": "yvY9XDNSS82VvhfqO8poTA",
+      "maxCalls": 2,
+      "maxReservedMicrousd": 5600,
+      "version": 1,
+      "receipts": [
+        {
+          "case": "prose",
+          "startedAt": "2026-11-20T06:51:16.744Z",
+          "elapsedMs": 297,
+          "hostStatePlusQuestionEstimate": 18104,
+          "stateChars": 54128,
+          "sha256": "2f71604269f613780f68182184c5c1972ec2fdfdd67b58fb8bb5ea4afabbb381",
+          "status": 200,
+          "railwayRequestId": "vaHWEYAASHyh-ur4c9o55Q",
+          "model": "jev-1.14.0",
+          "providerInputTokens": 11998,
+          "code": null,
+          "reading": "birch",
+          "answerShape": [
+            "type",
+            "choice",
+            "confidence",
+            "probabilities"
+          ],
+          "usageShape": [
+            "input_tokens",
+            "output_tokens"
+          ]
+        },
+        {
+          "case": "identifiers",
+          "startedAt": "2026-11-20T06:51:17.043Z",
+          "elapsedMs": 78,
+          "hostStatePlusQuestionEstimate": 18104,
+          "stateChars": 54128,
+          "sha256": "29a7e8913613b99d236abe895c46c9746ad2f04ca33b27ef14fd77f3fb9273ed",
+          "status": 400,
+          "railwayRequestId": "8PnlqVFGTa2GoIZAHn5Ytg",
+          "model": null,
+          "providerInputTokens": null,
+          "code": "backend-unavailable",
+          "reading": null,
+          "answerShape": [],
+          "usageShape": []
+        }
+      ]
+    },
+    "directOverflowConfirmation": {
+      "at": "2026-11-20T06:53:02.434Z",
+      "status": 400,
+      "sha256": "29a7e8913613b99d236abe895c46c9746ad2f04ca33b27ef14fd77f3fb9273ed",
+      "fields": [
+        "detail"
+      ],
+      "structure": {
+        "detail": [
+          "error_type"
+        ]
+      },
+      "errorCategory": "max_tokens_exceeded",
+      "numberFields": [],
+      "model": null,
+      "providerInputTokens": null,
+      "providerRequestId": null,
+      "safeErrorText": [
+        "max_tokens_exceeded"
+      ]
+    },
+    "signed": {
+      "maxCalls": 3,
+      "maxCostMicrousdPerRequest": 12000,
+      "rows": [
+        {
+          "kind": "prose",
+          "startedAt": "2026-11-20T06:56:56.780Z",
+          "finishedAt": "2026-11-20T06:56:56.957Z",
+          "status": 400,
+          "requestedModel": "judgement-jev/jev-1.14.0",
+          "model": null,
+          "usage": null,
+          "observedLabel": null,
+          "code": "invalid_model",
+          "errorType": "invalid_request_error",
+          "bodyId": null,
+          "requestSha256": "633544447aca682a93722ecd5ba125b277a982f8a8b7a158d88a73e1a1ed55c7",
+          "idempotencyKey": "keating_jev_boundary_c596e1cb-935f-424f-8312-9c3c5da9b0cb",
+          "ids": {
+            "x-request-id": null,
+            "x-railway-request-id": "RuytlK-8T2eTi2O1BT7zVQ",
+            "x-notorganic-request-id": null
+          },
+          "headers": {}
+        },
+        {
+          "kind": "identifiers",
+          "startedAt": "2026-11-20T06:56:56.958Z",
+          "finishedAt": "2026-11-20T06:56:57.034Z",
+          "status": 400,
+          "requestedModel": "judgement-jev/jev-1.14.0",
+          "model": null,
+          "usage": null,
+          "observedLabel": null,
+          "code": "invalid_model",
+          "errorType": "invalid_request_error",
+          "bodyId": null,
+          "requestSha256": "275e3cda0ed692294a71c4b408d35cc9a314bd5a9b3aaac9dc4a4f9f5769568d",
+          "idempotencyKey": "keating_jev_boundary_1a88ac09-41a7-44b2-be2c-14983d893feb",
+          "ids": {
+            "x-request-id": null,
+            "x-railway-request-id": "xqQPW_IiT9u9BVbgozsQ6Q",
+            "x-notorganic-request-id": null
+          },
+          "headers": {}
+        },
+        {
+          "kind": "default-route",
+          "startedAt": "2026-11-20T06:56:57.035Z",
+          "finishedAt": "2026-11-20T06:56:57.704Z",
+          "status": 200,
+          "requestedModel": "judgement",
+          "model": "judgement-jev/jev-1.14.0",
+          "usage": 11998,
+          "observedLabel": "birch",
+          "code": null,
+          "errorType": null,
+          "bodyId": null,
+          "requestSha256": "5a5a405ab7102a04755657a06665445d3ee8af5f72ff05c27e8f1ea70c356c17",
+          "idempotencyKey": "keating_jev_boundary_c2b40b8c-0810-4af4-9ab3-b5fa6ec137b1",
+          "ids": {
+            "x-request-id": null,
+            "x-railway-request-id": "Iv3i00blR8SKpaztc9o55Q",
+            "x-notorganic-request-id": null
+          },
+          "headers": {}
+        }
+      ]
+    },
+    "signedCliOverflow": {
+      "startedAt": "2026-11-20T06:57:28.866Z",
+      "finishedAt": "2026-11-20T06:57:29.400Z",
+      "normalCliAccountTransport": true,
+      "maxCalls": 1,
+      "perRequestMaxMicrousd": 12000,
+      "wire": {
+        "status": 502,
+        "railwayRequestId": "tEBIs5UST6iy7sH9Aax-fw",
+        "bodyRequestId": null,
+        "idempotencyKey": "keating_judgement_d3b2caa9-8455-4778-a230-5393ea4ed921",
+        "code": "judgement_upstream_error",
+        "model": null
+      },
+      "cliResult": {
+        "code": "backend-unavailable",
+        "retryable": true
+      }
+    },
+    "isolatedAccountPortalRows": [
+      {
+        "at": "2026-11-20T06:56:57.590Z",
+        "status": "succeeded",
+        "inputTokens": 11998,
+        "outputTokens": 42,
+        "billedMicrousd": 731
+      },
+      {
+        "at": "2026-11-20T06:57:29.296Z",
+        "status": "failed",
+        "code": "upstream_400",
+        "billedMicrousd": null
+      }
+    ],
+    "portalCorrelation": "Dedicated test account, close timestamps, and exact usage on success. The HTTP request IDs matched Railway directly."
+  },
+  "directProvider": {
+    "setup": {
+      "event": "start",
+      "timestamp": "2026-11-20T06:53:40.110Z",
+      "fixture": "synthetic-checksum-manifest-v1",
+      "requestedModel": "jev-latest",
+      "endpoint": "https://api.typesafe.ai/v1/systemone",
+      "longContext": false,
+      "axes": [
+        "state-question",
+        "request"
+      ],
+      "maxCalls": 42,
+      "reservePerCallMicrousd": 2800,
+      "maximumReservedMicrousd": 117600,
+      "priceUsdPerMillionInputTokens": 0.042
+    },
+    "requests": [
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 8000,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "7b2b55963de1517ddac822e62c6c1ecc7b4b45be9ac7ce8556aaa5d167461155",
+        "wireBytes": 8521,
+        "hostEstimatedStateQuestionTokens": 2821,
+        "hostEstimatedRequestTokens": 2834,
+        "id": 1,
+        "status": 200,
+        "elapsedMs": 192,
+        "requestId": "req_01a1f7bb761675e9bdc53b6ad7395f83",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 6056,
+        "outputTokens": 55,
+        "recall": true
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 41849,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "795b6b3e8fc694cb9291623d02f89276d452874597c4fba446b89db3147e62f6",
+        "wireBytes": 43140,
+        "hostEstimatedStateQuestionTokens": 14361,
+        "hostEstimatedRequestTokens": 14373,
+        "id": 2,
+        "status": 200,
+        "elapsedMs": 396,
+        "requestId": "req_01a1f7bb76907154a28732e33a39ccce",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 30183,
+        "outputTokens": 55,
+        "recall": true
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 44360,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "751085b9f0b376f9b835cf21c570a1df91ba3154aa02c6f16bd77b52c42c6f28",
+        "wireBytes": 45708,
+        "hostEstimatedStateQuestionTokens": 15217,
+        "hostEstimatedRequestTokens": 15229,
+        "id": 3,
+        "status": 200,
+        "elapsedMs": 488,
+        "requestId": "req_01a1f7bb78db7aab9695793e3adc149f",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 31962,
+        "outputTokens": 55,
+        "recall": true
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 47022,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "e936014dd4dc10cfdec7f217b887f407a774a9e45a98f0e18ad91d2a727299da",
+        "wireBytes": 48430,
+        "hostEstimatedStateQuestionTokens": 16124,
+        "hostEstimatedRequestTokens": 16137,
+        "id": 4,
+        "status": 400,
+        "elapsedMs": 53,
+        "requestId": "req_01a1f7bb7a267580ad3065a02d9da56d",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 45691,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "8b02167aad7f6e85f85f1be13a6b3282eef6fb11d4fb27d204a06f95f891046a",
+        "wireBytes": 47069,
+        "hostEstimatedStateQuestionTokens": 15671,
+        "hostEstimatedRequestTokens": 15683,
+        "id": 5,
+        "status": 200,
+        "elapsedMs": 305,
+        "requestId": "req_01a1f7bb7a6a7c64b161986caf9d4080",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 32924,
+        "outputTokens": 55,
+        "recall": true
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 46356,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "43b582402764573b14b960de3eb6b1ea8723ef9da1659b4d5b48f9f3cc51b8e1",
+        "wireBytes": 47749,
+        "hostEstimatedStateQuestionTokens": 15897,
+        "hostEstimatedRequestTokens": 15910,
+        "id": 6,
+        "status": 400,
+        "elapsedMs": 98,
+        "requestId": "req_01a1f7bb7be570e99826948fb9e83ad3",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 46023,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "c2ed181f97b4e373b84182fd60b8974009cf1a3b17d2e78bc948bebb46c5c6a7",
+        "wireBytes": 47408,
+        "hostEstimatedStateQuestionTokens": 15784,
+        "hostEstimatedRequestTokens": 15796,
+        "id": 7,
+        "status": 400,
+        "elapsedMs": 107,
+        "requestId": "req_01a1f7bb7c657a2c88014591c1d75760",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "state-question",
+        "group": "all",
+        "fillerCharsPerSection": 45857,
+        "questions": [
+          "bookends_0"
+        ],
+        "wireSha256": "fa6cd8a566a9b5db4aaaa04e39dc95c9b23c7fcb10786d190068a83b1a20d318",
+        "wireBytes": 47239,
+        "hostEstimatedStateQuestionTokens": 15727,
+        "hostEstimatedRequestTokens": 15740,
+        "id": 8,
+        "status": 400,
+        "elapsedMs": 50,
+        "requestId": "req_01a1f7bb7cb37e5ebfdbfe47518bb800",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 2000,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "1be4b2a6a02215b755a9697bc61f45da70281d64987175691bdb4aa3fe531fd9",
+        "wireBytes": 9277,
+        "hostEstimatedStateQuestionTokens": 779,
+        "hostEstimatedRequestTokens": 3086,
+        "id": 9,
+        "status": 200,
+        "elapsedMs": 81,
+        "requestId": "req_01a1f7bb7cf377388ed7a41f475d3f06",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 6246,
+        "outputTokens": 211,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 20288,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "756bab3c3c95a5c344827b34a911dcb809087ca3fdea1f5db74d5c497fce3de0",
+        "wireBytes": 84093,
+        "hostEstimatedStateQuestionTokens": 7014,
+        "hostEstimatedRequestTokens": 28024,
+        "id": 10,
+        "status": 200,
+        "elapsedMs": 405,
+        "requestId": "req_01a1f7bb7d5b7e438f9eabcde9dae19d",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 58335,
+        "outputTokens": 211,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 22036,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "0c60431d4c2f145efa2010782e19bd1c1907273eae657e367eb60cd9f01125c4",
+        "wireBytes": 91241,
+        "hostEstimatedStateQuestionTokens": 7610,
+        "hostEstimatedRequestTokens": 30407,
+        "id": 11,
+        "status": 200,
+        "elapsedMs": 414,
+        "requestId": "req_01a1f7bb7f0b74f986523c6c5df234b0",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 63280,
+        "outputTokens": 211,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 23359,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "bea24ca7b1525600c580a5e74f67a49cd01a22a2892a184de390c0dd4a50f150",
+        "wireBytes": 96653,
+        "hostEstimatedStateQuestionTokens": 8061,
+        "hostEstimatedRequestTokens": 32211,
+        "id": 12,
+        "status": 400,
+        "elapsedMs": 59,
+        "requestId": "req_01a1f7bb80c676bda47a5331fe7c8c74",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 22697,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "cd6a126c854d5027b248e9e962231a57a15cfd14d685eb71f6a6a15b45b076f4",
+        "wireBytes": 93945,
+        "hostEstimatedStateQuestionTokens": 7835,
+        "hostEstimatedRequestTokens": 31308,
+        "id": 13,
+        "status": 200,
+        "elapsedMs": 458,
+        "requestId": "req_01a1f7bb810e7f0dad66eb497efb054e",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 65138,
+        "outputTokens": 211,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 23028,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "5a0d5a89be93775975c7ef11f1386cb8b19694fa31f7f6e48b3621f35a448e71",
+        "wireBytes": 95301,
+        "hostEstimatedStateQuestionTokens": 7948,
+        "hostEstimatedRequestTokens": 31760,
+        "id": 14,
+        "status": 400,
+        "elapsedMs": 110,
+        "requestId": "req_01a1f7bb83217fd286f2c18a11b40641",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 22862,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "5c8bcbd253d84325450b4e39ea4f6ddb70a548c28ee0fb0ecf4cdd768e63810e",
+        "wireBytes": 94621,
+        "hostEstimatedStateQuestionTokens": 7891,
+        "hostEstimatedRequestTokens": 31534,
+        "id": 15,
+        "status": 200,
+        "elapsedMs": 504,
+        "requestId": "req_01a1f7bb83be75c5b6cae4078004d410",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 65600,
+        "outputTokens": 211,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "all",
+        "fillerCharsPerSection": 22945,
+        "questions": [
+          "bookends_0",
+          "bookends_1",
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "253eda70efbee8d3b4f2b3b2c4261b1be9e392c0124e8d1926a95b164ce2969e",
+        "wireBytes": 94961,
+        "hostEstimatedStateQuestionTokens": 7920,
+        "hostEstimatedRequestTokens": 31647,
+        "id": 16,
+        "status": 400,
+        "elapsedMs": 354,
+        "requestId": "req_01a1f7bb86c77a19be8407a2efef472f",
+        "reason": "max_tokens_exceeded",
+        "providerNumericFields": {}
+      },
+      {
+        "axis": "request",
+        "group": "first-half",
+        "fillerCharsPerSection": 22945,
+        "questions": [
+          "bookends_0",
+          "bookends_1"
+        ],
+        "wireSha256": "4a0c4ee0a6c876267be4e803562fe4c76a9e2390f093375a9d73c13fdfbe7635",
+        "wireBytes": 47531,
+        "hostEstimatedStateQuestionTokens": 7920,
+        "hostEstimatedRequestTokens": 15837,
+        "id": 17,
+        "status": 200,
+        "elapsedMs": 2015,
+        "requestId": "req_01a1f7bb879a7c61a633853a9712a423",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 33109,
+        "outputTokens": 107,
+        "recall": true
+      },
+      {
+        "axis": "request",
+        "group": "second-half",
+        "fillerCharsPerSection": 22945,
+        "questions": [
+          "bookends_2",
+          "bookends_3"
+        ],
+        "wireSha256": "aef6b37e07bfe0d0f208fcd28dd105eac4c2f7f7a6a5748cc7f13940f9660c15",
+        "wireBytes": 47531,
+        "hostEstimatedStateQuestionTokens": 7920,
+        "hostEstimatedRequestTokens": 15837,
+        "id": 18,
+        "status": 200,
+        "elapsedMs": 348,
+        "requestId": "req_01a1f7bb8f1d70e5bfd16d57a9e9af5c",
+        "result": "accepted",
+        "returnedModel": "jev-1.14.0",
+        "inputTokens": 33007,
+        "outputTokens": 107,
+        "recall": true
+      }
+    ],
+    "observedBoundaries": [
+      {
+        "event": "boundary",
+        "axis": "state-question",
+        "nominalTokens": 32000,
+        "closestAccepted": {
+          "chars": 45691,
+          "inputTokens": 32924,
+          "recall": true
+        },
+        "closestRejectedChars": 45857,
+        "fillerGapFraction": 0.0036331006106235363,
+        "rejectedQuestionHalvesAccepted": false
+      },
+      {
+        "event": "boundary",
+        "axis": "request",
+        "nominalTokens": 64000,
+        "closestAccepted": {
+          "chars": 22862,
+          "inputTokens": 65600,
+          "recall": true
+        },
+        "closestRejectedChars": 22945,
+        "fillerGapFraction": 0.003630478523313796,
+        "rejectedQuestionHalvesAccepted": true
+      }
+    ],
+    "accounting": {
+      "event": "complete",
+      "dispatched": 18,
+      "reservedMicrousd": 50400,
+      "reportedInputTokens": 425840,
+      "priceFromReportedUsageMicrousd": 17885.28,
+      "unmeteredDispatches": 0
+    }
+  },
+  "initialApplicationRun": {
+    "passed": false,
+    "denied": 2,
+    "reason": "The test reservation denied a second tutor in the at and over cases. The final run required both overlapping network requests and individual completed reviews."
+  },
+  "candidateApplication": {
+    "timestampUTC": "2026-11-20T07:03:43.940Z",
+    "sourceSha256": "872c7baf7d2adae4578300954211212fcd9f3b87a03915a82c2c4c074785f19d",
+    "fileHashes": {
+      "packages/learner-contracts/src/judgement/state-metrics.ts": "e3a369be5b1f45f364a441572cdf46edcb11c4fb05741329818f3c275aea1932",
+      "packages/learner-contracts/src/judgement/teaching-policy.ts": "c23f48b40dc41908d57f74afd0b44ef08e820f0952597a91544d90428619986d",
+      "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "ff757eafce7332eb1aa87ba79f65a17e1aae5d40ec7c0e26fbb4964bc457feb0",
+      "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "0906319c8d14225a7bb96336da029b6dec424899002b407a02741dc5a83b097b",
+      "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "d987ffbcdf03bb90f951cc9e3833cfee2e27bb8dd5870c80b8f047b4cc90e2f5",
+      "packages/learner-contracts/src/judgement/system-one.ts": "e2950bb63a93a7ab040b427148d13dc66a13faa244a5a56711715c0ad6f5369c",
+      "web/src/keating/judgement/draft-gate.ts": "d26735c4c8ca7a9c2ed831d4e57d00a82905065d8d18623805b30abea8c13d5c",
+      "web/src/keating/judgement/search-evidence.ts": "c4803dbf1bd8cf136d49ff5b7a8033b2dd2d88cda7c512a306f8b9f4769a96d4",
+      "web/src/keating/judgement/custom-backend.ts": "7d5d4be53a3e197f534b04590a045598c086428bb49ab96b6f46c5d3db2213ea",
+      "web/src/keating/flue/model-messages.ts": "f97e9cfc77e8fe0c4badc7b6adb3d52698b4af32057b6d94af129f5d31353030",
+      "web/server/api/judgement/typesafe.post.ts": "25aa2d850d77a9a2cc2b2d5fba24b528b2ccd894dbc3f3f2c600d31778afa004",
+      "web/scripts/jev-boundary-cases.ts": "53a450156ed395cca81883000770d2c6c97324eb9c34fad7889ece4bb871cba8",
+      "web/scripts/jev-boundary-flue.ts": "87131592b0f79030ca6d6dbc767b034e340766f04f56cf102444f73634bae559",
+      "web/scripts/jev-boundary-transport.ts": "e9382350e5087f66fb8b243a0a310f0ee31c19ee6434e93c6d58440844239f09",
+      "web/scripts/jev-boundary-proof.ts": "fcf098e9d9a70690b88c9293fc7faba69ec273ea80c6d39b154b876b5b33ab6e"
+    },
+    "passed": true,
+    "requestCount": 31,
+    "reservationsDenied": 0,
+    "cases": [
+      {
+        "case": "under",
+        "original": {
+          "estimatedStateQuestionTokens": 31999,
+          "estimatedRequestTokens": 37711,
+          "stateCharacters": 34461,
+          "stateHash": "0759f839b5f5eaa2cb07e880028109602a519472831071905eba630b01003503",
+          "currentHash": "82bcf868f9975f5f6e2453bcfdf5c0a1c1f814d37547a73caa5c5e79ebeb645e"
+        },
+        "originalMessages": 4,
+        "reviewRequests": [
+          {
+            "sequence": 1,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 39,
+            "estimatedStateQuestionTokens": 31999,
+            "stateCharacters": 34461,
+            "requestHash": "9f97cead37c60dd4b0e53b4913ca3a53b0315570234e1f04e66792f195991be5",
+            "stateHash": "0759f839b5f5eaa2cb07e880028109602a519472831071905eba630b01003503",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 2,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30833,
+            "stateCharacters": 31002,
+            "requestHash": "b5f24d2cca5008b3c2d24eab44685ed8a12a97959af270ffad6e0deceb41bf30",
+            "stateHash": "42629cb4558a280ba0dbc850ce046cd0421cbda51c9a9fb0c180ae49121d3d99",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 3,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30837,
+            "stateCharacters": 31014,
+            "requestHash": "0be5691b255c2132601d750e996ff2d883c74e415357467d9efa6b8c07eb7a78",
+            "stateHash": "ec1d4a71d2f3f568be71be13e3d26035d10936fc04d65ffb4b0ed2945fbdb1fe",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 4,
+            "phase": "selecting",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 30922,
+            "stateCharacters": 31299,
+            "requestHash": "aea5765f56779ab2cd3e3e555628d8d50e804975ed16637155bf917996849e25",
+            "stateHash": "c4f0acba80b0153574aeb50bc2116289fe718921880fab9de0d7ca42878f555a",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": "draft_2",
+            "openingExcerpts": 1
+          }
+        ],
+        "tutorOverlapMs": 1771.241324,
+        "selectedAttempt": 2,
+        "phase": "released",
+        "reason": null,
+        "slides": [
+          {
+            "phase": "checking",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32019,
+            "after": 30833
+          },
+          {
+            "phase": "checking",
+            "attempt": 1,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32023,
+            "after": 30837
+          },
+          {
+            "phase": "selecting",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32108,
+            "after": 30922
+          }
+        ],
+        "learnerVisible": {
+          "textHash": "e7c579a0c61a1a2876a29b4739459f8044c065f46657336fd6f18378de2e6fd2",
+          "chars": 64,
+          "correct": true,
+          "notice": null,
+          "suggestsShorterRequest": false
+        },
+        "flueReadSha256": "e7c579a0c61a1a2876a29b4739459f8044c065f46657336fd6f18378de2e6fd2",
+        "checks": {
+          "stateWithinWireLimit": true,
+          "actualPlanningMatchesCalibration": true,
+          "historyInOrder": true,
+          "planningBoundary": true,
+          "twoCandidatesReviewed": true,
+          "selectedBetweenBoth": true,
+          "flueDeliveredReturnedMessage": true,
+          "expectedOutcome": true
+        },
+        "passed": true,
+        "wire": [
+          {
+            "id": 1,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:25.119Z",
+            "completedAt": "2026-11-20T07:03:25.430Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "b16506e0cbf2ef666414360c6bb58078abb5bb674443d2eb1dbda45177708f0a",
+            "responseSha256": "6a77e2d2b8fdf08f0f8966a67a72cb4775e6200548d304504b0a3d1576ecb2d4",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 34999,
+              "output": 748
+            }
+          },
+          {
+            "id": 2,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:25.472Z",
+            "completedAt": "2026-11-20T07:03:27.244Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "6925a4287d5a5dc7f16ae678c8c719b0bff42f037e56fb82895285a678e2f955",
+            "responseSha256": "9f7aefab20ce3b82609d8353c1a988bff1cd77ff38ca10a7d13e7493a11ebb40",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 28852,
+              "output": 18,
+              "cached": 0
+            }
+          },
+          {
+            "id": 3,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:25.472Z",
+            "completedAt": "2026-11-20T07:03:29.671Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "a675bf5157135002520d61d02e56ec2a9be7e8eb7a4ebc445142a24913a51ff5",
+            "responseSha256": "dfd140e53e155fc5e94a9c2f417f60173d88f1c7cd5bad0251ead75aab37b4c9",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 28842,
+              "output": 24,
+              "cached": 0
+            }
+          },
+          {
+            "id": 4,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:27.264Z",
+            "completedAt": "2026-11-20T07:03:27.568Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "fed48e79247e1619879da9edd6427e6a262ba9c7fa03ea89cb41566ba22fa002",
+            "responseSha256": "6d23284af60ea80cfb9ebdcf60e37ec24d18924ef8b17b9e74d49b5eaf4a2bb5",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36352,
+              "output": 973
+            }
+          },
+          {
+            "id": 5,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:29.707Z",
+            "completedAt": "2026-11-20T07:03:29.926Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "9bef650780934b294b24a55b81cab5a40ae722e3885a590f61039c50ba3a8250",
+            "responseSha256": "4652c1385750549723ad64f4d10041a97a599275a3b0cf475e27d6258bfbc694",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36358,
+              "output": 973
+            }
+          },
+          {
+            "id": 6,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:29.958Z",
+            "completedAt": "2026-11-20T07:03:30.169Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "49f136df1592e9f80503a471cf9badf7abc675a8604cff98565fd656dfbce0c3",
+            "responseSha256": "761bb0b9a033210f2759872cac88d32a5fd4c0e4d83d1bb8d935b7ce894e9783",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 31033,
+              "output": 38
+            }
+          }
+        ]
+      },
+      {
+        "case": "at",
+        "original": {
+          "estimatedStateQuestionTokens": 32000,
+          "estimatedRequestTokens": 37712,
+          "stateCharacters": 34462,
+          "stateHash": "b01b02084f75c0171c0357252c7bb2387cfdd773184854732ff5ca38f78b27dc",
+          "currentHash": "82bcf868f9975f5f6e2453bcfdf5c0a1c1f814d37547a73caa5c5e79ebeb645e"
+        },
+        "originalMessages": 4,
+        "reviewRequests": [
+          {
+            "sequence": 1,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 39,
+            "estimatedStateQuestionTokens": 32000,
+            "stateCharacters": 34462,
+            "requestHash": "d3abb5313c6e1251446dafc3715d159722aaa60507f6c963f4d08f8b25d988e1",
+            "stateHash": "b01b02084f75c0171c0357252c7bb2387cfdd773184854732ff5ca38f78b27dc",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 2,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30834,
+            "stateCharacters": 31003,
+            "requestHash": "d933ad1aca04b06136b7d35cfe7ba8311b97411788d18df960bf5df9645145fe",
+            "stateHash": "8db1a677d5f40353d3323998277409c29cb181742477edeca8161a463a2e7015",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 3,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30834,
+            "stateCharacters": 31003,
+            "requestHash": "d933ad1aca04b06136b7d35cfe7ba8311b97411788d18df960bf5df9645145fe",
+            "stateHash": "8db1a677d5f40353d3323998277409c29cb181742477edeca8161a463a2e7015",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 4,
+            "phase": "selecting",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 30919,
+            "stateCharacters": 31288,
+            "requestHash": "1fe394c4cb244396023cfa2a17454f13eba250ff214b11d8ba536d70bfa72f86",
+            "stateHash": "47add24ec25d4df98a601eace94e2820219b328ab7f86701dc77fa8faa8f2805",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": "draft_1",
+            "openingExcerpts": 1
+          }
+        ],
+        "tutorOverlapMs": 927.6515840000002,
+        "selectedAttempt": 1,
+        "phase": "released",
+        "reason": null,
+        "slides": [
+          {
+            "phase": "checking",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32020,
+            "after": 30834
+          },
+          {
+            "phase": "checking",
+            "attempt": 1,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32020,
+            "after": 30834
+          },
+          {
+            "phase": "selecting",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32105,
+            "after": 30919
+          }
+        ],
+        "learnerVisible": {
+          "textHash": "e7c579a0c61a1a2876a29b4739459f8044c065f46657336fd6f18378de2e6fd2",
+          "chars": 64,
+          "correct": true,
+          "notice": null,
+          "suggestsShorterRequest": false
+        },
+        "flueReadSha256": "e7c579a0c61a1a2876a29b4739459f8044c065f46657336fd6f18378de2e6fd2",
+        "checks": {
+          "stateWithinWireLimit": true,
+          "actualPlanningMatchesCalibration": true,
+          "historyInOrder": true,
+          "planningBoundary": true,
+          "twoCandidatesReviewed": true,
+          "selectedBetweenBoth": true,
+          "flueDeliveredReturnedMessage": true,
+          "expectedOutcome": true
+        },
+        "passed": true,
+        "wire": [
+          {
+            "id": 7,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:30.227Z",
+            "completedAt": "2026-11-20T07:03:30.456Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "6ee0da7af0450aff7fe5793ae938e327c53f34ef2393aba4219f300302d89cbf",
+            "responseSha256": "b79cc2be742a7f8af68980739eada5001c05b3437134db13944afb5c4c960e8a",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 35000,
+              "output": 748
+            }
+          },
+          {
+            "id": 8,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:30.462Z",
+            "completedAt": "2026-11-20T07:03:35.473Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "fb03290f8e97abe010d34c59873f7af7f23b646ed9d638af1872b2fbf835721c",
+            "responseSha256": "29af0a8650eb3c2813e326cde8f2939a024761db675463d16329b97957fb4e16",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 28843,
+              "output": 18,
+              "cached": 0
+            }
+          },
+          {
+            "id": 9,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:30.464Z",
+            "completedAt": "2026-11-20T07:03:31.393Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "54012efe871c08b0084dd0eb0dcb93d9fb4f102fdcd1d64af7dca10a5ed642a3",
+            "responseSha256": "8eda1a0dd5838469dc910a4e3146ae39563f3c2cb12f9bbb3760563d68bfb061",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 2276,
+              "output": 18,
+              "cached": 26577
+            }
+          },
+          {
+            "id": 10,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:31.451Z",
+            "completedAt": "2026-11-20T07:03:31.723Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "d15dd8eee1303439ca32dddddcb9d3ceb59d8c2eba20c6d578c28dde02979b4f",
+            "responseSha256": "2f3d389ec6a79536c0217eee0a8e66891a10c082c96638cfcfe5e4254a641f91",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36353,
+              "output": 973
+            }
+          },
+          {
+            "id": 11,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:35.495Z",
+            "completedAt": "2026-11-20T07:03:35.730Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "d15dd8eee1303439ca32dddddcb9d3ceb59d8c2eba20c6d578c28dde02979b4f",
+            "responseSha256": "f59c910a8a55d176365937fef6b48a83d8700b4018ed36a50c69c86dddd84d12",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36353,
+              "output": 973
+            }
+          },
+          {
+            "id": 12,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:35.765Z",
+            "completedAt": "2026-11-20T07:03:35.956Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "785b118a42ca6fd6ded927a6a4f740d935320e87138c2ea3ad871e5771b57092",
+            "responseSha256": "b7ab33aea10675f92098a6da484a96b210fad2645de6e4147c0f3df5f8209a90",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 31028,
+              "output": 38
+            }
+          }
+        ]
+      },
+      {
+        "case": "over",
+        "original": {
+          "estimatedStateQuestionTokens": 32001,
+          "estimatedRequestTokens": 37713,
+          "stateCharacters": 34463,
+          "stateHash": "eb7b5598d8f410e13a269c0068d1cf1d61469caa453410836f7bf5a0530d85d5",
+          "currentHash": "82bcf868f9975f5f6e2453bcfdf5c0a1c1f814d37547a73caa5c5e79ebeb645e"
+        },
+        "originalMessages": 4,
+        "reviewRequests": [
+          {
+            "sequence": 1,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 39,
+            "estimatedStateQuestionTokens": 30815,
+            "stateCharacters": 30905,
+            "requestHash": "1fb7dbaae92107449a5e566eca77e3a514811f7cf6d9bf3e9da08a38740a133b",
+            "stateHash": "b3dc6698cdf8b010fd7fee7bb116a67098409a8095901de96366c41bd52be957",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 2,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30841,
+            "stateCharacters": 31022,
+            "requestHash": "ab0a6fd7c1b9f5ae3e3f4a6a4b189b969955991d26f378b79dae19fac6056eed",
+            "stateHash": "2df33d33b7c93ba04f74f132c6e406e6af86dea05d557f21cf44ddab0b2f9bdd",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 3,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 30841,
+            "stateCharacters": 31022,
+            "requestHash": "ab0a6fd7c1b9f5ae3e3f4a6a4b189b969955991d26f378b79dae19fac6056eed",
+            "stateHash": "2df33d33b7c93ba04f74f132c6e406e6af86dea05d557f21cf44ddab0b2f9bdd",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 4,
+            "phase": "selecting",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 30932,
+            "stateCharacters": 31325,
+            "requestHash": "44cb8768e99c8dca91174e44ae175ee0affdea7ee5f17da4b41f58435595df2a",
+            "stateHash": "44ca7b991a4ef4336f094b1cc3a17cc5f81f9422437ccb3fca6c3c675062f2af",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": "draft_1",
+            "openingExcerpts": 1
+          }
+        ],
+        "tutorOverlapMs": 1471.9904320000005,
+        "selectedAttempt": 1,
+        "phase": "released",
+        "reason": null,
+        "slides": [
+          {
+            "phase": "planning",
+            "attempt": 0,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32001,
+            "after": 30815
+          },
+          {
+            "phase": "checking",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32027,
+            "after": 30841
+          },
+          {
+            "phase": "checking",
+            "attempt": 1,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32027,
+            "after": 30841
+          },
+          {
+            "phase": "selecting",
+            "attempt": 2,
+            "reason": null,
+            "turnsDropped": 1,
+            "before": 32118,
+            "after": 30932
+          }
+        ],
+        "learnerVisible": {
+          "textHash": "49010117ce30380e0edbaa726e59b3b4d55fa45469d873a7a348abf09d7ce29c",
+          "chars": 82,
+          "correct": true,
+          "notice": null,
+          "suggestsShorterRequest": false
+        },
+        "flueReadSha256": "49010117ce30380e0edbaa726e59b3b4d55fa45469d873a7a348abf09d7ce29c",
+        "checks": {
+          "stateWithinWireLimit": true,
+          "actualPlanningMatchesCalibration": true,
+          "historyInOrder": true,
+          "planningBoundary": true,
+          "twoCandidatesReviewed": true,
+          "selectedBetweenBoth": true,
+          "flueDeliveredReturnedMessage": true,
+          "expectedOutcome": true
+        },
+        "passed": true,
+        "wire": [
+          {
+            "id": 13,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:36.004Z",
+            "completedAt": "2026-11-20T07:03:36.221Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "8d0d7e9ae657cc8c86ab6b3e33b8f073083fec718b6c518c5c289a1cf79c4612",
+            "responseSha256": "cb2f63ad5a232a8d22ee11a8b935c80363f1d57073ffa70c8cb0cc745dbd6fbf",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 34246,
+              "output": 748
+            }
+          },
+          {
+            "id": 14,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:36.226Z",
+            "completedAt": "2026-11-20T07:03:41.686Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "8adc7708db53fd67669d1bc93d455af5e1bc4627883240dba9bdff2473a66666",
+            "responseSha256": "15a689fc30aa6d51afa401d11c43f82075af821920958d8fda6c23d88b68104c",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 28844,
+              "output": 26,
+              "cached": 0
+            }
+          },
+          {
+            "id": 15,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:36.228Z",
+            "completedAt": "2026-11-20T07:03:37.701Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "7a74f67a3066c8f7c86e140a4a7e839221083d73e73d5224c569603b3f141118",
+            "responseSha256": "5b06e2a52e2fd4d084c37b312438fe19ca35c07c3942e9e34d82a5e3e0764edb",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 2277,
+              "output": 26,
+              "cached": 26577
+            }
+          },
+          {
+            "id": 16,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:37.738Z",
+            "completedAt": "2026-11-20T07:03:37.992Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "6ef5eb3278961f14a7badc556b722fb69d2fbde7670258bc4389392666681173",
+            "responseSha256": "c88329b1f2390859e65fbf69546203d27784f18ae0ab1f1acc98fc9a7782e58b",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36362,
+              "output": 973
+            }
+          },
+          {
+            "id": 17,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:41.713Z",
+            "completedAt": "2026-11-20T07:03:41.948Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "6ef5eb3278961f14a7badc556b722fb69d2fbde7670258bc4389392666681173",
+            "responseSha256": "bb3169a7221fd898b3d57aa23691eb89647aa5314b637ed393ff76a818c20cfd",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 36362,
+              "output": 973
+            }
+          },
+          {
+            "id": 18,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:41.968Z",
+            "completedAt": "2026-11-20T07:03:42.220Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "6be1c979fe3ccaebbbcdf19fa990b434857b50db5f6da046094dcd8dd4dd671c",
+            "responseSha256": "c8628855f6d9303c5f0f2296a58d220dae8e43896458169777b265e82936731a",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 31045,
+              "output": 38
+            }
+          }
+        ]
+      },
+      {
+        "case": "current",
+        "original": {
+          "estimatedStateQuestionTokens": 32001,
+          "estimatedRequestTokens": 37713,
+          "stateCharacters": 31938,
+          "stateHash": "08764cf8678bc143c816010557cc1754097443e1a03a8fef86a20ec7eb48508b",
+          "currentHash": "c75d3511c834ad5289bd02d956f58deb9b77c191ac1eeb30405fa81775b10f13"
+        },
+        "originalMessages": 0,
+        "reviewRequests": [],
+        "tutorOverlapMs": null,
+        "selectedAttempt": null,
+        "phase": "withheld",
+        "reason": "context-limit-exceeded",
+        "slides": [],
+        "learnerVisible": {
+          "textHash": "77276f4cedaf286ad2c31d8a61b05577a751fbc4421237af30d60770f772bf2c",
+          "chars": 255,
+          "correct": false,
+          "notice": "withheld",
+          "suggestsShorterRequest": true
+        },
+        "flueReadSha256": "77276f4cedaf286ad2c31d8a61b05577a751fbc4421237af30d60770f772bf2c",
+        "checks": {
+          "stateWithinWireLimit": true,
+          "actualPlanningMatchesCalibration": true,
+          "historyInOrder": true,
+          "planningBoundary": true,
+          "twoCandidatesReviewed": true,
+          "selectedBetweenBoth": true,
+          "flueDeliveredReturnedMessage": true,
+          "expectedOutcome": true
+        },
+        "passed": true,
+        "wire": []
+      },
+      {
+        "case": "dense",
+        "original": {
+          "estimatedStateQuestionTokens": 18104,
+          "estimatedRequestTokens": 23816,
+          "stateCharacters": 53484,
+          "stateHash": "157d3ef406a72bcddc8b6595df43de88348c148aaebc9d601e9f1106f6b9d85e",
+          "currentHash": "82bcf868f9975f5f6e2453bcfdf5c0a1c1f814d37547a73caa5c5e79ebeb645e"
+        },
+        "originalMessages": 4,
+        "reviewRequests": [
+          {
+            "sequence": 1,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 39,
+            "estimatedStateQuestionTokens": 18104,
+            "stateCharacters": 53484,
+            "requestHash": "2b8320ca3ae64d6271339c85d9de4c04f6300fbb1fdcc0fc0799ddfb64222ad2",
+            "stateHash": "157d3ef406a72bcddc8b6595df43de88348c148aaebc9d601e9f1106f6b9d85e",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 2,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 18104,
+            "stateCharacters": 53484,
+            "requestHash": "5aab734b642a77359c1324c53f2790bbd5852f1c08770f01598827054ae3fd64",
+            "stateHash": "157d3ef406a72bcddc8b6595df43de88348c148aaebc9d601e9f1106f6b9d85e",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 3,
+            "phase": "planning",
+            "attempt": 0,
+            "questionCount": 39,
+            "estimatedStateQuestionTokens": 459,
+            "stateCharacters": 549,
+            "requestHash": "695a69ea7131dfedcc16499eb1b7aa10c774709bc245404515ac1d435e9b9f11",
+            "stateHash": "d9da7f7b89d5a95158ed417be4081919a662971ffea1553b67b012491e273338",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 4,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 18123,
+            "stateCharacters": 53578,
+            "requestHash": "0c4cefabe4abcf2c1143fabc86c2f716bc2995d3231988e08e87aad9fb38dd46",
+            "stateHash": "77e066676df8a298a262ab77f157b45018f37d92354b8ca78f8f7bb4e69a55bb",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 5,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 18123,
+            "stateCharacters": 53578,
+            "requestHash": "075df4fdbd6f12415de350a3e8b941627749513ec4ab690b6c6150da85c596b0",
+            "stateHash": "77e066676df8a298a262ab77f157b45018f37d92354b8ca78f8f7bb4e69a55bb",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 6,
+            "phase": "checking",
+            "attempt": 2,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 478,
+            "stateCharacters": 643,
+            "requestHash": "d4c3ceff185bc499f991fe07d77c7603c3c98c9a4cb3c839dca33c3dd2689404",
+            "stateHash": "47c25cf40df17b76e1c939ea6e35aa7dff3b410a75adf7e9c2f96c85d8060898",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 7,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 18123,
+            "stateCharacters": 53578,
+            "requestHash": "0c4cefabe4abcf2c1143fabc86c2f716bc2995d3231988e08e87aad9fb38dd46",
+            "stateHash": "77e066676df8a298a262ab77f157b45018f37d92354b8ca78f8f7bb4e69a55bb",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 8,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 18123,
+            "stateCharacters": 53578,
+            "requestHash": "075df4fdbd6f12415de350a3e8b941627749513ec4ab690b6c6150da85c596b0",
+            "stateHash": "77e066676df8a298a262ab77f157b45018f37d92354b8ca78f8f7bb4e69a55bb",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 9,
+            "phase": "checking",
+            "attempt": 1,
+            "questionCount": 48,
+            "estimatedStateQuestionTokens": 478,
+            "stateCharacters": 643,
+            "requestHash": "d4c3ceff185bc499f991fe07d77c7603c3c98c9a4cb3c839dca33c3dd2689404",
+            "stateHash": "47c25cf40df17b76e1c939ea6e35aa7dff3b410a75adf7e9c2f96c85d8060898",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": null,
+            "openingExcerpts": 1
+          },
+          {
+            "sequence": 10,
+            "phase": "selecting",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 18206,
+            "stateCharacters": 53858,
+            "requestHash": "98be1b852c112b712d6f87eb5474c7a1d64952cf6ae84f3ef4da0a032955618c",
+            "stateHash": "798d90a3713070df7c873ae3663504063f59ca0bf555bc9f083981a24404d7bc",
+            "droppedMessages": 0,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": false,
+            "code": "context-limit-exceeded",
+            "resolvedReviewer": null,
+            "choice": null,
+            "openingExcerpts": 0
+          },
+          {
+            "sequence": 11,
+            "phase": "selecting",
+            "attempt": 2,
+            "questionCount": 1,
+            "estimatedStateQuestionTokens": 561,
+            "stateCharacters": 923,
+            "requestHash": "6844c19868e4e137b24b7da9c7fbef04022a698ca99113f073748dcc3d5d295a",
+            "stateHash": "a83df0a0b1a7f606949c2006147e5f3d091ecb8fa8ebc681fe81890cf54fc8aa",
+            "droppedMessages": 2,
+            "currentIntact": true,
+            "suffixInOrder": true,
+            "ok": true,
+            "code": null,
+            "resolvedReviewer": "jev-1.14.0",
+            "choice": "draft_1",
+            "openingExcerpts": 1
+          }
+        ],
+        "tutorOverlapMs": 837.1269090000023,
+        "selectedAttempt": 1,
+        "phase": "released",
+        "reason": null,
+        "slides": [
+          {
+            "phase": "planning",
+            "attempt": 0,
+            "reason": "provider-context-limit",
+            "turnsDropped": 1,
+            "before": 18104,
+            "after": 459
+          },
+          {
+            "phase": "checking",
+            "attempt": 2,
+            "reason": "provider-context-limit",
+            "turnsDropped": 1,
+            "before": 18123,
+            "after": 478
+          },
+          {
+            "phase": "checking",
+            "attempt": 1,
+            "reason": "provider-context-limit",
+            "turnsDropped": 1,
+            "before": 18123,
+            "after": 478
+          },
+          {
+            "phase": "selecting",
+            "attempt": 2,
+            "reason": "provider-context-limit",
+            "turnsDropped": 1,
+            "before": 18206,
+            "after": 561
+          }
+        ],
+        "learnerVisible": {
+          "textHash": "d39ca2c09ce212f8ac2dfbdaba033ed04f25d94a8c719eafc5ffff57a9aa75a0",
+          "chars": 59,
+          "correct": true,
+          "notice": null,
+          "suggestsShorterRequest": false
+        },
+        "flueReadSha256": "d39ca2c09ce212f8ac2dfbdaba033ed04f25d94a8c719eafc5ffff57a9aa75a0",
+        "checks": {
+          "stateWithinWireLimit": true,
+          "actualPlanningMatchesCalibration": true,
+          "historyInOrder": true,
+          "planningBoundary": true,
+          "twoCandidatesReviewed": true,
+          "selectedBetweenBoth": true,
+          "flueDeliveredReturnedMessage": true,
+          "expectedOutcome": true
+        },
+        "passed": true,
+        "wire": [
+          {
+            "id": 19,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:42.276Z",
+            "completedAt": "2026-11-20T07:03:42.330Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "adb8f2f38fff6c217789d22cc5ccacae8c6c7f65e6029ca6d2f4da3045764da2",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 20,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:42.334Z",
+            "completedAt": "2026-11-20T07:03:42.381Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "3f30e7efebcb8bcc20b4db38f341cbcb76ffe3ef93576678027e56cb35895bdf",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 21,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:42.385Z",
+            "completedAt": "2026-11-20T07:03:42.486Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "2cb4b0a571f8bb62e06f6133062887936c45873e26927a41f4a9a9487b7e21a2",
+            "responseSha256": "605c77f0c69a3f9c6aa7294b7f19b1c42bce031dfbbbe5ae8fc48dfe7a9ed92e",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 3890,
+              "output": 748
+            }
+          },
+          {
+            "id": 22,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:42.489Z",
+            "completedAt": "2026-11-20T07:03:43.586Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "1cce9fe62feb09232c8d1802258bfeaed334ec3fc5a20b97016a3e39edf1f272",
+            "responseSha256": "716112fb814aeea8e951b677e840e45a80469f578a5342e624c361349d10963d",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 36407,
+              "output": 17,
+              "cached": 0
+            }
+          },
+          {
+            "id": 23,
+            "role": "tutor",
+            "startedAt": "2026-11-20T07:03:42.490Z",
+            "completedAt": "2026-11-20T07:03:43.328Z",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "c7bf7bf8ff59dc4b9e2ab703fd277a3b8ed29abdb4434896b70c7754da2d7377",
+            "responseSha256": "f5cd3d9a2d21cf3e85dd334ebb89e1fd190c66bfd987877f0af5b12e12a55eba",
+            "reportedModel": "gemini-3.1-flash-lite",
+            "usage": {
+              "input": 36417,
+              "output": 17,
+              "cached": 0
+            }
+          },
+          {
+            "id": 24,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.334Z",
+            "completedAt": "2026-11-20T07:03:43.404Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "fa8c50ce6b3f569f88f082fe6e4da16d8bf3375b1425563eb9bf55eee9a24ad0",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 25,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.407Z",
+            "completedAt": "2026-11-20T07:03:43.478Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "254ae9da9b261c9ec71d679a10c43f370eaeab9982555a59cf10de52dfb8eb76",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 26,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.481Z",
+            "completedAt": "2026-11-20T07:03:43.572Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "e7c363d7fd5799b90bd5a91234edb5b66e4c8d417ddba3adb00332071c15b370",
+            "responseSha256": "74e8eb0cd771a0a06a116412306ba3b3086c114ef26dbc5f9cf5d9c4007950dc",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 5997,
+              "output": 973
+            }
+          },
+          {
+            "id": 27,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.594Z",
+            "completedAt": "2026-11-20T07:03:43.647Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "fa8c50ce6b3f569f88f082fe6e4da16d8bf3375b1425563eb9bf55eee9a24ad0",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 28,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.650Z",
+            "completedAt": "2026-11-20T07:03:43.704Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "254ae9da9b261c9ec71d679a10c43f370eaeab9982555a59cf10de52dfb8eb76",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 29,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.709Z",
+            "completedAt": "2026-11-20T07:03:43.817Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "e7c363d7fd5799b90bd5a91234edb5b66e4c8d417ddba3adb00332071c15b370",
+            "responseSha256": "47bc2427b04eeaa110eba10e56aa900f65f73571fbfd883e5c05abdf755ab8c9",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 5997,
+              "output": 973
+            }
+          },
+          {
+            "id": 30,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.821Z",
+            "completedAt": "2026-11-20T07:03:43.871Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 400,
+            "requestId": null,
+            "requestSha256": "62ba8957c824973345f4cbaa741c2d43b656fd7538ca903841aa45a594986c74",
+            "responseSha256": "064254f3ae23a1d1840abd90c4cedbac7b8c38861daa5c55ab69485bc8af3df5",
+            "reportedModel": null,
+            "usage": null
+          },
+          {
+            "id": 31,
+            "role": "reviewer",
+            "startedAt": "2026-11-20T07:03:43.872Z",
+            "completedAt": "2026-11-20T07:03:43.934Z",
+            "endpoint": "http://127.0.0.1:45861/api/judgement/typesafe",
+            "status": 200,
+            "requestId": null,
+            "requestSha256": "c270859a7efd5b89fb06e26a0edcefcbe091aa44a842646d693c4b31e1d0a21b",
+            "responseSha256": "9900f1b56b1d328e4e98a03559a97c9c7174a613abeb6faf79f6e266471c7a5a",
+            "reportedModel": "jev-1.14.0",
+            "usage": {
+              "input": 671,
+              "output": 38
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "localSignedGateway": {
+    "exitCode": 0,
+    "receipts": [
+      {
+        "upstream": "TypeSafe",
+        "model": "judgement-jev/jev-1.14.0",
+        "oversized": 400,
+        "code": "context-limit-exceeded",
+        "recovery": 200,
+        "fullHistoryChars": 54000,
+        "retainedSuffixChars": 496,
+        "answer": "birch",
+        "usage": {
+          "input_tokens": 716,
+          "output_tokens": 42
+        },
+        "isolatedReservationMicros": 2764,
+        "isolatedSettledMicros": 50
+      }
+    ]
+  },
+  "learnerBrowser": {
+    "sessionId": "3167da15-79c9-412e-8707-154d06d492a7",
+    "uniqueCode": "SAGE-C291B1B0",
+    "question": "Using our earlier workshop code, give the perimeter of a rectangle with sides 7 and 5. Include the code and numeric result in one sentence. Use only our conversation.",
+    "origin": "http://127.0.0.1:45861",
+    "mode": "live",
+    "passed": true,
+    "beforeAssistantRows": 2,
+    "afterAssistantRows": 3,
+    "seededMessageCount": 4,
+    "persistedMessageCount": 6,
+    "answerFromStorage": "The perimeter of a rectangle with sides 7 and 5 is 24, calculated under workshop code SAGE-C291B1B0.",
+    "storage": {
+      "sessionId": "3167da15-79c9-412e-8707-154d06d492a7",
+      "messageCount": 6,
+      "questionIndex": 4,
+      "assistantText": "The perimeter of a rectangle with sides 7 and 5 is 24, calculated under workshop code SAGE-C291B1B0.",
+      "assistantTimestamp": 1795158705121,
+      "stopReason": "stop",
+      "receiptTimestamp": 1795158705121,
+      "phase": "released",
+      "selectedAttempt": 1,
+      "reason": "remaining-part-unresolved",
+      "parallelAttempts": [
+        1,
+        2
+      ],
+      "slides": [
+        {
+          "reason": null,
+          "phase": "planning",
+          "turnsDropped": 1
+        },
+        {
+          "reason": null,
+          "phase": "checking",
+          "turnsDropped": 1
+        },
+        {
+          "reason": null,
+          "phase": "checking",
+          "turnsDropped": 1
+        },
+        {
+          "reason": null,
+          "phase": "selecting",
+          "turnsDropped": 1
+        }
+      ]
+    },
+    "offlineReload": {
+      "text": "Requested part still open\n2 drafts\n56 of 58 checks passed\n6s\n\nThe perimeter of a rectangle with sides 7 and 5 is 24, calculated under workshop code SAGE-C291B1B0.",
+      "newDispatches": 0,
+      "staticAssetCount": 188,
+      "stopButtonVisible": false,
+      "stored": {
+        "sessionId": "3167da15-79c9-412e-8707-154d06d492a7",
+        "messageCount": 6,
+        "questionIndex": 4,
+        "assistantText": "The perimeter of a rectangle with sides 7 and 5 is 24, calculated under workshop code SAGE-C291B1B0.",
+        "assistantTimestamp": 1795158705121,
+        "stopReason": "stop",
+        "receiptTimestamp": 1795158705121,
+        "phase": "released",
+        "selectedAttempt": 1,
+        "reason": "remaining-part-unresolved",
+        "parallelAttempts": [
+          1,
+          2
+        ],
+        "slides": [
+          {
+            "reason": null,
+            "phase": "planning",
+            "turnsDropped": 1
+          },
+          {
+            "reason": null,
+            "phase": "checking",
+            "turnsDropped": 1
+          },
+          {
+            "reason": null,
+            "phase": "checking",
+            "turnsDropped": 1
+          },
+          {
+            "reason": null,
+            "phase": "selecting",
+            "turnsDropped": 1
+          }
+        ]
+      }
+    },
+    "calls": [
+      {
+        "id": 15,
+        "kind": "review",
+        "bytes": 72853,
+        "wireHash": "94b901db1123e5134225098a0e3d024aa6e0d7524b049747a1dafadb9dcd3ad4",
+        "questions": 39,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 16,
+        "kind": "review",
+        "bytes": 55771,
+        "wireHash": "b13ce00bd131fd9be167b73902cfc2ae36c952fca7691642f4ef3a677ffdb121",
+        "questions": 1,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 17,
+        "kind": "review",
+        "bytes": 19813,
+        "wireHash": "dab0cabb95539277da055066fa80e701b88132ead81a35578a1a3cbcf5c8f29a",
+        "questions": 39,
+        "historyMessages": 2,
+        "historyHash": "184f8b4508a80fc11d7c65bfcf0d4d2686ffbd44bef7bbf8c467adea018bee7b",
+        "oldestPresent": false,
+        "retainedCode": true,
+        "currentPresent": true,
+        "status": 200,
+        "matchedCode": null,
+        "responseModel": "jev-1.14.0",
+        "selectedDraft": null,
+        "input": 4242,
+        "output": 748
+      },
+      {
+        "id": 18,
+        "kind": "tutor",
+        "bytes": 95967,
+        "wireHash": "757e27c1e75dd77534adab2a304019eabb7daeee8f922df9a50002df1f721ed7",
+        "status": 200,
+        "responseModel": "gemini-3.1-flash-lite",
+        "input": 45361,
+        "output": 33
+      },
+      {
+        "id": 19,
+        "kind": "tutor",
+        "bytes": 96033,
+        "wireHash": "8bb36114748623cf2f15fe3b4524937f00478d4703fc70696f299b9fa1bd2cd7",
+        "status": 200,
+        "responseModel": "gemini-3.1-flash-lite",
+        "input": 45371,
+        "output": 33
+      },
+      {
+        "id": 20,
+        "kind": "review",
+        "bytes": 83261,
+        "wireHash": "fce09e18d0808cb7a9150f030125d381ecda5f971a9e666a0b711a2130882859",
+        "questions": 48,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 21,
+        "kind": "review",
+        "bytes": 55859,
+        "wireHash": "6a75b4e638c2c8dd6a587c4ae61e14bd394e0a9192c1f8ea895797fe86c584f7",
+        "questions": 1,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 22,
+        "kind": "review",
+        "bytes": 30221,
+        "wireHash": "b452205d72580d7c38c66f17b9e38ad5907227d6f7968e50a8ac06ddaacaa8d0",
+        "questions": 48,
+        "historyMessages": 2,
+        "historyHash": "184f8b4508a80fc11d7c65bfcf0d4d2686ffbd44bef7bbf8c467adea018bee7b",
+        "oldestPresent": false,
+        "retainedCode": true,
+        "currentPresent": true,
+        "status": 200,
+        "matchedCode": null,
+        "responseModel": "jev-1.14.0",
+        "selectedDraft": null,
+        "input": 6363,
+        "output": 973
+      },
+      {
+        "id": 23,
+        "kind": "review",
+        "bytes": 83265,
+        "wireHash": "089c0170010b6d8ddde4b50cbf396d761dc8ea310f59bb8f44000138fb8cbbb7",
+        "questions": 48,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 24,
+        "kind": "review",
+        "bytes": 55863,
+        "wireHash": "c2f2f41392f9d0e00279ac14a64c62c3ee9d51bc1369a09a0e268f62f9f4d8fc",
+        "questions": 1,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 25,
+        "kind": "review",
+        "bytes": 30225,
+        "wireHash": "923be8ae3bf45436832c35a36e530e90fef07c3221e5d36d704676f43c843dae",
+        "questions": 48,
+        "historyMessages": 2,
+        "historyHash": "184f8b4508a80fc11d7c65bfcf0d4d2686ffbd44bef7bbf8c467adea018bee7b",
+        "oldestPresent": false,
+        "retainedCode": true,
+        "currentPresent": true,
+        "status": 200,
+        "matchedCode": null,
+        "responseModel": "jev-1.14.0",
+        "selectedDraft": null,
+        "input": 6363,
+        "output": 973
+      },
+      {
+        "id": 26,
+        "kind": "review",
+        "bytes": 56532,
+        "wireHash": "7248c95a9bf2a3d30cec4c569f42696d693a9c5474063297f725e25273bf79c0",
+        "questions": 1,
+        "historyMessages": 4,
+        "historyHash": "d55083dfed5b61c5819e330d067b15d3efe8b1ff8409e936e30193b8f04ceb2b",
+        "oldestPresent": true,
+        "retainedCode": false,
+        "currentPresent": true,
+        "status": 400,
+        "matchedCode": "context-limit-exceeded",
+        "responseModel": null,
+        "selectedDraft": null,
+        "input": null,
+        "output": null
+      },
+      {
+        "id": 27,
+        "kind": "review",
+        "bytes": 3492,
+        "wireHash": "77554ea92a53cc174dec322f9b1daeb850f34e03ac3c8147f1b34ef1bc23ed71",
+        "questions": 1,
+        "historyMessages": 2,
+        "historyHash": "184f8b4508a80fc11d7c65bfcf0d4d2686ffbd44bef7bbf8c467adea018bee7b",
+        "oldestPresent": false,
+        "retainedCode": true,
+        "currentPresent": true,
+        "status": 200,
+        "matchedCode": null,
+        "responseModel": "jev-1.14.0",
+        "selectedDraft": "draft_1",
+        "input": 1185,
+        "output": 38
+      },
+      {
+        "id": 28,
+        "kind": "tutor",
+        "bytes": 96862,
+        "wireHash": "f60ee35b0d3a9ce8ab459e8d170e68854c6e27828140116a5b05234161922093",
+        "status": 200,
+        "responseModel": "gemini-3.1-flash-lite",
+        "input": 45532,
+        "output": 33
+      }
+    ]
+  },
+  "candidateSignedApplication": {
+    "summary": {
+      "mode": "live",
+      "passed": true,
+      "checks": {
+        "flue": true,
+        "signed": true,
+        "reportedIdentity": true,
+        "upstreamRejected": true,
+        "recovered": true,
+        "bounded": true,
+        "concurrency": true,
+        "liveDispatch": true
+      },
+      "overlapMs": 1026.9501860000003,
+      "reviewRequests": 11,
+      "tutorRequests": 2,
+      "localAuthExchanges": 1,
+      "reviewerHeldMicrousd": 35698,
+      "tutorHeldMicrousd": 18270,
+      "combinedHeldMicrousd": 53968,
+      "visible": {
+        "textHash": "d39ca2c09ce212f8ac2dfbdaba033ed04f25d94a8c719eafc5ffff57a9aa75a0",
+        "chars": 59,
+        "correct": true,
+        "notice": null,
+        "suggestsShorterRequest": false
+      }
+    },
+    "ledger": {
+      "denied": 0,
+      "signedCalls": 11,
+      "authExchanges": 1,
+      "reviews": [
+        {
+          "id": 1,
+          "wireHash": "b9d2e6f7deb80bab1c4b0f1f4da8984e426b2642d9bb9c58c016a6860e6e80e0",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:04.463Z",
+          "completedAt": "2026-11-20T07:12:04.566Z"
+        },
+        {
+          "id": 2,
+          "wireHash": "62be9a517ac897a0c1a5ae7b9c1b93a07a91874ac67b7679f5b8faab60480767",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:04.575Z",
+          "completedAt": "2026-11-20T07:12:04.614Z"
+        },
+        {
+          "id": 3,
+          "wireHash": "d60af63959a3fe8ef09ab60c34832674febc3611e2fdcc6c15197bc781f5c87d",
+          "status": 200,
+          "model": "jev-1.14.0",
+          "safeCode": null,
+          "reservation": 5000,
+          "accounted": 164,
+          "requestId": null,
+          "input": 3890,
+          "output": 748,
+          "sentAt": "2026-11-20T07:12:04.626Z",
+          "completedAt": "2026-11-20T07:12:04.788Z"
+        },
+        {
+          "id": 4,
+          "wireHash": "4db3c9a48647c6b234a6642926d0922d9edf253cbd4ef224026f3105188a5837",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:05.874Z",
+          "completedAt": "2026-11-20T07:12:05.939Z"
+        },
+        {
+          "id": 5,
+          "wireHash": "39f994447ed6382e3f7a15d4ccd18b618e6958fa46662316f87ad811a5f8666d",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:05.947Z",
+          "completedAt": "2026-11-20T07:12:05.990Z"
+        },
+        {
+          "id": 6,
+          "wireHash": "02bcf5680cd42608d1e9c3f9cb03b5cd168b7f556a6ba8934ad0c1ee5d34754a",
+          "status": 200,
+          "model": "jev-1.14.0",
+          "safeCode": null,
+          "reservation": 5000,
+          "accounted": 253,
+          "requestId": null,
+          "input": 6005,
+          "output": 973,
+          "sentAt": "2026-11-20T07:12:05.998Z",
+          "completedAt": "2026-11-20T07:12:06.346Z"
+        },
+        {
+          "id": 7,
+          "wireHash": "aed3c29d56bbecfd15204c4665f8e0d55693dc0c6483b5a90efbea8a85d57a30",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:09.006Z",
+          "completedAt": "2026-11-20T07:12:09.070Z"
+        },
+        {
+          "id": 8,
+          "wireHash": "46fbb44fe265f85b35308fcbd08a87b54f75878a6b71cfb99a4d75c0bd811f9a",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:09.078Z",
+          "completedAt": "2026-11-20T07:12:09.122Z"
+        },
+        {
+          "id": 9,
+          "wireHash": "0460327c026ff4885a52babec0e9256deefcbae4d13a5fb76b92230ec802f544",
+          "status": 200,
+          "model": "jev-1.14.0",
+          "safeCode": null,
+          "reservation": 5000,
+          "accounted": 252,
+          "requestId": null,
+          "input": 5997,
+          "output": 973,
+          "sentAt": "2026-11-20T07:12:09.131Z",
+          "completedAt": "2026-11-20T07:12:09.246Z"
+        },
+        {
+          "id": 10,
+          "wireHash": "287f73a9593ab766b02570430ec46103293aa803ff584d02dcb5fdcfad743ffd",
+          "status": 400,
+          "model": null,
+          "safeCode": "max_tokens_exceeded",
+          "reservation": 5000,
+          "accounted": 5000,
+          "requestId": null,
+          "input": null,
+          "output": null,
+          "sentAt": "2026-11-20T07:12:09.256Z",
+          "completedAt": "2026-11-20T07:12:09.302Z"
+        },
+        {
+          "id": 11,
+          "wireHash": "813558b487fd163ac2fd209ea6e869a23c06f229500ad7a8257e93db353cbee5",
+          "status": 200,
+          "model": "jev-1.14.0",
+          "safeCode": null,
+          "reservation": 5000,
+          "accounted": 29,
+          "requestId": null,
+          "input": 679,
+          "output": 38,
+          "sentAt": "2026-11-20T07:12:09.307Z",
+          "completedAt": "2026-11-20T07:12:09.402Z"
+        }
+      ]
+    }
+  }
+}
