@@ -769,8 +769,11 @@ html[data-reply-typeface="mono"] .st-reply-preview { font-family: var(--mono-bod
 		font-size: 0.673rem;
 	}
 
-	/* Search results */
+	/* Search results fill the page so the search field stays at the bottom. */
 	.st-results {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
 		padding: 0.4rem 0.8rem;
 	}
 	.st-results button {
