@@ -32,7 +32,7 @@ export function JudgementStateInspector({ snapshot }: { snapshot: TeachingDraftS
       <strong className={copy}>State + longest question</strong>
       <span className={copy}>{format(state.estimatedStateQuestionTokens)}{state.budgetTokens === null ? " estimated tokens · budget unknown" : ` / ${format(state.budgetTokens)} estimated tokens`}</span>
     </div>
-    {state.fillRatio !== null && <Meter label="Estimated judgement context usage" value={state.fillRatio * 100} max={100}
+    {state.fillRatio !== null && <Meter label="Estimated judgement context usage" value={Math.min(100, state.fillRatio * 100)} max={100}
       valueText={`${(state.fillRatio * 100).toLocaleString(undefined, { maximumFractionDigits: 1 })}% of the recorded token budget`} />}
     <p className={copy}>{format(state.totalBytes)} state bytes · {format(state.estimatedStateTokens)} estimated state tokens · {format(state.estimatedRequestTokens)} estimated request tokens{retainedExcerpts(state)}. Token estimates use serialized text.</p>
     <details><summary className={detail}>State sections & pinned context</summary>

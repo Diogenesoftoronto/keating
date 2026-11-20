@@ -6,7 +6,7 @@ import {
 import { JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT } from "@keating/runtime-config";
 import { reasoningQuestions, standardQuestion } from "../../packages/learner-contracts/src/judgement/teaching-drafts/policy";
 
-export const CASES = ["under", "at", "over", "current", "dense"] as const;
+export const CASES = ["under", "at", "over", "current-fit", "dense", "current", "wire"] as const;
 export type BoundaryCase = typeof CASES[number];
 export const TUTOR_MODEL = "gemini-3.1-flash-lite";
 export const REVIEW_MODEL = "jev-1.14.0";
@@ -23,9 +23,9 @@ export function correctAnswer(value: string) {
 
 function makeTurn(kind: BoundaryCase, characters: number): TeachingPolicyTurn {
   const referenceText = reference.repeat(Math.ceil(characters / reference.length)).slice(0, characters);
-  const pinned = kind === "current";
+  const pinned = kind === "current" || kind === "current-fit" || kind === "wire";
   return {
-    learnerMessage: pinned ? current + "\n" + referenceText : current,
+    learnerMessage: pinned ? opening + "\nReference notes\n" + referenceText + "\n" + current : current,
     conversation: pinned ? [] : [
       { role: "user", content: opening },
       { role: "assistant", content: "We will use a rectangle for the next exercise. ".repeat(75) },
@@ -45,20 +45,26 @@ function planningRequest(turn: TeachingPolicyTurn): JudgementRequest {
 
 export function calibratedCase(kind: BoundaryCase) {
   const offset = kind === "under" ? -1 : kind === "at" ? 0 : 1;
-  const target = kind === "dense" ? 18_104 : JEV_STATE_QUESTION_TOKEN_LIMIT + offset;
-  const baseline = estimatedStateQuestionTokens(planningRequest(makeTurn(kind, 0)));
+  const dense = kind === "dense" || kind === "current";
+  const target = dense ? 18_104 : JEV_STATE_QUESTION_TOKEN_LIMIT + offset;
+  const empty = makeTurn(kind, 0);
+  const baseline = estimatedStateQuestionTokens(planningRequest(empty));
   let turn = makeTurn(kind, target - baseline);
-  if (kind === "dense") {
-    const empty = makeTurn(kind, 0);
-    const characters = 3 * (target - estimatedStateQuestionTokens(planningRequest(empty)));
+  if (dense) {
+    const characters = 3 * (target - baseline);
     const hashes: string[] = [];
     for (let i = 0; hashes.length * 44 < characters; i++) hashes.push(createHash("sha256").update("jev-boundary-" + i).digest("base64"));
-    turn = { ...empty, conversation: empty.conversation.map((message, index) =>
-      index === 1 ? { ...message, content: message.content + hashes.join("").slice(0, characters) } : message) };
+    const ids = hashes.join("").slice(0, characters);
+    turn = kind === "current" ? { ...empty, learnerMessage: empty.learnerMessage + ids }
+      : { ...empty, conversation: empty.conversation.map((message, index) => index === 1 ? { ...message, content: message.content + ids } : message) };
+  } else if (kind === "wire") {
+    const excess = MAX_STATE_CHARS + 1 - stateCharacterCount(planningRequest(empty).state);
+    turn = { ...empty, learnerMessage: empty.learnerMessage + "x".repeat(excess) };
   }
   const request = planningRequest(turn);
   const measured = measureStateComposition(request, JEV_STATE_QUESTION_TOKEN_LIMIT);
-  if (measured.estimatedStateQuestionTokens !== target || stateCharacterCount(request.state) >= MAX_STATE_CHARS) {
+  const wireChars = stateCharacterCount(request.state);
+  if (kind === "wire" ? wireChars !== MAX_STATE_CHARS + 1 : measured.estimatedStateQuestionTokens !== target || wireChars >= MAX_STATE_CHARS) {
     throw new Error("fixture-calibration-failed");
   }
   return { kind, turn, full: {

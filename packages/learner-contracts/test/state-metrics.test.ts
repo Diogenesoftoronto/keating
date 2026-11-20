@@ -146,3 +146,32 @@ test("the transport character ceiling also preserves the full transcript at exac
   expect(over.turn.earlierLearnerExcerpts).toEqual(["Keep the opening requirement."]);
   expect(over.turn.learnerMessage).toBe(turn.learnerMessage);
 });
+
+test("a wire limit preserves history if every question fits alone and drops only the oldest whole turn otherwise", () => {
+  const history: TeachingPolicyTurn["conversation"] = [
+    { role: "user", content: "Keep the opening requirement." }, { role: "assistant", content: "先".repeat(400) },
+    { role: "user", content: "Recent detail" }, { role: "assistant", content: "Recent answer" },
+  ];
+  const input = { ...turn, conversation: history };
+  const questions = { short: { type: "noul", instructions: "OK?" },
+    longer: { type: "noul", instructions: "根拠".repeat(80) } } as const;
+  const request = (current: TeachingPolicyTurn) => ({ state: teachingPolicyState(current), questions });
+  const bytes = (value: JudgementRequest) => new TextEncoder().encode(JSON.stringify(value)).byteLength;
+  const largest = (current: TeachingPolicyTurn) => bytes({ state: request(current).state, questions: { longer: questions.longer } });
+  const fits = (limit: number) => (value: JudgementRequest) => bytes(value) <= limit;
+
+  const exact = largest(input);
+  expect(bytes(request(input))).toBeGreaterThan(exact);
+  expect(prepareTeachingWindow(input, request, null, null, fits(exact)).turn).toBe(input);
+  expect(bytes({ state: request(input).state, questions: { short: questions.short } })).toBeLessThan(exact);
+  const over = prepareTeachingWindow(input, request, null, null, fits(exact - 1));
+  expect(over.fitsLimits).toBe(true);
+  expect(over.turnsDropped).toBe(1);
+  expect(over.turn.conversation).toEqual(history.slice(2));
+  expect(over.turn.earlierLearnerExcerpts).toEqual([history[0]!.content]);
+  expect(over.turn.learnerMessage).toBe(turn.learnerMessage);
+
+  const tooLarge = prepareTeachingWindow(input, request, null, null, fits(largest(turn) - 1));
+  expect(tooLarge.fitsLimits).toBe(false);
+  expect(tooLarge.turn.learnerMessage).toBe(turn.learnerMessage);
+});

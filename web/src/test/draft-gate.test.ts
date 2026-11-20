@@ -1304,6 +1304,43 @@ describe("private judgement transport boundary", () => {
     expect(getJudgementDiagnostics().events).toEqual([]);
   });
 
+  test.each([false, true])("the web gate enforces the TypeSafe relay byte limit with multibyte text (oversized current request %s)", async oversized => {
+    const runtime = createWebJudgementRuntime({ calibration: {}, settings: { backend: "hosted", hostedProvider: "typesafe",
+      customModel: "jev-1.14.0", localModelId: "unused", gatewayPath: "/api/judgement" } });
+    const reviewer = runtime.teachingTiers![0]!;
+    const requests: JudgementRequest[] = [];
+    const call: JudgementCaller = async request => {
+      requests.push(request);
+      const outcome = answer(request);
+      return outcome.ok ? { ...outcome, response: { ...outcome.response, backend: reviewer.key } } : outcome;
+    };
+    const isolated = { ...runtime, policy: { ...runtime.policy, tiers: [{ key: reviewer.key, call }] } };
+    const input = context(oversized ? "界".repeat(88_000) : "What is four factorial?");
+    const prior = "界".repeat(86_000);
+    if (!oversized) {
+      input.messages = [{ role: "user", content: "Opening requirement", timestamp: 0 }, message(prior), ...input.messages];
+    }
+    let actors = 0;
+    const result = await (await gate(() => { actors++; return streamOf(message("Four factorial is 24.")); }, {
+      makeCaller: undefined, makeRuntime: () => isolated, maxAttempts: 1,
+    })(MODEL, input)).result();
+    if (oversized) {
+      expect(requests).toHaveLength(0);
+      expect(actors).toBe(0);
+    } else {
+      expect(text(result)).toBe("Four factorial is 24.");
+      expect(actors).toBe(1);
+      expect(requests.every(request => reviewer.fitsWire!(request))).toBe(true);
+      const planning = requests.filter(request => !(request.state as { reply?: unknown }).reply);
+      expect(planning.length).toBeGreaterThan(1);
+      expect(reviewer.fitsWire!({ state: planning[0]!.state,
+        questions: Object.assign({}, ...planning.map(request => request.questions)) })).toBe(false);
+      for (const request of planning) {
+        expect((request.state as { turn: TeachingPolicyTurn }).turn.conversation[1]!.content).toBe(prior);
+      }
+    }
+  });
+
   test("an account change during hosted planning stops before the local fallback sees the previous account's evidence", async () => {
     let account = "first", hostedCalls = 0, localCalls = 0, actorCalls = 0;
     const mixed = createWebJudgementRuntime({

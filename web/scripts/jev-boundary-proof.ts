@@ -10,31 +10,33 @@ export async function main(args: string[]) {
   if (args.length === 1 && ["--help", "-h"].includes(args[0]!)) {
     console.log([
       "rtk bun web/scripts/jev-boundary-proof.ts --mode preflight --out DIRECTORY",
-      "rtk bun web/scripts/jev-boundary-proof.ts --mode live --out DIRECTORY [--case under,at,over,current,dense] [--reviewer relay|direct] [--relay-base ORIGIN] [--max-microusd 800000]",
-      "Preflight uses deterministic model fixtures and the real Flue and draft controller. Dense preflight supplies an explicit provider-overflow response.",
+      "rtk bun web/scripts/jev-boundary-proof.ts --mode live --out DIRECTORY [--case under,at,over,current-fit,dense,current,wire] [--reviewer relay|direct] [--relay-base ORIGIN] [--max-microusd 800000]",
+      "Preflight uses deterministic model fixtures and the real Flue and draft controller. The dense and current fixtures explicitly return provider overflow.",
       "Live reads GEMINI_API_KEY and TYPESAFE_API_KEY. The default reviewer uses the production Keating BYOK relay. A loopback origin selects a running local relay.",
-      "The default cases are under, at, over and current. Dense exercises provider-confirmed overflow with identifier-heavy text. Each invocation requires a fresh output directory.",
-      "The live ledger reserves at most $0.80 across 40 HTTP calls, and retains full reservations for missing provider usage. Receipts contain hashes and typed checks.",
+      "All seven cases run by default. Use --case for a subset. Dense tests recoverable overflow in earlier messages, current tests irreducible provider overflow, and wire tests the local size guard. Use a fresh output directory.",
+      "The live ledger reserves at most $0.80 across 64 HTTP calls, and retains full reservations for missing provider usage. Receipts contain hashes and typed checks.",
     ].join("\n"));
     return true;
   }
   const { values } = parseArgs({ args, options: {
-    mode: { type: "string", default: "preflight" }, out: { type: "string" }, case: { type: "string", default: "under,at,over,current" },
+    mode: { type: "string", default: "preflight" }, out: { type: "string" }, case: { type: "string", default: CASES.join(",") },
     "max-microusd": { type: "string", default: String(MAX_MICROUSD) },
     reviewer: { type: "string", default: "relay" }, "relay-base": { type: "string", default: "https://chat.keating.help" },
   } });
   if (!values.out || !["preflight", "live"].includes(values.mode!) || !["relay", "direct"].includes(values.reviewer!)) {
-    throw new Error("usage: --mode preflight|live --out DIRECTORY [--case under,at,over,current,dense] [--reviewer relay|direct] [--relay-base ORIGIN] [--max-microusd 800000]");
+    throw new Error("usage: --mode preflight|live --out DIRECTORY [--case under,at,over,current-fit,dense,current,wire] [--reviewer relay|direct] [--relay-base ORIGIN] [--max-microusd 800000]");
   }
   const kinds = values.case!.split(",");
   if (!kinds.length || kinds.some(value => !CASES.includes(value as BoundaryCase)) || new Set(kinds).size !== kinds.length) throw new Error("invalid-case");
   const mode = values.mode as "preflight" | "live", reviewer = values.reviewer as "relay" | "direct";
   const origin = relayOrigin(values["relay-base"]!);
   const codePaths = [
-    "packages/learner-contracts/src/judgement/state-metrics.ts", "packages/learner-contracts/src/judgement/teaching-policy.ts",
+    "packages/runtime-config/src/budgets.ts", "packages/learner-contracts/src/judgement/contracts.ts",
+    "packages/learner-contracts/src/judgement/wire.ts", "packages/learner-contracts/src/judgement/state-metrics.ts", "packages/learner-contracts/src/judgement/teaching-policy.ts",
     "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts", "packages/learner-contracts/src/judgement/teaching-drafts/session.ts",
     "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts", "packages/learner-contracts/src/judgement/system-one.ts",
     "web/src/keating/judgement/draft-gate.ts", "web/src/keating/judgement/search-evidence.ts", "web/src/keating/judgement/custom-backend.ts",
+    "web/src/keating/judgement/runtime.ts", "web/server/utils/judgement-gateway.ts",
     "web/src/keating/flue/model-messages.ts", "web/server/api/judgement/typesafe.post.ts",
     ...["cases", "flue", "transport", "proof"].map(name => "web/scripts/jev-boundary-" + name + ".ts"),
   ];
@@ -60,19 +62,22 @@ export async function main(args: string[]) {
   for (const value of kinds) {
     const kind = value as BoundaryCase;
     const fixture = calibratedCase(kind);
-    const engines = mode === "preflight" ? offlineModels(kind === "dense" ? fixture.full.stateHash : undefined) : liveModels(kind, ledger, reviewer, origin);
+    const engines = mode === "preflight" ? offlineModels(kind === "dense" || kind === "current" ? fixture.full.stateHash : undefined) : liveModels(kind, ledger, reviewer, origin);
     const result = await runFlueCase(fixture, engines);
     const fromWire = ledger.rows.filter(row => row.case === kind);
     const successful = fromWire.filter(row => row.status !== null && row.status >= 200 && row.status < 300);
-    const resolved = mode === "preflight" || kind === "current" ? fromWire.length === 0
-      : successful.some(row => row.role === "tutor") && successful.some(row => row.role === "reviewer")
-        && successful.every(row => row.role === "tutor" ? row.reportedModel?.replace(/^models\//, "") === TUTOR_MODEL : row.reportedModel === REVIEW_MODEL);
+    const expectsModels = mode === "live" && kind !== "current" && kind !== "wire";
+    const resolved = expectsModels ? successful.some(row => row.role === "tutor") && successful.some(row => row.role === "reviewer")
+        && successful.every(row => row.role === "tutor" ? row.reportedModel?.replace(/^models\//, "") === TUTOR_MODEL : row.reportedModel === REVIEW_MODEL)
+      : null;
     const networkOverlapMs = openingWireOverlap(fromWire, result.tutorResponses.slice(0, 2).map(candidate => candidate.requestHash));
-    const transportPass = mode === "preflight" || kind === "current" ? fromWire.length === 0
+    const transportPass = mode === "preflight" || kind === "wire" ? fromWire.length === 0
+      : kind === "current" ? fromWire.length === 2 && fromWire.every((row, index) => row.role === "reviewer" && row.status === 400 && row.responseSha256
+          && row.semanticRequestHash === result.requests[index]?.requestHash && result.requests[index]?.code === "context-limit-exceeded")
       : (networkOverlapMs ?? 0) > 0 && successful.filter(row => row.role === "reviewer").every(row => row.responseSha256 && row.endpoint)
         && result.requests.filter(request => request.ok).every(request => successful.some(row => row.role === "reviewer" && row.semanticRequestHash === request.requestHash));
-    const passed = result.passed && resolved && transportPass;
-    save(kind, { ...result, passed, sourceHash, providerIdentityConfirmed: mode === "live" && kind !== "current" ? resolved : null,
+    const passed = result.passed && resolved !== false && transportPass;
+    save(kind, { ...result, passed, sourceHash, providerIdentityConfirmed: resolved,
       networkOverlapMs, transportPass,
       transport: mode === "preflight" ? "offline" : reviewer === "direct" ? "typesafe-direct" : origin, wire: fromWire });
     results.push({ case: kind, passed, phase: result.final?.phase, checks: result.checked, providerRequests: fromWire.length, networkOverlapMs, transportPass });

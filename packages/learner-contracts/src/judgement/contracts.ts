@@ -92,6 +92,8 @@ export const MAX_QUESTIONS_PER_REQUEST = 64;
 export const MAX_STATE_CHARS = 96_000;
 /** The Not Organic and same-origin judgement gateways limit the serialized questions object separately. */
 export const MAX_GATEWAY_QUESTION_CHARS = 96_000;
+/** Incoming UTF-8 JSON body limit for Keating's TypeSafe BYOK relay. */
+export const MAX_TYPESAFE_BYOK_BODY_BYTES = 256 * 1024;
 /** A Choice accepts at most 255 options; past that, narrow in two stages. */
 export const MAX_CHOICE_OPTIONS = 255;
 /** A Score needs at least two levels to be ordered at all. */

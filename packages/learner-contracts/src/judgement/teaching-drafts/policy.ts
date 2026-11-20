@@ -289,10 +289,12 @@ export function splitJudgementRequest(request: JudgementRequest, budgets: {
   readonly requestTokens: number | null;
   readonly stateQuestionTokens: number | null;
   readonly maxQuestionChars?: number;
+  readonly fitsWire?: (request: JudgementRequest) => boolean;
 }): JudgementRequest[] | null {
   const fitsRequest = (batch: JudgementRequest) =>
     (budgets.maxQuestionChars === undefined || JSON.stringify(batch.questions).length <= budgets.maxQuestionChars)
-    && (budgets.requestTokens === null || estimatedRequestTokens(batch) <= budgets.requestTokens);
+    && (budgets.requestTokens === null || estimatedRequestTokens(batch) <= budgets.requestTokens)
+    && (budgets.fitsWire?.(batch) ?? true);
   const entries = Object.entries(request.questions);
   if (!entries.length) return [];
   // Batching cannot reduce the state or its longest individual question.

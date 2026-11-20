@@ -15,6 +15,29 @@ const generated = async () => ({ reply: { text: "Division splits a quantity into
 const turnOf = (request: JudgementRequest) => (request.state as { turn: TeachingPolicyTurn }).turn;
 
 describe("a provider token limit that the host estimate missed", () => {
+  test.each(["jev-1.14.0", "judgement", "judgement-jev/jev-1.14.0"])("keeps full fitting input above the token estimate for %s", async id => {
+    const longHistory = [{ role: "user" as const, content: "Earlier instruction." }, { role: "assistant" as const, content: "四角形".repeat(11_000) }];
+    const seen: JudgementRequest[] = [];
+    const result = await runTeachingDrafts({ turn: { ...turn, conversation: longHistory }, judgementModel: { ...reviewer, id },
+      judge: async (request, signal) => { seen.push(request); return accept(request, signal); }, generate: generated, maxAttempts: 1 });
+    expect(result.status).toBe("released");
+    expect(result.receipt.stateHistory![0]!.state.estimatedStateQuestionTokens).toBeGreaterThan(32_000);
+    expect(result.receipt.stateHistory![0]!.state.budgetTokens).toBe(32_000);
+    expect(seen.length).toBeGreaterThan(1);
+    expect(seen.every(request => turnOf(request).conversation.length === longHistory.length)).toBe(true);
+    expect(result.receipt.slides).toEqual([]);
+  });
+
+  test("honors an explicitly smaller operator budget even for a known hosted Jev", async () => {
+    const result = await runTeachingDrafts({ turn, judgementModel: { ...reviewer, id: "jev-1.14.0", stateQuestionTokens: 2_000 },
+      judge: async (request, signal) => {
+        expect(turnOf(request).conversation.length).toBeLessThan(conversation.length);
+        return accept(request, signal);
+      }, generate: generated, maxAttempts: 1 });
+    expect(result.status).toBe("released");
+    expect(result.receipt.slides!.length).toBeGreaterThan(0);
+  });
+
   test("recovers every review step with the intact current request and a recent suffix", async () => {
     const observations: { request: JudgementRequest; fit: boolean }[] = [];
     const judge: JudgementCaller = async (request, signal) => {

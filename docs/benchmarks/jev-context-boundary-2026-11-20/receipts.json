@@ -2233,9 +2233,124 @@
       }
     },
     "ledger": {
+      "caps": {
+        "combinedMicrousd": 580000,
+        "reviewerMicrousd": 90000,
+        "perReview": 5000,
+        "maxReviews": 24,
+        "maxTutors": 2
+      },
       "denied": 0,
-      "signedCalls": 11,
       "authExchanges": 1,
+      "signedCalls": 11,
+      "outgoingReviewCalls": 11,
+      "outgoingTutorCalls": 2,
+      "heldMicrousd": 53968,
+      "gatewayReservations": [
+        {
+          "id": "5d90903c-366c-491c-a921-5d001dca9261",
+          "state": "reserved",
+          "micros": 1500
+        },
+        {
+          "id": "5d90903c-366c-491c-a921-5d001dca9261",
+          "state": "upstream_400"
+        },
+        {
+          "id": "8f91ee56-b227-4412-ae4d-19f1482ff9d0",
+          "state": "reserved",
+          "micros": 1142
+        },
+        {
+          "id": "8f91ee56-b227-4412-ae4d-19f1482ff9d0",
+          "state": "upstream_400"
+        },
+        {
+          "id": "a57b66a4-4ff5-4579-9d25-a379380e13c2",
+          "state": "reserved",
+          "micros": 389
+        },
+        {
+          "id": "a57b66a4-4ff5-4579-9d25-a379380e13c2",
+          "state": "settled",
+          "micros": 164
+        },
+        {
+          "id": "91e74812-0cc1-4835-ad3c-933866aee38b",
+          "state": "reserved",
+          "micros": 1719
+        },
+        {
+          "id": "91e74812-0cc1-4835-ad3c-933866aee38b",
+          "state": "upstream_400"
+        },
+        {
+          "id": "7481ba24-9a05-4493-8a42-7cfdcf2de0d6",
+          "state": "reserved",
+          "micros": 1143
+        },
+        {
+          "id": "7481ba24-9a05-4493-8a42-7cfdcf2de0d6",
+          "state": "upstream_400"
+        },
+        {
+          "id": "509ba973-a679-4953-9b6d-9616b71d8032",
+          "state": "reserved",
+          "micros": 607
+        },
+        {
+          "id": "509ba973-a679-4953-9b6d-9616b71d8032",
+          "state": "settled",
+          "micros": 253
+        },
+        {
+          "id": "11477f15-726f-434e-b8c8-79a8d84f2db7",
+          "state": "reserved",
+          "micros": 1718
+        },
+        {
+          "id": "11477f15-726f-434e-b8c8-79a8d84f2db7",
+          "state": "upstream_400"
+        },
+        {
+          "id": "efb81dd4-31a5-4c4e-9298-8c2d8ff5542e",
+          "state": "reserved",
+          "micros": 1143
+        },
+        {
+          "id": "efb81dd4-31a5-4c4e-9298-8c2d8ff5542e",
+          "state": "upstream_400"
+        },
+        {
+          "id": "5de2d90b-4404-4e24-84c2-418fcb6e25ea",
+          "state": "reserved",
+          "micros": 607
+        },
+        {
+          "id": "5de2d90b-4404-4e24-84c2-418fcb6e25ea",
+          "state": "settled",
+          "micros": 252
+        },
+        {
+          "id": "44a63dec-2dc6-443a-bb53-fbdd3f6d149e",
+          "state": "reserved",
+          "micros": 1148
+        },
+        {
+          "id": "44a63dec-2dc6-443a-bb53-fbdd3f6d149e",
+          "state": "upstream_400"
+        },
+        {
+          "id": "3eb16b3d-f7b3-4b4c-a2da-ea3d77d556cb",
+          "state": "reserved",
+          "micros": 50
+        },
+        {
+          "id": "3eb16b3d-f7b3-4b4c-a2da-ea3d77d556cb",
+          "state": "settled",
+          "micros": 29
+        }
+      ],
       "reviews": [
         {
           "id": 1,
@@ -2391,7 +2506,97 @@
           "sentAt": "2026-11-20T07:12:09.307Z",
           "completedAt": "2026-11-20T07:12:09.402Z"
         }
+      ],
+      "tutor": [
+        {
+          "id": 1,
+          "case": "dense",
+          "role": "tutor",
+          "reservedInput": 1048576,
+          "reservedOutput": 384,
+          "reservedMicrousd": 262720,
+          "requestSha256": "c7bf7bf8ff59dc4b9e2ab703fd277a3b8ed29abdb4434896b70c7754da2d7377",
+          "startedAt": "2026-11-20T07:12:04.831Z",
+          "status": 200,
+          "requestId": null,
+          "reportedModel": "gemini-3.1-flash-lite",
+          "usage": {
+            "input": 36417,
+            "output": 17,
+            "cached": 0
+          },
+          "accountedMicrousd": 9130,
+          "completed": true,
+          "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          "semanticRequestHash": "bce8377c8efa1d045c3efea6d27b18491799467ee3c97cfca7d5a67a07022b21",
+          "method": "POST",
+          "sentMs": 1154.015811,
+          "headersAt": "2026-11-20T07:12:08.956Z",
+          "receivedMs": 5295.756995,
+          "responseSha256": "272e5bfe4330a55830f2d95de0b5357ba9a902672e329c73b71a7ff17ed05176",
+          "completedAt": "2026-11-20T07:12:08.973Z"
+        },
+        {
+          "id": 2,
+          "case": "dense",
+          "role": "tutor",
+          "reservedInput": 1048576,
+          "reservedOutput": 384,
+          "reservedMicrousd": 262720,
+          "requestSha256": "1cce9fe62feb09232c8d1802258bfeaed334ec3fc5a20b97016a3e39edf1f272",
+          "startedAt": "2026-11-20T07:12:04.831Z",
+          "status": 200,
+          "requestId": null,
+          "reportedModel": "gemini-3.1-flash-lite",
+          "usage": {
+            "input": 36407,
+            "output": 25,
+            "cached": 0
+          },
+          "accountedMicrousd": 9140,
+          "completed": true,
+          "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+          "semanticRequestHash": "4b925fca3f4b1ce61954902a0a3657c7ee3eff2fceb80125acd8ad9006e51843",
+          "method": "POST",
+          "sentMs": 1154.457788,
+          "headersAt": "2026-11-20T07:12:05.811Z",
+          "receivedMs": 2181.407974,
+          "responseSha256": "00f954e980d7d76ae9cf7eaa97dcd81b8337155c03d88ba61f30e5eff564ecb2",
+          "completedAt": "2026-11-20T07:12:05.859Z"
+        }
       ]
     }
+  },
+  "deployedFullStateControls": {
+    "maxCalls": 2,
+    "maximumReservedMicrousd": 5600,
+    "rows": [
+      {
+        "kind": "over",
+        "start": "2026-11-20T07:17:22.541Z",
+        "hostEstimatedStateQuestionTokens": 32001,
+        "stateHash": "eb7b5598d8f410e13a269c0068d1cf1d61469caa453410836f7bf5a0530d85d5",
+        "questionsHash": "8ecfbff9a9c0f49aa19a4524af3e59d9529efafa5bb5e432ba4e6f85439a4d1c",
+        "status": 200,
+        "railwayId": "k3Fo9BXvRPeuSFGmo3UVLg",
+        "resolvedModel": "jev-1.14.0",
+        "acceptedQuestions": 39,
+        "reportedInput": 35076,
+        "error": null
+      },
+      {
+        "kind": "current",
+        "start": "2026-11-20T07:17:22.975Z",
+        "hostEstimatedStateQuestionTokens": 32001,
+        "stateHash": "08764cf8678bc143c816010557cc1754097443e1a03a8fef86a20ec7eb48508b",
+        "questionsHash": "8ecfbff9a9c0f49aa19a4524af3e59d9529efafa5bb5e432ba4e6f85439a4d1c",
+        "status": 200,
+        "railwayId": "smLtvwp2SAKNc6jTBhdwDg",
+        "resolvedModel": "jev-1.14.0",
+        "acceptedQuestions": 39,
+        "reportedInput": 35488,
+        "error": null
+      }
+    ]
   }
 }

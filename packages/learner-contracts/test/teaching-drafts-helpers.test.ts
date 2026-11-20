@@ -68,6 +68,23 @@ describe("extracted teaching draft policy", () => {
     expect(splitJudgementRequest(largeSingle, { requestTokens: null, stateQuestionTokens: null })).toEqual([largeSingle]);
   });
 
+  test("wire-bound question batches keep their entire shared state and reject any oversized single question", () => {
+    const state = { earlier: "漢😀".repeat(30), latest: "Keep." };
+    const question = { type: "noul", instructions: "Verify the earlier and latest requirements." } as const;
+    const request = { state, questions: { a: question, b: question, c: question } };
+    const size = (batch: JudgementRequest) => new TextEncoder().encode(JSON.stringify(batch)).byteLength;
+    const limits = (max: number) => ({ requestTokens: null, stateQuestionTokens: null,
+      fitsWire: (batch: JudgementRequest) => size(batch) <= max });
+    expect(splitJudgementRequest(request, limits(size(request)))).toEqual([request]);
+    const batches = splitJudgementRequest(request, limits(size(request) - 1))!;
+    expect(batches.map(batch => Object.keys(batch.questions))).toEqual([["a", "b"], ["c"]]);
+    for (const batch of batches) expect(batch.state).toBe(state);
+    const longer = { ...question, instructions: "根拠".repeat(40) };
+    const single = { state, questions: { longer } };
+    expect(splitJudgementRequest(single, limits(size(single)))).toEqual([single]);
+    expect(splitJudgementRequest({ state, questions: { a: question, longer } }, limits(size(single) - 1))).toBeNull();
+  });
+
   test("ranking is total, antisymmetric, transitive, and favors earlier attempts on ties", () => {
     fc.assert(fc.property(rankable, rankable, rankable, (a, b, c) => {
       const ab = compareDraftCandidates(a, b);

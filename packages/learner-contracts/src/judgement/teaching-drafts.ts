@@ -7,7 +7,7 @@
  * candidates in two parallel pairs. Other judges keep the ordinary repair loop.
  */
 import { TeachingDraftSession } from "./teaching-drafts/session.js";
-import type { JudgementCaller, JudgementUsage } from "./contracts.js";
+import type { JudgementCaller, JudgementRequest, JudgementUsage } from "./contracts.js";
 import type { TeachingPolicyCheck, TeachingPolicyReply, TeachingPolicyTurn } from "./teaching-policy-types.js";
 import type { InteractionFamily, InteractionRecommendation } from "./interaction-affordances.js";
 import type { PlanChangeMode, PlanReview, PlanReviewHostTrigger } from "./plan-review.js";
@@ -203,6 +203,8 @@ export interface TeachingDraftReviewer {
   readonly judge: JudgementCaller;
   readonly judgementModel: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   readonly maxQuestionChars?: number;
+  /** Whether the encoded request fits this reviewer's transport. */
+  readonly fitsWire?: (request: JudgementRequest) => boolean;
 }
 export interface TeachingDraftOptions<T> {
   /** Host-only input. Never reconstructed from learner prose or a teaching decision. */
@@ -237,6 +239,7 @@ export interface TeachingDraftOptions<T> {
   readonly reviewers?: readonly TeachingDraftReviewer[];
   /** Optional transport limit on JSON.stringify(questions).length for each review request. */
   readonly maxQuestionChars?: number;
+  readonly fitsWire?: TeachingDraftReviewer["fitsWire"];
   /** Primary model selected for planning diagnostics; null when no route was configured. */
   readonly configuredDecisionModel?: string | null;
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
