@@ -44,6 +44,10 @@
  .sd-table .st-scope { margin-inline-start: .25rem; }
  .sd-destination > span { display: inline; color: var(--ink-soft); }
  .sd-fold > summary { min-height: 44px; }
+ /* A switch sits on the right of its text, as on every other row. */
+ .sd-table tbody tr:has(.k-switch) { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: .6rem; align-items: center; cursor: pointer; }
+ .sd-table tbody tr:has(.k-switch) > td { grid-column: 1; }
+ .sd-table tbody tr:has(.k-switch) > td:last-child { grid-column: 2; grid-row: 1 / span 2; }
 }
 
 .sd-inspector-block { display: grid; gap: .45rem; padding: .5rem 0; border-top: 1px solid var(--line-soft); }

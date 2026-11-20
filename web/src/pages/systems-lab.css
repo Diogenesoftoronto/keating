@@ -135,3 +135,79 @@ html.dark .systems-lab::before { mix-blend-mode: soft-light; opacity: .18; }
   .systems-lab-goal { margin-block: 8px; }
   .systems-lab-runtime { margin-bottom: 7px; }
 }
+
+/* Readability pass (2026-11-19): native-zoom desktop sizes, a dark wash that keeps
+   the selected subject legible, phone-safe Reset and a visible trace switch. */
+.systems-lab { --lab-wash: var(--green-wash); --lab-wash-ink: var(--green-deep); }
+/* Dark: neutral light inks instead of green-tinted ones, so text never reads green on green.
+   Green stays for marks (selected underline, icons, the Run action, links). */
+html.dark .systems-lab {
+  color-scheme: dark;
+  --ink: #f1f3f1;
+  --ink-soft: #c9cfcb;
+  --line: rgb(255 255 255 / 18%);
+  --line-soft: rgb(255 255 255 / 11%);
+  --card: #121815;
+  --paper-deep: #0b0f0d;
+  --lab-wash: rgb(255 255 255 / 7%);
+  --lab-wash-ink: var(--ink);
+}
+.systems-lab-subjects a[aria-current="page"] { color: var(--lab-wash-ink); background: var(--lab-wash); }
+html.dark .systems-lab-subjects a[aria-current="page"] { border-bottom-color: var(--green-deep); }
+html.dark .systems-lab-runtime { color: var(--ink-soft); }
+html.dark .systems-lab-runtime svg { color: var(--green-deep); }
+html.dark .systems-lab-result[data-status="passed"] .systems-lab-result-title svg { color: var(--green-deep); }
+@media (hover: hover) {
+  .systems-lab-subjects a:hover { background: var(--lab-wash); color: var(--ink); }
+}
+.systems-lab-subjects a { font-size: 16px; }
+.systems-lab-runtime { font-size: 14px; }
+.systems-lab-goal { font-size: clamp(17px, 1.5vw, 20px); }
+.systems-lab-prompt, .systems-lab-result p { font-size: 16px; line-height: 1.6; }
+.systems-lab-target, .systems-lab-target p { font-size: 15px; }
+.systems-lab-filebar > span { font-size: 15px; }
+.systems-lab-gutter, .systems-lab-editor textarea { font-size: 15px; }
+.systems-lab-runbar code, .systems-lab pre { font-size: 14px; }
+.systems-lab-result-title { font-size: 15px; }
+.systems-lab button:disabled { opacity: .6; }
+
+/* Global phone rules size every unclassed button icon at 1.5rem; keep this bar compact. */
+.systems-lab .systems-lab-filebar button {
+  min-width: 44px; min-height: 44px; padding: 0 8px; margin: 0 -8px 0 0;
+  color: var(--ink-soft); font-size: 14px; background: transparent; border: 0;
+}
+.systems-lab .systems-lab-filebar button:enabled { color: var(--ink); }
+.systems-lab .systems-lab-filebar button svg,
+.systems-lab .systems-lab-run svg { width: 16px; height: 16px; flex: none; }
+
+/* Trace commands: a switch drawn on the native checkbox, so keyboard and labels are unchanged. */
+.systems-lab-trace { gap: 10px; font-size: 14px; color: var(--ink); padding-inline: 2px; }
+.systems-lab .systems-lab-trace input {
+  min-width: 36px; min-height: 20px; padding: 0;
+  appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0;
+  width: 36px; height: 20px; border-radius: 999px; cursor: pointer;
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.systems-lab-trace input::before {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ink-soft); transition: transform .15s ease, background-color .15s ease;
+}
+.systems-lab-trace input:checked { background: var(--primary); border-color: var(--primary); }
+.systems-lab-trace input:checked::before { transform: translateX(16px); background: var(--primary-foreground); }
+.systems-lab-trace input:disabled { cursor: default; opacity: .6; }
+.systems-lab-trace:has(input:disabled) { cursor: default; }
+html:is([data-motion="reduce"], [data-reduce-motion="true"]) :is(.systems-lab-trace input, .systems-lab-trace input::before) { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .systems-lab-trace input, .systems-lab-trace input::before { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .systems-lab-subjects a { font-size: 15px; }
+  .systems-lab-runbar { gap: 4px 12px; padding-block: 6px 10px; }
+  .systems-lab-runbar code { flex-basis: 100%; padding-top: 6px; }
+  .systems-lab-run { margin-left: auto; min-width: 104px; }
+}
+/* Light: white on the mid primary green is 3.6:1 at 15px; the deep green clears AA. */
+html:not(.dark) .systems-lab-run { background: var(--green-deep); color: #fff; }

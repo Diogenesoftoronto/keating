@@ -9,7 +9,7 @@ const keywords = { ...learningKeywords, ...modelsKeywords, ...dataKeywords };
 const scopes: Record<string, Scope> = {
 	profile: "your profile",
 	account: "your account",
-	sources: "your account",
+	connections: "your account",
 	jobs: "new chats",
 };
 export function searchSettings(query: string) {

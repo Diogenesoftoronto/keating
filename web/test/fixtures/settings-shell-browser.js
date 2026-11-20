@@ -79,7 +79,7 @@
 	check("forward tab wraps", document.activeElement === search);
 	fire(window, "keating:settings-tab", { section: "persona" });
 	await pause();
-	const persona = find("#teacher-persona");
+	const persona = find("#pf-persona");
 	const original = persona.value;
 	edit(persona, original + " Browser draft");
 	await pause();
@@ -87,9 +87,10 @@
 	await pause();
 	check(
 		"draft survives navigation",
-		find("#teacher-persona").value.endsWith(" Browser draft"),
+		find("#pf-persona").value.endsWith(" Browser draft"),
 	);
-	find('[aria-label="Close settings"]').click();
+	// Phone has no ✕: Back leads the top bar and Escape (cancel) closes.
+	fire(modal, "cancel");
 	await pause();
 	check(
 		"unsaved close asks once",
@@ -100,7 +101,7 @@
 	check(
 		"keep editing retains draft",
 		!find("dialog[role=alertdialog][open]") &&
-			find("#teacher-persona").value.endsWith(" Browser draft"),
+			find("#pf-persona").value.endsWith(" Browser draft"),
 	);
 	fire(modal, "cancel");
 	await pause();
@@ -114,8 +115,8 @@
 	);
 	fire(window, "keating:open-settings", { section: "persona" });
 	await pause();
-	check("discard releases edits", find("#teacher-persona").value === original);
-	edit(find("#teacher-persona"), original + " Browser save");
+	check("discard releases edits", find("#pf-persona").value === original);
+	edit(find("#pf-persona"), original + " Browser save");
 	await pause();
 	fire(find("dialog.st-dialog"), "cancel");
 	await pause();
@@ -125,7 +126,7 @@
 	await pause();
 	check(
 		"save writes through existing editor",
-		find("#teacher-persona").value.endsWith(" Browser save"),
+		find("#pf-persona").value.endsWith(" Browser save"),
 	);
 	fire(find("dialog.st-dialog"), "cancel");
 	await pause();

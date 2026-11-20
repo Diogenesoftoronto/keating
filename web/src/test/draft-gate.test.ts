@@ -43,6 +43,7 @@ import { presentationsFromAssistantText } from "../keating/judgement/active-work
 import { registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
 import { learningMessageId } from "../keating/learning-intelligence/source-navigation";
 import { getModelRequestLog, setModelRequestLogEnabled } from "../keating/model-request-log";
+import { NOTORGANIC_BALANCED_MODEL, NOTORGANIC_DEFAULT_MODEL } from "../notorganic-provider";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
 const MODEL = {
@@ -238,6 +239,29 @@ describe("private teaching draft stream", () => {
 			},
 		), { numRuns: 12 });
 	});
+
+  test.each([NOTORGANIC_BALANCED_MODEL, NOTORGANIC_DEFAULT_MODEL])(
+    "$name does not carry private review content into later public turns (transport replay)", async model => {
+      const turns = [
+        ["Explain what makes copper an element.", "Copper consists of atoms with 29 protons."],
+        ["How is that different from bronze?", "Bronze is an alloy made mostly of copper and tin."],
+        ["Summarize the distinction in a sentence.", "Copper is an element, while bronze is an alloy."],
+      ] as const;
+      const conversation: Context = { ...context(), messages: [] };
+      for (const [index, [prompt, expected]] of turns.entries()) {
+        conversation.messages.push({ role: "user", content: prompt, timestamp: index * 2 + 1 });
+        const replay = gate((selected, input) => {
+          expect(selected.id).toBe(model.id);
+          expect(JSON.stringify(input.messages)).not.toMatch(/PRIVATE THINKING|PRIVATE SIGNATURE|PRIVATE STREAM FRAGMENT/);
+          return streamOf({ ...message(expected), model: model.id, provider: model.provider, api: model.api, timestamp: index * 2 + 2 });
+        });
+        const { events, result } = await collect(await replay(model, conversation));
+        expect(text(result)).toBe(expected);
+        expect(JSON.stringify(events)).not.toMatch(/PRIVATE THINKING|PRIVATE SIGNATURE|PRIVATE STREAM FRAGMENT/);
+        conversation.messages.push(result);
+      }
+    },
+  );
 
   test("ordinary web turns publish once despite uncertain presentation and report the shared ten-attempt ceiling", async () => {
     let calls = 0;

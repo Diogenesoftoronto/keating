@@ -69,6 +69,10 @@ export interface UseKeatingAgentReturn {
   openSettings: () => void;
   /** Display name of the active chat model, for the header's model button. */
   modelLabel: string;
+  /** The active chat model, so the header can describe its thinking level. */
+  activeModel: Model<Api>;
+  /** The open session's thinking level, read the same way the composer reads it. */
+  activeThinkingLevel: ThinkingLevel;
   openModelSelector: () => void;
   chooseKeatingModel: () => Promise<void>;
   openSessions: () => void;
@@ -148,6 +152,7 @@ export function useKeatingAgent(
   const [modelLabel, setModelLabel] = useState<string>(
     DEFAULT_MODEL.name ?? DEFAULT_MODEL.id,
   );
+  const [activeModel, setActiveModel] = useState<Model<Api>>(DEFAULT_MODEL);
   const selectModel = useCallback((model: Model<Api>) => {
     recordDiagnostic("info", "model", "Active model selected", {
       provider: model.provider,
@@ -155,6 +160,7 @@ export function useKeatingAgent(
     });
     refs.selectedModelRef.current = model;
     setModelLabel(model.name ?? model.id);
+    setActiveModel(model);
   }, []);
   useAgentEnvironmentSync({
     refs,
@@ -395,6 +401,9 @@ export function useKeatingAgent(
     modelSelectorDialog,
     imageModelSelectorDialog,
     currentModel: refs.agentRef.current?.context.model ?? refs.selectedModelRef.current,
+    thinkingLevel: refs.agentRef.current?.context.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
+    onThinkingLevelChange: setThinkingLevel,
+    thinkingDisabled: refs.agentRef.current?.getSnapshot().running ?? false,
     onSelectModel: (model: Model<Api>) => {
       startTransition(() => changeChatModel(model));
     },
@@ -417,6 +426,8 @@ export function useKeatingAgent(
     // Top-level actions
     openSettings,
     modelLabel,
+    activeModel,
+    activeThinkingLevel: refs.agentRef.current?.context.thinkingLevel ?? loadKeatingUiSettings().reasoningLevel,
     openModelSelector: modelSelectorDialog.onOpen,
     chooseKeatingModel,
     openSessions,

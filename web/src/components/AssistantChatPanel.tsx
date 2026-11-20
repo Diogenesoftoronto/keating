@@ -67,6 +67,7 @@ import type {
   ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
+import { effectiveThinkingLevel, supportedThinkingOptions } from "./thinking-level";
 import {
   AssistantRuntimeProvider,
   AttachmentPrimitive,
@@ -2993,18 +2994,6 @@ export function SuggestedPrompts({
   </section>;
 }
 
-const REASONING_OPTIONS: {
-  value: ThinkingLevel;
-  label: string;
-}[] = [
-  { value: "off", label: "Off" },
-  { value: "minimal", label: "Minimal" },
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "xhigh", label: "Extra high" },
-  { value: "max", label: "Maximum" },
-];
 
 function WebGroundingHint({
   hasUrl,
@@ -3240,6 +3229,7 @@ function AssistantThread({
     [agent, version, localVersion, messages, isRunning, speechEnabled],
   );
   const sentFrom = useRef<{ top: number; previous: string | undefined } | null>(null);
+  const locallyStartedSession = useRef<string | null>(null);
   const lastUserId = [...threadMessages].reverse().find(message => message.role === "user")?.id;
   useEffect(() => {
     const from = sentFrom.current;
@@ -3300,6 +3290,7 @@ function AssistantThread({
     isRunning,
     onLocalMessagesShown: () => setLocalVersion((current) => current + 1),
     onSendStarted: () => {
+      locallyStartedSession.current = callbacks.sessionId ?? null;
       const composer = viewport.current?.querySelector(".composer-root");
       if (composer && motionAllowed()) sentFrom.current = { top: composer.getBoundingClientRect().top, previous: lastUserId };
       followNextQuestion();
@@ -3412,6 +3403,7 @@ function AssistantThread({
         usingGoogleModel={usingGoogleModel}
         callbacks={callbacks}
         thinkingLevel={selectedThinkingLevel}
+        thinkingModel={agent?.context.model}
         onThinkingLevelChange={handleThinkingLevelChange}
         isRunning={isRunning}
         voiceComposerOpen={voiceComposerOpen}
@@ -3444,7 +3436,9 @@ function AssistantThread({
               })}
             >
               <ThreadPrimitive.Viewport
+                turnAnchor="top"
                 autoScroll={false}
+                scrollToBottomOnInitialize={locallyStartedSession.current !== callbacks.sessionId}
                 scrollToBottomOnRunStart={false}
                 ref={viewport}
                 className={css({
@@ -3458,6 +3452,7 @@ function AssistantThread({
                   flexDirection: "column",
                   overflowY: "auto",
                   overflowX: "hidden",
+                  overflowAnchor: "none",
                   paddingInline: "0.75rem",
                   // No bottom padding here: the sticky footer carries it, so the thread cannot show through a
                   // strip under the composer while it scrolls.
@@ -3653,6 +3648,23 @@ function sendSparks(button: HTMLElement) {
   }
 }
 
+/** Composer thinking level: the levels the current model accepts, with the level that will really be used. */
+function ThinkingLevelSelect({ model, level, disabled, onChange }: {
+  model?: Model<Api> | null; level: ThinkingLevel; disabled: boolean; onChange: (level: ThinkingLevel) => void;
+}) {
+  const options = supportedThinkingOptions(model);
+  const unsupported = !!model && !model.reasoning;
+  const value = effectiveThinkingLevel(model, level);
+  const title = unsupported ? `${model.name} has no thinking step` : "Thinking level";
+  return <label className="ch-reason" data-glyph-host title={title} data-unsupported={unsupported ? "" : undefined}>
+    <KeatingGlyph name="bulb" size={13} /><span className="ch-reason__label" aria-hidden="true">Thinking</span>
+    <select aria-label={unsupported ? "Thinking level, not available for this model" : "Thinking level"} disabled={disabled || unsupported} value={value}
+      onChange={event => onChange(event.target.value as ThinkingLevel)}>
+      {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+    </select>
+  </label>;
+}
+
 function ThreadComposer({
   pendingPrompt,
   composerHasUrl,
@@ -3662,6 +3674,7 @@ function ThreadComposer({
   usingGoogleModel,
   callbacks,
   thinkingLevel,
+  thinkingModel,
   onThinkingLevelChange,
   isRunning,
   voiceComposerOpen,
@@ -3677,6 +3690,8 @@ function ThreadComposer({
   usingGoogleModel: boolean;
   callbacks: ChatPanelSetupCallbacks;
   thinkingLevel: ThinkingLevel;
+  /** Current chat model: only the thinking levels it accepts are offered. */
+  thinkingModel?: Model<Api> | null;
   onThinkingLevelChange: (level: ThinkingLevel) => void;
   isRunning: boolean;
   voiceComposerOpen: boolean;
@@ -3779,10 +3794,7 @@ function ThreadComposer({
             onRequestCredential={callbacks.onApiKeyRequired}
           />
           <span className="ch-spacer" />
-          <label className="ch-reason" data-glyph-host title="Reasoning level"><KeatingGlyph name="bulb" size={13} /><select aria-label="Reasoning" disabled={isRunning} value={thinkingLevel}
-            onChange={event => onThinkingLevelChange(event.target.value as ThinkingLevel)}>
-            {REASONING_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select></label>
+          <ThinkingLevelSelect model={thinkingModel} level={thinkingLevel} disabled={isRunning} onChange={onThinkingLevelChange} />
           {/* Only show Send OR Cancel — never both */}
           {isRunning ? (
             <ComposerPrimitive.Cancel
@@ -4251,8 +4263,11 @@ function AssistantMessage({
   const retry = canRetry && isLastMessage ? onRetry : undefined;
   const chooseModel = llmFailure?.category !== "aborted" ? onModelSelect : undefined;
   const diagnostics = developerMode && llmFailure ? diagnosticsSummaryForFailure(llmFailure) : undefined;
-  if (isPrefillStatus) return developerMode ? <KeatingThinkingIndicator status={messageText} /> : progress;
-  if (searchStepCovered) return progress;
+  if (isPrefillStatus || searchStepCovered) {
+    return <MessagePrimitive.Root>
+      {isPrefillStatus && developerMode ? <KeatingThinkingIndicator status={messageText} /> : progress}
+    </MessagePrimitive.Root>;
+  }
 
   return (
     <>

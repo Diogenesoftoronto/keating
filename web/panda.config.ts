@@ -1463,7 +1463,6 @@ export default defineConfig({
       fontFamily: "var(--font-ui)"
     },
     html: {
-      transform: "scale(100%)",
       fontSize: "130%",
       transition: "color-scheme 0.2s ease"
     },

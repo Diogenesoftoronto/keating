@@ -52,6 +52,20 @@ describe("provider default pinning", () => {
 		expect(html).toContain('aria-label="Selected"');
 	});
 
+	it("lists recently used models after the selection, and drops the heading while searching", () => {
+		const recentA: PickerItem = { id: "recent-a", name: "Recent A", group: "Provider A", recent: true };
+		const plainB: PickerItem = { id: "plain-b", name: "Plain B", group: "Provider A" };
+		const list = [plainB, other, recentA, cloud];
+		expect(orderedPickerItems(list, "", other.id).map(item => item.id)).toEqual([cloud.id, other.id, recentA.id, plainB.id]);
+		// A recent model that is also selected appears once, as the selection.
+		expect(orderedPickerItems(list, "", recentA.id).map(item => item.id)).toEqual([cloud.id, recentA.id, plainB.id, other.id]);
+		expect(orderedPickerItems(list, "recent", other.id).map(item => item.id)).toEqual([cloud.id, recentA.id]);
+		const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={list} selected={other.id} onSelect={() => {}} onClose={() => {}} />);
+		expect(html.indexOf("Selected model")).toBeLessThan(html.indexOf("Recently used"));
+		expect(html.indexOf("Recently used")).toBeLessThan(html.indexOf("Recent A"));
+		expect(html.indexOf("Recent A")).toBeLessThan(html.indexOf("Plain B"));
+	});
+
 	it("renders a recovery action for an unavailable selection", () => {
 		const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={[{
 			...other,

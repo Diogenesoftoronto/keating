@@ -73,9 +73,11 @@ export function createTypography(fontFamily: UiFontFamily): KeatingTypography {
   return {
     title: { fontSize: 24, lineHeight: 30, ...boldFace },
     heading: { fontSize: 18, lineHeight: 24, ...boldFace },
-    body: { fontSize: 16, lineHeight: 24, ...face },
-    label: { fontSize: 14, lineHeight: 20, ...boldFace },
-    caption: { fontSize: 12, lineHeight: 17, ...face },
+    // Reading sizes are 2 up from the first native scale (body 16, label 14, caption 12) so text and
+    // controls read comfortably on phones; title and heading keep their sizes.
+    body: { fontSize: 18, lineHeight: 26, ...face },
+    label: { fontSize: 16, lineHeight: 22, ...boldFace },
+    caption: { fontSize: 14, lineHeight: 19, ...face },
     mono: { fontFamily: MONO_FONT_FACE[fontFamily] },
     monoBold: { fontFamily: MONO_FONT_BOLD_FACE[fontFamily] },
   };

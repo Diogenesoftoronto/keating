@@ -249,3 +249,60 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 @media (max-width:640px) {
   .chat-page-panel .ch-latest button {width:1.3462rem;min-width:0;padding:0;gap:0;justify-content:center;font-size:0}
 }
+
+/* ── Reading size and composer controls (model-controls lane, 2026-11-20) ─────────────────────────
+   Conversation, composer and message meta only; titles, the header and the menus are not set here.
+   Desktop reads like the earlier view at about 150% (sizes in rem, so the Text size setting still scales
+   them); phones keep the earlier sizes plus 2px. The thinking control always shows its word and level. */
+.ch-reason {height:auto;min-height:1.7308rem;gap:.24rem;padding-inline:.3846rem;font:500 .6731rem/1.2 var(--font-ui)}
+.ch-reason__label {font:600 .5529rem/1.2 var(--mono-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.ch-reason select {font:600 .6971rem/1.2 var(--font-ui) !important;color:var(--ink);padding-inline-end:.1rem}
+.ch-reason[data-unsupported] select {color:var(--ink-faint)}
+.ch-reason[data-unsupported]:has(select:disabled) {opacity:1}
+.chat-page-panel .ch-toolbar {flex-wrap:wrap;row-gap:.24rem}
+@media (min-width:640px) {
+  .chat-page-panel {--ch-column:36rem}
+  .chat-page-panel .keating-bubble [data-chat-prose] {font-size:1.0096rem;line-height:1.6}
+  html[data-reply-typeface=mono] .chat-page-panel .keating-bubble [data-chat-prose] {font-size:.9135rem}
+  .chat-page-panel .you-bubble [data-chat-prose] {font-size:1.0096rem}
+  .chat-page-panel .you-bubble {font-size:1.0096rem}
+  .chat-page-panel .composer-root textarea {min-height:2.3077rem;font-size:.9615rem}
+  .chat-page-panel .ch-toolbar :is(button,select) {font-size:.6971rem}
+  .chat-page-panel .ch-toolbar > button,.chat-page-panel .ch-toolbar > * > button {min-width:1.7308rem;min-height:1.7308rem}
+  .chat-page-panel .ch-toolbar :is(.ch-send,.ch-stop) {width:1.9231rem;min-height:1.7308rem}
+  .chat-page-panel .msg-meta {font-size:.625rem}
+  .chat-page-panel .ch-actions button {min-width:1.6346rem;min-height:1.6346rem}
+  .chat-page-panel .ch-study button {font-size:.7212rem;min-height:1.7308rem;padding:.2rem .45rem}
+  .chat-page-panel .composer-hint {font-size:.601rem}
+}
+@media (max-width:639px) {
+  .chat-page-panel .keating-bubble [data-chat-prose] {font-size:.8654rem}
+  html[data-reply-typeface=mono] .chat-page-panel .keating-bubble [data-chat-prose] {font-size:.7933rem}
+  .chat-page-panel .you-bubble [data-chat-prose],.chat-page-panel .you-bubble {font-size:.8654rem}
+  .chat-page-panel .composer-root textarea {font-size:18px}
+  .chat-page-panel .ch-toolbar :is(button,select) {font-size:.601rem}
+  .chat-page-panel .msg-meta {font-size:.5769rem}
+  .chat-page-panel .ch-study button {font-size:.6462rem}
+  .chat-page-panel .composer-hint {font-size:.5529rem}
+  /* Exception to +2: the thinking level is a control, so it reads at 16px like the other phone inputs. */
+  .ch-reason select {font-size:16px !important}
+  .ch-reason {gap:.19rem}
+  .ch-reason__label {font-size:11.5px;letter-spacing:.02em}
+}
+/* The composer decides by its own width. Wide enough: bulb, word and level. A phone-width composer drops the
+   word (the bulb and the level stay, and the select keeps its "Thinking level" name). Too narrow for icons,
+   thinking and Send on one row: thinking takes its own full row under them, word back, Send stays put. */
+.chat-page-panel .composer-root {container:ch-composer / inline-size}
+.ch-reason > svg {flex:none}
+@container ch-composer (max-width:420px) {
+  .ch-reason__label {display:none}
+}
+@container ch-composer (max-width:340px) {
+  .chat-page-panel .ch-reason {order:1;flex:1 0 100%;justify-content:flex-start}
+  .ch-reason__label {display:inline}
+}
+@media (pointer:coarse) {
+  .chat-page-panel .ch-toolbar {column-gap:8px;row-gap:8px}
+  .ch-reason {min-height:44px;padding-inline:.29rem}
+  .ch-reason select {min-height:44px}
+}

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, type MutableRefObject } from "react";
 import type { PostHog } from "posthog-js";
 import { SETTINGS_DIALOG_TAB_IDS } from "../../components/settings/section-ids";
 import type { DialogState } from "../useDialogState";
+import { currentEntry, settingsLeaving } from "../../components/settings/settings-history";
 
 export interface SettingsDeepLink {
 	tabId: string;
@@ -75,22 +76,30 @@ export function useSettingsDialogLinks(
 			window.removeEventListener("keating:open-settings", onOpenSettingsTab);
 	}, [settingsDialog]);
 
-	// Deep-link support: ?settings=<tabId> or ?settings=<tabId>-<sectionId>.
-	// Opens the settings dialog on the matching tab, scrolls to the section
-	// anchor after the dialog mounts, then strips the param from the URL so
-	// it doesn't pollute history/back-button behavior.
+	// Deep links, reloads and Forward: a location that describes a Settings
+	// entry (`?settings=…`) opens Settings there. The parameter stays in the URL
+	// while Settings is open, so a reload lands on the same section; the dialog
+	// owns the history entries from then on (components/settings/settings-history).
+	const openRef = useRef(settingsDialog.open);
+	openRef.current = settingsDialog.open;
+	const { onOpen } = settingsDialog;
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-		const params = new URLSearchParams(window.location.search);
-		const raw = params.get("settings");
-		if (!raw) return;
-		settingsDeepLinkRef.current = parseSettingsDeepLink(raw);
-		params.delete("settings");
-		const next = params.toString();
-		const url = `${window.location.pathname}${next ? `?${next}` : ""}${window.location.hash}`;
-		window.history.replaceState({}, "", url);
-		settingsDialog.onOpen();
-	}, [settingsDialog]);
+		const fromLocation = () => {
+			const entry = currentEntry(window.location, window.history.state);
+			if (!entry) return false;
+			settingsDeepLinkRef.current = parseSettingsDeepLink(entry.raw);
+			onOpen();
+			return true;
+		};
+		fromLocation();
+		// Back out of Settings, then Forward: reopen on the section that entry holds.
+		const onPopState = () => {
+			if (!openRef.current && !settingsLeaving()) fromLocation();
+		};
+		window.addEventListener("popstate", onPopState);
+		return () => window.removeEventListener("popstate", onPopState);
+	}, [onOpen]);
 
 	return { openSettings, settingsDeepLinkRef };
 }

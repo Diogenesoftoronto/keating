@@ -68,16 +68,6 @@ export function KnowledgeSources() {
   </section>;
 }
 
-export function KnowledgeSourcesButton() {
-  useSyncExternalStore(subscribeKnowledge, knowledgeVersion, () => 0);
-  const [open, setOpen] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const state = knowledgeClient()?.snapshot();
-  const count = Object.keys(state?.selected ?? {}).length;
-  useEffect(() => { const timer = setInterval(() => { knowledgeClient()?.snapshot(); }, 2_000); return () => clearInterval(timer); }, []);
-  useEffect(() => { if (open) dialog.current?.showModal(); else dialog.current?.close(); }, [open]);
-  return <><button type="button" className="knowledge-sources-button" onClick={() => setOpen(true)} aria-label={`Choose knowledge sources. ${count} selected.`}>Sources · {count}</button><dialog ref={dialog} className="knowledge-sources-dialog" aria-label="Choose your sources" onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}><button className="knowledge-sources-close k-bloom" type="button" onClick={() => setOpen(false)} aria-label="Close sources"><KeatingGlyph name="x" /></button>{open && <KnowledgeSources />}</dialog></>;
-}
 export function KnowledgeToolReview() {
   useSyncExternalStore(subscribeKnowledge, knowledgeVersion, () => 0);
   const review = getKnowledgeReview();

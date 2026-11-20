@@ -453,3 +453,344 @@ html[data-reply-typeface="mono"] .st-reply-preview { font-family: var(--mono-bod
 @media (min-width: 981px) {
 	.st-group[aria-expanded="true"] { border: 1.5px solid var(--k-strong-line, var(--ink)); background: var(--card); box-shadow: var(--k-hard-shadow); }
 }
+
+/* ── Navigation and reading size (Settings lane, 2026-11-19) ─────────────────────────────
+   Root font is 130%, so 1rem = 20.8 CSS px: 0.77rem ≈ 16px, 0.673rem ≈ 14px, 0.587rem ≈ 12px. */
+.st-subs {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+.st-subs[data-open="false"],
+.st-grouphead,
+.st-sub > svg {
+	display: none;
+}
+.st-sub {
+	display: flex;
+	align-items: baseline;
+	gap: 0.3rem;
+}
+.st-sub > span {
+	flex: 1;
+	min-width: 0;
+}
+.st-sub > small {
+	color: var(--muted-foreground);
+	font: 400 0.49rem / 1.4 var(--mono-body, monospace);
+}
+
+/* Desktop: the earlier view at 150%. Zoom scales the composite editors with the shell. */
+@media (min-width: 701px) {
+	.st-dialog {
+		width: min(96rem, calc(100vw - 3rem));
+		height: calc(100dvh - 3rem);
+		--st-zoom: 1.25;
+	}
+	.st-dialog > :is(.st-top, .st-body, .st-results) {
+		zoom: var(--st-zoom);
+	}
+	.st-main {
+		scroll-padding-block: 0.6rem;
+	}
+}
+@media (min-width: 1101px) {
+	.st-dialog {
+		--st-zoom: 1.5;
+	}
+}
+@media (min-width: 701px) and (max-width: 1499px) {
+	.st-aside {
+		display: none;
+	}
+}
+@media (min-width: 701px) and (max-height: 620px) {
+	.st-dialog {
+		height: calc(100dvh - 1rem);
+	}
+}
+
+@media (max-width: 700px) {
+	.st-dialog {
+		font-size: 0.77rem;
+	}
+	.st-find input {
+		font-size: 0.77rem;
+	}
+	.st-top > .k-icon {
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	/* Outline: every section, grouped, as tappable rows. */
+	.st-outline {
+		padding: 0.2rem 0.8rem 1.2rem;
+	}
+	.st-outline .st-group {
+		display: none;
+	}
+	.st-grouphead {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		margin: 0.9rem 0.1rem 0.4rem;
+		font: 650 0.77rem / 1.3 var(--font-ui, system-ui);
+	}
+	.st-grouphead svg {
+		width: 1.05rem;
+		flex: none;
+		margin-top: 0.08rem;
+	}
+	.st-grouphead small {
+		display: block;
+		margin-top: 0.1rem;
+		font: 400 0.673rem / 1.4 var(--font-ui, system-ui);
+		color: var(--muted-foreground);
+		overflow-wrap: anywhere;
+	}
+	.st-subs,
+	.st-subs[data-open="false"] {
+		display: block;
+		border: 1px solid var(--line, var(--border));
+		border-radius: 0.1923rem;
+		background: var(--card);
+		overflow: hidden;
+	}
+	.st-outline .st-sub {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 48px;
+		margin: 0;
+		padding: 0.45rem 0.7rem;
+		border: 0;
+		font-size: 0.77rem;
+		line-height: 1.3;
+		text-align: left;
+	}
+	/* Global dialog buttons are width: auto !important in a cascade layer; stretch instead. */
+	.st-subs > li {
+		display: flex;
+		flex-direction: column;
+	}
+	.st-subs > li + li .st-sub {
+		border-top: 1px solid var(--line-soft, var(--border));
+	}
+	.st-outline .st-sub > small {
+		flex: none;
+		max-width: 45%;
+		font-size: 0.587rem;
+		text-align: right;
+		overflow-wrap: anywhere;
+	}
+	.st-outline .st-sub > svg {
+		display: block;
+		flex: none;
+		width: 0.85rem;
+		color: var(--muted-foreground);
+	}
+	.st-outline .st-sub:active {
+		background: var(--k-wash);
+	}
+
+	/* Top bar on every phone page: Back (closes from the first page), where you are, the outline. */
+	.st-mobilebar {
+		position: relative;
+		flex: none;
+		gap: 0.25rem;
+		padding: max(0.15rem, env(safe-area-inset-top)) 0.35rem 0.15rem;
+		border-bottom: 1.5px solid var(--k-strong-line, var(--ink));
+	}
+	.st-bar-spacer {
+		flex: none;
+		width: 44px;
+	}
+	/* Search lives at the bottom, within thumb reach. */
+	.st-top {
+		border-top: 1px solid var(--line, var(--border));
+		border-bottom: 0;
+		padding: 0.4rem 0.6rem max(0.4rem, env(safe-area-inset-bottom));
+	}
+	.st-top h2 {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		padding: 0;
+		border: 0;
+	}
+	.st-find {
+		min-height: 44px;
+	}
+	.st-back,
+	.st-all {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		min-width: 44px;
+		min-height: 44px;
+		padding: 0 0.4rem;
+		font: 600 0.77rem / 1 var(--font-ui, system-ui);
+		border-radius: 0.1923rem;
+		flex: none;
+	}
+	.st-back svg,
+	.st-all svg {
+		width: 0.9rem;
+	}
+	.st-crumb {
+		flex: 1;
+		min-width: 0;
+		text-align: center;
+		font: 400 0.673rem / 1.2 var(--mono-body, monospace);
+		color: var(--muted-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.st-main {
+		padding: 0.8rem 0.8rem 2rem;
+	}
+
+	/* Rows: real labels at 16px, help at 14px, scope and status at 12px. */
+	.st-row {
+		padding: 0.7rem 0.7rem;
+		gap: 0.35rem 0.7rem;
+	}
+	.st-row strong {
+		font-size: 0.77rem;
+		line-height: 1.3;
+		overflow-wrap: anywhere;
+	}
+	.st-row p,
+	.st-aside > p,
+	.st-section > p {
+		font-size: 0.673rem;
+		line-height: 1.45;
+		overflow-wrap: anywhere;
+	}
+	.st-scope,
+	.st-status,
+	.st-why,
+	.st-badge {
+		font-size: 0.587rem;
+	}
+	.st-scope {
+		display: inline-block;
+		margin: 0.1rem 0 0;
+	}
+	.st-row:not(:has(.k-switch)) .st-control {
+		justify-self: stretch;
+	}
+	/* A row whose only control is a switch: text left, switch right, whatever the editor's own grid says. */
+	.st-dialog .st-main .st-row:has(> .st-control .k-switch):not(:has(> .st-control :is(select, input, textarea, a, button:not(.k-switch)))) {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+	.st-dialog .st-main .st-row:has(> .st-control .k-switch):not(:has(> .st-control :is(select, input, textarea, a, button:not(.k-switch)))) > .st-control {
+		grid-column: 2;
+		grid-row: 1;
+		justify-self: end;
+		align-self: center;
+	}
+	.st-row .k-select-field,
+	.st-row .k-select-field .keating-select {
+		width: 100%;
+	}
+	.st-row .k-select-field .keating-select,
+	.st-dialog .k-select-field,
+	.st-dialog .k-switch-field {
+		font-size: 0.77rem;
+	}
+	.st-row:has(.k-switch):not(:has(.st-control :is(a, select, input, textarea, button:not(.k-switch)))) {
+		cursor: pointer;
+	}
+	.st-unsaved {
+		flex-wrap: wrap;
+	}
+	.st-unsaved > button {
+		flex: 1 1 8rem;
+	}
+
+	/* Switch: a 50 × 50 target with a track you can read at a glance. */
+	.st-dialog .k-switch {
+		width: 2.4rem;
+		min-height: 2.4rem;
+	}
+	.st-dialog .k-switch > span {
+		width: 2.2rem;
+		height: 1.25rem;
+		padding: 0.14rem;
+		border-width: 1.5px;
+		border-radius: 0.2rem;
+	}
+	.st-dialog .k-switch > span:after {
+		width: 0.82rem;
+		height: 0.82rem;
+	}
+	.st-dialog .k-switch:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+
+	/* Composite editors that keep their own markup (profile, providers, privacy, sources,
+	   health): a phone floor of 14px for copy and controls, 16px for labels and fields, 12px
+	   for meta. Scoped under the dialog so it outranks their desktop sizes. */
+	.st-dialog .st-main :is(p, li, dd, td, summary, label, legend, button, .k-button span, .k-empty p) {
+		font-size: 0.673rem;
+		line-height: 1.45;
+	}
+	.st-dialog .st-main :is(div, header, label, footer) > strong,
+	.st-dialog .st-main :is(h4, .s2-checking-heading) {
+		font-size: 0.77rem;
+		line-height: 1.3;
+	}
+	.st-dialog .st-main :is(textarea, input:not([type="checkbox"]):not([type="radio"]), select, .keating-select) {
+		font-size: 0.77rem;
+	}
+	.st-dialog .st-main :is(small, th, dt, code, .k-chip, .pf-meta, footer span, .sd-choice) {
+		font-size: 0.587rem;
+	}
+	.st-dialog .st-main :is(p, li, dd, td, label, span, strong, small) {
+		overflow-wrap: anywhere;
+	}
+	.st-dialog .st-main .knowledge-sources header {
+		flex-wrap: wrap;
+	}
+
+	/* Segmented choices (theme, typeface, text size) */
+	.st-dialog .k-seg {
+		flex-wrap: wrap;
+		max-width: 100%;
+	}
+	.st-dialog .k-seg button {
+		min-height: 44px;
+		padding-inline: 0.6rem;
+		font-size: 0.673rem;
+	}
+
+	/* Search results */
+	.st-results {
+		padding: 0.4rem 0.8rem;
+	}
+	.st-results button {
+		min-height: 48px;
+		font-size: 0.77rem;
+	}
+	.st-results button > small {
+		font-size: 0.673rem;
+	}
+}
+@media (max-width: 360px) {
+	.st-all > span {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+}
+/* Section anchors take focus when a link lands on them; they are not controls. */
+.st-dialog .st-main :is(h2, h3, h4)[tabindex="-1"]:focus-visible {
+	outline: 0;
+}

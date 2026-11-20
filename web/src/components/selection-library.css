@@ -87,3 +87,80 @@
   .model-picker .model-picker__option { min-height: 52px; }
 }
 @media (max-width: 420px) { .model-picker__filters { grid-template-columns: 1fr; } }
+
+/* ── Model picker, reading size and thinking level (model-controls lane, 2026-11-20) ──────────────
+   Desktop reads like the earlier sheet at about 150%; phones keep the earlier sizes plus 2px, with
+   44px targets. Only .model-picker and .thinking-level selectors live here; .material-library is untouched. */
+.model-picker { width: min(780px, calc(100vw - 24px)); height: min(820px, calc(100dvh - 32px)); font-size: 17px; }
+.model-picker__toolbar { padding: 14px 10px 12px 16px; }
+.model-picker .library-search { min-height: 44px; }
+.model-picker .library-search svg { flex-basis: 18px; width: 18px; height: 18px; }
+.model-picker .library-search input { min-height: 42px; font-size: 17px !important; }
+.model-picker .library-icon { flex-basis: 44px; width: 44px; height: 44px; min-height: 44px !important; }
+.model-picker .library-icon svg { width: 18px; height: 18px; }
+.model-picker__filters { padding: 0 16px 14px; }
+.model-picker__filters label { font-size: 13px; }
+.model-picker__filters select { min-height: 40px; font-size: 16px; }
+.model-picker .library-group { padding: 14px 16px 5px; font-size: 12.5px; }
+.model-picker .model-picker__option { gap: 12px; min-height: 60px; padding: 9px 16px 9px 13px; }
+.model-picker .model-picker__option strong { font-size: 18px; line-height: 1.3; }
+.model-picker .model-picker__option small { margin-top: 3px; font-size: 14px; }
+.model-picker .model-picker__option svg { width: 18px; height: 18px; }
+.model-picker__details { margin: 0 16px 6px; font-size: 14px; }
+.model-picker__details summary { min-height: 32px; display: flex; align-items: center; }
+.model-picker__item-action, .model-picker__error-action, .model-picker__notice { font-size: 14.5px; }
+.model-picker__notice { max-height: 140px; }
+.model-picker__notice summary { min-height: 36px; display: flex; align-items: center; }
+.model-picker__hint { padding: 8px 16px; font-size: 13px; }
+.model-picker .library-message { font-size: 16px; }
+
+.thinking-level { display: grid; gap: 8px; padding: 2px 16px 14px; border-bottom: 1px solid var(--line); }
+.thinking-level__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.thinking-level__label { font: 600 12.5px/1.4 var(--mono-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.thinking-level__head strong { font: 600 17px/1.3 var(--font-ui); color: var(--ink); }
+.thinking-level__options { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5em, 1fr)); gap: 6px; }
+.thinking-level__options button { min-width: 0; min-height: 40px; margin: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font: 500 15px/1.25 var(--font-ui); color: var(--ink); cursor: pointer; overflow-wrap: anywhere; transition: background-color 150ms, border-color 150ms; }
+.thinking-level__options button:hover:not(:disabled) { border-color: var(--ink-soft); }
+/* Chosen: wash, a heavier frame and weight, so the state reads without colour alone. */
+.thinking-level__options button[aria-checked=true] { background: var(--k-wash); border: 2px solid var(--green-deep); padding: 5px 9px; font-weight: 700; }
+.thinking-level__options button:focus-visible { outline: 2px solid var(--green-deep); outline-offset: 1px; }
+.thinking-level__options button:disabled { opacity: .55; cursor: not-allowed; }
+.thinking-level__hint { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
+.thinking-level[data-unsupported] .thinking-level__head strong { color: var(--ink-soft); }
+
+@media (pointer: coarse) {
+  .thinking-level__options button { min-height: 44px; }
+  .model-picker__filters select { min-height: 44px; }
+}
+/* Phones: the earlier sheet sizes plus 2px, full-height sheet, stacked filters, 44px rows and options. */
+@media (max-width: 639px) {
+  .model-picker { width: calc(100vw - 16px); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); font-size: 15px; }
+  .model-picker__toolbar { padding: 10px 6px 10px 12px; }
+  .model-picker .library-search input { font-size: 18px !important; }
+  .model-picker__filters { grid-template-columns: 1fr; gap: 8px; padding: 0 12px 12px; }
+  .model-picker__filters label { font-size: 12px; }
+  .model-picker__filters select { min-height: 44px; font-size: 18px; }
+  .model-picker .library-group { padding: 12px 12px 4px; font-size: 11.5px; }
+  .model-picker .model-picker__option { min-height: 56px; padding: 8px 12px 8px 9px; }
+  .model-picker .model-picker__option strong { font-size: 15.5px; }
+  .model-picker .model-picker__option small { font-size: 12.5px; }
+  .model-picker__details { margin: 0 12px 4px; font-size: 13px; }
+  .model-picker__details summary, .model-picker__notice summary { min-height: 44px; }
+  .model-picker__item-action, .model-picker__error-action, .model-picker__notice { font-size: 13.5px; }
+  .model-picker__item-action button, .model-picker__error-action button { min-height: 44px; }
+  .model-picker__hint { font-size: 12px; }
+  .thinking-level { padding: 2px 12px 12px; }
+  .thinking-level__label { font-size: 12px; }
+  .thinking-level__head strong { font-size: 17px; }
+  .thinking-level__options { grid-template-columns: repeat(auto-fit, minmax(6.25em, 1fr)); gap: 8px; }
+  .thinking-level__options button { min-height: 44px; font-size: 16px; }
+  .thinking-level__hint { font-size: 13.5px; }
+}
+@media (max-width: 639px) and (pointer: coarse) { .model-picker__hint { display: none; } }
+/* Small screens: the whole sheet scrolls, so the thinking row and filters never squeeze the list to one row. */
+@media (max-width: 639px), (max-height: 700px) {
+  .model-picker__body { overflow-y: auto; overscroll-behavior: contain; }
+  .model-picker__toolbar { position: sticky; top: 0; z-index: 1; background: var(--card); }
+  .model-picker__results { flex: none; min-height: auto; overflow: visible; }
+  .model-picker__hint { position: sticky; bottom: 0; background: var(--card); }
+}
