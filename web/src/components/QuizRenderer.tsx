@@ -7,17 +7,16 @@
 import { EmptyState } from "../design-system/kit";
 import { useCallback } from "react";
 import type { Quiz } from "../keating/core";
-import { cx } from "../../styled-system/css";
 import type { FlashcardShaderPreset } from "./flashcards/game";
 import { quizTimerState } from "./quiz/game";
 import { QuestionCard } from "./quiz/QuestionCard";
-import { QuizHeader } from "./quiz/QuizHeader";
+import { QuizHeader, QuizProgress } from "./quiz/QuizHeader";
 import { QuizNavigation } from "./quiz/QuizNavigation";
 import { QuizResultsView } from "./quiz/QuizResultsView";
 import { createQuizResultId } from "./quiz/quiz-result-id";
 import { quizQuestionEntryClass, quizShaderAccent, stableQuizSeed } from "./quiz/quiz-presentation";
 import { isOpenEnded, questionCredit } from "./quiz/quiz-scoring";
-import { quizStyles } from "./quiz/quiz-styles";
+import "./quiz/quiz.css";
 import { useQuizRun } from "./quiz/useQuizRun";
 
 export { createQuizResultId, isOpenEnded, questionCredit };
@@ -47,14 +46,6 @@ export interface TopicStats {
 	avgScore: number;
 	avgPartialCreditPoints: number;
 	topQuartile: number;
-}
-
-export interface QuizRendererProps {
-	quiz: Quiz;
-	onSubmit?: (result: QuizResult) => void;
-	topicStats?: TopicStats | null;
-	/** Initial visual atmosphere. A saved learner choice takes precedence. */
-	defaultShaderPreset?: FlashcardShaderPreset;
 }
 
 export interface QuizRendererProps {
@@ -131,40 +122,43 @@ export function QuizRenderer(props: QuizRendererProps) {
 
 	if (questions.length === 0) {
 		return (
-			<section className={cx(quizStyles.shell, "activity-game activity-quiz")} aria-label={`Quiz: ${quiz.topic}`}>
+			<section className="lesson-frame activity-game quiz-frame" aria-label={`Quiz: ${quiz.topic}`}>
 				{header}
-				<EmptyState glyph="quiz" role="status" heading="No quiz questions yet." />
+				<div className="lesson-body"><EmptyState glyph="quiz" role="status" heading="No quiz questions yet." /></div>
 			</section>
 		);
 	}
 
 	return (
-		<section className={cx(quizStyles.shell, "activity-game activity-quiz")} aria-label={`Quiz: ${quiz.topic}`}>
+		<section className="lesson-frame activity-game quiz-frame" aria-label={`Quiz: ${quiz.topic}`}>
 			{header}
 
 			{!revealed ? (
 				<>
-					{currentQuestion ? (
-						<div
-							key={`${currentQuestion.id}:${shaderPreset}`}
-							aria-busy={run.isQuestionPending}
-							className={cx(quizStyles.questionStage, quizQuestionEntryClass(shaderPreset))}
-							style={{ ...headerStyle, opacity: run.isQuestionPending ? 0.72 : 1 }}
-						>
-							<QuestionCard
-								q={currentQuestion}
-								index={current}
-								answer={answers[currentQuestion.id] || ""}
-								onChange={(value) => run.setAnswer(currentQuestion.id, value)}
-								revealed={false}
-								bookmarked={run.bookmarkIds.includes(currentQuestion.id)}
-								onToggleBookmark={() => run.toggleBookmark(currentQuestion.id)}
-								onSpeak={() => speakQuestion(currentQuestion.question)}
-								reframeMode={run.reframeModes[currentQuestion.id] ?? null}
-								onReframe={(mode) => run.setReframeMode(currentQuestion.id, mode)}
-							/>
-						</div>
-					) : null}
+					<div className="lesson-body">
+						<QuizProgress current={current} totalVisible={totalVisible} answeredCount={answeredCount} revealed={false} />
+						{currentQuestion ? (
+							<div
+								key={`${currentQuestion.id}:${shaderPreset}`}
+								aria-busy={run.isQuestionPending}
+								className={quizQuestionEntryClass(shaderPreset)}
+								style={{ ...headerStyle, opacity: run.isQuestionPending ? 0.72 : 1 }}
+							>
+								<QuestionCard
+									q={currentQuestion}
+									index={current}
+									answer={answers[currentQuestion.id] || ""}
+									onChange={(value) => run.setAnswer(currentQuestion.id, value)}
+									revealed={false}
+									bookmarked={run.bookmarkIds.includes(currentQuestion.id)}
+									onToggleBookmark={() => run.toggleBookmark(currentQuestion.id)}
+									onSpeak={() => speakQuestion(currentQuestion.question)}
+									reframeMode={run.reframeModes[currentQuestion.id] ?? null}
+									onReframe={(mode) => run.setReframeMode(currentQuestion.id, mode)}
+								/>
+							</div>
+						) : null}
+					</div>
 
 					<QuizNavigation
 						isFirst={current === 0}

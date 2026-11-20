@@ -1,11 +1,13 @@
 /** Generated invariants for the extracted ranking, release, recovery, and repair policies. */
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
+import { MAX_GATEWAY_QUESTION_CHARS, MAX_QUESTIONS_PER_REQUEST, type JudgementRequest } from "../src/judgement/contracts.js";
+import { estimatedRequestTokens, estimatedStateQuestionTokens } from "../src/judgement/state-metrics.js";
 import type { TeachingPolicyCheck, TeachingPolicyReply } from "../src/judgement/teaching-policy-types.js";
 import {
   bestEffortQuality, buildRepairFeedback, canRetainTextDraft, compareDraftCandidates,
   draftQuality, needsTextOnlyRecovery, rankDraftCandidates, selectSynthesis,
-  standardInstructions, teachingDraftAttemptLimit, type DraftCandidate,
+  splitJudgementRequest, standardInstructions, teachingDraftAttemptLimit, type DraftCandidate,
 } from "../src/judgement/teaching-drafts/policy.js";
 import type { TeachingDraftAttempt } from "../src/judgement/teaching-drafts.js";
 
@@ -19,6 +21,53 @@ const rankable = fc.record({ attempt: fc.integer({ min: 1, max: 10 }), quality: 
 const status = fc.constantFrom("pass" as const, "unknown" as const, "fail" as const);
 
 describe("extracted teaching draft policy", () => {
+  test("a review fits at both token limits and splits only questions when the complete request is one token over", () => {
+    const state = { learner: "An earlier requirement", recent: "The latest request" };
+    const request: JudgementRequest = { state, questions: {
+      earlier: { type: "noul", instructions: "Does the reply address the earlier requirement?" },
+      latest: { type: "noul", instructions: "Does the reply address the latest request as well?" },
+    } };
+    const requestTokens = estimatedRequestTokens(request), stateQuestionTokens = estimatedStateQuestionTokens(request);
+    expect(splitJudgementRequest(request, { requestTokens, stateQuestionTokens })).toEqual([request]);
+    const split = splitJudgementRequest(request, { requestTokens: requestTokens - 1, stateQuestionTokens })!;
+    expect(split.map(batch => Object.keys(batch.questions))).toEqual([["earlier"], ["latest"]]);
+    for (const batch of split) {
+      expect(batch.state).toBe(state);
+      expect(estimatedRequestTokens(batch)).toBeLessThanOrEqual(requestTokens - 1);
+    }
+    expect(splitJudgementRequest(request, { requestTokens, stateQuestionTokens: stateQuestionTokens - 1 })).toBeNull();
+    const single = split[0]!;
+    expect(splitJudgementRequest(single, { requestTokens: estimatedRequestTokens(single), stateQuestionTokens: null })).toEqual([single]);
+    expect(splitJudgementRequest(single, { requestTokens: estimatedRequestTokens(single) - 1, stateQuestionTokens: null })).toBeNull();
+  });
+
+  test("the transport's question-count boundary preserves all entries in order and the exact same state", () => {
+    const questions = Object.fromEntries(Array.from({ length: MAX_QUESTIONS_PER_REQUEST + 1 }, (_, i) =>
+      [`check_${i}`, { type: "noul" as const, instructions: "Is this evidence present?" }]));
+    const request = { state: { history: ["first", "middle", "last"] }, questions };
+    const split = splitJudgementRequest(request, { requestTokens: null, stateQuestionTokens: null })!;
+    expect(split.map(batch => Object.keys(batch.questions).length)).toEqual([MAX_QUESTIONS_PER_REQUEST, 1]);
+    expect(split.flatMap(batch => Object.keys(batch.questions))).toEqual(Object.keys(questions));
+    for (const batch of split) expect(batch.state).toBe(request.state);
+  });
+
+  test("the gateway uses the serialized questions length, with equality, one character over, and uncapped direct models", () => {
+    const first = { type: "noul" as const, instructions: 'Check a quoted "🙂" value.' };
+    const questions = { first, second: { type: "noul" as const, instructions: "Check the evidence." } };
+    questions.second.instructions += "x".repeat(MAX_GATEWAY_QUESTION_CHARS - JSON.stringify(questions).length);
+    const request = { state: { history: "Intact evidence" }, questions };
+    const budgets = { requestTokens: null, stateQuestionTokens: null, maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS };
+    expect(JSON.stringify(questions)).toHaveLength(MAX_GATEWAY_QUESTION_CHARS);
+    expect(splitJudgementRequest(request, budgets)).toEqual([request]);
+    questions.second.instructions += "x";
+    const split = splitJudgementRequest(request, budgets)!;
+    expect(split.map(batch => Object.keys(batch.questions))).toEqual([["first"], ["second"]]);
+    for (const batch of split) expect(batch.state).toBe(request.state);
+    const largeSingle = { state: request.state, questions: { first: { ...first, instructions: "x".repeat(MAX_GATEWAY_QUESTION_CHARS) } } };
+    expect(splitJudgementRequest(largeSingle, budgets)).toBeNull();
+    expect(splitJudgementRequest(largeSingle, { requestTokens: null, stateQuestionTokens: null })).toEqual([largeSingle]);
+  });
+
   test("ranking is total, antisymmetric, transitive, and favors earlier attempts on ties", () => {
     fc.assert(fc.property(rankable, rankable, rankable, (a, b, c) => {
       const ab = compareDraftCandidates(a, b);

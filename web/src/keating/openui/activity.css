@@ -1,11 +1,156 @@
-.shared-quiz-result__question { display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: .5rem; padding-block: .625rem; font-size: .6rem; border-bottom: 1px solid var(--border); }
-.shared-quiz-result__question p { margin: 0; overflow-wrap: anywhere; line-height: 1.5; }
-.shared-quiz-result__mark { color: var(--muted-foreground); }
-.shared-quiz-result__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .625rem; margin-top: .375rem; color: var(--muted-foreground); font-size: .53rem; }
+.shared-quiz-result__question { display: grid; grid-template-columns: 1rem minmax(0, 1fr); gap: .5rem; padding-block: .34rem; border-top: 1px solid var(--line-soft); }
+.shared-quiz-result__question p { margin: 0; overflow-wrap: anywhere; font: .6rem/1.45 var(--font-ui); }
+.shared-quiz-result__mark { color: var(--ink-soft); transform: translateY(.1rem); }
+.shared-quiz-result__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .625rem; margin-top: .1rem; color: var(--ink-soft); font: .5rem/1.5 var(--font-mono); }
 .shared-quiz-result__meta span { display: inline-flex; gap: .25rem; align-items: center; }
 .shared-quiz-result__meta time { font-variant-numeric: tabular-nums; }
-.shared-quiz-result__meta [data-speed] { color: var(--primary); }
+.shared-quiz-result__meta [data-speed] { color: var(--accent-green); }
 .shared-quiz-result__meta [data-timeout] { color: var(--destructive); }
-.shared-quiz-result__timing-note { color: var(--muted-foreground); font-size: .53rem; }
-.shared-quiz-result__timing-note summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
+.shared-quiz-result__timing-note { border-top: 1px solid var(--line-soft); padding-top: .3rem; color: var(--ink-soft); font: .55rem/1.5 var(--font-ui); }
+.shared-quiz-result__timing-note summary { display: flex; align-items: center; min-height: 1.154rem; cursor: pointer; font: .55rem/1.4 var(--font-mono); }
 .shared-quiz-result__timing-note p { line-height: 1.5; margin: 0; }
+@media (pointer: coarse) { .shared-quiz-result__timing-note summary { min-height: 44px; } }
+
+/* Task family (Assignment, Practice, Draft, Fieldwork, Connect, PersonBrief), lane O2 2026-11-20.
+   One lesson frame, flat rows, wells, no box inside the frame. Vocabulary: components/lesson/lesson.css. */
+.task-tools, .task-meta { display: inline-flex; align-items: center; gap: .3rem; min-width: 0; }
+.task-meta { font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.task-meta > span { display: inline-flex; align-items: center; gap: .15rem; white-space: nowrap; }
+.task-brief { display: grid; gap: .42rem; min-width: 0; }
+.task-brief > .lesson-section-title > .lesson-meta { margin-inline-start: 0; }
+.task-brief > .lesson-section-title > .task-meta { margin-inline-start: auto; }
+.task-schedule { display: flex; flex-wrap: wrap; gap: .1rem .7rem; }
+.task-schedule > p { margin: 0; }
+[data-task-brief] > :is(div, p):empty { display: none; }
+.task-sources > li > svg { color: var(--ink-soft); }
+.task-sources > li > span { overflow-wrap: anywhere; font-family: var(--font-mono); font-size: .52rem; }
+.task-steps { list-style: none; margin: 0; padding: 0; }
+.task-steps > li { display: grid; gap: .2rem; padding-inline: .2rem; }
+.task-step { display: flex; align-items: flex-start; gap: .34rem; min-width: 0; }
+.lesson-frame .task-step__check { display: flex; flex: 1; align-items: flex-start; gap: .36rem; min-width: 0; font: .6rem/1.45 var(--font-ui); cursor: pointer; }
+.task-step__check input { flex: none; margin: .14rem 0 0; accent-color: var(--accent-green); }
+.task-step__check > span { display: grid; gap: .04rem; min-width: 0; }
+.task-step__check strong { font-weight: 600; }
+.task-step > .lesson-quiet { flex: none; margin-inline-end: -.2rem; }
+.task-step__recorded, .task-step__note { margin-inline-start: 1.02rem; }
+.lesson-frame .task-step__note { width: calc(100% - 1.02rem); }
+.lesson-frame .task-submission { min-height: 3.4rem; }
+.lesson-frame .lesson-section-title > label { font: inherit; }
+.lesson-frame[data-task] .lesson-hint[data-task-paper-hint] { font: .5rem/1.5 var(--font-mono); }
+.task-files > li { align-items: center; font: .55rem/1.45 var(--font-ui); }
+.task-files > li > svg { flex: none; color: var(--ink-soft); }
+.task-files a { overflow-wrap: anywhere; }
+.task-submitted { margin: 0; font: .6rem/1.5 var(--font-ui); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+@container (max-width: 22rem) {
+  .task-step { flex-wrap: wrap; }
+  .task-step > .lesson-quiet { margin-inline-start: .68rem; }
+}
+
+/* Shared notes and media inside their frames. */
+.lesson-frame .shared-notes__field { width: 100%; min-height: 4.2rem; }
+.shared-media__audio { display: block; width: 100%; max-width: 100%; }
+.shared-media__stage video { display: block; width: 100%; max-height: 18rem; object-fit: contain; }
+.lesson-section > .task-steps:last-child { border-bottom: 0; }
+/* `.lesson-frame :is(p,…)` sets the UI face at higher specificity than `.lesson-hint`. */
+.lesson-frame :is(.task-steps, [data-task-submission], .response-capture) .lesson-hint { font-family: var(--font-mono); }
+.shared-notes__text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: .6rem/1.6 var(--font-ui); }
+.lesson-foot > .shared-notes__saved { margin-inline-start: auto; }
+.task-card__brief { margin: 0; max-width: 72ch; font: .6rem/1.55 var(--font-ui); }
+/* `.lesson-frame :is(p,label,…)` resets the face to UI; the mono vocabulary needs it back. */
+.lesson-frame :is(p, label, small).lesson-status, .lesson-frame :is(p, label).lesson-hint, .lesson-frame label.lesson-label { font-family: var(--font-mono); }
+/* base mobile rule `body:not(.chat-shell-active) button svg { 1.5rem }` blows glyphs up outside the chat shell. */
+.lesson-frame :is(.lesson-quiet, .lesson-primary, .shared-task__submit) > svg { width: 13px; height: 13px; flex: none; }
+
+/* Shared question answer kinds, quiz review, checklist, resource, unavailable, handoff (lane O6 2026-11-20).
+   Vocabulary from components/lesson/lesson.css: wells, flat rows, k-grid drop areas, .lesson-status. */
+.shared-markdown { min-width: 0; }
+.shared-retry { justify-self: start; margin-inline-start: -.34rem; }
+.lesson-document > .lesson-document__inactive .shared-retry > svg { width: 13px; height: 13px; flex: none; }
+
+/* Blanks, stacked: a numbered well per blank. */
+.shared-blanks { display: grid; gap: .24rem; list-style: none; margin: 0; padding: 0; }
+.shared-blanks > li { display: flex; align-items: center; gap: .34rem; min-width: 0; }
+.shared-blanks > li > input { flex: 1; width: auto; }
+
+/* Blanks, inline: a filled well inside the sentence, sized to what it holds, like a printed blank. */
+.lesson-frame .shared-cloze { margin: 0; font: .6rem/2 var(--font-ui); overflow-wrap: anywhere; }
+.shared-cloze__text { white-space: pre-wrap; }
+.lesson-frame .shared-cloze__blank {
+  display: inline-block; min-width: 4ch; max-width: 100%; min-height: 0; height: 1.15rem; margin-inline: .12rem; padding: 0 .24rem;
+  vertical-align: baseline; text-align: center; box-shadow: inset 0 -1px 0 var(--ink-soft); line-height: 1.15rem;
+}
+.lesson-frame .shared-cloze__blank::placeholder { font-family: var(--font-mono); font-size: .5rem; }
+.lesson-frame .shared-cloze__blank:focus { outline: none; box-shadow: inset 0 -2px 0 var(--accent-green); }
+.lesson-frame .shared-cloze__blank:focus-visible { outline: none; }
+
+.shared-activity__slider { padding-block: .1rem .2rem; }
+
+/* Sort / order: flat rows, an index, a grip and quiet 22px step buttons. The moved row carries the wash. */
+.lesson-frame .shared-order { list-style: none; margin: 0; padding: 0; }
+.lesson-frame .shared-order > .shared-order__row { display: flex; align-items: center; gap: .34rem; padding: .2rem .1rem .2rem .2rem; font: .6rem/1.45 var(--font-ui); cursor: grab; background: none; }
+.shared-order__row[data-moving] { background: linear-gradient(90deg, var(--k-wash), transparent 75%); }
+.shared-order__row[data-over] { box-shadow: inset 3px 0 0 var(--accent-green); background: var(--k-wash); }
+.shared-order__grip { flex: none; color: var(--ink-soft); }
+.shared-order__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.shared-order__row > .k-icon { flex: none; }
+
+/* Categorize: drop areas are the grid texture with a mono label, no outline; an item is the one thing
+   with an edge (it is what you pick up). Drop target = green wash + 3px leading bar. */
+.shared-sort { display: grid; gap: .42rem; min-width: 0; }
+.shared-sort__pool, .shared-sort__column { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; align-items: flex-start; gap: .24rem; min-width: 0; padding: .3rem .34rem .38rem; border-radius: .1923rem; background-color: var(--paper); }
+.shared-sort__pool { min-height: 2.2rem; }
+.shared-sort__column { flex-direction: column; flex-wrap: nowrap; align-items: stretch; min-height: 3.6rem; }
+.shared-sort__pool > .lesson-label { flex-basis: 100%; }
+.shared-sort__pool > .lesson-hint { align-self: center; }
+.shared-sort :is(.shared-sort__pool, .shared-sort__column)[data-over] { background-color: var(--k-wash); box-shadow: inset 3px 0 0 var(--accent-green); }
+.shared-sort__columns { display: grid; gap: .34rem; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); min-width: 0; }
+.shared-sort__item { display: flex; align-items: center; gap: .3rem; min-width: 0; max-width: 100%; padding: .14rem .14rem .14rem .24rem; border: 1px solid var(--line); border-radius: .1923rem; background: var(--paper); font: .6rem/1.4 var(--font-ui); cursor: grab; }
+.shared-sort__item[data-dragging] { opacity: .5; }
+.shared-sort__grip { flex: none; color: var(--ink-soft); }
+.shared-sort__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+body .lesson-frame .shared-sort__item button.keating-select.keating-select { flex: none; width: auto; max-width: 9rem; min-height: 1.058rem; padding: .08rem .3rem; font: .5rem/1.4 var(--font-mono); }
+.shared-sort__placed { display: grid; gap: .14rem; min-width: 0; }
+.lesson-frame .shared-sort__reason { width: 100%; min-height: 1.154rem; padding: .12rem .3rem; font-size: .55rem; }
+
+/* Quiz review before submitting: flat rows, an index, statuses as square dots. No bordered rows, no pills. */
+.lesson-frame .shared-quiz-review > li { padding: 0; }
+.lesson-frame .shared-quiz-review__row { display: flex; align-items: baseline; gap: .34rem; width: 100%; min-height: 0; padding: .3rem .1rem; border: 0; border-radius: 0; background: none; color: var(--ink); font: .6rem/1.45 var(--font-ui); text-align: start; cursor: pointer; }
+.lesson-frame .shared-quiz-review__row:hover:not(:disabled) { background: var(--k-wash); }
+.lesson-frame .shared-quiz-review__row:focus-visible { outline-offset: -2px; }
+.shared-quiz-review__row > .lesson-index { align-self: center; }
+.shared-quiz-review__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.shared-quiz-review__status { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: .1rem .5rem; }
+.lesson-frame .shared-quiz-review__status .lesson-status { white-space: nowrap; }
+
+/* Quiz results: flat rows; grader notes under a soft rule. */
+.shared-quiz-results { display: grid; margin: 0; padding: 0; list-style: none; }
+.shared-quiz-result__notes { display: grid; gap: .2rem; border-top: 1px solid var(--line-soft); padding-top: .3rem; }
+.shared-quiz-result__notes > small { font: .55rem/1.5 var(--font-ui); color: var(--ink-soft); }
+
+/* Checklist (goal steps): a section head with a glyph and flat done-rows. It can sit outside a frame. */
+.shared-checklist { font: .6rem/1.45 var(--font-ui); color: var(--ink); }
+.shared-checklist__items { list-style: none; margin: 0; padding: 0; }
+.shared-checklist__items > li { padding-inline: .2rem; }
+.shared-checklist__items label { display: flex; align-items: flex-start; gap: .36rem; min-width: 0; cursor: pointer; font: inherit; }
+.shared-checklist__items label > span { min-width: 0; overflow-wrap: anywhere; }
+.shared-checklist__items input[type=checkbox] { margin-top: .14rem; }
+
+/* Resource: plain text on a well in mono. */
+.lesson-frame .shared-resource__text { margin: 0; padding: .3rem .43rem; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); color: var(--ink); font: .53rem/1.55 var(--font-mono); white-space: pre-wrap; overflow-x: auto; }
+.lesson-foot > .shared-save__done:not(:first-child) { margin-inline-start: auto; }
+
+/* Unavailable resource: a warn line, one sentence, quiet actions. No box. */
+.lesson-document > .shared-unavailable[role=status] { border: 0; padding: .1rem 0; }
+.shared-unavailable { display: grid; gap: .14rem; min-width: 0; padding-block: .1rem; font: .6rem/1.45 var(--font-ui); color: var(--ink); }
+.shared-unavailable > p { margin: 0; }
+.shared-unavailable > .lesson-status { font-family: var(--font-mono); }
+.shared-unavailable__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-inline-start: -.34rem; }
+.shared-unavailable__actions > .lesson-status { margin-inline-start: .34rem; }
+.shared-unavailable :is(.lesson-quiet) > svg { width: 13px; height: 13px; flex: none; }
+
+/* Handoff. */
+.shared-handoff__reason { margin: 0; font: .6rem/1.5 var(--font-ui); }
+a.lesson-primary { text-decoration: none; }
+.lesson-frame[data-handoff] .lesson-foot > .lesson-status { margin: 0; }
+/* .lesson-index fills with --paper-deep, which reads as a hole in dark; use the frame's well colour. */
+.lesson-frame :is(.shared-blanks, .shared-order, .shared-quiz-review) .lesson-index { background: var(--lesson-well, var(--paper-deep)); }

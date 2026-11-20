@@ -40,7 +40,7 @@ export function publishTeachingDraftContent(sessionId: string, candidate: import
 }
 export function clearTeachingDraftContents(): void { contentStates.clear(); emit(); }
 const listeners = new Set<() => void>();
-const checkIds = new Set<string>(["quality_progress", "quality_scope", "runtime_tool_schema"]);
+const checkIds = new Set<string>(["quality_progress", "quality_scope", "requested_part_missing", "runtime_tool_schema"]);
 const featureIds = new Set<string>(TEACHING_INTERACTION_FEATURES.map(feature => feature.id));
 const componentNames = new Set<string>(INTERACTION_AFFORDANCES.flatMap(row => row.components));
 const planTriggers = new Set<string>(["graded-attempt", "stalled-focus", "progression-requested", "goal-requested"]);
@@ -95,6 +95,10 @@ function projectSynthesisSources(sources: unknown, attempt: number): { synthesis
     && Number.isSafeInteger(source) && source >= 1 && source <= 10 && source < attempt))].slice(0, 2);
   return safe.length ? { synthesisSourceAttempts: safe } : {};
 }
+function projectRepairSource(source: unknown, attempt: number): { repairSourceAttempt?: number } {
+  return typeof source === "number" && Number.isSafeInteger(source) && source > 0 && source <= 10 && source < attempt
+    ? { repairSourceAttempt: source } : {};
+}
 /** Reconstruct every nested field so extra content cannot enter a saved receipt. */
 function projectState(state: StateComposition): StateComposition {
   return {
@@ -124,6 +128,10 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(selectionRule ? { selectionRule } : {}),
     ...(pairReviews ? { pairReviews } : {}),
     ...(finalComparison ? { finalComparison } : {}),
+    ...(Array.isArray(snapshot.parallelAttempts) && snapshot.parallelAttempts.length === 2
+      && snapshot.parallelAttempts[0] === 1 && snapshot.parallelAttempts[1] === 2
+      ? { parallelAttempts: [1, 2] as const } : {}),
+    ...projectRepairSource(snapshot.repairSourceAttempt, snapshot.attempt),
     ...projectSynthesisSources(snapshot.synthesisSourceAttempts, snapshot.attempt),
     ...(snapshot.planningMs === undefined ? {} : { planningMs: snapshot.planningMs }),
     ...(snapshot.interaction ? { interaction: projectInteraction(snapshot.interaction) } : {}),
@@ -134,19 +142,22 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(snapshot.state ? { state: projectState(snapshot.state) } : {}),
     ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({ phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs), turnsDropped: nonnegative(slide.turnsDropped), before: projectState(slide.before), after: slide.after ? projectState(slide.after) : null })) } : {}),
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),
-    attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
+    attempts: snapshot.attempts.map<TeachingDraftSnapshot["attempts"][number]>(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
       ...(attempt.status === "generation-error" && attempt.generationFailure === TUTOR_RATE_LIMIT_REASON ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}),
       ...(attempt.gradeOnly === true ? { gradeOnly: true as const } : {}),
       ...(attempt.feedbackOnly === true ? { feedbackOnly: true as const } : {}),
       ...(attempt.predictionQuestionOnly === true ? { predictionQuestionOnly: true as const } : {}),
+      ...projectRepairSource(attempt.repairSourceAttempt, attempt.attempt),
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
       ...projectToolNames(attempt.unavailableTools),
       checks: attempt.checks.filter(check => isOpenUiDiagnosticGateIssue(check.id) || checkIds.has(check.id)).map(check => ({
         id: check.id, source: check.source, severity: check.severity, status: check.status, probability: check.probability,
-        ...(check.applicability === "submitted-grade-without-text" && check.id === "checkpoint_continued" ? { applicability: check.applicability } : {}),
+        ...(check.applicability === "submitted-grade-without-text" && check.id === "checkpoint_continued"
+          || check.applicability === "standalone-direct-answer" || check.applicability === "debugging-expected-output"
+          || check.applicability === "feedback-on-attempt" ? { applicability: check.applicability } : {}),
       })),
-    })),
+    })).sort((left, right) => left.attempt - right.attempt),
   };
 }
 

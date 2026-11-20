@@ -117,15 +117,16 @@ export function DraftAttentionList({ findings }: { findings: readonly DraftDiagn
 
 const statusColor: Record<string, string> = { pass: "var(--primary)", fail: "var(--destructive)", unknown: "var(--amber)", "generation-error": "var(--destructive)" };
 
-/** A waterfall: one row per draft (writing, then review) placed where it ran on one time axis, so the slow step stands out. */
+/** Parallel receipts record durations without per-stage start times. */
 export function DraftTimeline({ snapshot }: { snapshot: TeachingDraftSnapshot }) {
   const planning = snapshot.planningMs ?? 0;
   const rows = snapshot.attempts;
   if (!rows.length && !planning) return <p className={small}>No drafts have finished yet.</p>;
   const seconds = (ms: number) => ms / 1000;
+  const parallel = Boolean(snapshot.parallelAttempts || snapshot.pairReviews);
   let cursor = seconds(planning);
   const lanes = rows.map(attempt => {
-    const start = snapshot.pairReviews ? 0 : cursor;
+    const start = parallel ? 0 : cursor;
     const written = start + seconds(attempt.generationMs);
     const end = written + seconds(attempt.judgementMs);
     cursor = end;
@@ -143,7 +144,9 @@ export function DraftTimeline({ snapshot }: { snapshot: TeachingDraftSnapshot })
   const end = Math.max(.001, seconds(snapshot.elapsedMs), ...lanes.flatMap(lane => lane.bands.map(band => band.end)));
   return <figure aria-label="Where the time went">
     <Timeline label="Draft phase times in seconds" lanes={lanes} domain={[0, end]} />
-    <figcaption className={small}>Total {seconds(snapshot.elapsedMs).toFixed(1)} s of {seconds(DRAFT_TIME_BUDGET_MS)} s.{snapshot.pairReviews && " Drafts run concurrently."}</figcaption>
+    <figcaption className={small}>Total {seconds(snapshot.elapsedMs).toFixed(1)} s of {seconds(DRAFT_TIME_BUDGET_MS)} s.{snapshot.parallelAttempts
+      ? " Drafts 1 and 2 started in parallel. Each bar shows time spent on that draft."
+      : snapshot.pairReviews && " Drafts run concurrently."}</figcaption>
   </figure>;
 }
 
@@ -186,7 +189,7 @@ export function DraftCheckGrid({ snapshot }: { snapshot: TeachingDraftSnapshot }
     </table>
   </div>;
   return <ChartFrame title="Draft checks" reading={`${rows.length} checks across ${attempts.length} drafts. A dash means the check did not run.`}>
-    {problems.length ? table(problems) : <p className={small}>Every check passed in every draft.</p>}
+    {problems.length ? table(problems) : <p className={small}>Every recorded check passed.</p>}
     {passing.length > 0 && <details>
       <summary className={cx(small, css({ cursor: "pointer" }))}>{passing.length} passing {passing.length === 1 ? "check" : "checks"}</summary>
       {table(passing)}

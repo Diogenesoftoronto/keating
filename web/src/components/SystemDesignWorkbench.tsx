@@ -1,6 +1,8 @@
-import { EmptyState, Loading } from "../design-system/kit";
+import { EmptyState, IconButton, Loading } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { LessonFrame } from "./lesson/LessonFrame";
 import "./specialist-lessons.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   DIAGRAM_LIMITS, addDiagramComponent, connectDiagramComponents, copyDiagramGraph, diagramDraftKey, disconnectDiagramConnection,
   getDiagramKinds, evaluateDiagramChecks, parseDiagramDraftContent, parseDiagramSubmission, diagramMermaid, prepareDiagramSubmission,
@@ -86,6 +88,17 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
   const [connectionLabel, setConnectionLabel] = useState("");
   const receiptRef = useRef(received);
   receiptRef.current = received;
+  const explanationId = useId();
+  const [controlsHost, setControlsHost] = useState<HTMLSpanElement | null>(null);
+  // Diagram controls join the frame head only when it has room; on narrow frames they float on the stage.
+  const [stage, setStage] = useState<HTMLDivElement | null>(null);
+  const [roomyHead, setRoomyHead] = useState(false);
+  useEffect(() => {
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => setRoomyHead((entry?.contentRect.width ?? 0) >= 440));
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [stage]);
   const storageKey = systemDesignDraftKey(documentId, documentRevision, node.id);
   const kinds = getDiagramKinds(node.diagram);
   const validGraph = validateDiagramGraph(graph);
@@ -159,63 +172,80 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
     }
   };
 
-  return <section className="specialist-frame system-design-workbench" aria-label={node.title} data-task={node.id}>
-    <header className="sd-brief">
-      <div className="sd-heading"><span className="sd-kicker">Diagram</span>{node.estimatedMinutes ? <span className="sd-muted">~{node.estimatedMinutes} min</span> : null}</div>
-      <h3>{node.title}</h3>
-      <MarkdownBlock content={node.brief} />
-    </header>
+  const labelOf = (componentId: string) => graph.components.find(item => item.id === componentId)?.label;
+  const canSubmit = editable && validGraph && graph.components.length > 0 && Boolean(explanation.trim());
+  const passedChecks = node.diagram.checks.filter(check => checks.find(item => item.id === check.id)?.passed).length;
+  return <LessonFrame glyph="shapes" kind="Diagram" title={node.title} aria-label={node.title} data-task={node.id} className="system-design-workbench"
+    tools={<span className="sd-tools">
+      {mermaid && roomyHead ? <span ref={setControlsHost} className="sd-diagram-tools" data-glyph-host /> : null}
+      {node.estimatedMinutes ? <span className="lesson-meta sd-duration"><KeatingGlyph name="clock" size={13} />~{node.estimatedMinutes} min</span> : null}
+    </span>}
+    footer={received || recorded ? <p role="status" className="lesson-status" data-tone="ok">Submission recorded for review.</p> : <>
+      <button type="button" className="lesson-quiet" disabled={!editable || !validGraph} onClick={() => void saveDraft()}><KeatingGlyph name="save" size={13} />Save draft</button>
+      {!restored ? <Loading size="inline" label="Restoring local draft…" /> : <span className="lesson-foot-meta sd-save-status">{!validGraph ? "Name every component before saving or submitting." : !graph.components.length || !explanation.trim() ? "Add a component and an explanation to submit." : saveStatus}</span>}
+      <button type="button" className="lesson-primary k-lift sd-submit" data-glyph-surface="inverse" disabled={!canSubmit} onClick={submit}><KeatingGlyph name={deliveryError ? "refresh" : "send"} size={13} />{deliveryError ? "Retry submission" : "Submit diagram"}</button>
+    </>}>
+    <div className="sd-brief"><MarkdownBlock content={node.brief} /></div>
 
-    <div className="sd-diagram" aria-label="Your diagram">
-      {mermaid ? <MermaidRenderer content={mermaid} htmlLabels={false} decodeEntityLabels /> : <EmptyState heading="Add a component to begin your diagram." />}
+    <div ref={setStage} className="sd-diagram" role="group" aria-label="Your diagram">
+      {mermaid ? <MermaidRenderer content={mermaid} htmlLabels={false} decodeEntityLabels chrome="none" controlsHost={roomyHead ? controlsHost : null} className="lesson-stage k-grid lesson-bleed sd-stage" />
+        : <div className="lesson-stage k-grid lesson-bleed sd-stage"><EmptyState glyph="shapes" heading="Add a component to begin your diagram." /></div>}
     </div>
 
     <fieldset disabled={!editable} className="sd-editor">
-      <legend>Build your diagram</legend>
-      <div className="sd-section-heading"><h4>Components <span className="sd-muted">{graph.components.length}/{MAX_COMPONENTS}</span></h4>
-        <button type="button" disabled={graph.components.length >= MAX_COMPONENTS} onClick={() => edit(addDiagramComponent(graph, { label: `Component ${graph.components.length + 1}`, kind: kinds[0] }, newId))}>Add component</button>
-      </div>
-      {!graph.components.length ? <p className="sd-muted">Add the parts you want to show, then connect them.</p> : null}
-      <ol className="sd-components">
-        {graph.components.map((component, index) => <li className="sd-component" key={component.id}>
-          <label>Component {index + 1}<input maxLength={MAX_LABEL} value={component.label} onChange={event => edit(renameDiagramComponent(graph, component.id, event.currentTarget.value))} /></label>
-          <label>Category<select value={component.kind} onChange={event => edit(setDiagramComponentKind(graph, component.id, event.currentTarget.value))}>{kinds.map(kind => <option key={kind} value={kind}>{kindLabel(kind)}</option>)}</select></label>
-          <button className="sd-remove" type="button" aria-label={`Remove ${component.label || `component ${index + 1}`}`} onClick={() => edit(removeDiagramComponent(graph, component.id))}>Remove</button>
-        </li>)}
-      </ol>
-      <div className="sd-section-heading"><h4>Connections <span className="sd-muted">{graph.connections.length}/{MAX_CONNECTIONS}</span></h4></div>
-      <ul className="sd-connections">{graph.connections.map(connection => <li key={connection.id}>
-        <span>{graph.components.find(item => item.id === connection.from)?.label} <span aria-label="to">→</span> {graph.components.find(item => item.id === connection.to)?.label}{connection.label ? <small>{connection.label}</small> : null}</span>
-        <button className="sd-remove" type="button" aria-label={`Remove connection ${graph.components.find(item => item.id === connection.from)?.label} to ${graph.components.find(item => item.id === connection.to)?.label}`} onClick={() => edit(disconnectDiagramConnection(graph, connection.id))}>Remove</button>
-      </li>)}</ul>
-      <div className="sd-connection-form">
-        <label>From<select value={graph.components.some(item => item.id === from) ? from : ""} onChange={event => setFrom(event.currentTarget.value)}><option value="">Choose component</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select></label>
-        <label>To<select value={graph.components.some(item => item.id === to) ? to : ""} onChange={event => setTo(event.currentTarget.value)}><option value="">Choose component</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select></label>
-        <label>Connection label <span className="sd-muted">(optional)</span><input maxLength={MAX_LABEL} value={connectionLabel} placeholder="Describe the relationship" onChange={event => setConnectionLabel(event.currentTarget.value)} /></label>
-        <button type="button" disabled={graph.connections.length >= MAX_CONNECTIONS || !graph.components.some(item => item.id === from) || !graph.components.some(item => item.id === to)} onClick={() => {
-          edit(connectDiagramComponents(graph, { from, to, label: connectionLabel }, newId)); setConnectionLabel("");
-        }}>Connect</button>
-      </div>
+      <legend className="lesson-sr">Build your diagram</legend>
+      <section className="lesson-section">
+        <h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="chip" size={13} />Components<span className="lesson-meta">{graph.components.length}/{MAX_COMPONENTS}</span></h4>
+        {!graph.components.length ? <p className="lesson-hint">Add the parts you want to show, then connect them.</p> : null}
+        <ol className="lesson-rows sd-components">
+          {graph.components.map((component, index) => <li className="sd-component" key={component.id}>
+            <span className="lesson-meta sd-index" aria-hidden="true">{index + 1}</span>
+            <label className="sd-name"><span className="lesson-sr">Component {index + 1}</span><input maxLength={MAX_LABEL} value={component.label} onChange={event => edit(renameDiagramComponent(graph, component.id, event.currentTarget.value))} /></label>
+            <label className="sd-select" data-glyph-host><span className="lesson-sr">Category</span><select value={component.kind} onChange={event => edit(setDiagramComponentKind(graph, component.id, event.currentTarget.value))}>{kinds.map(kind => <option key={kind} value={kind}>{kindLabel(kind)}</option>)}</select><KeatingGlyph name="chev" size={13} /></label>
+            <IconButton size="sm" glyph="x" className="sd-remove" label={`Remove ${component.label || `component ${index + 1}`}`} onClick={() => edit(removeDiagramComponent(graph, component.id))} />
+          </li>)}
+        </ol>
+        <button type="button" className="lesson-quiet sd-add" disabled={graph.components.length >= MAX_COMPONENTS} onClick={() => edit(addDiagramComponent(graph, { label: `Component ${graph.components.length + 1}`, kind: kinds[0] }, newId))}><KeatingGlyph name="plus" size={13} />Add component</button>
+      </section>
+
+      <section className="lesson-section">
+        <h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="link" size={13} />Connections<span className="lesson-meta">{graph.connections.length}/{MAX_CONNECTIONS}</span></h4>
+        {graph.connections.length ? <ul className="lesson-rows sd-connections">{graph.connections.map(connection => <li key={connection.id} data-glyph-host>
+          <KeatingGlyph name="link" size={13} />
+          <span className="sd-route">{labelOf(connection.from)} <span aria-label="to" className="sd-arrow">→</span> {labelOf(connection.to)}</span>
+          {connection.label ? <small className="lesson-meta sd-connection-label">{connection.label}</small> : null}
+          <IconButton size="sm" glyph="x" className="sd-remove" label={`Remove connection ${labelOf(connection.from)} to ${labelOf(connection.to)}`} onClick={() => edit(disconnectDiagramConnection(graph, connection.id))} />
+        </li>)}</ul> : null}
+        <div className="sd-connection-form" data-glyph-host>
+          <label className="sd-select" data-glyph-host><span className="lesson-sr">From</span><select value={graph.components.some(item => item.id === from) ? from : ""} onChange={event => setFrom(event.currentTarget.value)}><option value="">From</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select><KeatingGlyph name="chev" size={13} /></label>
+          <KeatingGlyph name="right" size={13} className="sd-arrow-glyph" />
+          <label className="sd-select" data-glyph-host><span className="lesson-sr">To</span><select value={graph.components.some(item => item.id === to) ? to : ""} onChange={event => setTo(event.currentTarget.value)}><option value="">To</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select><KeatingGlyph name="chev" size={13} /></label>
+          <label className="sd-label-field"><input aria-label="Connection label (optional)" maxLength={MAX_LABEL} value={connectionLabel} placeholder="Label (optional)" onChange={event => setConnectionLabel(event.currentTarget.value)} /></label>
+          <button type="button" className="lesson-quiet sd-connect" disabled={graph.connections.length >= MAX_CONNECTIONS || !graph.components.some(item => item.id === from) || !graph.components.some(item => item.id === to)} onClick={() => {
+            edit(connectDiagramComponents(graph, { from, to, label: connectionLabel }, newId)); setConnectionLabel("");
+          }}><KeatingGlyph name="link" size={13} />Connect</button>
+        </div>
+      </section>
     </fieldset>
 
-    {node.diagram.checks.length ? <section className="sd-review" aria-label="Structural checks">
-      <h4>Structural checks</h4><p className="sd-muted">These check the diagram's structure. They do not judge your design or block submission.</p>
-      <ul>{node.diagram.checks.map(check => {
+    {node.diagram.checks.length ? <section className="lesson-section sd-review" aria-label="Structural checks">
+      <h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="verified" size={13} />Structural checks<span className="lesson-meta">{passedChecks}/{node.diagram.checks.length}</span></h4>
+      <p className="lesson-hint">These check the diagram's structure. They do not judge your design or block submission.</p>
+      <ul className="sd-checks">{node.diagram.checks.map(check => {
         const result = checks.find(item => item.id === check.id);
-        return <li key={check.id}><span className={result?.passed ? "sd-check-pass" : "sd-muted"}>{result?.passed ? "Present" : "Missing"}</span><span>{check.label}<small>{result?.detail ?? "Name each component to update this check."}</small></span></li>;
+        return <li key={check.id} className="lesson-status" data-tone={result?.passed ? "ok" : "warn"}><span className="lesson-sr">{result?.passed ? "Present" : "Missing"}: </span><span className="sd-check-copy"><b>{check.label}</b> <span className="sd-check-detail">· {result?.detail ?? "Name each component to update this check."}</span></span></li>;
       })}</ul>
     </section> : null}
-    {node.criteria?.length ? <section className="sd-review" aria-label="Review criteria"><h4>Review criteria</h4><ul className="sd-criteria">{node.criteria.map(criterion => <li key={criterion}>{criterion}</li>)}</ul></section> : null}
-    <label className="sd-explanation">Explain your diagram<textarea disabled={!editable} maxLength={MAX_EXPLANATION} rows={5} value={explanation} placeholder="Explain what the components and connections mean, and any assumptions or decisions behind them." onChange={event => { setExplanation(event.currentTarget.value); setPending(undefined); setDeliveryError(""); setSaveStatus(""); }} /></label>
-    <div className="sd-footer">
-      {received || recorded ? <p role="status">Submission recorded for review.</p> : <>
-        <button type="button" className="sd-submit k-lift" disabled={!editable || !validGraph || !graph.components.length || !explanation.trim()} onClick={submit}>{deliveryError ? "Retry submission" : "Submit diagram"}</button>
-        <button type="button" disabled={!editable || !validGraph} onClick={() => void saveDraft()}>Save draft</button>
-        {!restored ? <Loading size="inline" label="Restoring local draft…" /> : <p className="sd-muted">{!validGraph ? "Name every component before saving or submitting." : !graph.components.length || !explanation.trim() ? "Add a component and an explanation to submit." : saveStatus}</p>}
-      </>}
-    </div>
-    {storageError ? <p role="alert" className="sd-error">{storageError}</p> : null}
-    {deliveryError ? <p role="alert" className="sd-error">{deliveryError}</p> : null}
-    {acknowledged && !received ? <p role="alert" className="sd-error">The recorded diagram could not be verified. Its stored checks were not accepted.</p> : null}
-  </section>;
+    {node.criteria?.length ? <section className="lesson-section sd-review" aria-label="Review criteria">
+      <h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="target" size={13} />Review criteria</h4>
+      <ul className="lesson-criteria">{node.criteria.map(criterion => <li key={criterion}><KeatingGlyph name="target" size={13} />{criterion}</li>)}</ul>
+    </section> : null}
+    <section className="lesson-section">
+      <label className="lesson-section-title" data-glyph-host htmlFor={explanationId}><KeatingGlyph name="pen" size={13} />Explain your diagram</label>
+      <textarea id={explanationId} disabled={!editable} maxLength={MAX_EXPLANATION} rows={5} value={explanation} placeholder="Explain what the components and connections mean, and any assumptions or decisions behind them." onChange={event => { setExplanation(event.currentTarget.value); setPending(undefined); setDeliveryError(""); setSaveStatus(""); }} />
+    </section>
+    {storageError ? <p role="alert" className="lesson-status" data-tone="bad">{storageError}</p> : null}
+    {deliveryError ? <p role="alert" className="lesson-status" data-tone="bad">{deliveryError}</p> : null}
+    {acknowledged && !received ? <p role="alert" className="lesson-status" data-tone="bad">The recorded diagram could not be verified. Its stored checks were not accepted.</p> : null}
+  </LessonFrame>;
 }

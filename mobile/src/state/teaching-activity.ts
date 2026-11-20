@@ -5,9 +5,9 @@
  */
 import type { MutableRefObject } from "react";
 import { DEFAULT_MODELS } from "@keating/runtime-config";
-import type { ReleasedActivitySelection, UiDocument } from "@keating/learner-contracts";
+import type { ReleasedActivitySelection, TeachingPolicyTurn, UiDocument } from "@keating/learner-contracts";
 import { activitySourcesFromDocuments, descriptor, selectActivityCandidate } from "../../../packages/learner-contracts/src/judgement/activity-learning";
-import { configuredMobileJudgementRuntime } from "@/lib/judgement/runtime";
+import { configuredMobileJudgementRuntime, mobileTeachingDraftReviewers } from "@/lib/judgement/runtime";
 import { createMobileTeachingDraftRound } from "@/lib/judgement/teaching-drafts";
 import { mobileActivityBoundaries, mobileUnansweredActivityDocument } from "@/lib/judgement/activity-learning";
 import { mobileOnlineLearningPreferences } from "@/lib/judgement/online-learning";
@@ -64,6 +64,7 @@ export interface TurnIdentity {
   sessionId: string;
   triggeringMessage: ChatMessage;
   recallIdentity: string;
+  reviewHistory: TeachingPolicyTurn["conversation"];
 }
 
 /** Everything that must still hold for the activity round to be allowed to act. */
@@ -132,10 +133,11 @@ export async function prepareActivityRound(env: ActivityEnv, turn: TurnIdentity,
   const judgement = await configuredMobileJudgementRuntime();
   const activeDocument = await mobileUnansweredActivityDocument(env.stateRef.current.sessions.find(session => session.id === sessionId),
     await repository.records.snapshot(), id => repository.uiActions.getJournal(id)).catch(() => null);
-  round.privateRound = createMobileTeachingDraftRound({ judge: judgement.call, current, sessionId,
+  round.privateRound = createMobileTeachingDraftRound({ judge: judgement.call, reviewers: mobileTeachingDraftReviewers(judgement.policy), current, sessionId,
     configuredDecisionModel: judgement.policy.tiers[0]?.key.model,
     activityLearningMode: activityMode, backgroundActivityPolicy,
     learnerContext: env.learnerContextRef.current,
+    reviewHistory: turn.reviewHistory,
     activeDocument, questionJournal: id => repository.uiActions.getJournal(id),
     sessionMessages: () => env.stateRef.current.sessions.find(session => session.id === sessionId)?.messages,
     onReviewedGrade: grade => { round.reviewedGrade = grade; },

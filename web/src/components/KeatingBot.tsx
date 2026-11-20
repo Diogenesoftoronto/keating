@@ -55,7 +55,7 @@ function loadSprite(url: string): Promise<boolean> {
 }
 
 export function preloadCompanionDragSprites() {
-  for (const name of ["held", "falling", "landing"]) void loadSprite(`/brand/stop-motion-v1/keatingbot-body-${name}.avif`);
+  for (const name of ["held", "falling", "landing", "wall-climb", "climbing"]) void loadSprite(`/brand/stop-motion-v1/keatingbot-body-${name}.avif`);
 }
 
 /** An animated atlas, with no React work between animation frames. */

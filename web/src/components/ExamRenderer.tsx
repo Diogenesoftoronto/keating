@@ -1,6 +1,5 @@
-import { LessonFrame } from "./lesson/LessonFrame";
-import { Countdown, Progress, StackBar, Stat } from "../design-system/charts";
-import "./specialist-lessons.css";
+import { LessonFrame, LessonScore } from "./lesson/LessonFrame";
+import { Countdown } from "../design-system/charts";
 import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { KeatingGlyph } from "../design-system/glyphs";
 import {
@@ -41,8 +40,8 @@ export interface ExamRendererProps {
 
 export function ExamRenderer(props: ExamRendererProps) {
   if (props.node.questions.length < MIN_EXAM_QUESTIONS) {
-    return <LessonFrame glyph="quiz" kind="Exam unavailable" title={props.node.title} className="exam-surface" data-exam={props.node.id}>
-      <p className="exam-surface__error" role="alert">Exams require at least {MIN_EXAM_QUESTIONS} questions. This exam has {props.node.questions.length}.</p>
+    return <LessonFrame glyph="quiz" kind="Exam unavailable" title={props.node.title} className="exam-frame" data-exam={props.node.id}>
+      <p className="exam-error" role="alert">Exams require at least {MIN_EXAM_QUESTIONS} questions. This exam has {props.node.questions.length}.</p>
     </LessonFrame>;
   }
   return <ExamAttempt key={JSON.stringify(props.node)} {...props} />;
@@ -243,31 +242,36 @@ function ExamAttempt({
 
   if (terminal)
     return <ExamResults node={node} completion={saved ?? delivered!} focusOnMount={Boolean(delivered)} />;
+  const minutes = seconds < 60 ? `${seconds} seconds` : `${Number((seconds / 60).toFixed(1))} minutes`;
   if (!clock)
     return (
-      <LessonFrame glyph="clock" kind="Exam" title={node.title} className="exam-surface exam-surface--start" data-exam={node.id}>
-        <p className="exam-start__facts">
-          {node.questions.length} questions <span aria-hidden="true">·</span>{" "}
-          {seconds < 60
-            ? `${seconds} seconds`
-            : `${Number((seconds / 60).toFixed(1))} minutes`}
-        </p>
-        <p className="exam-start__description">
-          Move between questions. Review before you submit.
-        </p>
-        <button
-          type="button"
-          className="exam-surface__primary k-lift"
-          disabled={disabled || node.questions.length === 0}
-          onClick={() => {
-            const at = Date.now();
-            setClock(startExamClock(at, seconds, current?.id));
-            setNow(at);
-          }}
-        >
-          Start exam
-          <KeatingGlyph name="right" size={18} />
-        </button>
+      <LessonFrame glyph="quiz" kind="Exam" title={node.title} className="exam-frame" data-exam={node.id} data-exam-phase="ready"
+        tools={<span className="exam-clock"><KeatingGlyph name="clock" size={13} />{seconds < 60 ? `${seconds} s` : `${Number((seconds / 60).toFixed(1))} min`}</span>}
+        footer={<>
+          <span className="lesson-foot-meta">Answers save as you go</span>
+          <button
+            type="button"
+            className="lesson-primary"
+            data-glyph-surface="inverse"
+            disabled={disabled || node.questions.length === 0}
+            onClick={() => {
+              const at = Date.now();
+              setClock(startExamClock(at, seconds, current?.id));
+              setNow(at);
+            }}
+          >
+            <KeatingGlyph name="play" size={13} />
+            Start exam
+          </button>
+        </>}>
+        <section className="lesson-section">
+          <h4 data-glyph-host className="lesson-section-title"><KeatingGlyph name="info" size={13} />Before you start</h4>
+          <ul className="lesson-rows exam-facts" data-glyph-host>
+            <li><KeatingGlyph name="quiz" size={13} />{node.questions.length} questions</li>
+            <li><KeatingGlyph name="clock" size={13} />{minutes}; the timer starts when you begin</li>
+            <li><KeatingGlyph name="flag" size={13} />Flag a question and come back to it</li>
+          </ul>
+        </section>
       </LessonFrame>
     );
 
@@ -275,8 +279,53 @@ function ExamAttempt({
   const countdown = `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`;
   const urgent =
     remainingMs > 0 && remainingMs <= Math.min(seconds * 100, 60_000);
+  const isFlagged = Boolean(current && flagged.includes(current.id));
+  const footer = reviewing ? <>
+      <button type="button" className="lesson-quiet" disabled={frozen} onClick={() => navigate(node.questions.length - 1)}>
+        <KeatingGlyph name="left" size={13} />Back to questions
+      </button>
+      <button type="button" className="lesson-primary" data-glyph-surface="inverse" disabled={disabled} onClick={submit}>
+        <KeatingGlyph name="send" size={13} />
+        {pending ? "Retry save exam" : "Submit exam"}
+      </button>
+    </> : current ? <>
+      <button type="button" className="lesson-quiet k-bloom" title="Back" disabled={frozen || index === 0} onClick={() => navigate(index - 1)}>
+        <KeatingGlyph name="left" size={15} /><span className="lesson-sr">Back</span>
+      </button>
+      <button
+        type="button"
+        className="lesson-quiet exam-flag"
+        aria-pressed={isFlagged}
+        title={isFlagged ? "Flagged" : "Flag"}
+        disabled={frozen}
+        onClick={() =>
+          setFlagged((value) =>
+            value.includes(current.id)
+              ? value.filter((id) => id !== current.id)
+              : [...value, current.id],
+          )
+        }
+      >
+        <KeatingGlyph name="flag" size={13} active={isFlagged} />{isFlagged ? "Flagged" : "Flag"}
+      </button>
+      {index < node.questions.length - 1 ? (
+        <button type="button" className="lesson-quiet" disabled={frozen} onClick={() => navigate("review")}>
+          <KeatingGlyph name="eye" size={13} />Review all answers
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="lesson-primary"
+        data-glyph-surface="inverse"
+        disabled={frozen}
+        onClick={() => navigate(index === node.questions.length - 1 ? "review" : index + 1)}
+      >
+        <KeatingGlyph name="right" size={13} />
+        {index === node.questions.length - 1 ? "Review exam" : "Next"}
+      </button>
+    </> : undefined;
   return (
-    <LessonFrame glyph="quiz" title={node.title} kind="Exam" className="exam-surface"
+    <LessonFrame glyph="quiz" title={node.title} kind="Exam" className="exam-frame"
       data-exam={node.id} data-exam-phase={reviewing ? "review" : "answering"}
       tools={<div
           className="exam-clock"
@@ -285,55 +334,61 @@ function ExamAttempt({
           aria-label="Exam time remaining"
           data-urgent={urgent || undefined}
         >
-          <KeatingGlyph name="clock" size={17} />
+          <KeatingGlyph name={urgent ? "alert" : "clock"} size={13} />
           <strong>{countdown}</strong>
-        </div>}>
-      <Countdown remaining={remainingSeconds} total={seconds} label="Exam countdown" />
-      <Progress done={answered} total={node.questions.length} label="Answered questions" />
-      <div className="exam-surface__progress">
+          <Countdown remaining={remainingSeconds} total={seconds} label="Exam countdown" />
+        </div>}
+      footer={footer}>
+      <div className="lesson-round">
+        <span className="lesson-progress" role="progressbar" aria-label="Answered questions" aria-valuemin={0} aria-valuemax={node.questions.length} aria-valuenow={answered} aria-valuetext={`${answered} of ${node.questions.length}`}>
+          <i style={{ width: `${answered / Math.max(1, node.questions.length) * 100}%` }} />
+        </span>
+        <small>{reviewing ? `${answered} of ${node.questions.length} answered` : `${index + 1} of ${node.questions.length}`}</small>
+      </div>
+      <div className="exam-status">
         <button
           type="button"
-          className="exam-navigator-toggle"
+          className="lesson-quiet exam-navigator-toggle"
           aria-expanded={navigatorOpen}
           aria-controls={navigatorId}
           aria-label={navigatorOpen ? "Hide question navigator" : "Show question navigator"}
           onClick={() => setNavigatorOpen((value) => !value)}
         >
+          <KeatingGlyph name="hash" size={13} />
           Questions
-          <KeatingGlyph name="chev" size={15} />
+          <KeatingGlyph name={navigatorOpen ? "chevu" : "chev"} size={13} />
         </button>
-        <span>
-          <KeatingGlyph name="check" size={15} />{answered}/{node.questions.length} answered
-        </span>
-        <span><KeatingGlyph name="flag" size={15} />{flagged.length} flagged</span>
-        <span><KeatingGlyph name="minus" size={15} />{node.questions.length - answered} unanswered</span>
-        {!reviewing && <span><KeatingGlyph name="right" size={15} />Current {index + 1}</span>}
+        {navigatorOpen ? <nav id={navigatorId} className="exam-navigator" aria-label="Exam questions">
+          {node.questions.map((question, questionIndex) => (
+            <button
+              key={question.id}
+              type="button"
+              aria-label={`Question ${questionIndex + 1}${ready[question.id] ? ", answered" : ", unanswered"}${flagged.includes(question.id) ? ", flagged" : ""}`}
+              aria-current={
+                !reviewing && questionIndex === index ? "step" : undefined
+              }
+              data-answered={ready[question.id] || undefined}
+              data-flagged={flagged.includes(question.id) || undefined}
+              disabled={frozen}
+              onClick={() => navigate(questionIndex)}
+            >
+              {questionIndex + 1}
+            </button>
+          ))}
+        </nav> : null}
+        <div className="exam-legend">
+          <span className="lesson-status" data-tone="ok">{answered} answered</span>
+          <span className="lesson-status" data-tone="warn">{flagged.length} flagged</span>
+          {!reviewing ? <span className="lesson-status" data-tone="ink">current</span> : null}
+          <span className="lesson-status" data-tone="none">{node.questions.length - answered} left</span>
+        </div>
       </div>
-      {navigatorOpen ? <nav id={navigatorId} className="exam-navigator" aria-label="Exam questions">
-        {node.questions.map((question, questionIndex) => (
-          <button
-            key={question.id}
-            type="button"
-            aria-label={`Question ${questionIndex + 1}${ready[question.id] ? ", answered" : ", unanswered"}${flagged.includes(question.id) ? ", flagged" : ""}`}
-            aria-current={
-              !reviewing && questionIndex === index ? "step" : undefined
-            }
-            data-answered={ready[question.id] || undefined}
-            data-flagged={flagged.includes(question.id) || undefined}
-            disabled={frozen}
-            onClick={() => navigate(questionIndex)}
-          >
-            <span>{questionIndex + 1}</span>
-            {!reviewing && questionIndex === index && <KeatingGlyph name="right" size={11} />}
-            {flagged.includes(question.id) && <KeatingGlyph name="flag" size={11} />}
-            <KeatingGlyph name={ready[question.id] ? "check" : "minus"} size={11} />
-          </button>
-        ))}
-      </nav> : null}
       {reviewing ? (
-        <div className="exam-review">
-          <h4 ref={headingRef} tabIndex={-1}>
+        <section className="lesson-section exam-review">
+          <h4 data-glyph-host className="lesson-section-title" ref={headingRef} tabIndex={-1}>
+            <KeatingGlyph name={expired ? "clock" : "eye"} size={13} />
             {expired ? "Time is up" : "Ready to submit?"}
+            <span className="lesson-meta">{answered} of {node.questions.length}</span>
           </h4>
           {expired ? (
             <p role="status">
@@ -348,32 +403,30 @@ function ExamAttempt({
               incomplete.
             </p>
           ) : null}
-          <ol>
-            {node.questions.map((question, questionIndex) => (
+          <ol className="lesson-rows exam-review__rows">
+            {node.questions.map((question, questionIndex) => {
+              const status = ready[question.id]
+                ? "Answered"
+                : examResponseHasAnswer(responses[question.id])
+                  ? "Incomplete"
+                  : "Unanswered";
+              return (
               <li key={question.id}>
                 <button
                   type="button"
                   disabled={frozen}
                   onClick={() => navigate(questionIndex)}
                 >
-                  <span className="exam-review__number">
+                  <span className="lesson-index">
                     {questionIndex + 1}
                   </span>
                   <span className="exam-review__question">
                     {question.header ?? question.prompt}
-                    <small>
-                      {ready[question.id]
-                        ? "Answered"
-                        : examResponseHasAnswer(responses[question.id])
-                          ? "Incomplete"
-                          : "Unanswered"}
-                    </small>
                   </span>
                   {flagged.includes(question.id) ? (
-                    <KeatingGlyph name="flag" size={15} label="Flagged" />
-                  ) : (
-                    <KeatingGlyph name="right" size={15} />
-                  )}
+                    <KeatingGlyph name="flag" size={13} label="Flagged" className="exam-flagged" />
+                  ) : null}
+                  <span className="lesson-status" data-tone={status === "Answered" ? "ok" : status === "Incomplete" ? "warn" : "none"}>{status}</span>
                 </button>
                 {expired && answerText[question.id] ? (
                   <p className="exam-review__answer">
@@ -385,26 +438,15 @@ function ExamAttempt({
                   </p>
                 ) : null}
               </li>
-            ))}
+              );
+            })}
           </ol>
-          <button
-            type="button"
-            className="exam-surface__primary k-lift"
-            disabled={disabled}
-            onClick={submit}
-          >
-            {pending ? "Retry save exam" : "Submit exam"}
-            <KeatingGlyph name="send" size={17} />
-          </button>
-        </div>
+        </section>
       ) : current ? (
-        <div className="exam-question">
-          <div className="exam-question__top">
-            <h4 ref={headingRef} tabIndex={-1}>
-              Question {index + 1} of {node.questions.length}
-            </h4>
-
-          </div>
+        <section className="exam-question">
+          <h4 className="lesson-sr" ref={headingRef} tabIndex={-1}>
+            Question {index + 1} of {node.questions.length}
+          </h4>
           <Question
             key={current.id}
             node={current}
@@ -413,65 +455,15 @@ function ExamAttempt({
             hideSubmit
             onResponseChange={updateResponse}
           />
-          <div className="exam-question__footer">
-            <button
-              type="button"
-              className="exam-surface__quiet"
-              disabled={frozen || index === 0}
-              onClick={() => navigate(index - 1)}
-            >
-              <KeatingGlyph name="left" size={17} />
-              Back
-            </button>
-            <button
-              type="button"
-              className="exam-surface__quiet"
-              aria-pressed={flagged.includes(current.id)}
-              disabled={frozen}
-              onClick={() =>
-                setFlagged((value) =>
-                  value.includes(current.id)
-                    ? value.filter((id) => id !== current.id)
-                    : [...value, current.id],
-                )
-              }
-            >
-              <KeatingGlyph name="flag" size={17} />
-              {flagged.includes(current.id) ? "Flagged" : "Flag"}
-            </button>
-            {index < node.questions.length - 1 ? (
-            <button
-              type="button"
-              className="exam-surface__review-link"
-              disabled={frozen}
-              onClick={() => navigate("review")}
-            >
-              Review all answers
-            </button>
-          ) : null}
-            <button
-              type="button"
-              className="exam-surface__primary k-lift"
-              disabled={frozen}
-              onClick={() =>
-                navigate(
-                  index === node.questions.length - 1 ? "review" : index + 1,
-                )
-              }
-            >
-              {index === node.questions.length - 1 ? "Review exam" : "Next"}
-              <KeatingGlyph name="right" size={17} />
-            </button>
-          </div>
-        </div>
+        </section>
       ) : null}
       {error ? (
-        <p className="exam-surface__error" role="alert">
+        <p className="exam-error" role="alert">
           {error}
         </p>
       ) : null}
       {!localSaved ? (
-        <p className="exam-surface__error" role="status">
+        <p className="exam-error" role="status">
           Draft saving is unavailable. Keep this tab open until you submit.
         </p>
       ) : null}
@@ -526,16 +518,21 @@ function ExamResults({
   }).length;
   return (
     <LessonFrame glyph="quiz" kind="Exam submitted" title={<span role="heading" aria-level={3} ref={resultHeadingRef} tabIndex={-1}>{node.title}</span>}
-      tools={<KeatingGlyph name="check" size={16} />} className="exam-surface exam-results" data-exam={node.id} data-exam-phase="completed">
-      <div className="specialist-stats" role="status">
-        <Stat label="Score" value={summary.decided ? `${summary.earned}/${summary.decided}` : "In review"} support={summary.pending ? `${summary.pending} awaiting grading` : "points"} />
-        <Stat label="Time" value={formatQuizDuration(completion.timing.totalMs)} support={completion.examTimedOut ? "Time limit reached" : "total"} />
+      tools={<span className="lesson-foot-meta"><KeatingGlyph name="check" size={13} />Submitted</span>} className="exam-frame" data-exam={node.id} data-exam-phase="completed"
+      footer={<>
+        <span className="lesson-foot-meta">{completion.answers.length} of {node.questions.length} answered</span>
+        {completion.examTimedOut ? <span className="lesson-status" data-tone="warn">Time limit reached</span> : null}
+      </>}>
+      <div role="status" className="lesson-section">
+        <LessonScore
+          score={summary.decided ? `${formatPoints(summary.earned)} of ${summary.decided}` : "In review"}
+          percent={summary.decided ? summary.percentage : undefined}
+          time={formatQuizDuration(completion.timing.totalMs)}
+          correct={summary.correct} partly={partly} missed={Math.max(0, summary.decided - summary.correct - partly)}
+        />
+        {summary.pending ? <small className="lesson-meta">{summary.pending} awaiting grading</small> : null}
       </div>
-      <StackBar label="Graded and skipped answers" data={[
-        {label:"Correct",value:summary.correct,tone:"ok"}, {label:"Partly",value:partly,tone:"warn",pattern:true},
-        {label:"Missed or skipped",value:summary.decided-summary.correct-partly,tone:"bad"}
-      ]} />
-      <ol className="exam-results__questions">
+      <ol className="lesson-rows exam-results__questions">
         {node.questions.map((question, index) => {
           const outcome = quizOutcome(question, answers[question.id], {
             skipped: completion.skippedQuestionIds.includes(question.id),
@@ -555,17 +552,20 @@ function ExamResults({
                 : outcome.kind === "pending"
                   ? "Awaiting grading"
                   : "Unanswered";
+          const tone = verdict === "Correct" ? "ok" : verdict === "Partial credit" ? "warn" : verdict === "Incorrect" ? "bad" : verdict === "Unanswered" ? "none" : undefined;
           return (
             <li key={question.id} data-outcome={outcome.kind}>
               <details>
                 <summary>
-                  <span>{index + 1}</span>
+                  <span className="lesson-index">{index + 1}</span>
                   <span className="exam-results__question-title">
                     {question.header ?? question.prompt}
-                    <small>{verdict}</small>
-                    {question.mathProblem && objectiveCredit(question, answers[question.id] ?? "") === undefined ? <small>Not independently checked</small> : null}
+                    <span className="exam-results__meta">
+                      <span className="lesson-status" data-tone={tone}>{verdict}</span>
+                      {question.mathProblem && objectiveCredit(question, answers[question.id] ?? "") === undefined ? <small>Not independently checked</small> : null}
+                    </span>
                   </span>
-                  <time>
+                  <time className="lesson-meta">
                     {completion.timing.perQuestionMs[question.id] !== undefined
                       ? formatQuizDuration(
                           completion.timing.perQuestionMs[question.id]!,
@@ -575,7 +575,7 @@ function ExamResults({
                 </summary>
                 <div className="exam-results__detail">
                   <p>
-                    <strong>Your answer</strong>{" "}
+                    <span className="lesson-label">Your answer</span>
                     {answers[question.id]
                       ? readableAnswer(node, question.id, answers[question.id]!)
                       : "Unanswered"}
@@ -594,4 +594,8 @@ function ExamResults({
       </ol>
     </LessonFrame>
   );
+}
+
+function formatPoints(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }

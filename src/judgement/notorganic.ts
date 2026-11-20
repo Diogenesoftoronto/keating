@@ -10,6 +10,7 @@ import {
   resolveNotOrganicIssuer,
 } from "../core/notorganic-auth.js";
 import type { FetchLike } from "../../packages/learner-contracts/src/judgement/system-one.js";
+import { MAX_GATEWAY_QUESTION_CHARS } from "../../packages/learner-contracts/src/judgement/contracts.js";
 
 export const NOTORGANIC_JUDGEMENT_SCOPE = "judgement:evaluate";
 export const NOTORGANIC_JUDGEMENT_MODEL = "judgement";
@@ -29,7 +30,7 @@ function normalizeGatewayBody(body: string): string | null {
       }
     }
     const stateText = typeof payload.state === "string" ? payload.state : JSON.stringify(payload.state);
-    if (stateText.length > 96_000 || JSON.stringify(payload.questions).length > 96_000) return null;
+    if (stateText.length > 96_000 || JSON.stringify(payload.questions).length > MAX_GATEWAY_QUESTION_CHARS) return null;
     for (const raw of Object.values(payload.questions)) {
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
       const question = raw as { type?: string; criteria?: unknown };

@@ -148,7 +148,8 @@ describe("durable content-free OpenUI turn observation", () => {
       expect(receipt.reason).toBe(TUTOR_RATE_LIMIT_REASON);
       expect(receipt.attempts.map(a => [a.status, a.generationFailure, a.checks])).toEqual(
         Array.from({length: 4}, () => ["generation-error", TUTOR_RATE_LIMIT_REASON, []]));
-      expect(receipt.pairReviews?.map(p => [p.status, p.preferredAttempt])).toEqual([["incomplete", null], ["incomplete", null]]);
+      expect(receipt.parallelAttempts).toEqual([1, 2]);
+      expect(receipt.pairReviews).toBeUndefined();
       expect(store.getRows()[0]).toMatchObject({ reply: "withheld", model: null, gateIssues: [TUTOR_RATE_LIMIT_REASON] });
       expect(store.getRows()[0]?.decisionFailure).toBeUndefined();
       expect(JSON.stringify([reply, receipt, store.getRows()])).not.toContain("PRIVATE provider detail");

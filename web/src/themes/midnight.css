@@ -1,0 +1,65 @@
+/* Midnight: a blue dark theme layered on the regular dark theme.
+   It keeps `html.dark` (so every dark rule still applies) and re-points the Panda
+   colour variables when `data-theme="midnight"` is also set. Surfaces are navy,
+   text is cool neutral, and the interface accent turns sky blue. The mascot keeps
+   its own green; it is a character, not an accent. */
+html.dark[data-theme="midnight"] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --colors-paper: #0b1220;
+  --colors-paper-deep: #080e1a;
+  --colors-card: #111a2c;
+  --colors-background: #0b1220;
+  --colors-popover: #111a2c;
+  --colors-secondary: #17233a;
+  --colors-muted: #142036;
+  --colors-sidebar: #080e1a;
+  --colors-terminal: #0b1220;
+  --colors-terminal-edge: #1a2740;
+
+  /* Text */
+  --colors-ink: #e8edf5;
+  --colors-ink-soft: #b0bccd;
+  --colors-foreground: #e8edf5;
+  --colors-card-foreground: #e8edf5;
+  --colors-popover-foreground: #e8edf5;
+  --colors-secondary-foreground: #e8edf5;
+  --colors-muted-foreground: #a6b4c8;
+  --colors-sidebar-foreground: #e8edf5;
+
+  /* Accent: sky blue in place of the interface green */
+  --colors-accent: #3d8fe8;
+  --colors-accent-dim: #7cc0ff;
+  --colors-primary: #7cc0ff;
+  --colors-primary-foreground: #07101d;
+  --colors-ring: #7cc0ff;
+  --colors-accent-surface: rgb(124 192 255 / 14%);
+  --colors-accent-surface-foreground: #a3d3ff;
+  --colors-green-wash: rgb(124 192 255 / 14%);
+  --colors-phosphor: #8ccaff;
+  --colors-phosphor-dim: #3f86c9;
+  --colors-sidebar-primary: #7cc0ff;
+  --colors-sidebar-primary-foreground: #07101d;
+  --colors-sidebar-accent: rgb(124 192 255 / 14%);
+  --colors-sidebar-accent-foreground: #a3d3ff;
+  --colors-sidebar-ring: #7cc0ff;
+
+  /* Lines */
+  --colors-line: rgb(150 180 225 / 24%);
+  --colors-line-soft: rgb(150 180 225 / 13%);
+  --colors-border: rgb(150 180 225 / 26%);
+  --colors-input: rgb(150 180 225 / 52%); /* field outlines: 3.2:1 on cards (WCAG 1.4.11) */
+  --colors-sidebar-border: rgb(150 180 225 / 26%);
+
+  /* Charts keep three distinct hues on navy */
+  --colors-series1: #6cb6ff;
+  --colors-series2: #b391ff;
+  --colors-series3: #e9a250;
+  --colors-chart1: #7cc0ff;
+  --colors-chart2: #3d8fe8;
+  --colors-chart3: #b391ff;
+
+  /* Errors: 5.6:1 on cards */
+  --colors-destructive: #e5705a;
+}

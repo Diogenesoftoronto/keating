@@ -50,3 +50,16 @@ export function parameterPrecision(parameter: UiSimulationParameter): number {
 	const [significand = "", exponent = "0"] = String(parameter.step).toLowerCase().split("e");
 	return Math.min(6, Math.max(0, (significand.split(".")[1]?.length ?? 0) - Number(exponent)));
 }
+
+/**
+ * Chart and slider wording: at most three significant figures, never more decimals than the
+ * authored precision, so a plotted 83.89830508474574 reads "83.9" and a step of 0.1 keeps "5.1".
+ */
+export function formatSimulationCompact(value: number | undefined, precision = 2, unit?: string): string {
+	if (value === undefined || !Number.isFinite(value)) return "—";
+	const text = Math.abs(value) >= 1e9 || (value !== 0 && Math.abs(value) < 10 ** -Math.max(precision, 4))
+		? value.toExponential(2)
+		: Number(value.toPrecision(Math.max(3, Math.ceil(Math.log10(Math.abs(value) || 1))))).toLocaleString("en-US", { maximumFractionDigits: precision });
+	if (!unit) return text;
+	return unit === "%" ? `${text}%` : `${text} ${unit}`;
+}

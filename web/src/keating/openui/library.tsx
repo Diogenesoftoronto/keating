@@ -1,4 +1,5 @@
 import { LessonCallout, LessonFrame } from "../../components/lesson/LessonFrame";
+import { LessonConceptMap, LessonExplanation, LessonImage } from "../../components/lesson/LessonProse";
 import { SharedUiDocumentRenderer } from "./shared-renderer";
 import { useMemo } from "react";
 import {
@@ -12,7 +13,6 @@ import { z } from "zod";
 import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { MarkdownBlock } from "../../components/MarkdownBlock";
-import { MermaidRenderer } from "../../components/MermaidRenderer";
 import {
 	QuestionRenderer,
 	normalizeQuestionForm,
@@ -59,14 +59,7 @@ export const Explanation = defineComponent({
 		markdown: z.string().describe("Markdown explanation, capped at a focused section"),
 		title: z.string().optional().describe("Optional short heading"),
 	}),
-	component: ({ props }) => (
-		<section className={css({ maxWidth: "72ch" })}>
-			{props.title ? (
-				<h3 className={css({ marginBottom: "0.5rem", fontSize: "1rem", fontWeight: 650 })}>{props.title}</h3>
-			) : null}
-			<MarkdownBlock content={props.markdown} />
-		</section>
-	),
+	component: ({ props }) => <LessonExplanation title={props.title} markdown={props.markdown} />,
 });
 
 export const Callout = defineComponent({
@@ -312,12 +305,7 @@ export const ConceptMap = defineComponent({
 		lifecycle: lifecycleSchema.default("workspace"),
 		title: z.string().optional(),
 	}),
-	component: ({ props }) => (
-		<figure className={surfaceClass}>
-			{props.title ? <figcaption className={css({ borderBottom: "1px solid var(--border)", padding: "0.75rem 1rem", fontSize: "0.875rem", fontWeight: 650 })}>{props.title}</figcaption> : null}
-			<div className={bodyClass}><MermaidRenderer content={props.code} /></div>
-		</figure>
-	),
+	component: ({ props }) => <LessonConceptMap title={props.title} source={props.code} />,
 });
 
 const designKindSchema = z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/).describe("A declared category such as concept, step, organism, resource, or service");
@@ -383,17 +371,7 @@ export const LearningImage = defineComponent({
 		title: z.string().optional(),
 		caption: z.string().optional(),
 	}),
-	component: ({ props }) => (
-		<figure className={surfaceClass}>
-			<img src={props.src} alt={props.alt} loading="lazy" className={css({ display: "block", width: "100%", background: "var(--muted)", objectFit: "contain" })} />
-			{props.title || props.caption ? (
-				<figcaption className={css({ display: "grid", gap: "0.125rem", borderTop: "1px solid var(--border)", padding: "0.625rem 0.75rem" })}>
-					{props.title ? <span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>{props.title}</span> : null}
-					{props.caption ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{props.caption}</span> : null}
-				</figcaption>
-			) : null}
-		</figure>
-	),
+	component: ({ props }) => <LessonImage src={props.src} alt={props.alt} title={props.title} caption={props.caption} />,
 });
 
 const sharedNotesPropsSchema = z.object({
@@ -442,27 +420,29 @@ const taskItemSchema = z.object({
 });
 
 function TaskCard({ badge, title, brief, criteria, items, itemsLabel, footer }: { badge: string; title: string; brief: string; criteria?: string[]; items?: z.infer<typeof taskItemSchema>[]; itemsLabel: string; footer?: string }) {
+	// Same frame vocabulary as the interactive task in shared-renderer (board L4): glyph by kind,
+	// duration as clock meta, flat rows, criteria with amber targets.
+	const glyph = ({ Practice: "checklist", Draft: "doc", Fieldwork: "globe", Connect: "people", "Person brief": "person" } as const)[badge as "Practice"] ?? "checklist";
+	const sources = badge === "Person brief";
 	return (
-		<LessonFrame title={title} glyph="checklist" kind={badge} tools={footer}>
-			<div className={bodyClass}>
-				<p className={css({ maxWidth: "72ch", fontSize: "0.875rem", lineHeight: "1.6" })}>{brief}</p>
-				{criteria?.length ? (
-					<div className={css({ display: "grid", gap: "0.25rem" })}>
-						<span className={css({ fontSize: "0.75rem", fontWeight: 650, color: "var(--muted-foreground)" })}>Judged on</span>
-						<ul className={css({ display: "grid", gap: "0.125rem", margin: 0, paddingLeft: "1.125rem", fontSize: "0.8125rem" })}>
-							{criteria.map((entry) => <li key={entry}>{entry}</li>)}
-						</ul>
-					</div>
-				) : null}
-				{items?.length ? (
-					<div className={css({ display: "grid", gap: "0.25rem" })}>
-						<span className={css({ fontSize: "0.75rem", fontWeight: 650, color: "var(--muted-foreground)" })}>{itemsLabel}</span>
-						<ul className={css({ display: "grid", gap: "0.25rem", margin: 0, paddingLeft: "1.125rem", fontSize: "0.8125rem" })}>
-							{items.map((item) => <li key={item.id}><strong>{item.title}</strong>{item.detail ? <span className={css({ display: "block", color: "var(--muted-foreground)" })}>{item.detail}</span> : null}</li>)}
-						</ul>
-					</div>
-				) : null}
-			</div>
+		<LessonFrame title={title} glyph={glyph} kind={badge} tools={footer ? <span className="task-meta" data-glyph-host><span>{footer.startsWith("~") ? <KeatingGlyph name="clock" size={13} /> : null}{footer}</span></span> : undefined}>
+			<div className="lesson-section"><p className="task-card__brief">{brief}</p></div>
+			{items?.length ? (
+				<section className="lesson-section">
+					<h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name={badge === "Connect" ? "share" : sources ? "help" : "checklist"} size={13} />{itemsLabel}<span className="lesson-meta">{items.length}</span></h4>
+					<ul className="lesson-group task-steps">
+						{items.map((item) => <li key={item.id}><span className="task-step__check"><span><strong>{item.title}</strong>{item.detail ? <small className="lesson-meta">{item.detail}</small> : null}</span></span></li>)}
+					</ul>
+				</section>
+			) : null}
+			{criteria?.length ? (
+				<section className="lesson-section">
+					<h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name={sources ? "link" : "target"} size={13} />{sources ? "Sources" : "Judged on"}</h4>
+					<ul className={`lesson-criteria${sources ? " task-sources" : ""}`} data-glyph-host>
+						{criteria.map((entry) => <li key={entry}><KeatingGlyph name={sources ? "link" : "target"} size={13} /><span>{entry}</span></li>)}
+					</ul>
+				</section>
+			) : null}
 		</LessonFrame>
 	);
 }

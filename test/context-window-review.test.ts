@@ -7,7 +7,7 @@ import type { ProviderResult } from "../scripts/context-window/providers.js";
 const success = (trial: Trial): ProviderResult => ({ status: "ok", returnedModel: "fixture-v1", answers: Object.fromEntries(Object.entries(trial.expected).map(([id, value]) => [id, { value, probabilities: null, confidence: null }])), latencyMs: 12, usage: null, raw: {} });
 const receipt = (trial: Trial, outcome: ProviderResult, repetition = 0): Receipt => ({ version: 1, trialId: trial.id, providerId: "fixture", providerKind: "system-one", requestedModel: "fixture-v1", requestSha256: trial.requestSha256, repetition, outcome, status: outcome.status === "ok" ? "completed" : "provider-error" });
 
-test("quoted structured evidence keeps its authored label until actually evicted", () => {
+test("complete structured evidence keeps its authored label and a partial cue stays unlabelled", () => {
   const fixture = hardContextCases()[0]!;
   expect(fixture.evidence).toContain('"rules"');
   expect(fixture.expected.evidence_verdict).toBe("supported");
@@ -16,11 +16,17 @@ test("quoted structured evidence keeps its authored label until actually evicted
     expect(full.cueRetained).toBe(true);
     expect(full.expected).toEqual(fixture.expected);
   }
-  const clipped = makeTrial(fixture, .9, "head", "windowed", 4000);
+  const fits = makeTrial(fixture, .9, "head", "windowed", 4000);
+  expect(fits.turnsDropped).toBe(0);
+  expect(fits.expected).toEqual(fixture.expected);
+  const clipped = makeTrial(fixture, 1.01, "head", "windowed", 4000);
   expect(clipped.turnsDropped).toBeGreaterThan(0);
   expect(clipped.cueRetained).toBe(false);
-  expect(clipped.expected.evidence_verdict).toBe("insufficient_context");
-  const pinned = makeTrial(fixture, .9, "pinned", "windowed", 4000);
+  expect(clipped.after.sections.earlierLearnerExcerpts.entries).toBeGreaterThan(0);
+  expect(clipped.labelSource).toBe("unlabelled");
+  expect(clipped.expected).toEqual({});
+  expect(clipped.fullExpected).toEqual(fixture.expected);
+  const pinned = makeTrial(fixture, 1.2, "pinned", "windowed", 4000);
   expect(pinned.cueRetained).toBe(true);
   expect(pinned.expected).toEqual(fixture.expected);
 });

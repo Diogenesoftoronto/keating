@@ -150,8 +150,9 @@ for (const fixture of ["portable", "official", "chat", "native-page", "teaching-
           const composer = page.getByPlaceholder("Message Keating");
           await composer.fill("Explain the interval.");
           await page.getByRole("button", { name: "Send message" }).click();
-          await page.getByPlaceholder("openai API key").fill("local-fixture-only");
-          await page.getByRole("button", { name: "Save key" }).click();
+          const keyInput = page.getByPlaceholder("openai API key");
+          await keyInput.fill("local-fixture-only");
+          await keyInput.press("Enter");
           await page.getByText("The interval spans four semitones.", { exact: true }).first().waitFor();
           await page.evaluate(() => (window as any).finishTeachingLabFixture());
         }

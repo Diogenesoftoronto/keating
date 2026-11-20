@@ -4393,10 +4393,13 @@ export default defineConfig({
         width: "1rem",
         height: "1rem"
       },
+      // Phone targets come from min-width/min-height (44px), not padding: the old 0.75rem 1rem padding
+      // (about 16 x 21px at the 130% root) turned compact text buttons into tall slabs. Components keep
+      // their own padding (utilities and component sheets win over this base-layer rule).
       "body:not(.chat-shell-active) button,\n  body:not(.chat-shell-active) [role=\"button\"],\n  body:not(.chat-shell-active) .btn": {
         minHeight: "44px",
         minWidth: "44px",
-        padding: "0.75rem 1rem",
+        paddingInline: "0.5rem",
         fontSize: "1rem"
       },
       "body:not(.chat-shell-active) input,\n  body:not(.chat-shell-active) textarea,\n  body:not(.chat-shell-active) select": {
@@ -4428,9 +4431,11 @@ export default defineConfig({
         width: "auto !important",
         marginBottom: "0 !important"
       },
-      "body:not(.chat-shell-active) button svg,\n  body:not(.chat-shell-active) [role=\"button\"] svg": {
-        width: "1.5rem",
-        height: "1.5rem"
+      // Icon-only buttons (named by aria-label, no element besides the glyph) get a legible glyph; icons beside
+      // a label keep the size their component sets. :has() cannot see bare text, hence the aria-label test.
+      "body:not(.chat-shell-active) button[aria-label]:not(:has(> :not(svg))) > svg,\n  body:not(.chat-shell-active) [role=\"button\"][aria-label]:not(:has(> :not(svg))) > svg": {
+        width: "1rem",
+        height: "1rem"
       },
       ".settings-panel,\n  [class*=\"settings-panel\"]": {
         padding: "1.5rem"

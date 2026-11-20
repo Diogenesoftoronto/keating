@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { runTeachingDrafts, type TeachingDraftSnapshot } from "../src/judgement/teaching-drafts.js";
-import type { JudgementRequest, JudgementAnswer } from "../src/judgement/contracts.js";
+import { runTeachingDrafts, type TeachingDraftReviewer, type TeachingDraftSnapshot } from "../src/judgement/teaching-drafts.js";
+import { MAX_STATE_CHARS, stateCharacterCount, type JudgementRequest, type JudgementAnswer } from "../src/judgement/contracts.js";
 import type { TeachingPolicyTurn } from "../src/judgement/teaching-policy-types.js";
 import { makeTeachingDraftJudge as makeJudge, teachingDraftTurn as turn } from "./fixtures/teaching-drafts.js";
 
@@ -268,7 +268,7 @@ describe("explicit extended private draft loop", () => {
     expect(result.receipt.reason).toBe("best-effort-draft");
   });
 
-  test("preflight rebuilds the window and diagnostics measure each actual batch", async () => {
+  test("an overflowing request keeps the newest complete turns and diagnostics measure each actual batch", async () => {
     const conversation = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, content: `PRIVATE_TURN_${index} ${"x".repeat(400)}` }));
     const calls: JudgementRequest[] = [];
     const progress: TeachingDraftSnapshot[] = [];
@@ -290,7 +290,8 @@ describe("explicit extended private draft loop", () => {
     expect(result.receipt.state!.totalBytes).toBe(independentlyCountedBytes(calls.at(-1)!.state));
     const finalState = calls.at(-1)!.state as { turn: { learnerMessage: string } };
     expect(result.receipt.state!.sections.learnerMessage.bytes).toBe(independentlyCountedBytes(finalState.turn.learnerMessage));
-    expect(result.receipt.slides![0]!.after!.fillRatio).toBeLessThanOrEqual(.65);
+    expect(result.receipt.slides![0]!.before.fillRatio).toBeGreaterThan(1);
+    expect(result.receipt.slides![0]!.after!.fillRatio).toBeLessThanOrEqual(1);
     expect(progress.some(snapshot => snapshot.phase === "checking" && snapshot.state?.sections.reply.bytes! > 0)).toBe(true);
     expect(JSON.stringify(progress)).not.toContain("PRIVATE_");
   });
@@ -298,16 +299,90 @@ describe("explicit extended private draft loop", () => {
   test("the conversation window slides but active work is never evicted", async () => {
     const activeWork = { plan: { documentId: "plan", revision: 1, title: "Division", outline: [{ id: "groups", title: "Equal groups", status: "in_progress" as const, depth: 0 }] }, focus: null, openInteractions: [], truncated: false };
     const conversation = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, content: `turn ${index} ${"x".repeat(400)}` }));
-    const states: string[] = [];
+    const states: TeachingPolicyTurn[] = [];
     await runTeachingDrafts({ refinement: "extended",
       turn: { ...turn, conversation, activeWork },
       judgementModel: { id: "fixture", requestTokens: null, stateQuestionTokens: 2_000 },
-      judge: async (request, signal) => { states.push(JSON.stringify(request.state)); return makeJudge()(request, signal); },
+      judge: async (request, signal) => { states.push((request.state as { turn: TeachingPolicyTurn }).turn); return makeJudge()(request, signal); },
       generate: async () => ({ reply: { text: "Division splits a quantity into equal groups.", toolCalls: [] }, value: "ok" }),
     });
     expect(states.length).toBeGreaterThan(0);
-    expect(states.some((state) => !state.includes("turn 0 "))).toBe(true);
-    for (const state of states) expect(state).toContain("Equal groups");
+    expect(states.some(state => state.conversation.length < conversation.length)).toBe(true);
+    expect(states.some(state => state.earlierLearnerExcerpts?.[0]?.startsWith("turn 0 "))).toBe(true);
+    for (const state of states) {
+      expect(state.activeWork).toEqual(activeWork);
+      expect(state.learnerMessage).toBe(turn.learnerMessage);
+    }
+  });
+
+  test("a large draft can exceed the wire limit while planning and its sibling still get the complete conversation", async () => {
+    const conversation: TeachingPolicyTurn["conversation"] = Array.from({ length: 21 }, (_, index) => [
+      { role: "user" as const, content: `Original requirement ${index}` },
+      { role: "assistant" as const, content: "x".repeat(4200) },
+    ]).flat();
+    const replies = ["First answer. " + "a".repeat(12_000), "Second answer."];
+    const sent: JudgementRequest[] = [];
+    const result = await runTeachingDrafts({
+      turn: { ...turn, conversation }, maxAttempts: 2, parallelDrafts: true,
+      generate: async ({ attempt }) => ({ value: attempt, reply: { text: replies[attempt - 1]!, toolCalls: [] } }),
+      judge: makeJudge((request): Record<string, string | number> => {
+        sent.push(request);
+        return request.questions.draft_choice ? { draft_choice: "draft_2" } : {};
+      }),
+    });
+    const states = sent.map(request => request.state as { turn: TeachingPolicyTurn; reply?: { text: string }; candidates?: Record<string, { text: string }> });
+    expect(states[0]!.turn.conversation).toEqual(conversation);
+    const large = states.find(state => state.reply?.text === replies[0])!;
+    const small = states.find(state => state.reply?.text === replies[1])!;
+    expect(large.turn.conversation.length).toBeLessThan(conversation.length);
+    expect(large.turn.earlierLearnerExcerpts).toContain("Original requirement 0");
+    expect(small.turn.conversation).toEqual(conversation);
+    expect(small.turn.earlierLearnerExcerpts).toBeUndefined();
+    const compared = states.find(state => state.candidates)!;
+    expect(Object.values(compared.candidates!).map(candidate => candidate.text)).toEqual(replies);
+    expect(compared.turn.learnerMessage).toBe(turn.learnerMessage);
+    expect(result.receipt.selectionOmittedForBudget).toEqual([]);
+    expect(result.receipt.selectedAttempt).toBe(2);
+    expect(sent.every(request => stateCharacterCount(request.state) <= MAX_STATE_CHARS)).toBe(true);
+  });
+
+  test.each([false, true])("each reviewer gets its own history window when preferred planning is unavailable: %s", async failFirst => {
+    const conversation: TeachingPolicyTurn["conversation"] = Array.from({ length: 20 }, (_, index) => [
+      { role: "user" as const, content: `Goal ${index}` }, { role: "assistant" as const, content: "x".repeat(500) },
+    ]).flat();
+    const seen: number[][] = [[], []];
+    const reviewers: TeachingDraftReviewer[] = [9000, 2000].map((tokens, index) => ({
+      judgementModel: { id: `fixture-${index}`, requestTokens: 20_000, stateQuestionTokens: tokens },
+      judge: async (request, signal) => {
+        seen[index]!.push((request.state as { turn: TeachingPolicyTurn }).turn.conversation.length);
+        return !index && failFirst ? { ok: false, error: { code: "backend-unavailable", retryable: false } } : makeJudge()(request, signal);
+      },
+    }));
+    const result = await runTeachingDrafts({ turn: { ...turn, conversation }, reviewers, maxAttempts: 1,
+      judge: async () => { throw new Error("Expected only a permitted reviewer"); },
+      generate: async () => ({ value: "answer", reply: { text: "Answer", toolCalls: [] } }),
+    });
+    expect(result.status).toBe("released");
+    expect(seen[0]![0]).toBe(conversation.length);
+    if (failFirst) {
+      expect(seen[0]).toHaveLength(1);
+      expect(seen[1]!.length).toBeGreaterThan(1);
+      expect(seen[1]!.every(length => length < conversation.length)).toBe(true);
+    } else {
+      expect(seen[0]!.every(length => length === conversation.length)).toBe(true);
+      expect(seen[1]).toEqual([]);
+    }
+  });
+
+  test("a cancelled planning reviewer cannot escalate the conversation to another reviewer", async () => {
+    let sentToFallback = false;
+    const judgementModel = { id: "fixture", requestTokens: 64_000, stateQuestionTokens: 32_000 };
+    const result = await runTeachingDrafts({ turn, judge: makeJudge(), reviewers: [
+      { judgementModel, judge: async () => ({ ok: false, error: { code: "cancelled", retryable: false } }) },
+      { judgementModel, judge: makeJudge(() => { sentToFallback = true; return {}; }) },
+    ], generate: async () => { throw new Error("No generation without a plan"); } });
+    expect(result.receipt.reason).toBe("cancelled");
+    expect(sentToFallback).toBe(false);
   });
 
   test("failed text never reaches diagnostics or revision context; only an approved value is returned", async () => {

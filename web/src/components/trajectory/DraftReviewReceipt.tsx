@@ -5,6 +5,7 @@ import { css } from "../../../styled-system/css";
 import type { PlanReview, ResourceReview, TeachingDraftInteraction, TeachingDraftSnapshot, TeachingPolicyCheck } from "@keating/learner-contracts";
 import type { TeachingDraftReceiptRecord } from "../../keating/storage";
 import { DRAFT_CHECK_PASS_LINE, describeTeachingCheck } from "../../keating/judgement/check-descriptions";
+import { draftOrigin } from "../../keating/judgement/draft-progress";
 import type { DraftCheckVerdict, JudgementLabelRecord } from "../../keating/judgement/turn-records";
 
 const muted = css({ color: "var(--muted-foreground)", fontSize: "0.75rem", lineHeight: 1.5 });
@@ -191,13 +192,14 @@ export function DraftReviewReceipt({ receipt, controls, embedded = false, open, 
 		?? flagged ?? snapshot.attempts.find(attempt => attempt.attempt === snapshot.selectedAttempt) ?? snapshot.attempts[0];
 	const activeWork = formatActiveWork(receipt.activeWork);
 	const released = snapshot.phase === "released";
+	const reviewed = snapshot.attempts.filter(attempt => attempt.status !== "generation-error").length;
 	const selectedVariant = variantLabel(snapshot.attempts.find(({ attempt }) => attempt === snapshot.selectedAttempt)?.variant);
 	return (
 		<details data-testid="draft-review-receipt" open={open} className={embedded ? undefined : css({ marginTop: "1rem", border: "1px solid var(--border)", borderRadius: "0.5rem", padding: "0.625rem 0.75rem" })}>
 			<summary className={summary}>
 				Draft review · {released ? "released" : snapshot.phase}
 				{snapshot.selectedAttempt ? ` draft ${snapshot.selectedAttempt}` : ""}
-				{selectedVariant ? ` (${selectedVariant})` : ""} · {snapshot.attempts.length} {snapshot.attempts.length === 1 ? "draft" : "drafts"} checked
+				{selectedVariant ? ` (${selectedVariant})` : ""} · {reviewed} {reviewed === 1 ? "draft" : "drafts"} checked
 			</summary>
 			<div className={css({ display: "grid", gap: "0.625rem", marginTop: "0.5rem" })}>
 				<p className={muted}>
@@ -236,7 +238,9 @@ export function DraftReviewReceipt({ receipt, controls, embedded = false, open, 
 					</button>)}
 				</div> : null}
 				{snapshot.attempts.map((attempt) => {
+					const origin = draftOrigin(snapshot, attempt);
 					const content = <>
+						{origin && <p className={muted}>{origin}</p>}
 						<p className={muted}>Generation {Math.round(attempt.generationMs)} ms · review {Math.round(attempt.judgementMs)} ms</p>
 						{attempt.unavailableTools?.length ? <p className={muted}>Tried to call tools this session does not offer: {attempt.unavailableTools.map(name => <code key={name}>{name}</code>).reduce<ReactNode[]>((all, item, index) => index ? [...all, ", ", item] : [item], [])}</p> : null}
 						<CheckTable attempt={attempt.attempt} checks={attempt.checks} controls={controls} compact={compact} />

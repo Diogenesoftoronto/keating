@@ -427,3 +427,17 @@ body .rv-work button.keating-select:not(.rv-status), .rv-desk input:not([type=ch
 }
 /* The keyboard-shortcut tip is no use on a phone, and it sat half-hidden under the sheet's actions. */
 @media (max-width: 760px) { .rv-desk-sheet .rv-desk-actions + div { display: none; } }
+
+/* Tutor activity: tool steps folded into the reply they led to, one quiet line each. */
+.rv-tool-activity-list { display: grid; gap: .05rem; margin: -.12rem 0 .5rem; }
+.rv-tool-activity-list .search-activity__hosts { font: .53rem/1.4 var(--mono-body, var(--font-mono, monospace)); }
+.rv-tool-activity-list .search-activity { margin: 0; }
+.rv-tool-activity__panel { display: grid; gap: .45rem; margin: .2rem 0 .3rem .375rem; padding: .1rem 0 .1rem .875rem; border-left: 1px solid var(--border); min-width: 0; }
+.rv-tool-activity__heading { display: flex; align-items: center; gap: .3rem; margin-bottom: .15rem; font: 600 .5rem/1.4 var(--font-mono, monospace); text-transform: uppercase; letter-spacing: .06em; color: var(--muted-foreground); }
+.rv-tool-activity__tag { padding: 0 .2rem; border-radius: .14rem; background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--foreground); text-transform: none; letter-spacing: 0; font-weight: 500; cursor: help; }
+.rv-tool-activity__panel pre { margin: 0; max-height: 14rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: .55rem/1.5 var(--mono-body, var(--font-mono, monospace)); color: var(--foreground); }
+.rv-tool-activity__prose { max-height: 14rem; overflow: auto; font-size: .6rem; line-height: 1.5; }
+.rv-tool-activity__panel details summary, .rv-turn-record summary { cursor: pointer; font: .5rem/1.4 var(--font-mono, monospace); color: var(--muted-foreground); }
+.rv-tool-activity__panel details summary:hover, .rv-turn-record summary:hover { color: var(--foreground); }
+.rv-turn-record { margin-top: .5rem; }
+.rv-turn-record pre { margin-top: .3rem; max-height: 16rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: .5rem/1.5 var(--mono-body, var(--font-mono, monospace)); }

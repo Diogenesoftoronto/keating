@@ -64,6 +64,26 @@ const smallButton = css({
 	_focusVisible: focusRing,
 });
 
+const quoteSourceButton = css({
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.25em",
+	color: "var(--foreground)",
+	background: "transparent",
+	border: 0,
+	textDecoration: "underline",
+	textUnderlineOffset: "0.15em",
+	cursor: "pointer",
+	"[data-quoted-passage] &": {
+		font: "inherit",
+		padding: 0,
+		minHeight: "24px",
+		"@media (pointer: coarse)": { minHeight: "44px" },
+		"& svg": { width: "1em", height: "1em", flexShrink: 0 },
+	},
+	_focusVisible: focusRing,
+});
+
 const quietIconButton = css({
 	display: "inline-flex",
 	alignItems: "center",
@@ -347,7 +367,7 @@ function QuotedPassage({ quote }: { quote: PassageQuote }) {
 						<KeatingGlyph name="alert" size={13} /> This passage has changed since you quoted it
 					</span>
 				) : (
-					<button type="button" className={smallButton} onClick={goToSource} aria-label={`Go to source: ${label}`}>
+					<button type="button" className={quoteSourceButton} onClick={goToSource} aria-label={`Go to source: ${label}`}>
 						<KeatingGlyph name="ext" size={12} /> Go to source
 					</button>
 				)}

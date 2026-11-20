@@ -27,6 +27,7 @@ const runtimeTitles: Record<string, string> = {
 const qualityTitles: Record<string, string> = {
   quality_progress: "Makes progress on the learner's request",
   quality_scope: "Scope fits this turn",
+  requested_part_missing: "A requested part of the answer is missing",
 };
 const humanize = (id: string) => {
   const words = id.replaceAll("_", " ");

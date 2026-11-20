@@ -7,7 +7,6 @@ import { LessonFrame } from "./lesson/LessonFrame";
  */
 import { useCallback, useMemo, useReducer, useRef, useTransition } from "react";
 import { KeatingGlyph } from "../design-system/glyphs";
-import { css, cx } from "../../styled-system/css";
 import { RoundProgress } from "./quiz/ActivityGame";
 import {
 	type BlankState,
@@ -36,7 +35,7 @@ import {
 	createQuestionInteractionState,
 	questionInteractionReducer,
 } from "./question/question-state";
-import { sm } from "./question/question-styles";
+import "./question/question-frame.css";
 
 /** A single blank within a fill-in-the-blank question. */
 export interface BlankField {
@@ -285,23 +284,21 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 	};
 
 	return (
-		<LessonFrame glyph="help" title={data.topic} kind="Quick check" className="activity-game" aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
-			<div className={css({ display: "flex", alignItems: "flex-start" })}>
-				<div className={css({ minWidth: 0, flex: 1, display: "grid", gap: "0.5rem", [sm]: { gap: "1rem" } })}>
-					<div data-question-progress className={css({ display: "flex", alignItems: "center", gap: "0.75rem" })}>
-						<div className={css({ flex: 1, minWidth: 0 })}><RoundProgress current={current} total={total} label="Question progress" /></div>
-						<button type="button" onClick={() => dispatch({ type: "toggle-collapsed" })} aria-expanded={!collapsed} aria-label={collapsed ? "Show questions" : "Hide questions"} className="activity-back-action">
-							{collapsed ? <KeatingGlyph name="chev" size={18} /> : <KeatingGlyph name="chevu" size={18} />}
+		<LessonFrame glyph="help" title={data.topic} kind="Quick check" className="activity-game question-frame" aria-busy={isQuestionPending} style={{ opacity: isQuestionPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}>
+					<div data-question-progress className="question-progress">
+						<RoundProgress current={current} total={total} label="Question progress" />
+						<button type="button" onClick={() => dispatch({ type: "toggle-collapsed" })} aria-expanded={!collapsed} aria-label={collapsed ? "Show questions" : "Hide questions"} className="lesson-quiet k-bloom activity-back-action">
+							{collapsed ? <KeatingGlyph name="chev" size={13} /> : <KeatingGlyph name="chevu" size={13} />}
 						</button>
 					</div>
 					{collapsed ? (
-						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", overflowWrap: "anywhere" })}>{q.question}</p>
+						<p className="question-collapsed">{q.question}</p>
 					) : (
 						<>
 							{/* Current question card */}
-							<div key={current} className={cx("activity-stage", css({ display: "grid", gap: "1rem", maxWidth: "100%" }))}>
+							<div key={current} className="activity-stage question-stage">
 								{q.header && (
-									<span className={css({ fontSize: "0.8125rem", fontWeight: 550, color: "var(--muted-foreground)" })}>
+									<span className="lesson-label">
 										{q.header}
 									</span>
 								)}
@@ -344,13 +341,13 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 									/>
 								)}
 
-								{data.intro && <details className="activity-hint"><summary>About this round</summary><p>{data.intro}</p></details>}
+								{data.intro && <details className="activity-hint question-about"><summary><KeatingGlyph name="info" size={13} />About this round</summary><p>{data.intro}</p></details>}
 								{q.hint && !submitted && (
-									<details className="activity-hint"><summary>Need a hint?</summary><p>{q.hint}</p></details>
+									<details className="activity-hint"><summary><KeatingGlyph name="bulb" size={13} />Need a hint?</summary><p>{q.hint}</p></details>
 								)}
 							</div>
 
-							<QuestionNavigation
+							<div className="lesson-foot question-actions"><QuestionNavigation
 								isFirst={current === 0}
 								isLast={isLast}
 								isPending={isQuestionPending}
@@ -360,11 +357,9 @@ export function QuestionRenderer({ data, onSubmit, submitLabel }: QuestionRender
 								onPrev={goPrev}
 								onNext={goNext}
 								onSubmit={handleSubmit}
-							/>
+							/></div>
 						</>
 					)}
-				</div>
-			</div>
 		</LessonFrame>
 	);
 }

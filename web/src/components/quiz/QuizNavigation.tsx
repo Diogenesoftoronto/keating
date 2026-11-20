@@ -1,8 +1,9 @@
-/** Back / next / finish controls under the live quiz question. */
+/**
+ * The quiz footer (board L1): a quiet back glyph at the leading edge, the
+ * remaining count in mono, and the one ink primary on the trailing edge.
+ */
 import { KeatingGlyph } from "../../design-system/glyphs";
-import { css, cx } from "../../../styled-system/css";
 import { finishButtonLabel } from "./quiz-session";
-import { quizStyles, sm } from "./quiz-styles";
 
 export function QuizNavigation({
 	isFirst,
@@ -28,23 +29,25 @@ export function QuizNavigation({
 	onFinish: () => void;
 }) {
 	return (
-		<nav className={quizStyles.nav} aria-label="Quiz questions">
+		<nav className="lesson-foot" aria-label="Quiz questions">
 			<button
 				type="button"
 				onClick={onPrev}
 				disabled={isPending || isFirst}
-				className={cx(quizStyles.buttonSecondary, "activity-back-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
+				title="Back"
+				className="lesson-quiet k-bloom activity-back-action"
 			>
-				<KeatingGlyph name="chevl" size={14} /> Back
+				<KeatingGlyph name="left" size={15} /><span className="lesson-sr">Back</span>
 			</button>
 			{!isLast ? (
 				<button
 					type="button"
 					onClick={onNext}
 					disabled={isPending}
-					className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", [sm]: { flex: "0 0 auto" } }))}
+					className="lesson-primary"
+					data-glyph-surface="inverse"
 				>
-					{currentAnswered ? "Lock in & next" : "Skip for now"} <KeatingGlyph name="chevr" size={14} />
+					{currentAnswered ? "Lock in & next" : "Skip for now"} <KeatingGlyph name={currentAnswered ? "right" : "skip"} size={13} />
 				</button>
 			) : (
 				<button
@@ -52,9 +55,10 @@ export function QuizNavigation({
 					onClick={onFinish}
 					disabled={!allAnswered || submitted}
 					title={allAnswered ? undefined : `${unansweredCount} unanswered`}
-					className={cx(quizStyles.buttonPrimary, "activity-main-action", css({ flex: 1, justifyContent: "center", gap: "0.5rem", [sm]: { flex: "0 0 auto" } }))}
+					className="lesson-primary"
+					data-glyph-surface="inverse"
 				>
-					<KeatingGlyph name="send" size={14} /> {finishButtonLabel(allAnswered, unansweredCount)}
+					<KeatingGlyph name="send" size={13} /> {finishButtonLabel(allAnswered, unansweredCount)}
 				</button>
 			)}
 		</nav>

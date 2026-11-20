@@ -52,3 +52,9 @@ export const NarrowReply: Story = {
   ...ExpandableWideDiagram,
   decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
 };
+
+/** chrome="none": for a host frame. No border or label row; controls float at the stage's top-right without a controlsHost. */
+export const EmbeddedWithoutFrame: Story = {
+	args: { chrome: "none", className: "k-grid" },
+	decorators: [Story => <div style={{ width: "100%", background: "var(--paper)" }}><Story /></div>],
+};

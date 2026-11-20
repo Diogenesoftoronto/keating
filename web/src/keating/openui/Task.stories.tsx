@@ -1,4 +1,5 @@
 import { saveLocalAttachment } from "../../submissions/local-store";
+import type React from "react";
 import { useMemo, useState } from "react";
 import { SubmissionUploadContext } from "../../components/SubmissionAttachments";
 import { TaskCourseServices } from "../../components/courses/SaveTaskToCourse";
@@ -199,4 +200,87 @@ export const ASLSignRecall: Story = {
 };
 export const DemonstrateAndExplain: Story = {
   args: { node: { type: "task", kind: "practice", id: "demonstrate-a-lever", title: "Show how a lever works", brief: "Use a ruler and an eraser to demonstrate a lever. Predict what changes when you move the pivot, then show the change. Include the microphone if you want to explain aloud.", criteria: ["Make a prediction", "Show the result", "Explain one real-world application"], submission: { format: "text", label: "How did your observation compare with your prediction?", capture: { kind: "video" } } } },
+};
+
+/** Takes one idea out to other people, with a few low-stakes ways to share it. */
+export const Connect: Story = {
+  args: { node: { type: "task", kind: "connect", id: "share-base-rates", title: "Ask someone about base rates", brief: "**The idea:** a positive result from an accurate test can still mean you are probably fine, because the condition is rare.\n\nAsk, don't broadcast: find out how someone else reasons about it before you explain.", estimatedMinutes: 20, criteria: ["Ask a question before giving the answer", "Never share anyone's health details"], items: [
+    { id: "friend", title: "Ask a friend what a 99% accurate positive result means", detail: "Note their first answer before you explain anything." },
+    { id: "forum", title: "Post the puzzle in a statistics-learning forum", detail: "A kind of place, not a specific group: pick one you already read." },
+    { id: "class", title: "Bring it to your next study room" },
+  ], submission: { format: "text", label: "What did people say?", placeholder: "Who did you ask, what did they answer, and did anything change your mind?" } } },
+};
+
+/** Prepares the learner to learn from a specific person: sources, questions, debrief. */
+export const PersonBrief: Story = {
+  args: { node: { type: "task", kind: "person", id: "meet-epidemiologist", title: "Dr. Example Researcher", brief: "An epidemiologist who writes about screening programmes ([university profile](https://example.org/profile)). Their recent talk argues that screening decisions should be explained with natural frequencies ([talk notes](https://example.org/talk)). The sources don't say which programmes they advise.", dueAt: "2099-03-14T15:00:00.000Z", criteria: ["https://example.org/profile", "https://example.org/talk"], items: [
+    { id: "want", title: "What do you hope to get out of this conversation?" },
+    { id: "frequencies", title: "When do natural frequencies stop helping?", detail: "Ask for a case where they misled people." },
+    { id: "start", title: "What should a beginner read first?" },
+  ], submission: { format: "text", label: "What you learned", placeholder: "One thing you learned and one follow-up." } } },
+};
+
+/** AudioResponse compiles to a practice task with an audio recorder. */
+export const AudioResponse: Story = {
+  args: { node: { type: "task", kind: "practice", id: "audio-response", title: "Explain the update aloud", brief: "Explain, in under a minute, why a positive result for a rare condition is usually a false alarm. Replay it and note one place you hesitated.", criteria: ["Names the base rate", "Explains why false positives outnumber true ones"], submission: { format: "text", label: "What will you change next time?", capture: { kind: "audio", timeLimitSeconds: 60 } } } },
+};
+
+/** VideoResponse compiles to a practice task with a camera recorder; the microphone is opt-in. */
+export const VideoResponse: Story = {
+  args: { node: { type: "task", kind: "practice", id: "video-response", title: "Show the pivot change", brief: "Film the ruler-and-eraser lever twice: pivot in the middle, then near the eraser.", criteria: ["Shows both pivot positions", "States the prediction first"], submission: { format: "text", label: "How did your observation compare with your prediction?", capture: { kind: "video" } } } },
+};
+
+/**
+ * The recorder with fake devices: a canvas camera and a tone microphone, so the
+ * recording and recorded states can be seen without hardware. Story-only.
+ */
+/** Wait for a story button to exist and be enabled (task state restores asynchronously). */
+async function readyButton(root: HTMLElement, text: string): Promise<HTMLButtonElement | undefined> {
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const button = [...root.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(text) && !candidate.disabled);
+    if (button) return button;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return undefined;
+}
+
+function withFakeDevices(Story: () => React.ReactElement) {
+  if (typeof navigator !== "undefined" && navigator.mediaDevices && !(navigator.mediaDevices as { __fake?: boolean }).__fake) {
+    const devices = navigator.mediaDevices as MediaDevices & { __fake?: boolean };
+    devices.__fake = true;
+    devices.getUserMedia = async (constraints?: MediaStreamConstraints) => {
+      const tracks: MediaStreamTrack[] = [];
+      if (constraints?.video) {
+        const canvas = document.createElement("canvas"); canvas.width = 320; canvas.height = 240;
+        const context = canvas.getContext("2d")!;
+        let frame = 0;
+        const draw = () => { frame++; context.fillStyle = "#e9e4d8"; context.fillRect(0, 0, 320, 240); context.fillStyle = "#1c1b18"; context.fillRect(40 + (frame % 200), 150, 80, 12); context.beginPath(); context.arc(160, 162, 8, 0, Math.PI * 2); context.fill(); requestAnimationFrame(draw); };
+        draw();
+        tracks.push(...canvas.captureStream(15).getVideoTracks());
+      }
+      if (constraints?.audio) {
+        const audio = new AudioContext(); const tone = audio.createOscillator(); const out = audio.createMediaStreamDestination();
+        tone.connect(out); tone.start(); tracks.push(...out.stream.getAudioTracks());
+      }
+      return new MediaStream(tracks);
+    };
+  }
+  return <Story />;
+}
+
+export const VideoResponseRecording: Story = {
+  args: VideoResponse.args as Story["args"],
+  decorators: [withFakeDevices],
+  play: async ({ canvasElement }) => { (await readyButton(canvasElement, "Start recording"))?.click(); },
+};
+
+/** Recorded state. Video, because a headless browser will not start a fake microphone without a gesture. */
+export const VideoResponseRecorded: Story = {
+  args: VideoResponse.args as Story["args"],
+  decorators: [withFakeDevices],
+  play: async ({ canvasElement }) => {
+    (await readyButton(canvasElement, "Start recording"))?.click();
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+    (await readyButton(canvasElement, "Stop recording"))?.click();
+  },
 };

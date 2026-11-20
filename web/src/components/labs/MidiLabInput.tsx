@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./midi-lab-input.css";
+import { KeatingGlyph } from "../../design-system/glyphs";
 
 type NoteInput = "device" | "screen";
 export interface MidiLabInputProps {
@@ -149,8 +150,8 @@ export function MidiLabInput({ disabled, notes, onNote }: MidiLabInputProps) {
           setSelected(inputs.find(input => input.id === event.target.value) ?? null);
           setNotice("");
         }}><option value="">Choose input</option>{inputs.map(input => <option key={input.id} value={input.id}>{input.name || input.id}</option>)}</select></label>
-        <button type="button" onClick={disconnect}>Disconnect MIDI</button>
-      </> : <button type="button" disabled={disabled || requesting} onClick={connect}>{requesting ? "Connecting…" : "Connect MIDI"}</button>}
+        <button type="button" onClick={disconnect}><KeatingGlyph name="x" size={13} />Disconnect MIDI</button>
+      </> : <button type="button" disabled={disabled || requesting} onClick={connect}><KeatingGlyph name="keyboard" size={13} />{requesting ? "Connecting…" : "Connect MIDI"}</button>}
       <label>Octave <select value={octave} disabled={disabled} onChange={event => setUserOctave(Number(event.target.value))}>
         {Array.from({ length: 11 }, (_, i) => <option key={i} value={i}>{i - 1}</option>)}
       </select></label>

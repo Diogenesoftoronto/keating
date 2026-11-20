@@ -26,10 +26,11 @@ import { useJudgementReview } from "./judgement-review-context";
 import { MarkdownBlock, type MarkdownHighlightRange } from "../MarkdownBlock";
 import { buildOpenUIPreview } from "../../keating/openui/preview";
 import { OpenUIPreview } from "../OpenUIPreview";
-import { reviewIcon, ReviewIcon } from "./review-icons";
+import { ReviewIcon } from "./review-icons";
 import { containedMediaRect, normalizedContainedMediaPoint, type MediaSize } from "./media-geometry";
 import { AnnotationHoverCard } from "./AnnotationHoverCard";
 import { SelectionToolbar } from "./SelectionToolbar";
+import { ReviewToolActivity, ReviewToolSources } from "./ReviewToolActivity";
 import { FloatingSurface } from "./FloatingSurface";
 import { AnnotationPopover } from "./AnnotationPopover";
 import { annotationKindColor, orderReviewNotes } from "./review-vocabulary";
@@ -339,7 +340,7 @@ function TranscriptTurn({
 						<path pathLength="1" vectorEffect="non-scaling-stroke" d="M9.4 27.6L14 30.7L10.6 34" />
 					</svg>
 				)}
-				<h2>{message.ordinal + 1} · {roleLabel}</h2>
+				<h2>{message.turnNumber ?? message.ordinal + 1} · {roleLabel}</h2>
 				{message.model && <small>{message.model}</small>}
 				{(active || readOnly) && <div className="rv-page-turn-actions">
 					{!readOnly && onStartAnnotation && (
@@ -353,6 +354,7 @@ function TranscriptTurn({
 				</div>}
 			</header>
 			<div className="rv-page-turn-body">
+				{tools.length > 0 ? <ReviewToolActivity tools={tools} /> : null}
 				{contentView === "rendered" ? (
 					<Body
 						ref={textRef}
@@ -378,27 +380,10 @@ function TranscriptTurn({
 				)}
 				{message.draftReview || message.turnJudgement ? <MessageJudgements message={message} /> : null}
 				{tools.length > 0 ? (
-					<div className={css({ display: "grid", gap: "0.5rem", marginTop: "1rem" })}>
-						{tools.map((tool, index) => (
-							<details key={`${tool.kind}:${tool.callId ?? tool.name}:${index}`} open={tool.status === "failed" || tool.kind === "result"} className={css({ border: "1px solid var(--border)", borderRadius: "0.5rem", background: "var(--card, var(--background))" })}>
-								<summary className={css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, color: tool.isError ? "var(--destructive)" : "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" }, "&::-webkit-details-marker": { display: "none" } })}>
-									<ReviewIcon icon={reviewIcon.tool} size={14} />
-									<span>{tool.kind === "call" ? "Tool call" : tool.isError ? "Tool error" : "Tool result"}: {tool.name}</span>
-									<span className={css({ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: tool.status === "succeeded" ? "color-mix(in srgb, var(--accent-green) 22%, transparent)" : tool.status === "failed" ? "color-mix(in srgb, var(--destructive) 10%, transparent)" : "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.625rem", fontWeight: 700, color: tool.status === "failed" ? "var(--destructive)" : "var(--foreground)" })}>
-										<ReviewIcon icon={tool.status === "succeeded" ? reviewIcon.accept : tool.status === "failed" ? reviewIcon.problem : reviewIcon.retry} size={10} active={tool.status !== "pending"} />
-										{tool.status === "succeeded" ? "Succeeded" : tool.status === "failed" ? "Failed" : "Pending"}
-									</span>
-									{tool.callId ? <code className={css({ fontSize: "0.625rem", fontWeight: 500, color: "var(--muted-foreground)" })}>{tool.callId}</code> : null}
-								</summary>
-								<div className={css({ display: "grid", gap: "0.75rem", borderTop: "1px solid var(--border)", padding: "0.75rem" })}>
-									{tool.input ? <div><div className={metaTextClass}>Input</div><pre className={css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.75rem", lineHeight: 1.55 })}>{tool.input}</pre></div> : null}
-									{tool.output ? <div><div className={metaTextClass}>Output</div><div className={css({ marginTop: "0.35rem", fontSize: "0.8125rem", lineHeight: 1.6 })}><MarkdownBlock content={tool.output} /></div></div> : null}
-									{tool.details ? <details><summary className={css({ cursor: "pointer", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)" })}>Raw details</summary><pre className={css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 })}>{tool.details}</pre></details> : null}
-								</div>
-							</details>
-						))}
-						{message.raw ? <details className={css({ fontSize: "0.6875rem" })}><summary className={css({ cursor: "pointer", color: "var(--muted-foreground)", _hover: { color: "var(--foreground)" } })}>Inspect message record</summary><pre className={css({ marginTop: "0.5rem", maxHeight: "20rem", overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 })}>{message.raw}</pre></details> : null}
-					</div>
+					<>
+						<ReviewToolSources tools={tools} />
+						{message.raw ? <details className="rv-turn-record"><summary>Inspect message record</summary><pre>{message.raw}</pre></details> : null}
+					</>
 				) : null}
 			</div>
 			<AnnotationStrip annotations={annotations.filter(note => readOnly || note.target.kind !== "message-span" || !renderedHighlights.some(range => range.ids.includes(note.id)))} activeAnnotationId={activeAnnotationId} onSelect={id => {
@@ -407,6 +392,11 @@ function TranscriptTurn({
 			}} />
 		</article>
 	);
+}
+
+function nothingSelected(): boolean {
+	const selection = window.getSelection();
+	return !selection || selection.rangeCount === 0 || selection.isCollapsed;
 }
 
 function annotationLocation(annotation: TrajectoryAnnotation): string {
@@ -886,7 +876,10 @@ export function TrajectoryCanvas({
 		const source = message ?? activeMessage;
 		if (readOnly || !source || !onTextSelection) return;
 		const selected = readSelection(container);
-		if (!selected) return;
+		if (!selected) {
+			if (nothingSelected()) setPending(null);
+			return;
+		}
 		const anchor = createTextAnchor(source.text, selected.start, selected.end);
 		const target: TrajectoryReviewTarget = {
 			kind: "message-span",
@@ -906,7 +899,10 @@ export function TrajectoryCanvas({
 	function captureArtifactSelection(container: HTMLElement) {
 		if (readOnly || !activeArtifact?.plainText || !onTextSelection) return;
 		const selected = readSelection(container);
-		if (!selected) return;
+		if (!selected) {
+			if (nothingSelected()) setPending(null);
+			return;
+		}
 		const anchor = createTextAnchor(activeArtifact.plainText, selected.start, selected.end);
 		const target: TrajectoryReviewTarget = {
 			kind: "artifact-span",
@@ -926,6 +922,47 @@ export function TrajectoryCanvas({
 		setPending(null);
 		window.getSelection()?.removeAllRanges();
 	}, [pending, onTextSelection]);
+
+	// The toolbar belongs to a live selection. Once nothing is selected (a click
+	// elsewhere, an arrow key, the selection cleared by script) it goes away. A
+	// press on the toolbar itself is exempt: on touch screens the tap can clear
+	// the selection before the button's click arrives.
+	const pressingToolbar = useRef(false);
+	const pressCheck = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		if (!pending) return;
+		function dropWhenCleared() {
+			if (!pressingToolbar.current && nothingSelected()) setPending(null);
+		}
+		// A click that activates another turn re-renders the transcript, and Chrome
+		// can drop the selection with the old text nodes without a selectionchange.
+		// So also look once the pointer is released, after the click has landed.
+		let afterPointer: ReturnType<typeof setTimeout> | null = null;
+		function checkAfterPointer(event: PointerEvent) {
+			if (event.target instanceof Element && event.target.closest(".rv-page-selection")) return;
+			if (afterPointer) clearTimeout(afterPointer);
+			afterPointer = setTimeout(dropWhenCleared, 0);
+		}
+		document.addEventListener("selectionchange", dropWhenCleared);
+		document.addEventListener("pointerup", checkAfterPointer, true);
+		return () => {
+			document.removeEventListener("selectionchange", dropWhenCleared);
+			document.removeEventListener("pointerup", checkAfterPointer, true);
+			if (afterPointer) clearTimeout(afterPointer);
+		};
+	}, [pending]);
+	useEffect(() => () => {
+		if (pressCheck.current) clearTimeout(pressCheck.current);
+	}, []);
+	const onToolbarPress = useCallback((pressing: boolean) => {
+		pressingToolbar.current = pressing;
+		if (pressCheck.current) clearTimeout(pressCheck.current);
+		if (pressing) return;
+		// Give the button's click time to land, then drop a toolbar left without a selection.
+		pressCheck.current = setTimeout(() => {
+			if (nothingSelected()) setPending(null);
+		}, 250);
+	}, []);
 
 	useEffect(() => {
 		if (!pending || readOnly) return;
@@ -1157,7 +1194,7 @@ export function TrajectoryCanvas({
 			{mode === "transcript" && <footer className="rv-page-hints">
 				{readOnly ? <span>{annotations.length} published note{annotations.length === 1 ? "" : "s"}</span>
 					: pending ? <>
-						<span>{pending.selection.anchor.quote.length} characters selected{pending.selection.source === "message" && ` · Turn ${(messages.find(m => pending.selection.source === "message" && m.id === pending.selection.messageId)?.ordinal ?? 0) + 1}`}</span>
+						<span>{pending.selection.anchor.quote.length} characters selected{pending.selection.source === "message" && ` · Turn ${(() => { const turn = messages.find(m => pending.selection.source === "message" && m.id === pending.selection.messageId); return turn?.turnNumber ?? (turn?.ordinal ?? 0) + 1; })()}`}</span>
 						<span><Kbd>1</Kbd> <Kbd>2</Kbd> <Kbd>3</Kbd> kind</span><span><Kbd>R</Kbd> rewrite</span><span><Kbd>Esc</Kbd> cancel</span>
 					</> : <>
 						<span>Select text to annotate</span><span><Kbd>N</Kbd> note</span>
@@ -1214,6 +1251,7 @@ export function TrajectoryCanvas({
 					<SelectionToolbar
 						onPick={(kind) => commitSelection("note", kind)}
 						onRewrite={() => commitSelection("rewrite", "suggestion")}
+						onPressChange={onToolbarPress}
 					/>
 				</FloatingSurface>
 			) : null}

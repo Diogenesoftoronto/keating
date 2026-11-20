@@ -7,7 +7,13 @@ import type { ResourceReview } from "./resource-review.js";
 /** Observations supplied by the runtime, never inferred permissions or benchmark labels. */
 export interface TeachingPolicyTurn {
   readonly learnerMessage: string;
-  readonly conversation: readonly { readonly role: "user" | "assistant" | "tool"; readonly content: string }[];
+  /** Opening learner excerpts from history outside the recent conversation, oldest first. */
+  readonly earlierLearnerExcerpts?: readonly string[];
+  readonly conversation: readonly {
+    readonly role: "user" | "assistant" | "tool"; readonly content: string;
+    /** Host metadata for extracting learner words after an injected time note. Kept off the wire. */
+    readonly learnerTextStart?: number;
+  }[];
   readonly learnerEvidence: readonly { readonly kind: string; readonly content: string }[];
   readonly availableTools: readonly string[];
   /** The conversation host renders the interactive Lab adapter and delivers checkpoint observations. */

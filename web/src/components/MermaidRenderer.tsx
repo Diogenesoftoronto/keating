@@ -1,11 +1,12 @@
 import { DiagramViewport } from "./DiagramViewport";
 import { IconButton, Loading } from "../design-system/kit";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { detectSupportedMermaidGrammar } from "@keating/learner-contracts";
 import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
 import { decodeSystemDesignSvgLabels } from "../lib/system-design-svg";
+import "./lesson/lesson-prose.css";
 
 const errorContainerClass = css({
 	padding: "1rem",
@@ -103,6 +104,14 @@ interface MermaidRendererProps {
 	/** Plain graph labels should stay SVG text, without HTML label markup. */
 	htmlLabels?: boolean;
 	decodeEntityLabels?: boolean;
+	/**
+	 * "frame" (default) draws the renderer's own bordered box and toolbar row.
+	 * "none" is for a host frame (a LessonFrame): no border, no label row, the
+	 * diagram straight on the grid, and quiet pan/zoom/expand icon buttons.
+	 */
+	chrome?: "frame" | "none";
+	/** With chrome="none": render the pan/zoom/expand controls into this element (e.g. a frame head's tools slot). Without it they float at the stage's top-right. */
+	controlsHost?: HTMLElement | null;
 }
 
 // Cache for rendered diagrams
@@ -151,7 +160,7 @@ export function extractMermaidSource(input: string): string {
 	return match ? match[1].trim() : trimmed;
 }
 
-export function MermaidRenderer({ content, className, htmlLabels = true, decodeEntityLabels = false }: MermaidRendererProps) {
+export function MermaidRenderer({ content, className, htmlLabels = true, decodeEntityLabels = false, chrome = "frame", controlsHost }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderTargetRef = useRef<HTMLDivElement | null>(null);
 	const expandButtonRef = useRef<HTMLButtonElement>(null);
@@ -304,11 +313,38 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 		};
 	}, [expanded]);
 
+	const embedded = chrome === "none";
+	if (error && embedded) {
+		return (
+			<div className={cx("mermaid-container mermaid-embedded", className)} data-mermaid-chrome="none">
+				<div className="mermaid-embedded-error">
+					<p className="lesson-status" data-tone="bad">Failed to render diagram: {error}</p>
+					<pre>{content}</pre>
+				</div>
+			</div>
+		);
+	}
+
 	if (error) {
 		return (
 			<div className={cx("specialist-frame", errorContainerClass, className)}>
 				<p className={errorTitleClass}>Failed to render diagram: {error}</p>
 				<pre className={errorPreClass}>{content}</pre>
+			</div>
+		);
+	}
+
+	if (embedded) {
+		return (
+			<div ref={containerRef} className={cx("mermaid-container mermaid-embedded", className)} data-mermaid-chrome="none">
+				{loading ? (
+					<Loading size="inline" label="Rendering diagram..." />
+				) : svg ? (
+					<>
+						<EmbeddedDiagram svg={svg} controlsHost={controlsHost} expandTool={<IconButton ref={expandButtonRef} size="sm" glyph="expand" label="Expand diagram" aria-expanded={expanded} onClick={() => setExpanded(true)} />} />
+						{expanded ? <ExpandedDiagram svg={svg} closeButtonRef={closeButtonRef} onClose={() => setExpanded(false)} /> : null}
+					</>
+				) : null}
 			</div>
 		);
 	}
@@ -325,35 +361,92 @@ export function MermaidRenderer({ content, className, htmlLabels = true, decodeE
 					<DiagramViewport caption="Mermaid diagram" tools={<IconButton ref={expandButtonRef} glyph="expand" label="Expand diagram" aria-expanded={expanded} onClick={() => setExpanded(true)} />}>
 						<div className={diagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
 					</DiagramViewport>
-					{expanded && typeof document !== "undefined"
-						? createPortal(
-								<div
-									className={expandedBackdropClass}
-									onMouseDown={(event) => {
-										if (event.target === event.currentTarget) setExpanded(false);
-									}}
-								>
-									<section
-										className={expandedPanelClass}
-										role="dialog"
-										aria-modal="true"
-										aria-label="Expanded Mermaid diagram"
-									>
-										<header className={expandedToolbarClass}>
-											<h2 className={expandedTitleClass}>Expanded diagram</h2>
-											<IconButton ref={closeButtonRef} glyph="x" label="Close expanded diagram" onClick={() => setExpanded(false)} />
-										</header>
-										<div className={cx(expandedViewportClass, "k-grid")}>
-											<div className={expandedDiagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
-										</div>
-									</section>
-								</div>,
-								document.body,
-							)
-						: null}
+					{expanded ? <ExpandedDiagram svg={svg} closeButtonRef={closeButtonRef} onClose={() => setExpanded(false)} /> : null}
 				</>
 			) : null}
 		</div>
+	);
+}
+
+/** Embedded viewport: same ARIA names and zoom range as DiagramViewport, without its label row. */
+function EmbeddedDiagram({ svg, controlsHost, expandTool }: { svg: string; controlsHost?: HTMLElement | null; expandTool: ReactNode }) {
+	const [zoom, setZoom] = useState(1);
+	const viewport = useRef<HTMLDivElement>(null);
+	function pan(direction: number) {
+		const element = viewport.current;
+		if (element) element.scrollLeft += direction * element.clientWidth / 2;
+	}
+	// Mermaid shrinks a wide diagram to fit; on a phone that makes labels unreadable, so the
+	// stage keeps it at least min(natural width, 30rem) and the pan buttons scroll it.
+	const naturalWidth = useMemo(() => Number(svg.match(/max-width:\s*([\d.]+)px/)?.[1]) || 0, [svg]);
+	const controls = (
+		<>
+			<IconButton size="sm" data-pan glyph="left" label="Pan left" onClick={() => pan(-1)} />
+			<IconButton size="sm" data-pan glyph="right" label="Pan right" onClick={() => pan(1)} />
+			<output>{Math.round(zoom * 100)}%</output>
+			<IconButton size="sm" glyph="minus" label="Zoom out" disabled={zoom <= .5} onClick={() => setZoom(zoom - .25)} />
+			<IconButton size="sm" glyph="plus" label="Zoom in" disabled={zoom >= 3} onClick={() => setZoom(zoom + .25)} />
+			{expandTool}
+		</>
+	);
+	// Drag to pan with a mouse or pen; touch keeps the browser's own scrolling.
+	const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+	const dragHandlers = {
+		onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+			if (event.pointerType === "touch" || event.button !== 0) return;
+			const element = event.currentTarget;
+			drag.current = { x: event.clientX, y: event.clientY, left: element.scrollLeft, top: element.scrollTop };
+			element.setPointerCapture?.(event.pointerId);
+			element.dataset.dragging = "";
+		},
+		onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+			const start = drag.current;
+			if (!start) return;
+			event.currentTarget.scrollLeft = start.left - (event.clientX - start.x);
+			event.currentTarget.scrollTop = start.top - (event.clientY - start.y);
+		},
+		onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+			drag.current = null;
+			delete event.currentTarget.dataset.dragging;
+		},
+	};
+	return (
+		<>
+			{controlsHost ? createPortal(controls, controlsHost) : <div className="mermaid-embedded-float" data-glyph-host>{controls}</div>}
+			<div className="mermaid-embedded-scroll" ref={viewport} role="region" aria-label="Mermaid diagram" tabIndex={0} {...dragHandlers} onPointerCancel={dragHandlers.onPointerUp} style={{ "--mermaid-natural-width": `${naturalWidth}px` } as CSSProperties}>
+				<div style={{ width: "max-content", minWidth: "100%", zoom }}>
+					<div className={diagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
+				</div>
+			</div>
+		</>
+	);
+}
+
+function ExpandedDiagram({ svg, closeButtonRef, onClose }: { svg: string; closeButtonRef: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
+	if (typeof document === "undefined") return null;
+	return createPortal(
+		<div
+			className={expandedBackdropClass}
+			onMouseDown={(event) => {
+				if (event.target === event.currentTarget) onClose();
+			}}
+		>
+			<section
+				className={expandedPanelClass}
+				role="dialog"
+				aria-modal="true"
+				aria-label="Expanded Mermaid diagram"
+			>
+				<header className={expandedToolbarClass}>
+					<h2 className={expandedTitleClass}>Expanded diagram</h2>
+					<IconButton ref={closeButtonRef} glyph="x" label="Close expanded diagram" onClick={onClose} />
+				</header>
+				<div className={cx(expandedViewportClass, "k-grid")}>
+					<div className={expandedDiagramClass} dangerouslySetInnerHTML={{ __html: svg }} />
+				</div>
+			</section>
+		</div>,
+		document.body,
 	);
 }
 

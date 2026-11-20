@@ -10,11 +10,14 @@ import { useCompanionMode } from "./companion/CompanionSetting";
 import { useCompanionDrag } from "./companion/useCompanionDrag";
 import { useLessonReactions } from "./companion/useLessonReactions";
 import {
+	activityTargetSelector,
 	captureTarget,
+	isActivityDrop,
 	questionSelector,
 	resolveDropTarget,
 	revealHint,
 	suggestions,
+	targetLabels,
 	type DropTarget,
 } from "./companion/drop-targets";
 
@@ -59,6 +62,11 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 		trigger.current?.focus({ preventScroll: true });
 	};
 	function selectTarget(t: DropTarget) {
+		if (isActivityDrop(t.kind)) {
+			close();
+			drag.perch.current(t);
+			return;
+		}
 		if (t.kind === "question") {
 			revealHint(t.el);
 			setGesture("hint");
@@ -163,10 +171,14 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 		if (!root) return;
 		const items = new Map<HTMLElement, DropTarget>();
 		for (const el of root.querySelectorAll(
-			".keating-bubble :is(p,li,pre,blockquote,th,td,h1,h2,h3,h4,h5,h6)," + questionSelector,
+			[
+				".keating-bubble :is(p,li,pre,blockquote,th,td,h1,h2,h3,h4,h5,h6)",
+				questionSelector,
+				...(lively ? [activityTargetSelector] : []),
+			].join(","),
 		)) {
 			const hit = resolveDropTarget([el], root);
-			if (hit && el.getClientRects().length) items.set(hit.el, hit);
+			if (hit && (lively || !isActivityDrop(hit.kind)) && el.getClientRects().length) items.set(hit.el, hit);
 		}
 		setChoices([...items.values()]);
 		setPanel("targets");
@@ -211,6 +223,7 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 				point ??
 				(!typing ? (gesture ?? reaction?.sprite) : null) ??
 				(working && state === "speaking" ? "typing" : seat));
+	const showSnack = lively && drag.hungry && !busy && !typing && drag.pose !== "held";
 	const screen =
 		pose === "blank-sitting"
 			? !typing && working && state === "thinking"
@@ -282,8 +295,11 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 					label=""
 					size={expanded ? 108 : 56}
 					screen={screen}
-					animated={motion && (expanded || (!!gesture && mode === "lively"))}
+					animated={motion && pose !== "held" && (expanded || (!!gesture && mode === "lively"))}
 				/>
+				<span className="chat-mascot-perch__snack" role="status">
+					{showSnack ? "Could use a study snack" : ""}
+				</span>
 				<span className="chat-mascot-perch__hint" aria-hidden="true">
 					+
 				</span>
@@ -341,7 +357,7 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 									</button>
 								))}
 								<button type="button" role="menuitem" onClick={chooseTargets}>
-									Ask about a passage or question
+									{lively ? "Choose a passage or activity" : "Ask about a passage or question"}
 								</button>
 								<div className="chat-mascot-menu__divider" role="separator" />
 								<button
@@ -366,7 +382,7 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 								>
 									Do a flip
 								</button>
-								{drag.pose === "ledge-sitting" && (
+								{(drag.pose === "ledge-sitting" || drag.pose === "wall-climb") && (
 									<button
 										type="button"
 										role="menuitem"
@@ -396,7 +412,7 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 						{panel === "targets" && (
 							<>
 								<p className="chat-mascot-menu__caption">
-									{choices.length ? "Choose a passage or question" : "No passages or active questions yet."}
+									{choices.length ? "Choose a spot" : "No passages or activities yet."}
 								</p>
 								{choices.map((t, i) => (
 									<button key={i} type="button" role="menuitem" onClick={() => selectTarget(t)}>
@@ -404,7 +420,11 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 											? "Hint for " +
 												(t.el.querySelector("legend,.activity-prompt,h3")?.textContent?.trim() ||
 													"this question")
-											: t.el.textContent?.trim().slice(0, 90)}
+											: isActivityDrop(t.kind)
+												? `${targetLabels[t.kind]} · ${t.el.getAttribute("aria-label") ||
+													t.el.querySelector(".lesson-head > strong, legend, h2, h3, h4")?.textContent?.trim() ||
+													(t.kind === "snack" ? "Flashcards" : "Activity")}`
+												: t.el.textContent?.trim().slice(0, 90)}
 									</button>
 								))}
 								<button type="button" role="menuitem" onClick={() => setPanel("study")}>

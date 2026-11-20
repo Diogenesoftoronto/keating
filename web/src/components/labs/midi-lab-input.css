@@ -1,10 +1,19 @@
-.midi-lab-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; }
-.midi-lab-controls label { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.midi-lab-controls select, .midi-lab-controls button {
-  max-width: 100%; min-height: 44px; padding: 4px 8px;
-  color: var(--ink); border: 1px solid var(--line); border-radius: 3px; background: var(--paper); font: inherit;
+/* Controls: quiet glyph-and-text actions and filled-well selects (no borders); the keys below keep
+   their printed piano edges because they are the instrument, not chrome. */
+.midi-lab-controls { display: flex; align-items: center; flex-wrap: wrap; gap: .2rem .6rem; }
+.midi-lab-controls label { display: inline-flex; align-items: center; gap: .24rem; min-width: 0; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.midi-lab-controls select {
+  max-width: 100%; min-height: 1.346rem; padding: .1rem .3rem; border: 0; border-radius: .1923rem;
+  color: var(--ink); background: var(--paper-deep); font: .6rem/1.45 var(--font-ui);
 }
-.midi-lab-input p[role="status"] { color: var(--ink-soft); font-size: .85em; }
+.midi-lab-controls button {
+  display: inline-flex; align-items: center; gap: .24rem; max-width: 100%; min-height: 1.154rem; padding: 0 .34rem; margin-inline-start: -.34rem;
+  border: 0; border-radius: .1923rem; background: transparent; box-shadow: none; color: var(--ink-soft); font: .505rem/1.2 var(--font-mono); cursor: pointer;
+}
+.midi-lab-controls button:hover:enabled { color: var(--ink); background: var(--k-wash); }
+.midi-lab-controls button > svg { color: var(--accent-green); }
+@media (pointer: coarse) { .midi-lab-controls :is(select, button) { min-height: 44px; } }
+.midi-lab-input p[role="status"] { margin: .2rem 0 0; color: var(--ink-soft); font: .5rem/1.5 var(--font-mono); }
 .midi-lab-input p:empty { display: none; }
 .midi-lab-keyboard {
   position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));

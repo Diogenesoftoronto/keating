@@ -62,11 +62,15 @@ export function QuizSessionPanel({ quiz, onSubmit, onDismiss }: QuizSessionProps
 	}
 
 	return (
-		<LessonFrame glyph="quiz" kind="Quiz" title={quiz.topic} aria-label={`Quiz ready: ${quiz.topic}`} tools={totalTimeLimit > 0 && <span aria-label={`${formatCountdown(totalTimeLimit)} total timed allowance`}><KeatingGlyph name="clock" size={14}/> {formatCountdown(totalTimeLimit)}</span>} footer={<>
+		<LessonFrame glyph="quiz" kind="Quiz" title={quiz.topic} aria-label={`Quiz ready: ${quiz.topic}`} tools={totalTimeLimit > 0 && <span className="lesson-foot-meta" aria-label={`${formatCountdown(totalTimeLimit)} total timed allowance`}><KeatingGlyph name="clock" size={13}/> {formatCountdown(totalTimeLimit)}</span>} footer={<>
 			{onDismiss && <IconButton size="sm" glyph="x" label="Dismiss quiz" onClick={onDismiss} />}
-			<button type="button" className="lesson-primary k-lift" onClick={()=>setStarted(true)} disabled={!questions.length}>{questions.length ? "Start Quiz" : "No questions"}</button>
+			<button type="button" className="lesson-primary" data-glyph-surface="inverse" onClick={()=>setStarted(true)} disabled={!questions.length}>{questions.length ? "Start Quiz" : "No questions"}<KeatingGlyph name="right" size={13}/></button>
 		</>}>
-			<p>{questions.length} question{questions.length === 1 ? "" : "s"}{timedQuestions.length ? ` · ${timedQuestions.length} timed` : ""}</p>
+			<div className="lesson-readouts" data-glyph-host>
+				<div className="lesson-readout"><small><KeatingGlyph name="quiz" size={13}/> Questions</small><b>{questions.length}</b></div>
+				{timedQuestions.length ? <div className="lesson-readout"><small><KeatingGlyph name="clock" size={13}/> Timed</small><b>{timedQuestions.length}</b></div> : null}
+			</div>
+			<p>{timedQuestions.length ? "Timed questions move on when their clock runs out; your answer is kept." : "Answer at your own pace; you can go back before you finish."}</p>
 		</LessonFrame>
 	);
 }

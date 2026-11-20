@@ -1,0 +1,62 @@
+/* Prose and figure frames inside a reply (lane O1, 2026-11-20): Explanation, ConceptMap, LearningImage,
+   and Mermaid's embedded mode. Builds on the board L3 vocabulary in lesson.css; nothing here draws a box. */
+
+.lesson-prose-frame { margin-block: .6rem; }
+.lesson-prose-plain { max-width: 72ch; }
+
+/* A stage or figure that is the whole body bleeds to all four frame edges. */
+/* max-width:none undoes `.lesson-body > * {max-width:100%}`, which otherwise cancels the right-hand bleed. */
+.lesson-body > .lesson-prose-bleed { margin: -.48rem -.58rem; max-width: none; border-radius: 0; }
+.lesson-body > .lesson-prose-bleed:not(:last-child) { margin-bottom: 0; }
+
+/* Head tools: quiet icon buttons, one 2px gap, the zoom readout in mono. */
+.lesson-prose-tools { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .0962rem; }
+.lesson-prose-tools:empty { display: none; }
+.lesson-prose-tools output { min-width: 2.1em; text-align: center; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+/* Mermaid embedded (chrome="none"): no border, no label row, the diagram straight on the grid. */
+.mermaid-embedded { position: relative; min-width: 0; }
+.mermaid-embedded .mermaid-embedded-scroll { max-width: 100%; min-width: 0; max-height: 32rem; overflow: auto; overscroll-behavior: contain; padding: .58rem; }
+.mermaid-embedded .mermaid-embedded-scroll:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.mermaid-embedded .mermaid-embedded-scroll svg { min-width: min(var(--mermaid-natural-width, 0px), 30rem); }
+.mermaid-embedded .k-busy-inline { padding: .9rem .58rem; }
+/* Edge labels sit on the grid: give them a paper backing and the mono meta face. Mermaid's own
+   stylesheet is scoped by the svg id, so these need !important to win. */
+.mermaid-embedded :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .labelBkg) {
+  background: var(--paper) !important; background-color: var(--paper) !important;
+  color: var(--ink-soft) !important; font: .5rem/1.4 var(--font-mono) !important;
+}
+.mermaid-embedded :is(.edgeLabel rect, .labelBkg rect) { fill: var(--paper) !important; opacity: 1 !important; }
+.mermaid-embedded .edgeLabel text { fill: var(--ink-soft) !important; font-family: var(--font-mono) !important; font-size: .5rem !important; }
+/* Mermaid's "neo" look puts a drop shadow on every node; the board draws none. */
+.mermaid-embedded svg :is(.node, .cluster), .mermaid-embedded svg :is(.node, .cluster) * { filter: none !important; }
+/* Without a slot the controls sit in a slim row at the stage's top-right (in flow, so they never cover the diagram). */
+.mermaid-embedded-float { position: relative; z-index: 1; width: max-content; max-width: 100%; margin: .24rem .24rem -.24rem auto; display: flex; align-items: center; gap: .0962rem; padding: .0962rem; background: var(--paper); border-radius: .1923rem; }
+.mermaid-embedded-float output { min-width: 2.1em; text-align: center; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.mermaid-embedded-error { display: grid; gap: .3rem; padding: .48rem .58rem; }
+.mermaid-embedded-error pre { margin: 0; max-height: 10rem; overflow: auto; padding: .3rem .43rem; background: var(--paper-deep); border-radius: .1923rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); white-space: pre-wrap; }
+
+/* LearningImage: image on the grid while it loads, mono caption under a soft rule. */
+.lesson-prose-image { display: grid; min-height: 6rem; place-items: center; }
+.lesson-prose-image > img { display: block; width: 100%; height: auto; }
+.lesson-prose-image[data-status=loading] > img { position: absolute; inset: 0; opacity: 0; }
+.lesson-prose-image[data-status=loaded] { min-height: 0; background-image: none; }
+.lesson-prose-image > .k-busy-block { position: absolute; inset: .58rem; min-height: 0; border-radius: 0; }
+.lesson-prose-image[data-status=loading] { min-height: 8rem; }
+.lesson-prose-failed { display: grid; justify-items: center; gap: .2rem; width: 100%; min-height: 6rem; align-content: center; padding: .58rem; text-align: center; color: var(--ink-soft); }
+.lesson-prose-failed > p { margin: 0; padding: 0 .3rem; background: var(--paper); }
+.lesson-prose-failed > svg { color: var(--ink-soft); }
+.lesson-prose-failed-note { font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.lesson-prose-alt { max-width: 60ch; font: .55rem/1.45 var(--font-ui); color: var(--ink); }
+.lesson-foot > .lesson-prose-retry { margin-inline-start: auto; }
+.mermaid-embedded .mermaid-embedded-scroll { cursor: grab; }
+.mermaid-embedded .mermaid-embedded-scroll[data-dragging] { cursor: grabbing; user-select: none; }
+@container (max-width: 26rem) { .lesson-prose-tools [data-pan] { display: none; } }
+
+/* Explanation: paragraphs and lists keep the reading rhythm of the reply, not the markdown block's wide gaps. */
+.lesson-prose-frame[data-lesson=prose] .lesson-body { gap: .42rem; }
+.lesson-prose-frame[data-lesson=prose] .lesson-body > :is(p, ul, ol, blockquote, pre) { margin-block: 0; }
+
+/* Pin glyph sizes: a global phone rule (body:not(.chat-shell-active) button svg) would blow them up to 1.5rem. */
+:is(.lesson-prose-tools, .mermaid-embedded-float) .k-icon svg { width: 13px; height: 13px; }
+.lesson-foot > .lesson-prose-retry svg { width: 13px; height: 13px; }

@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { KeatingBotState } from "../KeatingBot";
-import { preloadCompanionDragSprites } from "../KeatingBot";
-import { ledgeSelector, resolveDropTarget, targetLabels, type DropTarget } from "./drop-targets";
-type Point = { x: number; y: number };
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, max));
-type Ledge = { el: HTMLElement | null; top: number; left: number; right: number };
+import { keatingBotFramePosition, preloadCompanionDragSprites } from "../KeatingBot";
+import { activityTarget, activityTargetSelector, isActivityDrop, ledgeSelector, resolveDropTarget, targetLabels, type DropTarget } from "./drop-targets";
+import { clamp, crossesLedge, dragVelocity, heldMotion, releaseVelocity, type LedgeBounds, type Point } from "./drag-physics";
+
+import { crossesSide, findSurfaceContact, releasingAway, surfacePose, type SurfaceContact } from "./surface-contact";
+
+type Ledge = LedgeBounds & { el: HTMLElement | null };
+const snackDistance = 2000;
 
 export function useCompanionDrag(
 	trigger: RefObject<HTMLButtonElement | null>,
@@ -14,9 +17,11 @@ export function useCompanionDrag(
 	onGrab: () => void,
 ) {
 	const [pose, setPose] = useState<KeatingBotState | null>(null);
+	const [hungry, setHungry] = useState(false);
 	const suppressClick = useRef(false),
 		home = useRef<() => void>(() => {}),
-		clear = useRef<() => void>(() => {});
+		clear = useRef<() => void>(() => {}),
+		perch = useRef<(target: DropTarget) => void>(() => {});
 	const callbacks = useRef({ onDrop, onGrab });
 	callbacks.current = { onDrop, onGrab };
 	useEffect(() => {
@@ -25,9 +30,10 @@ export function useCompanionDrag(
 			chat = anchor?.parentElement?.parentElement;
 		if (!bot || !anchor || !chat || !enabled) {
 			setPose(null);
+			setHungry(false);
 			return;
 		}
-		const node = bot;
+		const node = bot, viewport = chat, footer = anchor.parentElement;
 		const rect = node.getBoundingClientRect(),
 			size = rect.width;
 		let drag: {
@@ -36,8 +42,8 @@ export function useCompanionDrag(
 			last: Point;
 			offset: Point;
 			time: number;
-			vx: number;
-			vy: number;
+			velocity: Point;
+			distance: number;
 			flips: number;
 			dir: number;
 			moved: boolean;
@@ -48,13 +54,19 @@ export function useCompanionDrag(
 		let perched: Ledge | null = null,
 			position: Point | null = null,
 			preloaded = false;
+		let distanceSinceSnack = 0;
+		let reactingSurface: HTMLElement | undefined;
+		let gripFrame = 0;
+		let refreshGrip: (() => void) | undefined;
+		let attached: SurfaceContact | undefined;
+		let heldFrame = 0, lastFrameTime = 0, spriteFrame = -1, angle = 0, phase = 0;
 		const controller = new AbortController(),
 			options = { signal: controller.signal };
 		const homePoint = () => {
 			const r = anchor.getBoundingClientRect();
 			return { x: r.right, y: r.bottom - size };
 		};
-		const place = (p: Point, rotation = 0) => {
+		const place = (p: Point) => {
 			position = p;
 			Object.assign(node.style, {
 				position: "fixed",
@@ -62,17 +74,55 @@ export function useCompanionDrag(
 				top: p.y + "px",
 				right: "auto",
 				bottom: "auto",
-				transform: `rotate(${rotation}deg)`,
 				zIndex: "95",
 			});
 		};
-		function mark(target: DropTarget | null) {
-			if (hot?.el === target?.el) return;
+		function renderHeld(time: number) {
+			heldFrame = 0;
+			if (!drag) return;
+			const dt = clamp((time - lastFrameTime) / 1000, 0, 0.05);
+			const next = heldMotion(angle, phase, releaseVelocity(drag.velocity, time - drag.time), dt);
+			angle = next.angle;
+			phase = next.phase;
+			lastFrameTime = time;
+			node.style.setProperty("--companion-held-angle", `${next.settled ? 0 : angle}deg`);
+			node.style.setProperty("--companion-held-stretch", String(next.settled ? 1 : next.stretch));
+			if (next.frame !== spriteFrame) {
+				const frame = keatingBotFramePosition(next.frame);
+				node.style.setProperty("--companion-held-x", frame.x);
+				node.style.setProperty("--companion-held-y", frame.y);
+				spriteFrame = next.frame;
+			}
+			if (!next.settled) heldFrame = window.requestAnimationFrame(renderHeld);
+		}
+		function stopHeld() {
+			window.cancelAnimationFrame(heldFrame);
+			heldFrame = lastFrameTime = angle = phase = 0;
+			spriteFrame = -1;
+			delete node.dataset.companionHeld;
+			for (const property of ["angle", "stretch", "x", "y"]) node.style.removeProperty(`--companion-held-${property}`);
+		}
+		function mark(target: DropTarget | null, label = target && targetLabels[target.kind]) {
+			if (hot?.el === target?.el && hot?.kind === target?.kind && (!target || target.el.dataset.companionDrop === label)) return;
 			hot?.el.removeAttribute("data-companion-drop");
 			hot = target;
-			if (target) target.el.setAttribute("data-companion-drop", targetLabels[target.kind]);
+			if (target && label) target.el.setAttribute("data-companion-drop", label);
+		}
+		function detach() {
+			window.cancelAnimationFrame(gripFrame);
+			gripFrame = 0;
+			attached = undefined;
+			refreshGrip = undefined;
+			delete node.dataset.gripRest;
+			delete node.dataset.grip;
+		}
+		function clearSurfaceReaction() {
+			reactingSurface?.removeAttribute("data-companion-reaction");
+			reactingSurface = undefined;
 		}
 		function cancel() {
+			detach();
+			clearSurfaceReaction();
 			flight?.cancel();
 			flight = undefined;
 			window.clearTimeout(timer);
@@ -80,8 +130,10 @@ export function useCompanionDrag(
 		}
 		function reset() {
 			cancel();
-			if (drag && node.hasPointerCapture(drag.id)) node.releasePointerCapture(drag.id);
+			stopHeld();
+			const held = drag;
 			drag = null;
+			if (held && node.hasPointerCapture(held.id)) node.releasePointerCapture(held.id);
 			perched = null;
 			position = null;
 			for (const key of ["position", "left", "top", "right", "bottom", "transform", "z-index"])
@@ -124,14 +176,145 @@ export function useCompanionDrag(
 				hop(reset);
 			}
 		};
+		const playground = () => {
+			const r = viewport.getBoundingClientRect();
+			return {
+				left: Math.max(0, r.left),
+				right: Math.min(innerWidth, r.right),
+				top: Math.max(0, r.top),
+				bottom: Math.min(innerHeight, r.bottom),
+			};
+		};
 		const ledges = (): Ledge[] =>
-			[...chat.querySelectorAll<HTMLElement>(ledgeSelector)]
-				.map<Ledge>((el) => ({ el, ...bounds(el) }))
-				.filter((l) => l.top > size && l.top < innerHeight)
-				.concat([{ el: null, top: innerHeight - 2, left: 0, right: innerWidth } as Ledge]);
-		function bounds(el: HTMLElement) {
-			const { top, left, right } = el.getBoundingClientRect();
-			return { top, left, right };
+			[...viewport.querySelectorAll<HTMLElement>(ledgeSelector)]
+				.sort((a, b) => Number(b.matches(activityTargetSelector)) - Number(a.matches(activityTargetSelector)))
+				.flatMap((el) => {
+					const edge = bounds(el);
+					return edge ? [edge] : [];
+				});
+		function bounds(el: HTMLElement): Ledge | null {
+			if (!el.isConnected || el.closest("[aria-busy=true]")) return null;
+			const { top, left, right, height } = el.getBoundingClientRect();
+			const area = playground();
+			const footerTop = footer?.getBoundingClientRect().top ?? area.bottom;
+			if (!height || top < area.top + size || top >= area.bottom || right <= area.left || left >= area.right) return null;
+			if (!footer?.contains(el) && top >= footerTop) return null;
+			return { el, top, left: Math.max(left, area.left), right: Math.min(right, area.right) };
+		}
+		function landOn(edge: Ledge, x: number) {
+			const area = playground();
+			const left = Math.max(area.left, edge.left - size * 0.64);
+			const right = Math.min(area.right - size, edge.right - size * 0.36);
+			const supportedX = clamp(x, left, right);
+			const y = edge.top - size;
+			const gutter = unobstructedX(supportedX, y);
+			return { x: gutter >= left && gutter <= right && Math.abs(gutter - supportedX) < 32 ? gutter : supportedX, y };
+		}
+		function perform(target: DropTarget) {
+			const reaction = surfacePose(target, distanceSinceSnack >= snackDistance);
+			setPose(reaction);
+			if (motion && reaction !== "ledge-sitting") {
+				clearSurfaceReaction();
+				reactingSurface = target.el;
+				reactingSurface.dataset.companionReaction = reaction;
+			}
+			if (reaction === "tea-break") {
+				distanceSinceSnack = 0;
+				setHungry(false);
+			}
+			if (reaction !== "ledge-sitting") timer = window.setTimeout(() => {
+				clearSurfaceReaction();
+				setPose("ledge-sitting");
+			}, 1700);
+		}
+		function restAt(target: DropTarget) {
+			// The menu is an explicit destination. Pointer releases use body contact.
+			if (!isActivityDrop(target.kind) || !viewport.contains(target.el)) return;
+			if (!bounds(target.el)) target.el.scrollIntoView({ block: "center", behavior: "instant" });
+			const edge = bounds(target.el);
+			if (!edge) return;
+			cancel();
+			const start = position ?? homePoint();
+			const end = landOn(edge, (edge.left + edge.right - size) / 2);
+			setPose("falling");
+			travel([start, end], 320, () => {
+				perched = edge;
+				reanchor();
+				if (perched) perform(target);
+			});
+		}
+		perch.current = restAt;
+
+		function gripSurface(contact: SurfaceContact) {
+			const { target, grip } = contact;
+			if (!position) return;
+			const start = position;
+			if (grip === "top") {
+				const edge = bounds(target.el);
+				if (!edge) { fall(0, 0, false); return; }
+				perched = edge;
+				travel([start, landOn(edge, start.x)], 100, () => settle(null, false));
+				return;
+			}
+			attached = contact;
+			node.dataset.grip = grip;
+			let box = target.el.getBoundingClientRect();
+			const sideX = () => grip === "left" ? box.left - size * 0.83 : box.right - size * 0.17;
+			const initialOffset = start.y - box.top;
+			const handHeight = size * 0.4;
+			const climbDistance = Math.max(0, initialOffset + handHeight);
+			const started = performance.now();
+			const undersideX = start.x - box.left;
+			function follow(time: number) {
+				if (attached !== contact) return;
+				box = target.el.getBoundingClientRect();
+				const area = playground();
+				const visibleBottom = footer?.contains(target.el) ? area.bottom : footer?.getBoundingClientRect().top ?? area.bottom;
+				if (!viewport.contains(target.el) || !box.height || box.bottom <= area.top ||
+					box.top >= visibleBottom || box.right <= area.left || box.left >= area.right) {
+					detach();
+					fall(0, 0, false);
+					return;
+				}
+				if (grip === "underside") {
+					if (box.bottom > visibleBottom) { detach(); fall(0, 0, false); return; }
+					place({ x: clamp(box.left + undersideX, area.left, area.right - size), y: clamp(box.bottom - size * 0.15, area.top, area.bottom - size) });
+					if (time - started >= 950) { detach(); fall(0, 0, false); return; }
+				} else {
+					const elapsed = (time - started) / 1000;
+					const climbed = motion ? Math.min(climbDistance, elapsed * 95) : 0;
+					const y = box.top + initialOffset - climbed;
+					place({ x: clamp(sideX(), area.left, area.right - size), y: clamp(y, area.top, area.bottom - size) });
+					const support = box.top >= area.top + size && box.top < visibleBottom
+						? { el: target.el, top: box.top, left: Math.max(box.left, area.left), right: Math.min(box.right, area.right) }
+						: null;
+					if (motion && !support && (y <= area.top || climbed >= climbDistance)) {
+						node.dataset.gripRest = "true";
+						return;
+					}
+					delete node.dataset.gripRest;
+					if (motion && support && climbed >= climbDistance) {
+						const x = grip === "left" ? box.left - size * 0.36 : box.right - size * 0.64;
+						const end = landOn(support, x);
+						const startLip = position!;
+						detach();
+						setPose("climbing");
+						travel([startLip, { x: startLip.x, y: end.y + size * 0.16 }, end], 660, () => {
+							perched = support;
+							reanchor();
+							if (perched) perform(target);
+						});
+						return;
+					}
+				}
+				if (motion || grip === "underside") gripFrame = window.requestAnimationFrame(follow);
+			}
+			refreshGrip = () => {
+				window.cancelAnimationFrame(gripFrame);
+				follow(performance.now());
+			};
+			setPose(grip === "underside" ? "held" : "wall-climb");
+			follow(started);
 		}
 		function settle(target: DropTarget | null, dizzy: boolean) {
 			setPose("landing");
@@ -140,14 +323,16 @@ export function useCompanionDrag(
 					reset();
 					if (target.el.isConnected) callbacks.current.onDrop(target);
 				} else {
-					setPose("ledge-sitting");
+					const el = perched?.el;
+					if (el?.matches(activityTargetSelector)) perform(activityTarget(el));
+					else setPose("ledge-sitting");
 					// A ledge in the conversation is a place to stay. The page floor is not:
 					// it can sit over the session list, so he rests there briefly and hops home.
 					if (!perched?.el) timer = window.setTimeout(() => home.current(), 8000);
 				}
 			}
 			const landed = () => {
-				if (dizzy) {
+				if (motion && dizzy) {
 					setPose("dizzy");
 					timer = window.setTimeout(done, 1143);
 				} else done();
@@ -157,69 +342,75 @@ export function useCompanionDrag(
 		function unobstructedX(x: number, y: number) {
 			// A block edge may sit immediately below the previous paragraph. Keep
 			// the same ledge height and move into the gutter if its text intersects.
-			for (const message of chat!.querySelectorAll(".keating-bubble, [data-learning-message-ids]")) {
+			for (const message of viewport.querySelectorAll(".keating-bubble, [data-learning-message-ids]")) {
 				const r = message.getBoundingClientRect();
 				if (x < r.right && x + size > r.left && y < r.bottom && y + size > r.top) return homePoint().x;
 			}
 			return x;
 		}
 		function fall(vx: number, vy: number, dizzy: boolean) {
-			const edges = ledges(),
-				points = [position!];
-			let { x, y } = position!;
+			const area = playground();
+			const floor = { el: null, top: area.bottom, left: area.left, right: area.right };
+			const edges = ledges();
+			const points = [position!];
+			let point = position!;
 			if (!motion) {
-				perched =
-					edges
-						.filter(
-							(edge) => x + size / 2 >= edge.left && x + size / 2 <= edge.right && edge.top >= y + size - 2,
-						)
-						.sort((a, b) => a.top - b.top)[0] ?? edges[edges.length - 1];
-				y = perched.top - size;
-				place({ x: unobstructedX(x, y), y });
+				const contact = crossesLedge(edges, point, { x: point.x, y: floor.top - size }, size);
+				perched = contact?.edge ?? floor;
+				place(landOn(perched, point.x));
 				settle(null, dizzy);
 				return;
 			}
-			// Sample the same gravity and damped wall bounce as the playground.
-			// WAAPI plays the resulting flight without a second JS frame loop.
+			const faces = [...viewport.querySelectorAll<HTMLElement>(activityTargetSelector)]
+				.filter(el => !el.closest("[aria-busy=true]"))
+				.map(el => {
+					const { left, right, top, bottom } = el.getBoundingClientRect();
+					return { el, left, right, top, bottom };
+				})
+				.filter(r => r.right > r.left && r.bottom > area.top && r.top < area.bottom);
+			// Precompute the flight so only an actively held sprite needs a frame loop.
 			for (let i = 0; i < 240; i++) {
-				const old = y;
 				vy += 2600 / 60;
-				x += vx / 60;
-				y += vy / 60;
-				if (x < 0 || x > innerWidth - size) {
-					x = clamp(x, 0, innerWidth - size);
+				const next = { x: point.x + vx / 60, y: point.y + vy / 60 };
+				const boundedX = clamp(next.x, area.left, area.right - size);
+				if (boundedX !== next.x) {
+					next.x = boundedX;
 					vx *= -0.5;
 				}
-				if (y < 0) {
-					y = 0;
+				if (next.y < area.top) {
+					next.y = area.top;
 					vy = Math.abs(vy) * 0.3;
 				}
-				const edge = edges
-					.filter(
-						(l) =>
-							x + size / 2 >= l.left &&
-							x + size / 2 <= l.right &&
-							l.top >= old + size - 2 &&
-							l.top <= y + size,
-					)
-					.sort((a, b) => a.top - b.top)[0];
-				if (edge || y >= innerHeight - size - 2) {
-					perched = edge ?? edges[edges.length - 1];
-					y = perched.top - size;
-					x = unobstructedX(x, y);
-					points.push({ x, y });
+				let contact = crossesLedge(edges, point, next, size);
+				const side = crossesSide(faces, point, next, size);
+				if (side && (!contact || side.t * (next.y - point.y) < contact.edge.top - point.y - size)) {
+					const probeX = next.x > point.x ? side.face.left + 1 : side.face.right - 1;
+					const hit = document.elementsFromPoint(probeX, side.y).find(el => !el.closest(".chat-mascot-perch"));
+					if (hit && side.face.el.contains(hit)) {
+						next.x = side.x;
+						vx *= -0.38;
+						contact = crossesLedge(edges, point, next, size);
+					}
+				}
+				if (contact || next.y >= floor.top - size) {
+					perched = contact?.edge ?? floor;
+					points.push(landOn(perched, contact?.x ?? next.x));
 					break;
 				}
-				points.push({ x, y });
+				points.push(next);
+				point = next;
 			}
 			setPose("falling");
-			travel(points, ((points.length - 1) * 1000) / 60, () => settle(null, dizzy));
+			travel(points, ((points.length - 1) * 1000) / 60, () => {
+				reanchor();
+				if (perched) settle(null, dizzy);
+			});
 		}
 		function over(e: PointerEvent) {
-			return resolveDropTarget(document.elementsFromPoint(e.clientX, e.clientY), chat!);
+			return resolveDropTarget(document.elementsFromPoint(e.clientX, e.clientY), viewport);
 		}
 		function down(e: PointerEvent) {
-			if (e.button !== 0 || !e.isPrimary) return;
+			if (e.button !== 0 || !e.isPrimary || drag) return;
 			const r = node.getBoundingClientRect(),
 				pt = { x: e.clientX, y: e.clientY };
 			drag = {
@@ -228,8 +419,8 @@ export function useCompanionDrag(
 				last: pt,
 				offset: { x: pt.x - r.left, y: pt.y - r.top },
 				time: e.timeStamp,
-				vx: 0,
-				vy: 0,
+				velocity: { x: 0, y: 0 },
+				distance: 0,
 				flips: 0,
 				dir: 0,
 				moved: false,
@@ -271,27 +462,40 @@ export function useCompanionDrag(
 				cancel();
 				callbacks.current.onGrab();
 				setPose("held");
+				if (motion) node.dataset.companionHeld = "true";
 				perched = null;
 				drag.moved = true;
 			}
-			const dt = Math.max(0.004, (e.timeStamp - drag.time) / 1000),
-				dx = e.clientX - drag.last.x;
-			drag.vx = drag.vx * 0.6 + (dx / dt) * 0.4;
-			drag.vy = drag.vy * 0.6 + ((e.clientY - drag.last.y) / dt) * 0.4;
+			const dx = e.clientX - drag.last.x;
+			const dy = e.clientY - drag.last.y;
+			drag.velocity = dragVelocity(
+				releaseVelocity(drag.velocity, e.timeStamp - drag.time),
+				{ x: dx, y: dy },
+				e.timeStamp - drag.time,
+			);
 			if (Math.abs(dx) > 3 && Math.sign(dx) !== drag.dir) {
 				if (drag.dir) drag.flips++;
 				drag.dir = Math.sign(dx);
 			}
-			place(
-				{
-					x: clamp(e.clientX - drag.offset.x, 0, innerWidth - size),
-					y: clamp(e.clientY - drag.offset.y, 0, innerHeight - size),
-				},
-				motion ? clamp(drag.vx * 0.035, -30, 30) : 0,
-			);
-			mark(over(e));
+			const area = playground();
+			const next = {
+				x: clamp(e.clientX - drag.offset.x, area.left, area.right - size),
+				y: clamp(e.clientY - drag.offset.y, area.top, area.bottom - size),
+			};
+			if (position) drag.distance += Math.hypot(next.x - position.x, next.y - position.y);
+			place(next);
+			const contact = findSurfaceContact(next, size, viewport);
+			const semantic = over(e);
+			if (contact) {
+				const label = contact.grip === "top" ? targetLabels[contact.target.kind] : contact.grip === "underside" ? "Hang underneath" : "Climb here";
+				mark(contact.target, label);
+			} else mark(semantic && !isActivityDrop(semantic.kind) ? semantic : null);
 			drag.last = { x: e.clientX, y: e.clientY };
 			drag.time = e.timeStamp;
+			if (motion && !heldFrame) {
+				lastFrameTime = performance.now();
+				heldFrame = window.requestAnimationFrame(renderHeld);
+			}
 		}
 		function up(e: PointerEvent) {
 			if (!drag || drag.id !== e.pointerId) return;
@@ -300,24 +504,35 @@ export function useCompanionDrag(
 			if (node.hasPointerCapture(e.pointerId)) node.releasePointerCapture(e.pointerId);
 			if (!d.moved) return;
 			suppressClick.current = true;
+			stopHeld();
+			distanceSinceSnack += d.distance;
+			if (distanceSinceSnack >= snackDistance) setHungry(true);
 			const target = over(e),
 				dizzy = d.flips >= 6;
 			mark(null);
-			if (target) hop(() => settle(target, dizzy));
-			else fall(motion ? clamp(d.vx, -1100, 1100) : 0, motion ? clamp(d.vy, -1100, 900) : 0, dizzy);
+			const velocity = releaseVelocity(d.velocity, e.timeStamp - d.time);
+			const contact = position && findSurfaceContact(position, size, viewport);
+			if (contact && !releasingAway(contact.grip, velocity)) {
+				gripSurface(contact);
+			} else if (target && !isActivityDrop(target.kind)) {
+				hop(() => settle(target, dizzy));
+			} else {
+				fall(clamp(velocity.x, -1100, 1100), clamp(velocity.y, -1100, 900), dizzy);
+			}
 		}
 		function reanchor() {
+			if (attached) {
+				refreshGrip?.();
+				return;
+			}
 			if (!perched || !position || flight) return;
-			if (perched.el && !perched.el.isConnected) {
-				reset();
-				return;
-			}
-			const top = perched.el?.getBoundingClientRect().top ?? innerHeight - 2;
-			if (top < size || top > innerHeight) {
-				reset();
-				return;
-			}
-			place({ x: unobstructedX(clamp(position.x, 0, innerWidth - size), top - size), y: top - size });
+			const { left, right, bottom } = playground();
+			const edge = perched.el ? bounds(perched.el) : { el: null, top: bottom, left, right };
+			if (edge) {
+				const x = position.x + edge.left - perched.left;
+				perched = edge;
+				place(landOn(edge, x));
+			} else reset();
 		}
 		node.addEventListener(
 			"pointerover",
@@ -347,7 +562,8 @@ export function useCompanionDrag(
 			reset();
 			home.current = () => {};
 			clear.current = () => {};
+			perch.current = () => {};
 		};
 	}, [trigger, enabled, motion]);
-	return { pose, suppressClick, home, clear };
+	return { pose, hungry, suppressClick, home, clear, perch };
 }

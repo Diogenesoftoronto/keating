@@ -1,0 +1,62 @@
+/* P3 phosphor: the amber monochrome terminal look (P1 is green, P4 white).
+   Layered on the regular dark theme like Midnight: keeps `html.dark` and re-points
+   the Panda colour variables when `data-theme="p3"` is also set. Everything reads as
+   one amber hue at different intensities; errors keep a distinct red. */
+html.dark[data-theme="p3"] {
+  color-scheme: dark;
+
+  /* Surfaces: warm near-black, like an unlit amber tube */
+  --colors-paper: #120c05;
+  --colors-paper-deep: #0d0803;
+  --colors-card: #1a1208;
+  --colors-background: #120c05;
+  --colors-popover: #1a1208;
+  --colors-secondary: #22180b;
+  --colors-muted: #1e150a;
+  --colors-sidebar: #0d0803;
+  --colors-terminal: #120c05;
+  --colors-terminal-edge: #2a1d0c;
+
+  /* Text: bright and dim phosphor */
+  --colors-ink: #ffd89a;
+  --colors-ink-soft: #d9a85c;
+  --colors-foreground: #ffd89a;
+  --colors-card-foreground: #ffd89a;
+  --colors-popover-foreground: #ffd89a;
+  --colors-secondary-foreground: #ffd89a;
+  --colors-muted-foreground: #cf9f55;
+  --colors-sidebar-foreground: #ffd89a;
+
+  /* Accent: the P3 emission peak, about 602 nm */
+  --colors-accent: #e89a00;
+  --colors-accent-dim: #ffb000;
+  --colors-primary: #ffb000;
+  --colors-primary-foreground: #120c05;
+  --colors-ring: #ffb000;
+  --colors-accent-surface: rgb(255 176 0 / 13%);
+  --colors-accent-surface-foreground: #ffc64d;
+  --colors-green-wash: rgb(255 176 0 / 13%);
+  --colors-phosphor: #ffb000;
+  --colors-phosphor-dim: #b37a00;
+  --colors-sidebar-primary: #ffb000;
+  --colors-sidebar-primary-foreground: #120c05;
+  --colors-sidebar-accent: rgb(255 176 0 / 13%);
+  --colors-sidebar-accent-foreground: #ffc64d;
+  --colors-sidebar-ring: #ffb000;
+
+  /* Lines */
+  --colors-line: rgb(255 176 0 / 24%);
+  --colors-line-soft: rgb(255 176 0 / 12%);
+  --colors-border: rgb(255 176 0 / 26%);
+  --colors-input: rgb(255 176 0 / 48%); /* field outlines: 3.2:1 on cards (WCAG 1.4.11) */
+  --colors-sidebar-border: rgb(255 176 0 / 26%);
+
+  /* Charts: amber intensities plus one cool contrast hue */
+  --colors-series1: #ffb000;
+  --colors-series2: #8fd3c8;
+  --colors-series3: #ff7a45;
+  --colors-chart1: #ffb000;
+  --colors-chart2: #b37a00;
+  --colors-chart3: #ffd89a;
+  --colors-destructive: #ff6a4d;
+}

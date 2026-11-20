@@ -149,6 +149,18 @@ describe("review applicability", () => {
     expect(teachingPolicyAdherenceRequest(turn, reply)!.questions.research_skipped).toBeDefined();
     expect(teachingPolicyAdherenceRequest(turn, reply, undefined, { researchRequired: true })!.questions.research_skipped).toBeDefined();
   });
+
+  test("an explicitly requested research check still produces its measured outcome on a search proposal", () => {
+    const proposal = { text: "", toolCalls: [{ name: "client-web-search", arguments: { query: "published report" } }] };
+    const scope = { researchRequired: true, searchOnly: true };
+    const ids = ["research_skipped"];
+    const request = teachingPolicyAdherenceRequest(turn, proposal, ids, scope)!;
+    expect(request.questions.research_skipped).toBeDefined();
+    const assessment = assessTeachingPolicyAdherence(turn, proposal, outcome(request, { research_skipped: .7 }), ids, scope);
+    expect(assessment.checks.find(check => check.id === "research_skipped")).toMatchObject({ probability: .7, status: "fail" });
+    expect(teachingPolicyAdherenceRequest(turn, { ...proposal, text: "This rule already applies." }, undefined, scope)!.questions.research_skipped).toBeDefined();
+    expect(teachingPolicyAdherenceRequest({ ...turn, availableTools: [] }, proposal, undefined, scope)!.questions.research_skipped).toBeDefined();
+  });
 });
 
 describe("deterministic adherence", () => {

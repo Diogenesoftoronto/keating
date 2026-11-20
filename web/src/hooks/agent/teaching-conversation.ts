@@ -135,6 +135,12 @@ export function createTeachingConversation({
     sessionId,
     basePrompt: () => refs.systemPromptBaseRef.current,
     isCurrent: isLive,
+    // Compare only inside this round. A receipt belongs to the learner message
+    // and sign-in that produced it, even if the chat remains open across a switch.
+    requestIdentity: () => {
+      const account = notOrganicPublicClient()?.getSession();
+      return JSON.stringify([latestLearnerMessage()?.timestamp, account?.id ?? account?.accessToken ?? null]);
+    },
     activityLearning: activityLearning.select,
     activityLearningState: activityLearning.turnSettings,
     onPublished: activityLearning.published,

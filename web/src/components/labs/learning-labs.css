@@ -1,46 +1,54 @@
-.learning-lab { display:grid; gap:14px; min-width:0; padding-block:8px; color:var(--foreground); }
-.learning-lab .learning-lab__header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.learning-lab .learning-lab__header h4 { display:flex; gap:8px; align-items:center; min-width:0; margin:0; font-size:16px; line-height:1.4; font-weight:700; }
-.learning-lab .learning-lab__header h4 svg { flex-shrink:0; color:var(--primary); }
-.learning-lab .learning-lab__language { flex-shrink:0; font-size:11px; color:var(--muted-foreground); }
-.learning-lab .learning-lab__brief { font-size:13px; line-height:1.6; }
-.learning-lab .learning-lab__brief p { margin-block:0 6px; }
-.learning-lab .learning-lab__brief code { padding:2px 4px; border-radius:4px; font-size:.95em; }
-.learning-lab .learning-lab__toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-.learning-lab button.learning-lab__primary,.learning-lab button.learning-lab__quiet { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:44px; min-height:44px; padding:0 14px; border-radius:8px; font:inherit; font-size:13px; font-weight:650; cursor:pointer; }
-.learning-lab button.learning-lab__primary { border:1px solid var(--foreground); background:var(--foreground); color:var(--background); }
-.learning-lab button.learning-lab__quiet { border:0; background:transparent; color:var(--muted-foreground); }
-.learning-lab button.learning-lab__quiet:hover:not(:disabled) { background:var(--muted); color:var(--foreground); }
-.learning-lab button.learning-lab__primary:hover:not(:disabled) { opacity:.85; }
-.learning-lab button:disabled { opacity:.45; cursor:default; }
-.learning-lab .learning-lab__toolbar button svg { width:15px; height:15px; }
-.learning-lab button:focus-visible,.learning-lab summary:focus-visible { outline:2px solid var(--ring); outline-offset:3px; }
-.learning-lab .learning-lab__sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-.learning-lab .learning-lab__hint { font-size:13px; }
-.learning-lab .learning-lab__hint summary { min-height:44px; cursor:pointer; padding-block:12px; font-weight:600; }
-.coding-challenge .coding-challenge__editor { overflow:hidden; border-radius:.1923rem; background:#101914; color:#e3efe7; }
-.coding-challenge .coding-challenge__timer { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; border-block:1px solid var(--border); padding-block:4px; }
-.coding-challenge .coding-challenge__timer-reading { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:12px; }
-.coding-challenge .coding-challenge__timer-digits { font-family:var(--mono-display),monospace; font-size:28px; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.4; }
-.coding-challenge .coding-challenge__timer-state { color:var(--muted-foreground); }
-.coding-challenge .coding-challenge__file { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-bottom:1px solid #33463a; color:#b2c6b9; font-family:var(--mono-display),monospace; font-size:11px; }
-.coding-challenge .coding-challenge__editor textarea { box-sizing:border-box; width:100%; min-height:240px; resize:vertical; padding:14px; border:0; border-radius:0; background:transparent; color:#e3efe7; font-family:var(--mono-display),monospace; font-size:14px; line-height:1.65; tab-size:2; outline:none; }
-.coding-challenge .coding-challenge__editor textarea:focus-visible { box-shadow:inset 0 0 0 2px var(--primary); }
-.coding-challenge .coding-challenge__status { font-size:12px; color:var(--muted-foreground); }
-.coding-challenge .coding-challenge__cases { margin:0; padding:0; list-style:none; border-top:1px solid var(--border); }
-.coding-challenge .coding-challenge__cases > li { border-bottom:1px solid var(--border); }
-.coding-challenge .coding-challenge__cases summary { display:flex; align-items:center; gap:9px; min-height:44px; cursor:pointer; list-style:none; font-size:13px; }
-.coding-challenge .coding-challenge__cases summary::-webkit-details-marker { display:none; }
-.coding-challenge .coding-challenge__case-icon { display:grid; place-items:center; flex-shrink:0; width:22px; height:22px; border-radius:0; background:transparent; font-size:11px; }
-.coding-challenge [data-test-result="passed"] .coding-challenge__case-icon { background:var(--primary); color:var(--primary-foreground); }
-.coding-challenge [data-test-result="failed"] .coding-challenge__case-icon { background:var(--muted); color:var(--destructive); }
-.coding-challenge .coding-challenge__case-state { margin-left:auto; padding-left:8px; font-size:11px; white-space:nowrap; color:var(--muted-foreground); }
-.coding-challenge .coding-challenge__cases dl { display:grid; gap:8px; margin:0; padding:0 0 14px 31px; font-size:12px; }
-.coding-challenge .coding-challenge__cases dl > div { display:grid; grid-template-columns:64px minmax(0,1fr); gap:8px; }
-.coding-challenge .coding-challenge__cases dt { color:var(--muted-foreground); }
-.coding-challenge .coding-challenge__cases dd { margin:0; overflow-wrap:anywhere; }
-.coding-challenge .coding-challenge__cases code { white-space:pre-wrap; }
-.music-lab .music-lab__frame { display:block; width:100%; border:0; border-radius:0; background:var(--paper); }
-.music-lab .music-lab__credit { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; font-size:11px; color:var(--muted-foreground); }
-.music-lab .music-lab__credit a { text-decoration:underline; text-underline-offset:3px; }
-@media(max-width:480px) { .coding-challenge .coding-challenge__editor textarea { font-size:16px; min-height:220px; } }
+/* Coding challenge and music lab, board L3 vocabulary: the frame is the only box. The editor is a
+   filled well, tests are flat rows with an index square, the work timer is head meta, the hint is a
+   bulb summary, the visualiser is a grid stage. Sizes follow the RELATIVE SIZE block in lesson.css. */
+.learning-lab .learning-lab__brief { font: .6rem/1.5 var(--font-ui); }
+.learning-lab .learning-lab__brief p { margin-block: 0 .24rem; }
+.learning-lab .learning-lab__brief p:last-child { margin-bottom: 0; }
+.learning-lab .learning-lab__brief code { padding: .04rem .16rem; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); font-size: .95em; }
+.learning-lab :is(button, summary):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+.learning-lab .learning-lab__hint > summary, .coding-challenge .coding-challenge__cases summary { list-style: none; cursor: pointer; }
+.learning-lab .learning-lab__hint > summary::-webkit-details-marker, .coding-challenge .coding-challenge__cases summary::-webkit-details-marker { display: none; }
+.learning-lab .learning-lab__hint { border-top: 1px solid var(--line-soft); padding-top: .2rem; font: .6rem/1.5 var(--font-ui); }
+.learning-lab .learning-lab__hint > summary { display: inline-flex; align-items: center; gap: .24rem; min-height: 1.154rem; padding: 0 .34rem; margin-inline-start: -.34rem; border-radius: .1923rem; color: var(--ink-soft); font: .505rem/1.4 var(--font-mono); }
+.learning-lab .learning-lab__hint > summary > svg { color: var(--amber); }
+.learning-lab .learning-lab__hint > summary:hover, .learning-lab .learning-lab__hint[open] > summary { color: var(--ink); background: var(--k-wash); }
+
+/* Work timer in the head: clock glyph, mono digits, state, a quiet pause icon. */
+.coding-challenge .coding-challenge__timer { display: inline-flex; align-items: center; gap: .24rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.coding-challenge .coding-challenge__timer > svg { color: var(--accent-green); }
+.coding-challenge .coding-challenge__timer-digits { color: var(--ink); font: 600 .55rem/1.4 var(--mono-display, var(--font-mono)); font-variant-numeric: tabular-nums; }
+
+/* The editor is a well: no dark slab, no border. The file bar is mono meta above the text. */
+.coding-challenge .coding-challenge__editor { display: grid; min-width: 0; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); overflow: hidden; }
+.coding-challenge .coding-challenge__file { display: flex; align-items: center; justify-content: space-between; gap: .3rem; padding: .2rem .43rem 0; color: var(--ink-soft); font: .5rem/1.5 var(--font-mono); }
+.coding-challenge .coding-challenge__file label { font-family: var(--font-mono); }
+.coding-challenge .coding-challenge__editor textarea, .lesson-frame.coding-challenge .coding-challenge__editor textarea {
+  box-sizing: border-box; width: 100%; min-height: 9rem; resize: vertical; margin: 0; padding: .2rem .43rem .43rem; border: 0; border-radius: 0; background: transparent;
+  color: var(--ink); font: .6rem/1.65 var(--font-code, var(--font-mono)); tab-size: 2; outline: none;
+}
+.coding-challenge .coding-challenge__editor:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+.coding-challenge .coding-challenge__retry { flex-wrap: wrap; }
+
+.coding-challenge .coding-challenge__cases > li { display: block; padding: 0; }
+.coding-challenge .coding-challenge__cases summary { display: flex; align-items: center; gap: .34rem; min-height: 1.346rem; padding-block: .14rem; font: .6rem/1.4 var(--font-ui); }
+.coding-challenge .coding-challenge__cases summary:hover { background: var(--k-wash); }
+.coding-challenge [data-test-result="passed"] .coding-challenge__case-icon { background: var(--k-wash); color: var(--accent-green); }
+.coding-challenge [data-test-result="failed"] .coding-challenge__case-icon { color: var(--destructive); }
+.coding-challenge [data-test-result="passed"] .coding-challenge__case-state { color: var(--accent-green); }
+.coding-challenge [data-test-result="failed"] .coding-challenge__case-state { color: var(--destructive); }
+.coding-challenge .coding-challenge__case-state { margin-inline-start: auto; white-space: nowrap; }
+.coding-challenge .coding-challenge__cases dl { display: grid; gap: .2rem; margin: 0; padding: 0 0 .34rem 1.34rem; font: .55rem/1.45 var(--font-ui); }
+.coding-challenge .coding-challenge__cases dl > div { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: .3rem; }
+.coding-challenge .coding-challenge__cases dt { color: var(--ink-soft); font: .5rem/1.6 var(--font-mono); }
+.coding-challenge .coding-challenge__cases dd { margin: 0; overflow-wrap: anywhere; }
+.coding-challenge .coding-challenge__cases code { white-space: pre-wrap; font-family: var(--font-code, var(--font-mono)); }
+.coding-challenge .coding-challenge__results .lesson-progress { flex: none; }
+
+/* Music lab: the instrument document bleeds to the frame edges on the stage. */
+.music-lab .music-lab__stage { margin-block: 0; max-width: none; }
+.music-lab .music-lab__frame { display: block; width: 100%; border: 0; border-radius: 0; background: var(--paper); }
+.music-lab .music-lab__code { margin: 0; padding: .3rem .43rem; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); font: .55rem/1.6 var(--font-code, var(--font-mono)); overflow: auto; }
+.music-lab .music-lab__credit { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: center; justify-content: space-between; }
+.music-lab .music-lab__credit a { color: inherit; text-decoration: underline; text-underline-offset: .12rem; }
+@media (max-width: 480px) { .coding-challenge .coding-challenge__editor textarea { font-size: 16px; min-height: 8rem; } }

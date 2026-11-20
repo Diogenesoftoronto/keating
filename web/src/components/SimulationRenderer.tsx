@@ -2,12 +2,12 @@ import { LessonFrame } from "./lesson/LessonFrame";
 import { Select } from "./Select";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { KeatingGlyph } from "../design-system/glyphs";
-import { LineChart, Stat, ChartTable } from "../design-system/charts";
-import { EmptyState, Field, TextInput, IconButton, Button } from "../design-system/kit";
+import { LineChart } from "../design-system/charts";
+import { EmptyState, IconButton, Button } from "../design-system/kit";
 import { evaluateSimulationExpression, parseSimulationExpression, type UiActionReceipt, type UiSimulationNode } from "@keating/learner-contracts";
-import { css } from "../../styled-system/css";
 import { MarkdownBlock } from "./MarkdownBlock";
-import { formatSimulationNumber, parameterPrecision, sampleSimulation } from "./simulation/sampling";
+import { formatSimulationCompact, formatSimulationNumber, parameterPrecision, sampleSimulation } from "./simulation/sampling";
+import { LessonSlider } from "./lesson/LessonSlider";
 import "./simulation/simulation.css";
 import type { StorageLike } from "../keating/event-store";
 import type { SharedUiActionEvent } from "../keating/openui/shared-renderer";
@@ -152,10 +152,13 @@ function SimulationControls(props: SimulationRendererProps) {
 	const xLabel = unitLabel(parameter.label, parameter.unit);
 	const yLabel = unitLabel(readout.label, readout.unit);
 	const caption = node.parameters.length > 1 ? `Other controls stay at their current settings.` : `Each dot is a sampled setting.`;
+	const precision = readout.precision ?? 2;
+	const formatY = (value: number) => formatSimulationCompact(value, precision, readout.unit);
+	const formatX = (value: number) => formatSimulationCompact(value, parameterPrecision(parameter), parameter.unit);
 
 	return <LessonFrame glyph="signal" kind="Simulation" title={node.title} aria-label={node.title} className="simulation" data-simulation={node.id}
 		tools={<IconButton size="sm" glyph="undo" label="Reset simulation" disabled={!interaction.dirty} onClick={interaction.reset} />}
-		footer={onAction && <><p id={`${identifier}-share-status`} role="status" className={css({ margin: 0, minWidth: 0, fontSize: "0.75rem", color: "var(--muted-foreground)", lineHeight: 1.4 })}>
+		footer={onAction && <><span id={`${identifier}-share-status`} role="status" className="lesson-foot-meta simulation__share-status">
 				{shareStatus === "failed"
 					? "Not shared yet. Your settings are kept here; try again."
 					: alreadyShared
@@ -163,63 +166,74 @@ function SimulationControls(props: SimulationRendererProps) {
 						: lastShared
 							? "Changed since you last shared."
 							: "Sends your settings and readouts to your tutor."}
-			</p><Button type="button" data-simulation-share={node.id} variant="primary" disabled={!interaction.canShare} aria-describedby={`${identifier}-share-status`} onClick={interaction.share}>
-				{alreadyShared ? <KeatingGlyph name="check" size={16} className={justShared ? "k-receipt" : undefined} /> : <KeatingGlyph name="send" size={16} />}
+			</span><Button type="button" size="sm" data-simulation-share={node.id} variant="primary" disabled={!interaction.canShare} aria-describedby={`${identifier}-share-status`} onClick={interaction.share}>
+				{alreadyShared ? <KeatingGlyph name="check" size={13} className={justShared ? "k-receipt" : undefined} /> : <KeatingGlyph name="send" size={13} />}
 				{alreadyShared ? "Shared with your tutor" : "Share what I found"}
 			</Button></>}>
-		{node.brief ? <div className={css({ fontSize: "0.8125rem", lineHeight: 1.5, maxWidth: "65ch", "& p": { marginBlock: 0 } })}><MarkdownBlock content={node.brief} /></div> : null}
+		{node.brief ? <div className="simulation__brief"><MarkdownBlock content={node.brief} /></div> : null}
 
 		<div className="simulation__pickers">
-			<Field label="Vary">
+			<div className="simulation__picker">
+				<span className="lesson-label" aria-hidden="true">Vary</span>
 				<Select aria-label="Graph horizontal axis" className="simulation__select" value={parameter.id} onValueChange={interaction.selectParameter}>
 					{node.parameters.map((item) => <option key={item.id} value={item.id}>{unitLabel(item.label, item.unit)}</option>)}
 				</Select>
-			</Field>
-			<Field label="Watch">
+			</div>
+			<div className="simulation__picker">
+				<span className="lesson-label" aria-hidden="true">Watch</span>
 				<Select aria-label="Graph output" className="simulation__select" value={readout.id} onValueChange={interaction.selectReadout}>
 					{node.readouts.map((item) => <option key={item.id} value={item.id}>{unitLabel(item.label, item.unit)}</option>)}
 				</Select>
-			</Field>
+			</div>
 		</div>
 
-		<figure aria-label={`${yLabel} against ${xLabel}`} aria-describedby={`${identifier}-caption`} className="simulation__figure">
-			{plotted.length > 0 ? <div data-simulation-plot={node.id}><LineChart crosshair connect={false} label={`${yLabel} against ${xLabel}`} series={[
-				{label:yLabel, points:plotted}, ...(currentValue === undefined ? [] : [{label:"Now", points:[{x:currentParameter,y:currentValue}]}])
-			]} /></div> : <EmptyState role="status" heading="No finite values at these settings.">Try another output or adjust a control.</EmptyState>}
-			<div className={css({ textAlign: "center", fontSize: "0.75rem", fontWeight: 600, overflowWrap: "anywhere" })}>{xLabel}</div>
-			<figcaption id={`${identifier}-caption`} className={css({ paddingTop: "0.625rem", textAlign: "center", fontSize: "0.6875rem", color: "var(--muted-foreground)", lineHeight: 1.4 })}>
+		<figure aria-label={`${yLabel} against ${xLabel}`} aria-describedby={`${identifier}-caption`} className="simulation__figure lesson-stage k-grid">
+			<span className="simulation__axis" aria-hidden="true">{yLabel}</span>
+			{plotted.length > 0 ? <div data-simulation-plot={node.id} data-sparse={plotted.length <= 24 || undefined}><LineChart crosshair connect={false} label={`${yLabel} against ${xLabel}`} format={formatY} formatX={formatX}
+				series={[{label:readout.label, points:plotted, endLabel:"value"}]}
+				now={currentValue === undefined ? undefined : {x:currentParameter, y:currentValue, label:`Now ${formatY(currentValue)}`}} /></div>
+				: <EmptyState role="status" heading="No finite values at these settings.">Try another output or adjust a control.</EmptyState>}
+			<div className="simulation__xaxis" aria-hidden="true"><span>{formatSimulationCompact(parameter.min, parameterPrecision(parameter))}</span><b>{xLabel}</b><span>{formatSimulationCompact(parameter.max, parameterPrecision(parameter))}</span></div>
+			<figcaption id={`${identifier}-caption`} className={samples.some((point) => point.y === undefined) ? "lesson-hint simulation__caption" : "lesson-sr"}>
 				{caption}{samples.some((point) => point.y === undefined) ? " Undefined values are omitted." : ""}
 			</figcaption>
 		</figure>
 
-		<div className={`simulation__parameters ${css({ display: "grid", gap: "0.75rem", gridTemplateColumns: "minmax(0, 1fr)", "@media (min-width: 640px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "1.5rem" } })}`}>
-			{node.parameters.map(item => <div key={item.id}>
-				<Field label={unitLabel(item.label,item.unit)}>
-					<input type="range" aria-label={unitLabel(item.label,item.unit)} min={item.min} max={item.max} step={item.step ?? "any"}
-						value={values[item.id] ?? item.value} onChange={e=>interaction.setValue(item.id,Number(e.currentTarget.value))} />
-				</Field>
-				<TextInput key={values[item.id]} type="number" aria-label={`${item.label} numeric value`} min={item.min} max={item.max}
-					step={item.step ?? "any"} defaultValue={values[item.id] ?? item.value} onBlur={e=>{
-						if (e.currentTarget.validity.valid && Number.isFinite(e.currentTarget.valueAsNumber)) interaction.setValue(item.id,e.currentTarget.valueAsNumber);
-						else e.currentTarget.value=String(values[item.id] ?? item.value);
-					}} onKeyDown={e=>{if(e.key==="Enter") e.currentTarget.blur();}} />
-			</div>)}
+		<section className="lesson-section simulation__controls">
+			<h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="compass" size={13} />Controls<span className="lesson-meta">drag or type a value</span></h4>
+			{node.parameters.length > 1 ? <p className="lesson-hint">{caption}</p> : null}
+		<div className="simulation__parameters">
+			{node.parameters.map(item => <LessonSlider key={item.id} label={unitLabel(item.label,item.unit)} ariaLabel={unitLabel(item.label,item.unit)} editLabel={`${item.label} numeric value`}
+				min={item.min} max={item.max} step={item.step} value={values[item.id] ?? item.value} start={item.value}
+				format={value => formatSimulationCompact(value, parameterPrecision(item), item.unit)} disabled={props.disabled}
+				onChange={value => interaction.setValue(item.id, value)} />)}
 		</div>
+		</section>
 
-		<div className="simulation__readouts">
+		<section className="lesson-section simulation__readouts-section">
+		<h4 className="lesson-section-title" data-glyph-host><KeatingGlyph name="trend" size={13} />Readouts</h4>
+		<div className="lesson-readouts simulation__readouts">
 			{compiled.map((item) => {
 				const value = item.expression ? evaluateSimulationExpression(item.expression, values) : undefined;
-				return <div key={item.readout.id} data-simulation-readout={item.readout.id} data-primary={item === defaultReadout || undefined} className="simulation__readout">
-					<Stat label={item.readout.label} value={formatSimulationNumber(value, item.readout.precision ?? 2) + (value !== undefined && item.readout.unit ? " " + item.readout.unit : "")} />
+				const text = formatSimulationNumber(value, item.readout.precision ?? 2) + (value !== undefined && item.readout.unit ? (item.readout.unit === "%" ? "%" : " " + item.readout.unit) : "");
+				return <div key={item.readout.id} role="group" aria-label={`${item.readout.label} ${text}`} data-simulation-readout={item.readout.id} data-primary={item === defaultReadout || undefined} className="lesson-readout simulation__readout">
+					<small>{item.readout.label}</small><b>{text}</b>
 				</div>;
 			})}
 		</div>
+		</section>
 
-		{saveFailed ? <p role="status" className={css({ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>This browser did not save your settings; they will reset if you reload.</p> : null}
+		{saveFailed ? <p role="status" className="lesson-status" data-tone="warn">This browser did not save your settings; they will reset if you reload.</p> : null}
 
-		<ChartTable columns={[xLabel,yLabel]} caption={`${yLabel} as ${xLabel} changes. ${caption}`} rows={samples.map(point=>[
-			formatSimulationNumber(point.x,parameterPrecision(parameter)) + (point.x === currentParameter ? " (now)" : ""),
-			point.y === undefined ? "No value" : formatSimulationNumber(point.y,readout.precision ?? 2)
-		])} />
+		<details className="kc-table simulation__table">
+			<summary><KeatingGlyph name="menu" size={13} />View as table</summary>
+			<table><caption>{`${yLabel} as ${xLabel} changes. ${caption}`}</caption>
+				<thead><tr><th scope="col">{xLabel}</th><th scope="col">{yLabel}</th></tr></thead>
+				<tbody>{samples.map((point, index) => <tr key={index}>
+					<th scope="row">{formatSimulationNumber(point.x,parameterPrecision(parameter)) + (point.x === currentParameter ? " (now)" : "")}</th>
+					<td>{point.y === undefined ? "No value" : formatSimulationNumber(point.y,readout.precision ?? 2)}</td>
+				</tr>)}</tbody>
+			</table>
+		</details>
 	</LessonFrame>;
 }

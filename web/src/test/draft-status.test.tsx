@@ -16,6 +16,36 @@ test("conditional exercise issues survive status projection as closed check code
   expect(projected.attempts[0]?.checks.map(c=>c.id)).toEqual(ids);
 });
 
+test("saved snapshots retain only bounded draft relationships and known check scopes", () => {
+  const attempt = { attempt: 1, variant: "default", reasoning: "low", standard: "concise", generationMs: 1, judgementMs: 1, status: "pass", checks: [] } as const;
+  const check = { id: "checkpoint_answer_leaked", source: "jev", severity: "major", status: "fail", probability: .9 } as const;
+  const staged: TeachingDraftSnapshot = { ...snapshot, phase: "checking", attempt: 3, parallelAttempts: [1, 2], repairSourceAttempt: 2,
+    attempts: [
+      { ...attempt, attempt: 3, repairSourceAttempt: 2, checks: [{ ...check, id: "requested_part_missing", severity: "minor" }] },
+      { ...attempt, attempt: 2, checks: [{ ...check, applicability: "feedback-on-attempt" }] }, attempt,
+    ] };
+  const saved = projectTeachingDraftSnapshot(staged);
+  expect(saved.parallelAttempts).toEqual([1, 2]);
+  expect(saved.repairSourceAttempt).toBe(2);
+  expect(saved.attempts.map(row => row.attempt)).toEqual([1, 2, 3]);
+  expect(saved.attempts[2]).toMatchObject({ repairSourceAttempt: 2, checks: [{ id: "requested_part_missing" }] });
+  expect(saved.attempts[1]?.checks[0]?.applicability).toBe("feedback-on-attempt");
+  const unsafe = { ...staged, parallelAttempts: [1, 2, "PRIVATE_PAYLOAD"], repairSourceAttempt: 3,
+    attempts: [{ ...attempt, repairSourceAttempt: "PRIVATE_BASE", checks: [{ ...check, applicability: "PRIVATE_REASON" }] }] };
+  const bounded = projectTeachingDraftSnapshot(unsafe as unknown as TeachingDraftSnapshot);
+  expect(bounded.parallelAttempts).toBeUndefined();
+  expect(bounded.repairSourceAttempt).toBeUndefined();
+  expect(JSON.stringify(bounded)).not.toMatch(/PRIVATE_|repairSourceAttempt|applicability/);
+});
+
+test("developer progress names the actual draft under review and the parent of a targeted revision", () => {
+  const state = { ...snapshot, attempt: 2, parallelAttempts: [1, 2] as const };
+  const html = (value: TeachingDraftSnapshot) => renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="parallel" status={{ id: 1, feedback: null, snapshot: value }} />);
+  expect(html(state)).toContain("Checking draft 2");
+  expect(html(state)).not.toContain("Rewrite 2");
+  expect(html({ ...state, phase: "revising", attempt: 3, repairSourceAttempt: 1 })).toContain("Revising draft 1");
+});
+
 test("best available release does not imply every review concern passed", () => {
   publishTeachingDraftStatus("best-effort", { ...snapshot, phase: "released", reason: "best-effort-draft", selectedAttempt: 2 });
   const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="best-effort" status={getTeachingDraftStatus("best-effort")} />);
@@ -74,7 +104,10 @@ test("chat prediction diagnostics retain bounded scores and discard callback tex
 
 test("state diagnostics reconstruct nested fields, reject content and retain only 64 samples", () => {
   const state = measureStateComposition({ state: { turn: { learnerMessage: "PRIVATE_REQUEST" } }, questions: { check: { type: "noul", instructions: "Supported?" } } }, 2000);
-  const dirty = { ...state, text: "PRIVATE_TOP", totalBytes: "PRIVATE_NUMBER", sections: { ...state.sections, conversation: { ...state.sections.conversation, text: "PRIVATE_HISTORY" }, PRIVATE_SECTION: { bytes: 99, text: "PRIVATE_TEXT" } }, pinned: { ...state.pinned, plan: "PRIVATE_PLAN", text: "PRIVATE_PINNED" } };
+  const dirty = { ...state, text: "PRIVATE_TOP", totalBytes: "PRIVATE_NUMBER", sections: {
+    ...state.sections, conversation: { ...state.sections.conversation, text: "PRIVATE_HISTORY" },
+    earlierLearnerExcerpts: { entries: 2, bytes: 60, excerpts: ["PRIVATE_EARLIER_WORDS"] }, PRIVATE_SECTION: { bytes: 99, text: "PRIVATE_TEXT" },
+  }, pinned: { ...state.pinned, plan: "PRIVATE_PLAN", text: "PRIVATE_PINNED" } };
   publishTeachingDraftStatus("metrics", { ...snapshot, state: dirty,
     slides: [{ phase: "PRIVATE_PHASE", attempt: 0, elapsedMs: 1, turnsDropped: 2, before: dirty, after: dirty, text: "PRIVATE_SLIDE" }],
     stateHistory: Array.from({ length: 70 }, (_, index) => ({ phase: "checking", attempt: 1, elapsedMs: index, requestIndex: index + 1, state: dirty, reply: "PRIVATE_REPLY" })),
@@ -86,6 +119,9 @@ test("state diagnostics reconstruct nested fields, reject content and retain onl
   expect(projected.stateHistory).toHaveLength(64);
   expect(projected.stateHistory![0]!.requestIndex).toBe(7);
   expect(projected.slides![0]!.phase).toBe("withheld");
+  for (const metric of [projected.state, projected.stateHistory![0]!.state, projected.slides![0]!.before, projected.slides![0]!.after]) {
+    expect(metric?.sections.earlierLearnerExcerpts).toEqual({ entries: 2, bytes: 60 });
+  }
 });
 
 test("planning request samples retain the same review id", () => {

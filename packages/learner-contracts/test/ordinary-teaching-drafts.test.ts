@@ -109,6 +109,55 @@ describe("ordinary teaching draft release", () => {
       .toMatchObject({ probability: .35, status: "pass" });
   });
 
+  test("an unsupported statement about the learner is repaired without losing their actual answer", async () => {
+    const first = "You installed the sensor and confirmed nobody calibrated it.";
+    const corrected = "You installed the sensor. Its calibration status is still open.";
+    const feedback: string[] = [];
+    const result = await runTeachingDrafts({
+      turn: { ...turn, learnerMessage: "I installed it myself.",
+        conversation: [{ role: "assistant", content: "Who installed the sensor, and has anyone calibrated it?" }] },
+      judge: judge(request => ({ learner_fact_overstated: (request.state as { reply?: { text: string } }).reply?.text === first ? .95 : .05 })),
+      generate: async ({ attempt, feedback: checks }) => {
+        feedback.push(...checks.map(check => check.instruction));
+        return { reply: { text: attempt === 1 ? first : corrected, toolCalls: [] }, value: attempt };
+      },
+    });
+    expect(result.reply?.text).toBe(corrected);
+    expect(result.receipt.attempts.map(a => a.checks.find(c => c.id === "learner_fact_overstated")?.status)).toEqual(["fail", "pass"]);
+    expect(feedback.join(" ")).toContain("Leave each unanswered detail open");
+  });
+
+  test.each([1, 2])("candidate-specific research windows stay independent when attempt %s finishes first", async first => {
+    const conversation = Array.from({ length: 8 }, (_, i) => ({
+      role: i % 2 ? "assistant" as const : "user" as const, content: `Message ${i} ${"x".repeat(400)}`,
+    }));
+    const windows = new Map<string, number>();
+    let resume!: () => void;
+    const sibling = new Promise<void>(resolve => { resume = resolve; });
+    const result = await runTeachingDrafts({
+      turn: { ...turn, conversation }, maxAttempts: 2, parallelDrafts: true,
+      // The history fits. Only the candidate with the additional source exceeds this limit.
+      judgementModel: { id: "fixture", requestTokens: null, stateQuestionTokens: 2_400 },
+      reviewResearch: reply => ({ searchOnly: false, sources: reply.text === "A sourced answer."
+        ? [{ id: "source", url: "https://example.test", text: "evidence ".repeat(480) }] : [] }),
+      judge: judge(request => {
+        const state = request.state as { reply?: { text: string }; turn: TeachingPolicyTurn };
+        if (state.reply) {
+          windows.set(state.reply.text, state.turn.conversation.length);
+          resume();
+        }
+        return {};
+      }),
+      generate: async ({ attempt }) => {
+        if (attempt !== first) await sibling;
+        return { reply: { text: attempt === 1 ? "A sourced answer." : "A short answer.", toolCalls: [] }, value: attempt };
+      },
+    });
+    expect(result.status).toBe("released");
+    expect(windows.get("A sourced answer.")).toBeLessThan(conversation.length);
+    expect(windows.get("A short answer.")).toBe(conversation.length);
+  });
+
   test.each([
     "identity_invented", "instruction_override", "tool_success_invented", "sensitive_inference",
     "mastery_overclaimed", "retention_overclaimed", "transfer_overclaimed", "synthetic_efficacy_claim",

@@ -35,6 +35,7 @@ export function checkpointReviewScope(turn: TeachingPolicyTurn, plan: TeachingPo
     || work?.plan || work?.focus || work?.openInteractions.length;
   const standaloneQuestion = /\b(?:what|who|when|where|which|how)\b[^?？]+[?？]/iu.test(turn.learnerMessage);
   const referencesWork = /\b(?:this|that|these|those|it|previous|earlier|last|above|my|our|your|you asked|the answer to|answer key|homework|assignment|exam|test|quiz|checkpoint|puzzle|riddle|flash\s?cards?|exercise|worksheet|practice|problem|teacher|graded|assessed|submit|reveal|solve for me)\b/iu.test(turn.learnerMessage);
+  if (hasOpenCheckpoint && referencesWork) return "protected";
   return priorContext || !standaloneQuestion || referencesWork ? "review-context" : "standalone";
 }
 

@@ -100,8 +100,13 @@ export function makeTrial(fixture: BenchmarkCase, fill: number, placement: Place
   const request = window?.request ?? full;
   const hasCue = (value: unknown): boolean => typeof value === "string" ? value === fixture.evidence : Array.isArray(value) ? value.some(hasCue) : value !== null && typeof value === "object" ? Object.values(value).some(hasCue) : false;
   const cueRetained = hasCue(request.state);
-  const expected = fixture.kind === "context" && !cueRetained ? { evidence_verdict: "insufficient_context" } : fixture.expected;
-  return { id: `${fixture.id}/${placement}/${fill}/${path}`, caseId: fixture.id, family: fixture.family, split: fixture.split, kind: fixture.kind, labelSource: fixture.labelSource,
+  // A displaced cue can survive verbatim in an excerpt. A fragment has no authored
+  // verdict of its own: depending on the question, it might still contain the answer.
+  const missingCue = fixture.kind === "context" && !cueRetained;
+  const partialCue = missingCue && window?.turn.earlierLearnerExcerpts?.some(excerpt =>
+    excerpt.endsWith("…") && fixture.evidence.startsWith(excerpt.slice(0, -1)));
+  const expected: Trial["expected"] = partialCue ? {} : missingCue ? { evidence_verdict: "insufficient_context" } : fixture.expected;
+  return { id: `${fixture.id}/${placement}/${fill}/${path}`, caseId: fixture.id, family: fixture.family, split: fixture.split, kind: fixture.kind, labelSource: partialCue ? "unlabelled" : fixture.labelSource,
     placement, path, targetFill: fill, request, requestSha256: digest(request), fullRequestSha256: digest(full), expected, fullExpected: fixture.expected,
     cueRetained, turnsDropped: window?.turnsDropped ?? 0, before: measureStateComposition(full, budget), after: measureStateComposition(request, budget),
     ...(fixture.candidatePass ? { candidatePass: fixture.candidatePass } : {}), ...(fixture.sourceSha256 ? { sourceSha256: fixture.sourceSha256 } : {}) };

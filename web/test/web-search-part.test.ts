@@ -49,6 +49,21 @@ describe("web search part — tool name detection", () => {
 });
 
 describe("web search part — result parsing", () => {
+	test("the card retains its eight-site and 240-character display limits", () => {
+		const results = Array.from({ length: 12 }, (_, i) => ({ url: `https://search.example/${i}`, snippet: "x".repeat(400) }));
+		const card = parseWebSearchResult({ results }, {});
+		expect(card.sites).toHaveLength(8);
+		expect(card.sites.every(site => site.snippet?.length === 240)).toBe(true);
+	});
+
+	test("complete plain-text evidence keeps each observed URL intact and leaves a missing passage empty", () => {
+		const target = "https://search.example/edition)";
+		const other = "https://other.example/finding";
+		const parsed = parseWebSearchResult(`[Edition](<${target}>) and ${other}.`, {}, "complete");
+		expect(parsed.sites.map(site => site.url)).toEqual([target, other]);
+		expect(parsed.sites.every(site => site.snippet === undefined)).toBe(true);
+	});
+
 	test("extracts query from tool arguments", () => {
 		const parsed: ParsedWebSearch = parseWebSearchResult(
 			{ text: "results" },

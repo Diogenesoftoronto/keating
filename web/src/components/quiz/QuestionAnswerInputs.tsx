@@ -5,12 +5,10 @@
  */
 import { KeatingGlyph } from "../../design-system/glyphs";
 import type { ReactNode } from "react";
-import { css, cx } from "../../../styled-system/css";
 import type { QuizQuestion } from "../../keating/core";
 import { AnswerTile } from "./ActivityGame";
 import { Select } from "../Select";
 import { isOpenEnded } from "./quiz-scoring";
-import { quizStyles, shared } from "./quiz-styles";
 
 type OptionStatus = "correct" | "wrong" | "neutral" | undefined;
 
@@ -57,7 +55,7 @@ export function ChoiceOptions({ q, answer, revealed, onChange, options, layout }
 	});
 	return layout === "grid"
 		? <div className="activity-answer-grid">{tiles}</div>
-		: <div className={css({ display: "flex", gap: "0.75rem" })}>{tiles}</div>;
+		: <div className="quiz-tf">{tiles}</div>;
 }
 
 export function MultiSelectOptions({ q, selected, revealed, onToggle }: {
@@ -94,11 +92,11 @@ export function RevealedAnswerNote({ q, afterAnswer, afterExplanation }: {
 	afterExplanation?: ReactNode;
 }) {
 	return (
-		<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-			<KeatingGlyph name="bulb" size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
-			<div className={shared.stack1}>
+		<div className="quiz-reveal">
+			<KeatingGlyph name="bulb" size={13} />
+			<div>
 				<p>
-					<span className={css({ fontWeight: 600, color: "var(--foreground)" })}>{q.correctAnswer}</span>
+					<b>{q.correctAnswer}</b>
 				</p>
 				{afterAnswer}
 				{q.explanation && <p>{q.explanation}</p>}
@@ -117,21 +115,12 @@ export function TextAnswer({ q, answer, revealed, correct, wrong, credit, onChan
 	credit: number;
 	onChange: (val: string) => void;
 }) {
-	const inputState = revealed && q.type === "fill_in"
-		? wrong
-			? quizStyles.inputWrong
-			: correct
-				? quizStyles.inputCorrect
-				: quizStyles.inputNeutral
-		: quizStyles.inputNeutral;
+	const result = revealed && q.type === "fill_in" ? wrong ? "wrong" : correct ? "correct" : undefined : undefined;
 	return (
-		<div className={shared.stack2}>
+		<div className="lesson-section">
 			<textarea
-				className={cx(
-					quizStyles.fieldBase, "activity-field",
-					css({ minHeight: "80px", resize: "none" }),
-					inputState,
-				)}
+				className="quiz-field"
+				data-result={result}
 				aria-label="Your answer"
 				placeholder={q.type === "fill_in" ? "Fill in the blank..." : "Type your answer..."}
 				value={answer}
@@ -142,11 +131,11 @@ export function TextAnswer({ q, answer, revealed, correct, wrong, credit, onChan
 				<RevealedAnswerNote
 					q={q}
 					afterAnswer={isOpenEnded(q) && (
-						<p className={css({ fontSize: "0.625rem" })}>
+						<small>
 							Teacher review pending{credit > 0 ? ` · ${credit >= 0.6 ? "close match" : "partial match"}` : ""}.
-						</p>
+						</small>
 					)}
-					afterExplanation={q.rubric && <p className={css({ fontSize: "0.625rem" })}>{q.rubric}</p>}
+					afterExplanation={q.rubric && <small>{q.rubric}</small>}
 				/>
 			)}
 		</div>
@@ -161,9 +150,9 @@ export function SliderAnswer({ q, answer, revealed, label, onChange }: {
 	onChange: (val: string) => void;
 }) {
 	return (
-		<div className={shared.stack3}>
-			<div className={shared.rowCenter2}>
-				<span className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>{q.min ?? 0}</span>
+		<div className="quiz-slider">
+			<div>
+				<span className="quiz-meta">{q.min ?? 0}</span>
 				<input
 					type="range"
 					aria-label={label}
@@ -173,13 +162,13 @@ export function SliderAnswer({ q, answer, revealed, label, onChange }: {
 					value={answer ? parseFloat(answer) : (q.min ?? 0)}
 					onChange={(e) => onChange(e.target.value)}
 					disabled={revealed}
-					className={css({ flex: 1, accentColor: "var(--primary)" })}
+					className="lesson-range"
 				/>
-				<span className={cx("font-terminal", css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }))}>{q.max ?? 100}</span>
+				<span className="quiz-meta">{q.max ?? 100}</span>
 			</div>
-			<div className={css({ textAlign: "center", fontSize: "0.875rem", fontWeight: 500 })}>
+			<output>
 				{answer || (q.min ?? 0).toString()}
-			</div>
+			</output>
 			{revealed && <RevealedAnswerNote q={q} />}
 		</div>
 	);
@@ -194,16 +183,14 @@ export function DropdownAnswer({ q, answer, revealed, correct, label, onChange }
 	onChange: (val: string) => void;
 }) {
 	return (
-		<div className={shared.stack2}>
+		<div className="lesson-section">
 			<Select
 				aria-label={label}
 				value={answer}
 				onValueChange={(value) => onChange(value)}
 				disabled={revealed}
-				className={cx(
-					quizStyles.fieldBase, "activity-field",
-					revealed ? (correct ? quizStyles.inputCorrect : quizStyles.inputWrong) : quizStyles.inputNeutral,
-				)}
+				className="quiz-field"
+				data-result={revealed ? (correct ? "correct" : "wrong") : undefined}
 			>
 				<option value="" disabled>
 					Select an answer...

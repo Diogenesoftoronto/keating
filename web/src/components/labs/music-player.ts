@@ -11,11 +11,11 @@ const editDetails=document.getElementById('edit');
 const scope=settings.visualization==='scope',reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const values=Object.create(null),parameters=settings.controls||[],noteNames=['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
 let appReducedMotion=false;
-const palette={grid:'GrayText',ink:'CanvasText',mark:'CanvasText'};
+const palette={grid:'GrayText',ink:'CanvasText',mark:'CanvasText'},playLabel=document.getElementById('play-label');
 addEventListener('message',event=>{
   if(event.source!==parent||event.data?.type!=='keating-music-appearance')return;
   const colors=event.data.palette||{};
-  for(const token of ['--series-1','--ink','--ink-soft','--line','--paper','--paper-deep','--accent-green']){
+  for(const token of ['--series-1','--ink','--ink-soft','--line','--line-soft','--paper','--paper-deep','--accent-green','--green-deep']){
     if(typeof colors[token]==='string'&&CSS.supports('color',colors[token]))document.documentElement.style.setProperty(token,colors[token]);
   }
   const style=getComputedStyle(document.documentElement);
@@ -28,21 +28,28 @@ addEventListener('message',event=>{
 let repl,wanted=false,playing=false,frame=0,timer=0,busy=false,queued=false,lastDraw=0,lastCycle=-1,events=[],signal=null;
 editor.value=settings.code;
 function noteLabel(midi){const n=Math.round(midi);return noteNames[((n%12)+12)%12]+(Math.floor(n/12)-1);}
-function format(value,unit){return unit==='MIDI'?noteLabel(value)+' · '+value:Number(value.toFixed(3)).toLocaleString()+(unit?' '+unit:'');}
-parameters.forEach(parameter=>{
+function format(value,unit){return unit==='MIDI'?noteLabel(value)+' · '+value:Number(value.toFixed(3)).toLocaleString()+(unit?(unit==='%'?'%':' '+unit):'');}
+parameters.forEach((parameter,index)=>{
   values[parameter.id]=parameter.value;
-  const label=document.createElement('label'),row=document.createElement('span'),name=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');
-  label.className='control';row.className='control-label';name.textContent=parameter.label;
+  const control=document.createElement('div'),row=document.createElement('span'),name=document.createElement('label'),output=document.createElement('output'),input=document.createElement('input');
+  const track=document.createElement('span'),rail=document.createElement('span'),thumb=document.createElement('span'),tag=document.createElement('span');
+  control.className='control';row.className='control-label';name.textContent=parameter.label;name.htmlFor=input.id='control-'+index;
+  track.className='track';rail.className='rail';rail.setAttribute('aria-hidden','true');thumb.className='thumb';tag.className='tag';
+  const span=parameter.max-parameter.min,at=value=>span>0?Math.min(1,Math.max(0,(value-parameter.min)/span)):0;
+  ['fill','start'].forEach(part=>{const line=document.createElement('i');line.className=part;rail.append(line);});
+  thumb.append(tag);rail.append(thumb);
   input.type='range';input.min=parameter.min;input.max=parameter.max;input.step=parameter.step||'any';input.value=parameter.value;
   input.setAttribute('aria-label',parameter.label+(parameter.unit?' ('+parameter.unit+')':''));
-  function update(){output.textContent=format(values[parameter.id],parameter.unit);input.setAttribute('aria-valuetext',output.textContent);input.style.setProperty('--fill',((values[parameter.id]-parameter.min)/(parameter.max-parameter.min)*100)+'%');}
+  control.style.setProperty('--from',String(at(parameter.value)));
+  function update(){output.textContent=tag.textContent=format(values[parameter.id],parameter.unit);input.setAttribute('aria-valuetext',output.textContent);control.style.setProperty('--at',String(at(values[parameter.id])));}
+  input.addEventListener('pointerdown',()=>{control.dataset.active='';addEventListener('pointerup',()=>{delete control.dataset.active;},{once:true});});
   input.addEventListener('input',()=>{const next=Number(input.value);if(!Number.isFinite(next))return;values[parameter.id]=Math.min(parameter.max,Math.max(parameter.min,next));update();if(wanted){clearTimeout(timer);timer=setTimeout(apply,90);}});
-  row.append(name,output);label.append(row,input);document.getElementById('controls').append(label);update();
+  row.append(name,output);track.append(rail,input);control.append(row,track);document.getElementById('controls').append(control);update();
 });
 function reportSize(){parent.postMessage({type:'keating-music-resize',height:Math.ceil(document.body.getBoundingClientRect().height)},'*');}
 new ResizeObserver(reportSize).observe(document.body);
-function dimensions(){const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}context.setTransform(dpr,0,0,dpr,0,0);return{w,h,left:42,right:w-12,top:14,bottom:h-28};}
-function grid(box){const{w,h,left,right,top,bottom}=box;context.clearRect(0,0,w,h);context.strokeStyle=palette.grid;context.lineWidth=1;context.fillStyle=palette.ink;context.font='10px system-ui';context.textBaseline='middle';for(let i=0;i<=4;i++){const x=left+(right-left)*i/4;context.beginPath();context.moveTo(x,top);context.lineTo(x,bottom);context.stroke();context.textAlign=i===4?'right':i===0?'left':'center';context.fillText(scope?(i===0?'0':i===4?signal?((signal.length/strudel.getAudioContext().sampleRate)*1000).toFixed(1)+' ms':'time':''):i===4?'1 cycle':i===0?'0':String(i/4),x,bottom+15);}context.textAlign='right';}
+function dimensions(){const w=canvas.clientWidth,h=canvas.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}context.setTransform(dpr,0,0,dpr,0,0);return{w,h,left:50,right:w-12,top:14,bottom:h-28};}
+function grid(box){const{w,h,left,right,top,bottom}=box;context.clearRect(0,0,w,h);context.strokeStyle=palette.grid;context.lineWidth=1;context.fillStyle=palette.ink;context.font='10px ui-monospace,monospace';context.textBaseline='middle';for(let i=0;i<=4;i++){const x=left+(right-left)*i/4;context.beginPath();context.moveTo(x,top);context.lineTo(x,bottom);context.stroke();context.textAlign=i===4?'right':i===0?'left':'center';context.fillText(scope?(i===0?'0':i===4?signal?((signal.length/strudel.getAudioContext().sampleRate)*1000).toFixed(1)+' ms':'time':''):i===4?'1 cycle':i===0?'0':String(i/4),x,bottom+15);}context.textAlign='right';}
 function readEvents(cycle){
   lastCycle=cycle;
   try{events=(repl?.state.pattern?.queryArc(cycle,cycle+1)||[]).slice(0,128).flatMap(event=>{
@@ -77,7 +84,7 @@ function drawScope(box){
 function draw(){if(!context)return;const box=dimensions();if(box.w<1)return;grid(box);if(scope)drawScope(box);else{const now=playing?repl.scheduler.now():lastCycle<0?0:lastCycle,cycle=Math.floor(now);if(repl?.state.pattern&&cycle!==lastCycle)readEvents(cycle);drawRoll(box,now-cycle);}}
 function animate(time){if(!playing)return;const interval=(appReducedMotion||reducedMotion.matches)?250:33;if(time-lastDraw>=interval){draw();lastDraw=time;}frame=requestAnimationFrame(animate);}
 new ResizeObserver(draw).observe(canvas);
-function playbackControls(){play.hidden=playing&&!editDetails.open;play.textContent=playing?'↻ Apply':'▶ Play';}
+function playbackControls(){play.hidden=playing&&!editDetails.open;play.dataset.mode=playing?'apply':'play';status.dataset.live=String(playing);playLabel.textContent=playing?'Apply':'Play';}
 function halt(){wanted=false;queued=false;clearTimeout(timer);repl?.stop();if(window.strudel)strudel.hush();playing=false;cancelAnimationFrame(frame);stop.disabled=true;play.disabled=false;playbackControls();status.textContent='Stopped.';canvas.dataset.playing='false';draw();}
 async function apply(){
   queued=true;if(busy)return;busy=true;play.disabled=true;

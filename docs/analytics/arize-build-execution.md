@@ -278,3 +278,29 @@ Vet was invoked after every logical implementation unit but could not run
 because neither `ANTHROPIC_API_KEY` nor `ANTHROPIC_AUTH_TOKEN` is available.
 This is not recorded as a vet pass. No real analytics credentials or cloud
 state were used during execution.
+
+## Production rollout, 2026-11-20
+
+Keating release `d2caa5f0` enabled the consented web relay on `keating.help`.
+Learners can opt in under **Settings → Data and support → What leaves this
+device → Arize evaluation**. The relay sends eligible visible text from the
+current turn to the `keating` project in Arize AX Canada. Legacy v1 envelopes,
+attachment-bearing turns and turns without a safely identifiable prompt and
+final reply provide metadata only.
+
+The Keating operator's continuous AX task `keating-jev-production` samples
+5% of eligible successful agent turns with source `provider` or `local`.
+It runs the native TypeSafe Decision Judge `keating_jev_v1` with
+`jev-latest`, pinned evaluator version `RXZhbHVhdG9yVmVyc2lvbjoyNzY6ajRIaQ==`.
+Its Boolean label describes the usefulness of the reply. The numeric score
+is confidence in that label. The provider alias can evolve independently of
+the pinned evaluator version.
+
+Two authored turns passed through the production relay in session
+`keating-ax-smoke-39bfef45-213d-411b-a51a-f75ac261d108`. On-demand AX
+runs scored the worked example true (0.85 confidence) and the incorrect
+answer false (0.98 confidence). Each trace had an eligible agent root and
+one generation span without prompt or reply text. A separate v1 trace had
+neither text field and was ineligible. Smoke sessions are excluded from the
+continuous task. The rollout did not measure human learning, confirm a
+retention period, or establish a billed amount.

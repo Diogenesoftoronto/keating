@@ -16,6 +16,8 @@ export interface TrajectorySessionMessage {
 	id: string;
 	role: string;
 	ordinal: number;
+	/** Position among the turns a teacher reviews, from 1, once tool steps are folded away. */
+	turnNumber?: number;
 	text: string;
 	/** Markdown source shown in the rendered review view. */
 	markdown?: string;
