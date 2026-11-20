@@ -35,10 +35,10 @@ export interface AgentAnalyticsOptions {
 	isArtifactTool?: (toolName: string) => boolean;
 	emitFailedEvent?: boolean;
 	onCompletedRun?: (envelope: AgentTraceEnvelopeV1) => unknown;
-	getEvaluationContent?: () => { input: string; output: string } | undefined;
+	getEvaluationContent?: (messages: readonly AgentMessage[]) => { input: string; output: string } | undefined;
 }
 
-export const AGENT_TRACE_ENVELOPE_VERSION = 1 as const;
+export const AGENT_TRACE_ENVELOPE_VERSION = 2 as const;
 export interface AgentTraceGenerationV1 {
 	client_span_id: string;
 	provider: string;
@@ -526,7 +526,7 @@ export function subscribeAgentAnalytics(
 						void Promise.resolve(options.onCompletedRun?.(completedEnvelope(
 							activeRun,
 							at,
-							options.getEvaluationContent ? safeValue(options.getEvaluationContent, undefined) : undefined,
+							activeRun.status === "success" ? safeValue(() => options.getEvaluationContent?.(event.messages), undefined) : undefined,
 						))).catch(() => undefined);
 					} catch {
 						// Trace submission must never interrupt a completed turn.

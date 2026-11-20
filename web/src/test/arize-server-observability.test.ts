@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { H3Event } from "h3";
+import relayTrace from "../../server/api/observability/v1/arize/traces";
+import { MemoryPublicAbuseStore, setPublicAbuseStoreForTests } from "../../server/utils/public-abuse";
 import {
 	agentTraceEnvelopeSchema,
 	exportAgentTrace,
@@ -12,7 +15,7 @@ import {
 } from "../../server/utils/arize-observability";
 
 const envelope = {
-	schema_version: 1,
+	schema_version: 2,
 	run_id: "run-1",
 	session_id: "session-1",
 	turn_index: 2,
@@ -57,6 +60,31 @@ function enabledConfig(content = false) {
 }
 
 describe("Arize server observability", () => {
+	test("accepts the public HTTPS origin behind Railway TLS termination", async () => {
+		const env = { ARIZE_ENABLED: "true", ARIZE_API_KEY: "test-key", ARIZE_SPACE_ID: "test-space", RAILWAY_ENVIRONMENT_ID: "test" };
+		const previous = Object.fromEntries(Object.keys(env).map(key => [key, process.env[key]]));
+		Object.assign(process.env, env);
+		setPublicAbuseStoreForTests(new MemoryPublicAbuseStore());
+		setAgentTraceExporterForTests(async () => {});
+		const post = (origin?: string) => relayTrace(new H3Event(new Request("http://keating.test/api/observability/v1/arize/traces", {
+			method: "POST",
+			headers: { "content-type": "application/json", "x-forwarded-proto": "https", ...(origin ? { origin } : {}) },
+			body: JSON.stringify(envelope),
+		})));
+		try {
+			expect(await post("https://keating.test")).toEqual({ accepted: true });
+			await expect(post("https://other.test")).rejects.toMatchObject({ status: 403 });
+			await expect(post()).rejects.toMatchObject({ status: 403 });
+		} finally {
+			setAgentTraceExporterForTests();
+			setPublicAbuseStoreForTests();
+			for (const [key, value] of Object.entries(previous)) {
+				if (value === undefined) delete process.env[key];
+				else process.env[key] = value;
+			}
+		}
+	});
+
 	test("uses a secret-free, default-off public configuration", () => {
 		const disabled = readServerArizeConfig({});
 		expect(disabled).toMatchObject({ enabled: false, reason: "disabled", evaluationContentEnabled: false });
@@ -83,6 +111,9 @@ describe("Arize server observability", () => {
 	});
 
 	test("strips evaluation content unless the deployment permits it", () => {
+		const oldClient = validateTracePayload({ ...envelope, schema_version: 1 }, enabledConfig(true));
+		expect(oldClient.evaluation_content).toBeUndefined();
+		expect(mapAgentTraceToSpans(oldClient, true)[0].attributes["keating.eval.eligible"]).toBe(false);
 		const disabledContent = validateTracePayload(envelope, enabledConfig(false));
 		expect(disabledContent.evaluation_content).toBeUndefined();
 		const enabledContent = validateTracePayload(envelope, enabledConfig(true));

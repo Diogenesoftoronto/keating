@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 	if (!contentType.toLowerCase().startsWith("application/json")) throw createError({ statusCode: 415, statusMessage: "JSON required." });
 	if (!requestWithinLimit(getHeader(event, "content-length"))) throw createError({ statusCode: 413, statusMessage: "Trace is too large." });
 	const origin = getHeader(event, "origin");
-	const url = getRequestURL(event);
+	const url = getRequestURL(event, { xForwardedProto: Boolean(process.env.RAILWAY_ENVIRONMENT_ID), xForwardedHost: false });
 	if (!origin || origin !== url.origin) throw createError({ statusCode: 403, statusMessage: "Same-origin request required." });
 	await consumePublicRateLimit(event, { bucket: "arize-global", key: "global", limit: 600, windowSeconds: 60 });
 	await consumePublicRateLimit(event, { bucket: "arize-client", limit: config.rateLimitPerMinute, windowSeconds: 60 });

@@ -65,14 +65,14 @@ export function subscribeConversationAnalytics(
     getTurnIndex: () => refs.analyticsTurnIndexRef.current,
     appVersion: String(import.meta.env.APP_VERSION ?? "dev"),
     isArtifactTool: (toolName) => ARTIFACT_TOOL_NAMES.has(toolName),
-    getEvaluationContent: () => {
+    getEvaluationContent: (messages) => {
       const preference = readAnalyticsPreferences(false);
       if (
         !preference.arizeEvaluationEnabled ||
         !refs.arizeConfigRef.current.evaluationContentEnabled
       )
         return undefined;
-      return currentTurnEvaluationContent(agent.context.messages);
+      return currentTurnEvaluationContent(messages);
     },
     onCompletedRun: (envelope) => {
       const preference = readAnalyticsPreferences(false);

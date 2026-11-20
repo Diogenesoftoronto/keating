@@ -103,6 +103,9 @@ export function makeUserMessageFromAppend(
   return {
     role: "user",
     content,
+    // Attachment text is indistinguishable from typed text after flattening.
+    ...(message.attachments?.length || message.content.some(part => part.type !== "text")
+      ? {} : { keatingTextOnlyComposer: true }),
     timestamp: Date.now(),
   } as AgentMessage;
 }
@@ -119,6 +122,7 @@ export function makeUserTextMessage(text: string): AgentMessage {
   return {
     role: "user",
     content: [{ type: "text", text }],
+    keatingTextOnlyComposer: true,
     timestamp: Date.now(),
   } as AgentMessage;
 }

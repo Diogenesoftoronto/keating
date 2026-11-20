@@ -75,7 +75,7 @@ function harness(options: {
 	turnIndex?: () => number;
 	emitFailedEvent?: boolean;
 	onCompletedRun?: (envelope: AgentTraceEnvelopeV1) => unknown;
-	evaluationContent?: () => { input: string; output: string } | undefined;
+	evaluationContent?: (messages: readonly AgentMessage[]) => { input: string; output: string } | undefined;
 	appVersion?: string;
 } = {}) {
 	const agent = new FakeAgent();
@@ -486,7 +486,8 @@ describe("agent analytics", () => {
 		const envelopes: AgentTraceEnvelopeV1[] = [];
 		const h = harness({
 			onCompletedRun: (envelope) => envelopes.push(envelope),
-			evaluationContent: () => ({ input: "explicitly shared input", output: "explicitly shared output" }),
+			evaluationContent: messages => messages.length === 1 && messages[0] === final
+				? { input: "explicitly shared input", output: "explicitly shared output" } : undefined,
 			appVersion: "9.9.9-test",
 		});
 		const final = assistant({ usage: { ...EMPTY_USAGE, input: 7, output: 5, totalTokens: 12 } });
@@ -499,7 +500,7 @@ describe("agent analytics", () => {
 
 		expect(envelopes).toHaveLength(1);
 		expect(envelopes[0]).toMatchObject({
-			schema_version: 1,
+			schema_version: 2,
 			run_id: "telemetry-1",
 			duration_ms: 50,
 			app_version: "9.9.9-test",

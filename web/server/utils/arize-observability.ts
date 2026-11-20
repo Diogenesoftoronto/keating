@@ -40,7 +40,7 @@ const toolSchema = z.object({
 }).strict();
 
 export const agentTraceEnvelopeSchema = z.object({
-	schema_version: z.literal(1),
+	schema_version: z.union([z.literal(1), z.literal(2)]),
 	run_id: identity,
 	session_id: identity,
 	turn_index: z.number().int().min(0).max(1_000_000),
@@ -216,7 +216,8 @@ export async function exportAgentTrace(envelope: AgentTraceEnvelope, config = re
 
 export function validateTracePayload(value: unknown, config = readServerArizeConfig()): AgentTraceEnvelope {
 	const parsed = agentTraceEnvelopeSchema.parse(value);
-	if (!config.evaluationContentEnabled) return { ...parsed, evaluation_content: undefined };
+	// Older clients cannot distinguish a visible prompt from flattened attachment data.
+	if (!config.evaluationContentEnabled || parsed.schema_version === 1) return { ...parsed, evaluation_content: undefined };
 	const cap = config.maxContentChars;
 	if (parsed.evaluation_content && (parsed.evaluation_content.input.length > cap || parsed.evaluation_content.output.length > cap)) throw new Error("content exceeds configured limit");
 	return parsed;
