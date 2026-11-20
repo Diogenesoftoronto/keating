@@ -52,7 +52,8 @@ export async function main(args: string[]) {
   const ledger = new ProofLedger(Number(values["max-microusd"]), () => save("ledger", accounting()));
   function accounting(): Record<string, unknown> {
     return { capMicrousd: ledger.cap, maxCalls: MAX_CALLS, maxReservedInputTokens: MAX_INPUT_TOKENS, maxReservedTotalTokens: MAX_TOTAL_TOKENS, maxTutorOutputTokensPerCall: MAX_TUTOR_OUTPUT,
-      dispatched: ledger.rows.length, denied: ledger.denied, accountedMicrousd: ledger.rows.reduce((sum, row) => sum + row.accountedMicrousd, 0),
+      dispatched: ledger.rows.length, denied: ledger.denied, reservationExceeded: ledger.rows.some(row => row.reservationExceeded),
+      accountedMicrousd: ledger.rows.reduce((sum, row) => sum + row.accountedMicrousd, 0),
       actualBilledMicrousd: null, rows: ledger.rows };
   }
   const results = [];
@@ -76,7 +77,7 @@ export async function main(args: string[]) {
           && row.semanticRequestHash === result.requests[index]?.requestHash && result.requests[index]?.code === "context-limit-exceeded")
       : (networkOverlapMs ?? 0) > 0 && successful.filter(row => row.role === "reviewer").every(row => row.responseSha256 && row.endpoint)
         && result.requests.filter(request => request.ok).every(request => successful.some(row => row.role === "reviewer" && row.semanticRequestHash === request.requestHash));
-    const passed = result.passed && resolved !== false && transportPass;
+    const passed = result.passed && resolved !== false && transportPass && fromWire.every(row => !row.reservationExceeded);
     save(kind, { ...result, passed, sourceHash, providerIdentityConfirmed: resolved,
       networkOverlapMs, transportPass,
       transport: mode === "preflight" ? "offline" : reviewer === "direct" ? "typesafe-direct" : origin, wire: fromWire });

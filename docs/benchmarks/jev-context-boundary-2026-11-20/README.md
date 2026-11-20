@@ -6,21 +6,31 @@ The reverse error was also observable. The deployed relay accepted two untrimmed
 
 The local fixes let hosted Jev confirm token fit at its advertised limits. Keating still enforces the transport’s hard byte and character limits and any explicitly smaller operator budget. On a model-confirmed overflow, Keating tries smaller question groups over identical history. If one question still exceeds capacity, it retries with an opening excerpt, recent whole turns and the intact current request. Each planning, draft-review and selection request gets its own window.
 
-## Five conversations through the local Keating answer flow
+## What the original conversation recorded
 
-The Flue host sent synthetic learner requests through Keating’s web draft gate, the local production-built Nitro BYOK relay, live Jev 1.14.0 and Gemini 3.1 Flash-Lite. Each answerable case had two successful, overlapping tutor HTTP requests. Jev reviewed each candidate and chose between their exact text hashes. The Flue conversation history contained the selected answer with the earlier workshop code and the correct perimeter of 24.
+The supplied ZIP had 12 turn-judgement rows. Eleven included a draft receipt. Seven of those receipts recorded a single attempt, three recorded two attempts and one recorded three. All 16 attempts were labelled `default` and none of the receipts recorded a parallel pair. Ten turns released a passing draft and one used the best-effort path. There were zero recorded context reductions and zero human judgement labels in this export. The live boundary cases below use separate synthetic conversations.
+
+The local chat also rendered the ownership quotation from the archive. “Go to source” now uses the caption’s 14.3 px type and an inline underline. The control measured 31.2 px tall on desktop and retained a 44 px touch target. Keyboard activation highlighted the exact archived passage.
+
+## Seven cases through the local Keating answer flow
+
+The Flue host sent synthetic learner requests through Keating’s web draft gate, the local production-built Nitro BYOK relay, live Jev 1.14.0 and Gemini 3.1 Flash-Lite. The first four answerable cases each had two successful, overlapping tutor HTTP requests. Jev reviewed both candidates and chose between their exact text hashes. The Flue conversation history contained the workshop code and the correct perimeter of 24.
 
 | Full planning estimate | Planning history Jev received | Tutor request overlap | Learner outcome |
 | --- | --- | ---: | --- |
-| 31,999 | All four messages | 1,771 ms | Correct answer |
-| 32,000 | All four messages | 928 ms | Correct answer |
-| 32,001 | Opening excerpt and newest turn after one older turn was removed | 1,472 ms | Correct answer |
-| 18,104, dense identifiers | Full history rejected with 39 questions, then with one. Jev accepted an opening excerpt and the newest turn. | 837 ms | Correct answer |
-| 32,001, current request alone | No request dispatched | — | Guidance to shorten the request. Zero tutor or Jev calls. |
+| 31,999 | All four messages | 1,011 ms | Correct answer |
+| 32,000 | All four messages | 1,170 ms | Correct answer |
+| 32,001 | All four messages | 656 ms | Correct answer |
+| 32,001, current request alone | Entire current message | 893 ms | Correct answer |
+| 18,104, dense identifiers in history | Full history rejected with 39 questions, then with one. Jev accepted an opening excerpt and the newest turn. | One tutor rate-limited | Correct answer from the completed draft |
+| 18,104, dense current request alone | Jev rejected both the batch and a single question | — | Guidance to shorten the request. Zero tutor calls. |
+| 96,001 state characters | Exceeded the gateway’s 96,000-character limit | — | Local notice. Zero network calls. |
 
-The five cases used 31 provider requests. The first two rows describe **planning**. Adding a candidate reply changed the size of its subsequent review, which could require its own trim. No candidate text or current learner message was silently shortened.
+The matrix used 34 provider requests with zero budget denials. Its two-draft check failed on the dense-history row because Google returned HTTP 429 to the second tutor. Keating still released the completed answer. For the four accepted controls around 32,000, subsequent draft reviews and selection kept the full history, too.
 
-An earlier test reservation prevented two second drafts from being sent. The harness reported that run as failed and now checks real network overlap, both completed reviews, selection and delivery. All five rows above come from the stronger run. [Application test](../../../web/scripts/jev-boundary-proof.ts) · [Request hashes, dispatch times and outcomes](receipts.json)
+The dense-history case was then rerun on its own. Across all 13 requests, Jev rejected the original state with both 39 questions and one question, accepted the smaller window, reviewed both completed drafts, and selected the answer that appeared in the learner’s conversation. Both tutor requests returned HTTP 200 and overlapped for **2,465 ms**. All nine checks passed. [Separate run, timings and answer hashes](receipts.json)
+
+An earlier test reservation also prevented two second drafts from being sent. The harness reported that run as failed and now checks real network overlap, both completed reviews, selection and delivery. The receipts preserve the operational 429 separately from the earlier reservation failures. [Application test](../../../web/scripts/jev-boundary-proof.ts) · [Request hashes, dispatch times and outcomes](receipts.json)
 
 ## The provider’s two limits
 
@@ -47,8 +57,16 @@ The signed application test connected Keating’s Flue draft gate to the browser
 
 ## The learner’s screen
 
-Chromium sent a question through the normal composer in an isolated local chat with four seeded synthetic messages. The learner asked for two things in one sentence: the earlier workshop code and the perimeter of a rectangle with sides 7 and 5. The final answer gave **SAGE-C291B1B0** and **24**. After an offline reload, Chromium restored the identical assistant text and review receipt from storage, with zero new provider calls. [Reloaded chat screenshot](learner-chat.png) · [Chromium receipt](receipts.json)
+Chromium sent a question through the normal composer in an isolated local chat with four seeded synthetic messages. Both browser tests used real Jev and Gemini with external tools and web retrieval disabled. The learner asked for the earlier workshop code and the perimeter of a rectangle with sides 7 and 5 in one sentence. The final answer gave **SAGE-C291B1B0** and **24**. After an offline reload, Chromium restored the identical assistant text and review receipt from storage, with zero new provider calls. [Reloaded chat screenshot](learner-chat.png) · [Chromium receipt](receipts.json)
 
 The captured build labelled the turn “Requested part still open.” Both requested items appear in the published sentence. The receipt records that Jev selected draft 1, an addition was attempted and the opening answer was kept. The local progress view now describes that outcome as “Opening answer kept.” The original screenshot preserves what the learner actually saw.
 
-The two code changes were tested locally against real providers. The production observations describe the deployments serving traffic during the test.
+In a second Chromium session, Keating estimated **33,627 tokens** for the first review. Jev returned HTTP 200 for all 39 questions over the complete history and current message. All four authored history messages matched the originals in planning, both draft reviews and selection. The selected, stored and offline-restored answer had the same SHA-256. It read “The perimeter of a rectangle with sides 7 and 5 is 24, as calculated for workshop SAGE-4E924372.” The browser restored the conversation and all 58 check results with zero new provider calls. [Full-history chat after offline reload](full-history-chat.png) · [Chromium proof](../../../web/scripts/jev-boundary-browser.ts)
+
+The only failed review check in that session was `requested_part_missing`. Jev assigned it probability 0.86 even though the answer included both the code and perimeter. Keating showed the selected answer while it tried an addition. The resulting addition did not pass through review and the stored answer stayed intact. The screenshot and receipt record the outcome before any further reviewer tuning. [Per-check scores and answer hashes](receipts.json)
+
+## The relay byte limit
+
+With an isolated upstream, the local Nitro relay accepted exactly 262,144 UTF-8 request bytes and returned HTTP 413 at 262,145. A separate web-gate test preserved an 86,000-character Chinese-language history by dividing the questions across requests. A protected current message too large to fit on its own caused zero provider dispatches. [Relay boundary test](../../../web/src/test/judgement-typesafe-relay.test.ts) · [Web draft gate tests](../../../web/src/test/draft-gate.test.ts)
+
+The gateway build, repository TypeScript check and all 707 gateway tests passed locally. The production observations describe the deployments serving traffic during the test.

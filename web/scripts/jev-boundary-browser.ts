@@ -6,15 +6,22 @@ import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, u
 import { resolve, join } from "node:path";
 import { parseArgs } from "node:util";
 import { calibratedCase, REVIEW_MODEL, TUTOR_MODEL } from "./jev-boundary-cases";
+import { learnerTimeNote } from "../src/keating/flue/model-messages";
 import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_RULES } from "../../packages/learner-contracts/src/judgement/teaching-policy-catalog";
 import { TEACHING_DEBUGGING_ISSUES } from "../../packages/learner-contracts/src/judgement/debugging-issue-ids";
-import type { TeachingDraftAttempt, TeachingPolicyCheck } from "@keating/learner-contracts";
+import { estimatedRequestTokens, estimatedStateQuestionTokens, MAX_STATE_CHARS, stateCharacterCount,
+  type TeachingDraftAttempt, type TeachingPolicyCheck } from "@keating/learner-contracts";
+import { JEV_STATE_QUESTION_TOKEN_LIMIT } from "@keating/runtime-config";
 
 const { values } = parseArgs({ options: { execute: { type: "boolean" }, origin: { type: "string", default: "http://127.0.0.1:45861" },
+  case: { type: "string", default: "dense" }, "max-microusd": { type: "string" }, "max-reviews": { type: "string" }, "max-tutors": { type: "string" },
   out: { type: "string", default: ".keating/benchmarks/jev-window-live-20261120/browser" } }, strict: true });
 const origin = new URL(values.origin!);
 if (origin.hostname !== "127.0.0.1" || origin.protocol !== "http:" || origin.href !== origin.origin + "/") throw Error("loopback_candidate_required");
-const out = resolve(values.out!), live = values.execute === true;
+const caseName = values.case, live = values.execute === true;
+if (caseName !== "dense" && caseName !== "estimated-over") throw Error("unknown-browser-case");
+const estimatedOver = caseName === "estimated-over";
+const out = estimatedOver ? resolve(values.out!, "estimated-over") : resolve(values.out!);
 const directory = join(out, (live ? "live-" : "dry-") + new Date().toISOString().replace(/[:.]/g, "-"));
 const model = getModel("google", TUTOR_MODEL);
 const digest = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -22,7 +29,20 @@ const prompt = "Using our earlier workshop code, give the perimeter of a rectang
 const id = randomUUID();
 const code = "SAGE-" + digest(id).slice(0, 8).toUpperCase();
 const ledgerPath = join(out, "spend.json");
-const cap = 140_000, maxReviews = 36, maxTutor = 7, maxOutput = 384;
+function budget(raw: string | undefined, limit: number) {
+  if (raw === undefined && estimatedOver && live) throw Error("estimated-over-explicit-budget-required");
+  if (raw !== undefined && (!/^[1-9]\d{0,5}$/.test(raw) || Number(raw) > limit)) throw Error("invalid-run-budget");
+  return raw === undefined ? limit : Number(raw);
+}
+const cap = budget(values["max-microusd"], 140_000), maxReviews = budget(values["max-reviews"], 36);
+const maxTutor = budget(values["max-tutors"], 7), maxOutput = 384;
+const seededConversation = estimatedOver ? [
+  { role: "user", content: `My workshop code is ${code}. Use it when I ask about our workshop.` },
+  { role: "assistant", content: "The archived vocabulary exercise follows." + " café".repeat(14_000) },
+  { role: "user", content: "The reference sheet is finished. Let us return to the geometry exercise." },
+  { role: "assistant", content: "We can use a rectangle for the next question." },
+] : calibratedCase("dense").turn.conversation.map(row => ({ role: row.role, content: row.content.replaceAll("AMBER-42", code) }));
+const seededHistorySha256 = digest(JSON.stringify(seededConversation));
 type Charge = { id: number; kind: "review" | "tutor"; reserved: number; charged: number; run: string; status: number | null;
   input: number | null; output: number | null; complete: boolean };
 type Evidence = { id: number | null; kind: Charge["kind"]; bytes: number; wireHash: string; questions?: number;
@@ -31,10 +51,13 @@ type Evidence = { id: number | null; kind: Charge["kind"]; bytes: number; wireHa
   matchedCode?: string | null; responseModel?: string | null; input?: number | null; output?: number | null;
   reviewedReplySha256?: string; candidateReplyHashes?: Record<string, string>; selectedDraft?: string | null;
   selectedDraftSha256?: string | null; proposedTools?: number };
+type PlanEvidence = { phase: "planning" | "checking" | "selecting"; stateQuestionEstimate: number; requestEstimate: number;
+  stateChars: number; stateUtf8Bytes: number; historyContentSha256: string; authoredHistorySha256: string; currentSha256: string | null; fullSeedPresent: boolean;
+  generatedTimeNoteChars: number };
 const calls: Evidence[] = [];
 const denied: string[] = [];
 const receipt: Record<string, unknown> = { sessionId: id, uniqueCode: code, question: prompt, origin: origin.origin,
-  mode: live ? "live" : "dry-run", calls, denied, caps: { microUsd: cap, maxReviews, maxTutor, maxOutput }, passed: false };
+  mode: live ? "live" : "dry-run", case: caseName, seededHistorySha256, calls, denied, caps: { microUsd: cap, maxReviews, maxTutor, maxOutput }, passed: false };
 const proofHashes = { questionSha256: digest(prompt), expectedPartsSha256: digest(JSON.stringify([code, "24"])),
   selectorSelectedDraftSha256: null as string | null, checkedPersistedReplySha256: null as string | null,
   persistedReplySha256: null as string | null, renderedBubbleSha256: null as string | null,
@@ -161,18 +184,22 @@ async function execute() {
   if (live) {
     lock = openSync(join(out, "run.lock"), "wx", 0o600);
     if (existsSync(ledgerPath)) charges = JSON.parse(readFileSync(ledgerPath, "utf8"));
-    if (new Set(charges.map(row => row.run)).size >= 2) throw Error("live-session-limit-reached");
+    if (new Set(charges.map(row => row.run)).size >= (estimatedOver ? 1 : 2)) throw Error("live-session-limit-reached");
   }
   const reviewKey = live ? key("TYPESAFE_API_KEY", "typesafe_api_key@secrets") : "unsent-browser-fixture";
   const tutorKey = live ? key("GEMINI_API_KEY", "gemini@secrets") : "unsent-browser-fixture";
   save();
   const browser = await chromium.launch({ headless: true });
   try {
-    const context = await browser.newContext({ viewport: { width: 1160, height: 850 }, deviceScaleFactor: 1, serviceWorkers: "block" });
+    const timestamp = Date.now() - 120_000;
+    const context = await browser.newContext({ viewport: { width: 1160, height: 850 }, deviceScaleFactor: 1, serviceWorkers: "block", timezoneId: "UTC" });
+    const firstTimePrefix = learnerTimeNote(timestamp, null, "UTC") + "\n";
     const page = await context.newPage();
     const pending = new Set<Promise<void>>();
     let submitted = false;
     let offline = false;
+    let firstPlan: (Evidence & PlanEvidence) | undefined;
+    let stopEstimatedRun = false;
     const staticFiles = new Map<string, { status: number; body: Buffer; headers: Record<string, string> }>();
     const caching = new Set<Promise<void>>();
     page.on("response", response => {
@@ -206,9 +233,10 @@ async function execute() {
         return route.abort("blockedbyclient");
       }
       if (!submitted || request.method() !== "POST") return route.abort("blockedbyclient");
+      if (stopEstimatedRun) return route.abort("blockedbyclient");
       const original = request.postData() ?? "", data = JSON.parse(original);
       let wire = original;
-      const entry: Evidence = { id: null, kind: review ? "review" : "tutor", bytes: 0, wireHash: "" };
+      const entry: Evidence & Partial<PlanEvidence> = { id: null, kind: review ? "review" : "tutor", bytes: 0, wireHash: "" };
       if (review) {
         if (data.model !== REVIEW_MODEL || url.search) throw Error("unexpected-review-model-or-query");
         const state = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
@@ -220,6 +248,18 @@ async function execute() {
         entry.oldestPresent = Boolean(turn?.conversation?.[0]?.content?.includes(code));
         entry.retainedCode = Boolean(turn?.earlierLearnerExcerpts?.some((e: string) => e.includes(code)));
         entry.currentPresent = turn?.learnerMessage === prompt;
+        const sourceRows = (turn?.conversation ?? []).map((row: { role: string; content: string }) => ({ role: row.role, content: row.content }));
+        const hasTimeNote = sourceRows[0]?.role === "user" && sourceRows[0].content.startsWith(firstTimePrefix);
+        const authoredRows = hasTimeNote ? [{ role: "user", content: sourceRows[0].content.slice(firstTimePrefix.length) }, ...sourceRows.slice(1)] : sourceRows;
+        Object.assign(entry, { phase: state?.candidates ? "selecting" : state?.reply ? "checking" : "planning",
+          stateQuestionEstimate: estimatedStateQuestionTokens({ state, questions: data.questions }),
+          requestEstimate: estimatedRequestTokens({ state, questions: data.questions }), stateChars: stateCharacterCount(state),
+          stateUtf8Bytes: Buffer.byteLength(JSON.stringify(state)),
+          currentSha256: typeof turn?.learnerMessage === "string" ? digest(turn.learnerMessage) : null,
+          historyContentSha256: digest(JSON.stringify(sourceRows)), authoredHistorySha256: digest(JSON.stringify(authoredRows)),
+          generatedTimeNoteChars: hasTimeNote ? firstTimePrefix.length : 0 });
+        entry.fullSeedPresent = entry.historyMessages === seededConversation.length && entry.authoredHistorySha256 === seededHistorySha256;
+        if (!calls.some(call => call.kind === "review")) firstPlan = entry as Evidence & PlanEvidence;
       } else {
         if (url.searchParams.has("key") && url.searchParams.get("key") !== tutorKey) throw Error("unexpected-google-key");
         if (!data.contents?.length || data.contents.some((c: { parts?: object[] }) => c.parts?.some(p => !("text" in p)))) throw Error("text-only-tutor-required");
@@ -241,6 +281,13 @@ async function execute() {
       // Whole serialized UTF-8 request plus framing allowance; no binary/media input.
       if (tutor) entry.estimatedInputCeiling = entry.bytes + 4_096;
       calls.push(entry);
+      if (estimatedOver && entry === firstPlan) {
+        const eligible = firstPlan.phase === "planning" && firstPlan.fullSeedPresent && firstPlan.currentPresent && firstPlan.oldestPresent
+          && firstPlan.stateQuestionEstimate > JEV_STATE_QUESTION_TOKEN_LIMIT && firstPlan.stateChars <= MAX_STATE_CHARS
+          && firstPlan.stateUtf8Bytes < 96_000 && firstPlan.bytes <= 256 * 1024;
+        receipt.firstPlanEligible = Boolean(eligible);
+        if (!eligible) { stopEstimatedRun = true; denied.push("estimated-over-first-plan-precondition"); save(); return route.abort("blockedbyclient"); }
+      }
       if (!live) { save(); return route.abort("blockedbyclient"); }
       const charge = reserve(entry.kind, review ? 2_800 : Math.ceil(entry.estimatedInputCeiling! * .25 + entry.outputLimit! * 1.5));
       entry.id = charge.id; save();
@@ -248,6 +295,7 @@ async function execute() {
       const response = await route.fetch({ ...(tutor ? { postData: wire } : {}), timeout: 75_000, maxRetries: 0, maxRedirects: 0 });
       const text = await response.text();
       entry.status = charge.status = response.status();
+      if (estimatedOver && entry === firstPlan && entry.status !== 200) stopEstimatedRun = true;
       if (review) {
         let parsed: Record<string, any> = {}; try { parsed = JSON.parse(text); } catch { /* gateway may reject non-JSON */ }
         entry.matchedCode = parsed.error?.code === "context-limit-exceeded" ? "context-limit-exceeded" : null;
@@ -289,11 +337,9 @@ async function execute() {
       });
       pending.add(run); return run.finally(() => pending.delete(run));
     });
-    const study = calibratedCase("dense");
-    const timestamp = Date.now() - 120_000;
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
-    const history = study.turn.conversation.map((m, i) => {
-      const text = m.content.replaceAll("AMBER-42", code);
+    const history = seededConversation.map((m, i) => {
+      const text = m.content;
       return m.role === "user" ? { role: "user", content: text, timestamp: timestamp + i }
         : { role: "assistant", content: [{ type: "text", text }], timestamp: timestamp + i, stopReason: "stop",
           api: model.api, provider: "google", model: model.id, usage };
@@ -392,14 +438,18 @@ async function execute() {
       await page.screenshot({ path: join(directory, "reloaded.png") });
     }
     const normal = (s: string) => s.replace(/[*_`~]/g, "").replace(/\s+/g, " ").trim();
-    receipt.passed = live && calls.some(c => c.status === 400 && c.matchedCode === "context-limit-exceeded") &&
-      calls.some(c => c.kind === "review" && c.status === 200 && c.currentPresent && c.retainedCode) &&
+    const boundaryObserved = estimatedOver ? receipt.firstPlanEligible === true && firstPlan?.status === 200 && firstPlan.responseModel === REVIEW_MODEL
+      : calls.some(c => c.status === 400 && c.matchedCode === "context-limit-exceeded") &&
+        calls.some(c => c.kind === "review" && c.status === 200 && c.currentPresent && c.retainedCode);
+    receipt.passed = live && boundaryObserved && stored.phase === "released" && stored.receiptTimestamp !== null && stored.selectedAttempt !== null &&
+      proofHashes.persistedReplySha256 !== null && proofHashes.persistedReplySha256 === proofHashes.offlinePersistedReplySha256 &&
       calls.some(c => c.kind === "tutor" && c.status === 200 && c.responseModel?.startsWith(TUTOR_MODEL) && c.proposedTools === 0) &&
       visible.includes(code) && /\b24\b/.test(visible) && normal(restored).includes(normal(persistedText)) && persistedText.includes(code) && /\b24\b/.test(persistedText);
     save();
     console.log(JSON.stringify({ directory, passed: receipt.passed, review: calls.filter(c => c.kind === "review").length,
       tutor: calls.filter(c => c.kind === "tutor").length, denied, accountedMicroUsd: charges.reduce((sum, e) => sum + e.charged, 0) }));
     if (live && !receipt.passed) process.exitCode = 1;
+    if (!live && estimatedOver && receipt.firstPlanEligible !== true) process.exitCode = 1;
   } finally { await browser.close(); }
 }
 if (import.meta.main) execute().catch(e => {
