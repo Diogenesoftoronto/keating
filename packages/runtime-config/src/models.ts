@@ -22,7 +22,7 @@ export const DEFAULT_MODELS = {
     minimax: MODEL_IDS.minimax_m3_1_flash,
     custom: MODEL_IDS.default,
   },
-  web: { notorganic: MODEL_IDS.inkling_2_small },
+  web: { notorganic: MODEL_IDS.gpt_6_luna },
   setup: { google: MODEL_IDS.gemini_3_1_pro_preview, cliAnthropic: MODEL_IDS.claude_sonnet_5 },
   account: { mobileChat: MODEL_IDS.inkling_2_small },
   speech: {
@@ -38,7 +38,7 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, google: MODEL_IDS.gemini_decision_1, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2, MODEL_IDS.gpt_6_luna] as const;
+export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.inkling_2_small, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2] as const;
 /** The main tutor stays tool-capable; Ampersand Tutor is consulted separately. */
 export const TUTOR_CONSULTATION_MODEL_ID = MODEL_IDS.ampersand_tutor;
 /** Direct Inception Chat Completions. Costs are USD per million tokens. */

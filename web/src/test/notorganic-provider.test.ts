@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mockEvent } from "h3";
 import {
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_INKLING_2_SMALL_MODEL,
 	NOTORGANIC_SOL_MODEL,
 	NOTORGANIC_LUNA_MODEL,
 	NOTORGANIC_FLINT_MODEL,
@@ -56,7 +57,7 @@ describe("Not Organic provider definition", () => {
 		expect(await models("infer:balanced", ["mercury-2"])).not.toContain("mercury-2");
 	});
 	it("makes Flint selectable only when the consented gateway advertises it", async () => {
-		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id, "balanced", NOTORGANIC_LUNA_MODEL.id];
+		const baseline = [NOTORGANIC_LUNA_MODEL.id, NOTORGANIC_SOL_MODEL.id, NOTORGANIC_INKLING_2_SMALL_MODEL.id, "balanced"];
 		let calls = 0;
 		const client = (scope: string, response: () => Response | Promise<Response>) => ({
 			getSession: () => ({ scope }), request: async (path: string) => { calls++; expect(path).toBe("/v1/models"); return response(); },
@@ -106,9 +107,10 @@ describe("Not Organic provider definition", () => {
     expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope })).toBe(true);
     expect(notOrganicModelNeedsConsent({ provider: "notorganic", id: "new-private-model" }, { scope })).toBe(true);
   });
-	it("uses Inkling 2 Small by default and retains a same-origin fallback", () => {
+	it("defaults to Luna, retains Inkling 2 Small, and supports the same-origin endpoints", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
-		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling 2 Small");
+		expect(NOTORGANIC_DEFAULT_MODEL).toBe(NOTORGANIC_LUNA_MODEL);
+		expect(NOTORGANIC_INKLING_2_SMALL_MODEL).toMatchObject({ id: "inkling-2-small", api: "openai-completions" });
 		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
 		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
 			"https://keating.test/api/notorganic/openai/v1",

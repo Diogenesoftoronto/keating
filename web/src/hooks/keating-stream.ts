@@ -17,6 +17,7 @@ import {
 	isNotOrganicProvider,
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_INKLING_2_SMALL_MODEL,
 	NOTORGANIC_LUNA_MODEL,
 	NOTORGANIC_SOL_MODEL,
 	notOrganicPublicClient,
@@ -395,7 +396,7 @@ export function notOrganicInferenceRequestUrl(model: Pick<Model<Api>, "api" | "b
 	return `${model.baseUrl.replace(/\/+$/, "")}/${endpoint}`;
 }
 
-const hostedInklingModels = new Set([NOTORGANIC_DEFAULT_MODEL.id, "balanced", "inkling-small", "inkling", "fast", "reasoning"]);
+const hostedInklingModels = new Set([NOTORGANIC_INKLING_2_SMALL_MODEL.id, "balanced", "inkling-small", "inkling", "fast", "reasoning"]);
 let inklingUnavailableUntil = 0;
 
 export async function hybridStreamFn(

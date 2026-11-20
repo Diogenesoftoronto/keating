@@ -7,7 +7,7 @@ import { normalizeProviderStreamOptions } from "../src/hooks/keating-stream";
 import { classifyLlmError } from "../src/core/api-retry";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
 import { inklingFallbackModel, sameInferenceSession, withInklingFallback } from "../src/notorganic-provider/inkling-fallback";
-import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_LUNA_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
+import { NOTORGANIC_INKLING_2_SMALL_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_LUNA_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -109,7 +109,7 @@ test("account Mercury sends exact chat parameters with a device-bound proof and 
 });
 
 test("the hosted Inkling SDK preserves a Tinker billing block and attempts the request once", async () => {
-	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const selected = { ...NOTORGANIC_INKLING_2_SMALL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
 	const context: Context = { messages: [{ role: "user", content: "Explain recursion", timestamp: 1 }] };
 	let attempts = 0;
 	const fetcher = createNotOrganicInferenceFetch({ async headersFor(_method, _target, initial) {
@@ -129,7 +129,7 @@ test("the hosted Inkling SDK preserves a Tinker billing block and attempts the r
 });
 
 test("an Inkling billing block switches transports before publishing events, with an independent signed request", async () => {
-	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const selected = { ...NOTORGANIC_INKLING_2_SMALL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
 	const fallback = { ...NOTORGANIC_SOL_MODEL, baseUrl: selected.baseUrl };
 	const context: Context = { messages: [{ role: "user", content: "Explain recursion", timestamp: 1 }] };
 	const attempts: Request[] = [];
@@ -286,7 +286,7 @@ test("Responses with a session preserve account authorization and caching withou
 });
 
 test("real reasoning model serializes supported system and tool roles while preserving account headers", async () => {
-	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const selected = { ...NOTORGANIC_INKLING_2_SMALL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
 	const context: Context = {
 		systemPrompt: "Guide the learner through one step at a time.",
 		tools: [{ name: "lookup", description: "Look up a learning concept", parameters: Type.Object({ topic: Type.String() }) }],

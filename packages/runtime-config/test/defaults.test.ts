@@ -14,7 +14,7 @@ describe("public runtime configuration", () => {
       openrouter: "anthropic/claude-sonnet-4.6", minimax: "MiniMax-M3.1-Flash", custom: "default" });
     expect(DEFAULT_MODELS.speech).toEqual({ sttOpenai: "gpt-4o-transcribe", sttGoogle: "gemini-2.5-flash",
       ttsOpenai: "gpt-4o-mini-tts", realtimeOpenai: "gpt-realtime-2.1", liveGoogle: "gemini-3.1-flash-live-preview", liveNotOrganic: "gpt-live-1", steering: "default" });
-    expect(DEFAULT_MODELS.web.notorganic).toBe("inkling-2-small");
+    expect(DEFAULT_MODELS.web.notorganic).toBe("gpt-6-luna");
     expect(DEFAULT_SYSTEM_ONE_MODEL).toBe("jev-latest");
     expect(DEFAULT_MODELS.judgement.google).toBe("gemini-decision-1");
     expect(DEFAULT_MODELS.judgement.tabular).toBe("v3.5_default");

@@ -163,9 +163,9 @@ and non-model UI/protocol strings as exceptions. Linking this guide from
 
 ### Hosted tutor consultation
 
-Keating's hosted main-model default is `inkling-2-small` (Inkling 2 Small),
-using Not Organic Chat Completions. The previous `balanced` / Inkling Small
-choice remains available for saved sessions and explicit selection.
+Keating's web app defaults to `gpt-6-luna` (GPT-6 Luna) through Not Organic
+Responses. Inkling 2 Small and Inkling Small (`balanced`) remain available
+for saved sessions and explicit selection.
 
 `consult_tutor` lets the main model ask Humans& Ampersand Tutor for text advice
 through `POST /v1/tutor/consult` on Not Organic. Advice is returned to the main
