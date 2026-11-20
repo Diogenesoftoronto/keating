@@ -1,5 +1,5 @@
 import { assertMethod, createError, defineEventHandler, setResponseHeader } from "h3";
-import { SYSTEM_ONE_ENDPOINT, systemOneHttpError } from "@keating/learner-contracts";
+import { MAX_TYPESAFE_BYOK_BODY_BYTES, SYSTEM_ONE_ENDPOINT, systemOneHttpError } from "@keating/learner-contracts";
 import { readBoundedBody, readBoundedJsonBody } from "../../utils/bounded-body";
 import { validateJudgementGatewayBody } from "../../utils/judgement-gateway";
 import { acquirePublicConcurrency, consumePublicRateLimit } from "../../utils/public-abuse";
@@ -20,7 +20,7 @@ export default defineEventHandler(async event => {
     throw createError({ statusCode: 401, statusMessage: "A TypeSafe API key is required." });
   }
   await consumePublicRateLimit(event, { bucket: "typesafe-review", limit: 120, windowSeconds: 60 });
-  const input = await readBoundedJsonBody(event.req, 256 * 1024);
+  const input = await readBoundedJsonBody(event.req, MAX_TYPESAFE_BYOK_BODY_BYTES);
   const checked = validateJudgementGatewayBody(input);
   const { model, state } = (input ?? {}) as { model?: unknown; state?: unknown };
   if (!checked.ok || typeof model !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/.test(model)) {

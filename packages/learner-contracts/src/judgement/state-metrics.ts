@@ -90,7 +90,8 @@ export function earlierLearnerExcerpts(history: TeachingPolicyTurn["conversation
 }
 
 /** Keep a small opening and a contiguous recent conversation beside the full current request. */
-export function prepareTeachingWindow(turn: TeachingPolicyTurn, build: (turn: TeachingPolicyTurn) => JudgementRequest | null, stateQuestionTokens: number | null, requestTokens: number | null = null) {
+export function prepareTeachingWindow(turn: TeachingPolicyTurn, build: (turn: TeachingPolicyTurn) => JudgementRequest | null,
+  stateQuestionTokens: number | null, requestTokens: number | null = null, fitsWire?: (request: JudgementRequest) => boolean) {
   const request = build(turn);
   const before = request ? measureStateComposition(request, stateQuestionTokens) : null;
   const budget = before?.budgetTokens ?? Infinity;
@@ -99,7 +100,9 @@ export function prepareTeachingWindow(turn: TeachingPolicyTurn, build: (turn: Te
     && (measured?.estimatedStateQuestionTokens ?? estimatedStateQuestionTokens(candidate)) <= budget
     // Question batches share identical state. Only a single question's request can require less history.
     && (requestTokens === null || (measured?.estimatedRequestTokens ?? estimatedRequestTokens(candidate)) <= requestTokens
-      || largestSingleRequestTokens(candidate) <= requestTokens);
+      || largestSingleRequestTokens(candidate) <= requestTokens)
+    && (!fitsWire || fitsWire(candidate) || Object.entries(candidate.questions).every(([id, question]) =>
+      fitsWire({ state: candidate.state, questions: { [id]: question } })));
   if (!request || !before || fits(request, before)) {
     return { turn, request, before, after: before, turnsDropped: 0, fitsLimits: request !== null };
   }

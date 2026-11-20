@@ -1,5 +1,5 @@
 /** Private mutable state for one turn; each named step preserves review and publication order. */
-import { DEFAULT_MODELS } from "../../../../runtime-config/src/index.js";
+import { DEFAULT_MODELS, hostedJudgementTokenLimits } from "../../../../runtime-config/src/index.js";
 import type { JudgementUsage } from "../contracts.js";
 import type { ChoiceAnswer, ChoiceQuestion, JudgementAnswer, JudgementBackendKey, JudgementOutcome, JudgementRequest } from "../contracts.js";
 import type { TeachingPolicyCheck, TeachingPolicyPlan, TeachingPolicyReply, TeachingPolicyTurn } from "../teaching-policy-types.js";
@@ -191,11 +191,11 @@ function finalComparisonEvidence(attempts: readonly number[], answer: ChoiceAnsw
 
 export class TeachingDraftSession<T> {
   private readonly context: DraftContext<T>;
+  private reviewer: Pick<TeachingDraftReviewer, "judge" | "maxQuestionChars" | "fitsWire"> & { judgementModel?: TeachingDraftReviewer["judgementModel"] };
   private removedProseForPrediction = false;
   private pairReviews?: TeachingDraftPairReview[];
   private decisionFailure?: DecisionPlanningFailure;
   private finalComparison?: TeachingDraftFinalComparison;
-  private reviewer: Pick<TeachingDraftReviewer, "judge" | "maxQuestionChars">;
   private parallelAttempts?: readonly [number, number];
   private repairSourceAttempt?: number;
   private committedAnswer?: DraftCandidate<T>;
@@ -255,27 +255,40 @@ export class TeachingDraftSession<T> {
     } finally { this.context.controller.signal.removeEventListener("abort", abort); }
   }
 
+  private batchLimits() {
+    const { requestTokens, stateQuestionTokens } = this.context;
+    const model = this.reviewer.judgementModel;
+    const advertised = model && hostedJudgementTokenLimits(model.id, "notorganic");
+    // A text estimate can err in either direction. Only Jev at its advertised limits confirms
+    // token fit on the wire. Smaller operator budgets and other models keep their local limits.
+    const providerConfirms = advertised?.requestTokens != null && advertised.requestTokens === requestTokens
+      && advertised.stateQuestionTokens === stateQuestionTokens;
+    return { requestTokens: providerConfirms ? null : requestTokens, stateQuestionTokens: providerConfirms ? null : stateQuestionTokens,
+      maxQuestionChars: this.reviewer.maxQuestionChars, fitsWire: this.reviewer.fitsWire };
+  }
+
   private prepareWindow(step: DraftStep, build: WindowBuilder, replies: readonly TeachingPolicyReply[] = [],
     recoveryTarget?: number): PreparedWindow {
-    const { requestTokens } = this.context;
-    const stateQuestionTokens = recoveryTarget ?? this.context.stateQuestionTokens;
+    const limits = this.batchLimits();
+    const stateQuestionTokens = recoveryTarget ?? limits.stateQuestionTokens;
     const turn = step.turn;
-    let prepared = prepareTeachingWindow(turn, build, stateQuestionTokens, requestTokens);
+    let prepared = prepareTeachingWindow(turn, build, stateQuestionTokens, limits.requestTokens, limits.fitsWire);
     if (!prepared.fitsLimits && turn.sources.length && this.options.compactResearchSources) {
       const sources = this.options.compactResearchSources(replies);
-      const compact = prepareTeachingWindow({ ...turn, sources }, build, stateQuestionTokens, requestTokens);
+      const compact = prepareTeachingWindow({ ...turn, sources }, build, stateQuestionTokens, limits.requestTokens, limits.fitsWire);
       if (compact.fitsLimits) prepared = { ...compact, before: prepared.before };
     }
-    if (prepared.before && (prepared.turnsDropped || prepared.before.sections.sources.bytes !== prepared.after?.sections.sources.bytes)) {
-      // The retry target guides pruning. Receipts still use the reviewer's configured limit.
-      const recorded = (state: StateComposition): StateComposition => {
-        if (recoveryTarget === undefined) return state;
-        const budget = this.context.stateQuestionTokens;
-        return { ...state, budgetTokens: budget, fillRatio: budget ? state.estimatedStateQuestionTokens / budget : null };
-      };
+    // The local packing target guides pruning. Report the reviewer's configured limit.
+    const recorded = (state: StateComposition | null): StateComposition | null => {
+      const budget = this.context.stateQuestionTokens;
+      return !state || state.budgetTokens === budget ? state
+        : { ...state, budgetTokens: budget, fillRatio: budget ? state.estimatedStateQuestionTokens / budget : null };
+    };
+    prepared = { ...prepared, before: recorded(prepared.before), after: recorded(prepared.after) };
+    if (prepared.before && (prepared.turnsDropped || prepared.after?.sections.sources.bytes !== prepared.before.sections.sources.bytes)) {
       this.context.slides.push({ phase: step.phase, attempt: step.attempt,
-        ...(recoveryTarget === undefined ? {} : { reason: "provider-context-limit" as const }), elapsedMs: Math.max(0, this.context.now() - this.context.start),
-        turnsDropped: prepared.turnsDropped, before: recorded(prepared.before), after: prepared.after ? recorded(prepared.after) : null });
+        ...(recoveryTarget !== undefined ? { reason: "provider-context-limit" as const } : {}), elapsedMs: Math.max(0, this.context.now() - this.context.start),
+        turnsDropped: prepared.turnsDropped, before: prepared.before, after: prepared.after });
       if (this.context.slides.length > 64) this.context.slides.shift();
     }
     return prepared;
@@ -288,7 +301,8 @@ export class TeachingDraftSession<T> {
       return { ...window, outcome: { ok: false, error: { code: "request-invalid", retryable: false } } as const };
     }
     if (!window.fitsLimits) {
-      const code = judgementRequestProblem(window.request) === null ? "context-limit-exceeded" : "request-invalid";
+      const legalBatches = this.reviewBatches(window.request, { ...this.batchLimits(), stateQuestionTokens: null, requestTokens: null });
+      const code = legalBatches ? "context-limit-exceeded" : "request-invalid";
       return { ...window, outcome: { ok: false, error: { code, retryable: false } } as const };
     }
     let outcome = await this.judge(window.request, step, onDispatch);
@@ -305,9 +319,8 @@ export class TeachingDraftSession<T> {
     return { ...window, outcome };
   }
 
-  private reviewBatches(request: JudgementRequest): JudgementRequest[] | null {
-    const batches = splitJudgementRequest(request, { requestTokens: this.context.requestTokens,
-      stateQuestionTokens: this.context.stateQuestionTokens, maxQuestionChars: this.reviewer.maxQuestionChars });
+  private reviewBatches(request: JudgementRequest, limits = this.batchLimits()): JudgementRequest[] | null {
+    const batches = splitJudgementRequest(request, limits);
     return batches?.length && batches.every(batch => judgementRequestProblem(batch) === null) ? batches : null;
   }
 

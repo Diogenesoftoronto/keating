@@ -13,7 +13,6 @@ import { DEFAULT_JUDGEMENT_MODEL_SETTINGS } from "../src/keating/judgement-model
 import { withTeachingDraftGate } from "../src/keating/judgement/draft-gate";
 import { parseReviewNotice } from "../src/keating/judgement/review-notice";
 import { createWebJudgementRuntime } from "../src/keating/judgement/runtime";
-import { DRAFT_GATE_JUDGE } from "../src/test/helpers/teaching-draft-judge";
 import { correctAnswer, digest, REVIEW_MODEL, sha, studyPrompt, type CaseFixture } from "./jev-boundary-cases";
 import { assistant, completedStream, type ProofModels } from "./jev-boundary-transport";
 
@@ -53,16 +52,18 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
     const outcome = await tracked(engines.judge(request, signal));
     entry.ok = outcome.ok;
     if (outcome.ok) {
-      entry.resolvedReviewer = outcome.response.backend.model;
+      if (engines.mode === "live") entry.resolvedReviewer = outcome.response.backend.model;
       const choice = outcome.response.answers.draft_choice;
       if (choice?.type === "choice" && /^draft_\d+$/.test(choice.choice)) entry.choice = choice.choice;
     }
     else entry.code = outcome.error.code;
     return outcome;
   };
-  const key = engines.reviewerKey ?? (engines.mode === "preflight" ? DRAFT_GATE_JUDGE : { backend: "system-one" as const, model: REVIEW_MODEL, calibrationSha256: null });
-  const baseRuntime = createWebJudgementRuntime({ settings: { ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted" },
-    hosted: { model: REVIEW_MODEL, fetch: async () => { throw new Error("unconfigured-review-transport"); } } });
+  const key = engines.reviewerKey ?? { backend: "system-one" as const, model: REVIEW_MODEL, calibrationSha256: null };
+  const managed = key.model === "judgement" || key.model.startsWith("judgement-jev/");
+  const baseRuntime = createWebJudgementRuntime({ settings: { ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted",
+    ...(managed ? {} : { hostedProvider: "typesafe", customModel: REVIEW_MODEL }) },
+    hosted: { model: key.model, fetch: async () => { throw new Error("unconfigured-review-transport"); } } });
   const configured = baseRuntime.teachingTiers![0]!;
   const runtime = { ...baseRuntime, teachingTiers: [{ ...configured, key }],
     policy: { ...baseRuntime.policy, tiers: [{ key, call: judge }] } };
@@ -132,19 +133,29 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
       requests.some(request => request.phase === "checking" && request.attempt === candidate.call && request.ok && request.replyHash === candidate.textHash));
     const selection = requests.find(request => request.phase === "selecting" && request.ok &&
       pair.every(candidate => request.candidateHashes["draft_" + candidate.call] === candidate.textHash) && request.choice === "draft_" + final?.selectedAttempt);
-    const checked = { stateWithinWireLimit: fixture.full.stateCharacters < fixture.full.limits.stateCharacters,
-      actualPlanningMatchesCalibration: fixture.kind === "current" ? plans.length === 0 : rawPlanSize === fixture.full.estimatedStateQuestionTokens,
+    const pinnedOverflow = fixture.kind === "current", wireOverflow = fixture.kind === "wire";
+    const withheld = pinnedOverflow || wireOverflow;
+    const untouchedUntilRejected = requests.every((call, index) => {
+      if (call.droppedMessages === 0 && call.prefixHashes.length === 0) return true;
+      return requests.slice(0, index).some(prior => prior.phase === call.phase && prior.attempt === call.attempt
+        && prior.code === "context-limit-exceeded" && prior.droppedMessages === 0);
+    });
+    const checked = { expectedWireSize: wireOverflow ? fixture.full.stateCharacters === fixture.full.limits.stateCharacters + 1
+        : fixture.full.stateCharacters < fixture.full.limits.stateCharacters,
+      actualPlanningMatchesCalibration: wireOverflow ? plans.length === 0 : rawPlanSize === fixture.full.estimatedStateQuestionTokens,
       historyInOrder: requests.every(call => call.suffixInOrder && call.currentIntact),
-      planningBoundary: fixture.kind === "current" ? requests.length === 0 && tutorResponses.length === 0 && final?.reason === "context-limit-exceeded"
-        : fixture.kind === "over" ? firstPlanSlide?.turnsDropped === 1 && plans[0]?.prefixHashes[0] === openingHash
+      untouchedUntilRejected,
+      planningBoundary: wireOverflow ? requests.length === 0 && tutorResponses.length === 0 && final?.reason === "request-invalid"
+        : pinnedOverflow ? requests.length === 2 && fullPlans.length === 2 && fullPlans.every(call => call.code === "context-limit-exceeded")
+          && fullPlans[0]!.questionCount > 1 && fullPlans[1]!.questionCount === 1 && final?.reason === "context-limit-exceeded"
         : fixture.kind === "dense" ? fullPlans.some(call => call.code === "context-limit-exceeded")
           && slides.some(slide => slide.reason === "provider-context-limit" && slide.turnsDropped > 0)
           && plans.some(call => call.ok && call.droppedMessages > 0 && call.prefixHashes[0] === openingHash)
-        : plans.every(call => call.stateHash === fixture.full.stateHash && call.prefixHashes.length === 0) && plans.length > 0,
-      twoCandidatesReviewed: fixture.kind === "current" ? tutorResponses.length === 0 : bothReviewed,
-      selectedBetweenBoth: fixture.kind === "current" ? !selection : Boolean(selection && final?.parallelAttempts?.length === 2),
+        : fullPlans.some(call => call.ok) && plans.every(call => call.stateHash === fixture.full.stateHash && call.prefixHashes.length === 0),
+      twoCandidatesReviewed: withheld ? tutorResponses.length === 0 : bothReviewed,
+      selectedBetweenBoth: withheld ? !selection : Boolean(selection && final?.parallelAttempts?.length === 2),
       flueDeliveredReturnedMessage: delivered.length > 0 && delivered === returned && delivered === result.text,
-      expectedOutcome: fixture.kind === "current" ? final?.phase === "withheld" && visible.notice === "withheld" && visible.suggestsShorterRequest
+      expectedOutcome: withheld ? final?.phase === "withheld" && visible.notice === "withheld" && (wireOverflow || visible.suggestsShorterRequest)
         : final?.phase === "released" && visible.correct && visible.notice === null && (final.selectedAttempt ?? 0) > 0,
     };
     return { case: fixture.kind, mode: engines.mode, full: fixture.full, rawPlanSize, requests, tutorResponses,

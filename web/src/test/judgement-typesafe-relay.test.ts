@@ -1,7 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
 import { H3 } from "h3";
+import { encodeSystemOneRequest, MAX_GATEWAY_QUESTION_CHARS, MAX_TYPESAFE_BYOK_BODY_BYTES, type JudgementRequest } from "@keating/learner-contracts";
+import { GOOGLE_DECISION_PROVIDER } from "@keating/runtime-config";
 import route from "../../server/api/judgement/typesafe.post";
 import { createCustomJudgementBackend } from "../keating/judgement/custom-backend";
+import { createWebJudgementRuntime } from "../keating/judgement/runtime";
 import { MemoryPublicAbuseStore, setPublicAbuseStoreForTests } from "../../server/utils/public-abuse";
 
 const originalFetch = globalThis.fetch;
@@ -107,6 +110,46 @@ test("the HTTPS edge indication cannot change the request authority or downgrade
   expect((await call(server, headers, body, internal)).status).toBe(403);
   expect((await call(server, { ...headers, origin: internal }, body, internal)).status).toBe(401);
 });
+
+test("only BYOK teaching uses the actual Nitro UTF-8 body limit, including the selected model and encoded questions", async () => {
+  const model = "jev-1.14.0";
+  const localModelId = "test-local";
+  const options = { settings: { backend: "hosted" as const, hostedProvider: "typesafe" as const, customModel: model,
+    localModelId, gatewayPath: "/api/judgement" }, calibration: {}, hosted: { accountClient: null },
+    localScorer: { modelId: localModelId, scoreLabels: async () => null } };
+  const byok = createWebJudgementRuntime(options).teachingTiers!;
+  const account = createWebJudgementRuntime({ ...options, settings: { ...options.settings, hostedProvider: "notorganic" } }).teachingTiers!;
+  const google = createWebJudgementRuntime({ ...options,
+    settings: { ...options.settings, hostedProvider: GOOGLE_DECISION_PROVIDER } }).teachingTiers!;
+  expect(byok.map(tier => tier.key.backend)).toEqual(["system-one", "local"]);
+  expect(byok[1]!.fitsWire).toBeUndefined();
+  expect(account.map(tier => tier.fitsWire)).toEqual([undefined, undefined]);
+  expect(google.map(tier => tier.fitsWire)).toEqual([undefined]);
+  expect([byok[0]!.maxQuestionChars, account[0]!.maxQuestionChars, google[0]!.maxQuestionChars])
+    .toEqual([MAX_GATEWAY_QUESTION_CHARS, MAX_GATEWAY_QUESTION_CHARS, undefined]);
+
+  const questions = { '問い"': { type: "choice", instructions: "Which label?", criteria: { yes: "はい", no: null } } } as const;
+  const request = (padding: string): JudgementRequest => ({ state: { opening: 'An opening "😀"', padding }, questions });
+  const encode = (input: JudgementRequest) => JSON.stringify(encodeSystemOneRequest(input, model));
+  const encoder = new TextEncoder();
+  const room = MAX_TYPESAFE_BYOK_BODY_BYTES - encoder.encode(encode(request(""))).byteLength;
+  const padding = "界".repeat(Math.floor(room / 3)) + "a".repeat(room % 3);
+  const exact = request(padding), over = request(padding + "x");
+  expect(encoder.encode(encode(exact)).byteLength).toBe(256 * 1024);
+  expect(encode(over).length).toBeLessThan(MAX_TYPESAFE_BYOK_BODY_BYTES);
+  expect(byok[0]!.fitsWire!(exact)).toBe(true);
+  expect(byok[0]!.fitsWire!(over)).toBe(false);
+
+  const server = app();
+  let upstreamCalls = 0;
+  globalThis.fetch = (async () => { upstreamCalls++; return Response.json({ answers: {} }); }) as unknown as typeof fetch;
+  for (const [input, status] of [[exact, 200], [over, 413]] as const) {
+    const response = await call(server, {}, encodeSystemOneRequest(input, model));
+    expect(response.status).toBe(status);
+  }
+  expect(upstreamCalls).toBe(1);
+});
+
 test("payment and auth failures retain status without forwarding private upstream errors", async () => {
   const server = app();
   for (const status of [401, 402, 403, 429, 503]) {

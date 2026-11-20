@@ -5,26 +5,36 @@ import { join } from "node:path";
 import { main } from "../scripts/jev-boundary-proof";
 import { runFlueCase } from "../scripts/jev-boundary-flue";
 import { CASES, calibratedCase, digest, REVIEW_MODEL, TUTOR_MODEL } from "../scripts/jev-boundary-cases";
-import { liveModels, MAX_MICROUSD, MAX_TUTOR_OUTPUT, offlineModels, openingWireOverlap, ProofLedger, relayOrigin } from "../scripts/jev-boundary-transport";
+import { liveModels, MAX_CALLS, MAX_MICROUSD, MAX_TUTOR_OUTPUT, offlineModels, openingWireOverlap, ProofLedger, relayOrigin } from "../scripts/jev-boundary-transport";
 
-test("Flue releases the three calibrated boundary cases, preserves history to the ceiling, and withholds the unshrinkable case", async () => {
+test("Flue preserves the complete accepted input across the estimated boundary and withholds only genuine provider or wire overflow", async () => {
   const dir = mkdtempSync(join(tmpdir(), "jev-boundary-proof-"));
   try {
-    expect(await main(["--out", dir, "--case", CASES.join(",")])).toBe(true);
+    expect(await main(["--out", dir])).toBe(true);
     const read = (name: string) => JSON.parse(readFileSync(join(dir, name + ".json"), "utf8"));
     expect(read("ledger").dispatched).toBe(0);
-    expect(CASES.map(kind => read(kind).full.estimatedStateQuestionTokens)).toEqual([31_999, 32_000, 32_001, 32_001, 18_104]);
+    expect(CASES.filter(kind => kind !== "wire").map(kind => read(kind).full.estimatedStateQuestionTokens)).toEqual([31_999, 32_000, 32_001, 32_001, 18_104, 18_104]);
     expect(read("at").requests.some((request: { phase: string }) => request.phase === "selecting")).toBe(true);
-    expect(read("over").final.slides.find((slide: { phase: string }) => slide.phase === "planning").turnsDropped).toBe(1);
-    expect(read("current").requests).toHaveLength(0);
+    for (const fit of ["under", "at", "over", "current-fit"]) {
+      const row = read(fit);
+      expect(row.final.slides).toEqual([]);
+      expect(row.requests.every((request: { ok: boolean; droppedMessages: number; prefixHashes: string[] }) =>
+        request.ok && request.droppedMessages === 0 && request.prefixHashes.length === 0)).toBe(true);
+      expect(row.delivered.correct).toBe(true);
+    }
+    expect(read("current").requests.map((request: { questionCount: number; code: string }) => [request.questionCount, request.code]))
+      .toEqual([[39, "context-limit-exceeded"], [1, "context-limit-exceeded"]]);
     expect(read("current").tutorResponses).toHaveLength(0);
     expect(read("current").final.reason).toBe("context-limit-exceeded");
     expect(read("current").delivered.suggestsShorterRequest).toBe(true);
+    expect(read("wire").requests).toHaveLength(0);
+    expect(read("wire").tutorResponses).toHaveLength(0);
     for (const kind of CASES) {
       const receipt = read(kind);
       expect(receipt.delivered.textHash).toBe(receipt.returned.textHash);
       expect(receipt.delivered.textHash).toBe(receipt.flueReadHash);
-      expect(receipt.full.stateCharacters).toBeLessThan(96_000);
+      if (kind === "wire") expect(receipt.full.stateCharacters).toBe(96_001);
+      else expect(receipt.full.stateCharacters).toBeLessThan(96_000);
       expect(JSON.stringify(receipt)).not.toMatch(/AMBER-42|Reference notes|直角四边形|What is the perimeter/i);
     }
     await expect(main(["--out", dir])).rejects.toThrow("fresh");
@@ -92,6 +102,10 @@ test("the shared reservation is atomic across roles and preserves the cost of mi
   ledger.finish(first, TUTOR_MODEL, { input: 2000, output: 20 });
   expect(ledger.reserve("under", "tutor", "f").role).toBe("tutor");
   expect(() => new ProofLedger(MAX_MICROUSD + 1)).toThrow();
+  const calls = new ProofLedger();
+  for (let index = 0; index < MAX_CALLS; index++) calls.finish(calls.reserve("at", "reviewer", "a"), REVIEW_MODEL, { input: 1, output: 1 });
+  expect(calls.rows).toHaveLength(64);
+  expect(() => calls.reserve("at", "reviewer", "b")).toThrow("reservation-denied");
   expect(() => relayOrigin("https://chat.keating.help.evil.test")).toThrow();
   expect(() => relayOrigin("http://private@127.0.0.1:8800")).toThrow();
   expect(calibratedCase("dense").full.stateCharacters).toBeGreaterThan(50_000);

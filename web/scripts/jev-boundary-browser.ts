@@ -6,6 +6,9 @@ import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, u
 import { resolve, join } from "node:path";
 import { parseArgs } from "node:util";
 import { calibratedCase, REVIEW_MODEL, TUTOR_MODEL } from "./jev-boundary-cases";
+import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_RULES } from "../../packages/learner-contracts/src/judgement/teaching-policy-catalog";
+import { TEACHING_DEBUGGING_ISSUES } from "../../packages/learner-contracts/src/judgement/debugging-issue-ids";
+import type { TeachingDraftAttempt, TeachingPolicyCheck } from "@keating/learner-contracts";
 
 const { values } = parseArgs({ options: { execute: { type: "boolean" }, origin: { type: "string", default: "http://127.0.0.1:45861" },
   out: { type: "string", default: ".keating/benchmarks/jev-window-live-20261120/browser" } }, strict: true });
@@ -26,11 +29,21 @@ type Evidence = { id: number | null; kind: Charge["kind"]; bytes: number; wireHa
   historyMessages?: number; oldestPresent?: boolean; retainedCode?: boolean; historyHash?: string; currentPresent?: boolean;
   nativeToolGroupsRemoved?: number; outputLimit?: number; estimatedInputCeiling?: number; status?: number;
   matchedCode?: string | null; responseModel?: string | null; input?: number | null; output?: number | null;
-  selectedDraft?: string | null; proposedTools?: number };
+  reviewedReplySha256?: string; candidateReplyHashes?: Record<string, string>; selectedDraft?: string | null;
+  selectedDraftSha256?: string | null; proposedTools?: number };
 const calls: Evidence[] = [];
 const denied: string[] = [];
 const receipt: Record<string, unknown> = { sessionId: id, uniqueCode: code, question: prompt, origin: origin.origin,
   mode: live ? "live" : "dry-run", calls, denied, caps: { microUsd: cap, maxReviews, maxTutor, maxOutput }, passed: false };
+const proofHashes = { questionSha256: digest(prompt), expectedPartsSha256: digest(JSON.stringify([code, "24"])),
+  selectorSelectedDraftSha256: null as string | null, checkedPersistedReplySha256: null as string | null,
+  persistedReplySha256: null as string | null, renderedBubbleSha256: null as string | null,
+  offlinePersistedReplySha256: null as string | null, offlineRenderedBubbleSha256: null as string | null };
+receipt.proofHashes = proofHashes;
+// The durable app receipt already filters policy checks. Use the catalog again at the export boundary.
+export const browserProofCheckIds = [...new Set<string>([...TEACHING_POLICY_DETERMINISTIC_RULES, ...TEACHING_POLICY_RULES.map(rule => rule.id),
+  ...TEACHING_DEBUGGING_ISSUES, CHECKPOINT_FEEDBACK_ISSUE, "quality_progress", "quality_scope", "requested_part_missing", "runtime_tool_schema"])];
+const readbackInput = { id, prompt, checkIds: browserProofCheckIds };
 let charges: Charge[] = [];
 let lock: number | undefined;
 function jsonWrite(path: string, data: unknown) {
@@ -58,8 +71,22 @@ function key(env: string, slot: string): string {
 }
 function safeCount(value: unknown): number | null { return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null; }
 
+export function reviewTargetHashes(state: { reply?: { text?: unknown }; candidates?: Record<string, { text?: unknown } | null> } | null) {
+  const targets: Pick<Evidence, "reviewedReplySha256" | "candidateReplyHashes"> = {};
+  if (typeof state?.reply?.text === "string") targets.reviewedReplySha256 = digest(state.reply.text);
+  if (state?.candidates) {
+    // The host supports at most ten attempts. Unrecognized keys and private candidate text never enter evidence.
+    targets.candidateReplyHashes = {};
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      const key = "draft_" + attempt, text = state.candidates[key]?.text;
+      if (typeof text === "string") targets.candidateReplyHashes[key] = digest(text);
+    }
+  }
+  return targets;
+}
+
 // Runs inside Chromium using the same storage records read by production session restoration.
-async function browserReadback({ id, prompt }: { id: string; prompt: string }) {
+export async function browserReadback({ id, prompt, checkIds }: { id: string; prompt: string; checkIds: readonly string[] }) {
   async function read(dbName: string, store: string, key?: string) {
     return new Promise<any>((resolve, reject) => {
       const open = indexedDB.open(dbName);
@@ -77,20 +104,55 @@ async function browserReadback({ id, prompt }: { id: string; prompt: string }) {
     typeof m.content === "string" ? m.content : (m.content ?? []).filter(p => p.type === "text").map(p => p.text ?? "").join("");
   const thread = await read("keating", "sessions", id);
   const messages = thread?.messages ?? [];
-  const questionIndex = messages.findIndex((m: { role: string; content: string }) => m.role === "user" && text(m) === prompt);
-  const final = questionIndex < 0 ? undefined : messages.slice(questionIndex + 1).findLast((m: { role: string; content: string }) => m.role === "assistant" && text(m).trim());
+  const questionIndex = messages.findLastIndex((m: { role: string; content: string }) => m.role === "user" && text(m) === prompt);
+  const after = questionIndex < 0 ? [] : messages.slice(questionIndex + 1);
+  const nextQuestion = after.findIndex((m: { role: string }) => m.role === "user");
+  const turn = nextQuestion < 0 ? after : after.slice(0, nextQuestion);
+  const final = turn.findLast((m: { role: string; content: string }) => m.role === "assistant" && text(m).trim());
+  const assistantText = final ? text(final) : null;
+  const assistantTextSha256 = assistantText === null ? null : Array.from(new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(assistantText))), byte => byte.toString(16).padStart(2, "0")).join("");
   const records = await read("keating-db", "teaching-draft-receipts");
-  const owner = records.filter((r: { sessionId: string }) => r.sessionId === id).sort((a: { createdAt: number }, b: { createdAt: number }) => b.createdAt - a.createdAt)[0];
+  const targetTimestamp = final?.metadata?.custom?.keatingDiagnosticTimestamps?.at(-1) ?? final?.timestamp;
+  const owner = typeof targetTimestamp === "number" ? records.filter((r: { sessionId: string; messageTimestamp: number }) =>
+    r.sessionId === id && r.messageTimestamp === targetTimestamp).sort((a: { createdAt: number }, b: { createdAt: number }) => b.createdAt - a.createdAt)[0] : undefined;
   const s = owner?.snapshot;
-  return { sessionId: thread?.id ?? null, messageCount: messages.length, questionIndex, assistantText: final ? text(final).slice(0, 4000) : null,
+  const questionTime = messages[questionIndex]?.timestamp, nextTime = after[nextQuestion]?.timestamp ?? Infinity;
+  const pending = !final && typeof questionTime === "number" ? records.filter((r: { sessionId: string; messageTimestamp: number }) =>
+    r.sessionId === id && r.messageTimestamp >= questionTime && r.messageTimestamp < nextTime) : [];
+  const attempts: TeachingDraftAttempt[] | null = Array.isArray(s?.attempts) ? s.attempts : null;
+  const selected = attempts?.find(row => row.attempt === s?.selectedAttempt);
+  const rows = Array.isArray(selected?.checks) ? selected.checks : null;
+  const known = new Set(checkIds);
+  const maxChecks = 96;
+  const sample = rows?.slice(0, maxChecks);
+  if (rows && sample && rows.length > maxChecks && !sample.some(row => row?.id === "requested_part_missing")) {
+    const requestedPart = rows.find(row => row?.id === "requested_part_missing" && row.source === "jev");
+    if (requestedPart) sample[maxChecks - 1] = requestedPart;
+  }
+  const selectedChecks = sample?.flatMap((row: TeachingPolicyCheck) => {
+    if (!row || !known.has(row.id) || !["jev", "deterministic"].includes(row.source) || !["pass", "fail", "unknown"].includes(row.status)) return [];
+    return [{ id: row.id, source: row.source, status: row.status,
+      probability: typeof row.probability === "number" && Number.isFinite(row.probability) && row.probability >= 0 && row.probability <= 1 ? row.probability : null,
+      applicability: ["standalone-direct-answer", "debugging-expected-output", "feedback-on-attempt"].includes(row.applicability ?? "") ? row.applicability! : null }];
+  }) ?? null;
+  const parallel = s?.parallelAttempts?.[0] === 1 && s?.parallelAttempts?.[1] === 2 ? [1, 2] : [];
+  const hasSource = (row: { attempt: number; repairSourceAttempt?: number }) =>
+    Number.isSafeInteger(row.repairSourceAttempt) && row.repairSourceAttempt! > 0 && row.repairSourceAttempt! < row.attempt;
+  const repairs = attempts?.filter(hasSource) ?? [];
+  const ambiguous = !attempts || attempts.some(row => row.attempt > 1 && !parallel.includes(row.attempt) && !hasSource(row) && !row.synthesisSourceAttempts?.length);
+  const started = repairs.length > 0 || Boolean(s && hasSource(s));
+  const repairAttempted = started ? true : ambiguous ? null : false;
+  const reviewed = repairs.some(row => Array.isArray(row.checks) && row.checks.length > 0);
+  const provenNoReview = repairs.length > 0 && repairs.every(row => row.status === "generation-error");
+  const repairReviewed = reviewed ? true : repairAttempted === false || (provenNoReview && !ambiguous) ? false : null;
+  return { sessionId: thread?.id ?? null, messageCount: messages.length, questionIndex, assistantText: assistantText?.slice(0, 4000) ?? null, assistantTextSha256,
     assistantTimestamp: final?.timestamp ?? null, stopReason: final?.stopReason ?? null, receiptTimestamp: owner?.messageTimestamp ?? null,
-    phase: s?.phase ?? null, selectedAttempt: s?.selectedAttempt ?? null, reason: s?.reason ?? null,
-    attempts: (s?.attempts ?? []).map((attempt: { attempt: number; status: string; repairSourceAttempt?: number;
-      checks: { id: string; source: string; status: string; probability: number | null; severity: string; applicability?: string }[] }) =>
-      ({ attempt: attempt.attempt, status: attempt.status, repairSourceAttempt: attempt.repairSourceAttempt ?? null,
-        checks: attempt.checks.map(({ id, source, status, probability, severity, applicability }) =>
-          ({ id, source, status, probability, severity, applicability: applicability ?? null })) })),
-    parallelAttempts: s?.parallelAttempts ?? [], slides: (s?.slides ?? []).map((slide: { reason?: string; phase?: string; turnsDropped: number }) =>
+    phase: s?.phase ?? (pending.length === 1 ? pending[0].snapshot?.phase ?? null : null), selectedAttempt: s?.selectedAttempt ?? null, reason: s?.reason ?? null,
+    selectedChecks, selectedCheckCount: rows?.length ?? null, selectedChecksOmitted: rows ? rows.length - selectedChecks!.length : null,
+    repairAttempted, repairReviewed, attempts: (attempts ?? []).slice(0, 10).map(row =>
+      ({ attempt: row.attempt, status: row.status, repairSourceAttempt: hasSource(row) ? row.repairSourceAttempt : null })),
+    parallelAttempts: parallel, slides: (s?.slides ?? []).slice(-64).map((slide: { reason?: string; phase?: string; turnsDropped: number }) =>
       ({ reason: slide.reason ?? null, phase: slide.phase, turnsDropped: slide.turnsDropped })) };
 }
 
@@ -150,6 +212,7 @@ async function execute() {
       if (review) {
         if (data.model !== REVIEW_MODEL || url.search) throw Error("unexpected-review-model-or-query");
         const state = typeof data.state === "string" ? JSON.parse(data.state) : data.state;
+        Object.assign(entry, reviewTargetHashes(state));
         const turn = state?.turn;
         entry.questions = Object.keys(data.questions ?? {}).length;
         entry.historyMessages = turn?.conversation?.length;
@@ -190,7 +253,8 @@ async function execute() {
         entry.matchedCode = parsed.error?.code === "context-limit-exceeded" ? "context-limit-exceeded" : null;
         entry.responseModel = typeof parsed.model === "string" && /^jev-[\d.]+$/.test(parsed.model) ? parsed.model : null;
         const selected = parsed.answers?.draft_choice?.choice;
-        entry.selectedDraft = typeof selected === "string" && /^draft_\d+$/.test(selected) ? selected : null;
+        entry.selectedDraft = typeof selected === "string" && /^draft_(?:[1-9]|10)$/.test(selected) ? selected : null;
+        entry.selectedDraftSha256 = entry.selectedDraft ? entry.candidateReplyHashes?.[entry.selectedDraft] ?? null : null;
         entry.input = safeCount(parsed.usage?.input_tokens); entry.output = safeCount(parsed.usage?.output_tokens);
       } else {
         let usage, resolved: string | null = null, toolCalls = 0;
@@ -280,7 +344,7 @@ async function execute() {
         save();
       }
       if (live && !(await stop.isVisible())) {
-        stored = await page.evaluate(browserReadback, { id, prompt });
+        stored = await page.evaluate(browserReadback, readbackInput);
         if (stored.phase === "released" && stored.assistantText && correct) break;
         if (stored.phase === "withheld" || stored.phase === "cancelled") break;
       }
@@ -289,11 +353,20 @@ async function execute() {
     }
     await Promise.allSettled([...pending]);
     const after = await bubbles.count();
-    const visible = after > initial ? (await bubbles.last().innerText()).slice(0,2000) : "";
-    stored = await page.evaluate(browserReadback, { id, prompt });
+    const renderedBubble = after > initial ? await bubbles.last().innerText() : "";
+    const visible = renderedBubble.slice(0, 2000);
+    stored = await page.evaluate(browserReadback, readbackInput);
     const persistedText = stored.assistantText ?? "";
-    receipt.storage = stored; receipt.persistedMessageCount = stored.messageCount; receipt.afterAssistantRows = after;
+    const { selectedChecks, repairAttempted, repairReviewed, ...storage } = stored;
+    Object.assign(receipt, { storage, selectedChecks, repairAttempted, repairReviewed });
+    receipt.persistedMessageCount = stored.messageCount; receipt.afterAssistantRows = after;
     receipt.answerFromDom = visible; receipt.answerFromStorage = persistedText;
+    proofHashes.persistedReplySha256 = stored.assistantTextSha256;
+    // innerText includes the turn's UI controls. Only compare raw candidate text to raw persisted text.
+    proofHashes.renderedBubbleSha256 = renderedBubble ? digest(renderedBubble) : null;
+    const selector = calls.filter(call => call.status === 200 && call.selectedDraft === "draft_" + stored.selectedAttempt).at(-1);
+    proofHashes.selectorSelectedDraftSha256 = selector?.selectedDraftSha256 ?? null;
+    proofHashes.checkedPersistedReplySha256 = calls.find(call => call.status === 200 && call.reviewedReplySha256 === stored.assistantTextSha256)?.reviewedReplySha256 ?? null;
     receipt.pageStatus = (await page.locator("body").innerText()).slice(-1400);
     if (after > initial) await bubbles.last().scrollIntoViewIfNeeded();
     await page.screenshot({ path: join(directory, "conversation.png") });
@@ -310,8 +383,12 @@ async function execute() {
       await restoredBubble.waitFor({ timeout: 30_000 });
       await restoredBubble.scrollIntoViewIfNeeded();
       restored = await restoredBubble.innerText();
+      const { selectedChecks: restoredChecks, ...restoredStorage } = await page.evaluate(browserReadback, readbackInput);
+      proofHashes.offlinePersistedReplySha256 = restoredStorage.assistantTextSha256;
+      if (live) proofHashes.offlineRenderedBubbleSha256 = digest(restored);
       receipt.offlineReload = { text: restored, newDispatches: charges.length - dispatches, staticAssetCount: staticFiles.size,
-        stopButtonVisible: await stop.isVisible(), stored: await page.evaluate(browserReadback, { id, prompt }) };
+        stopButtonVisible: await stop.isVisible(), stored: restoredStorage,
+        selectedChecksMatch: selectedChecks && restoredChecks ? JSON.stringify(selectedChecks) === JSON.stringify(restoredChecks) : null };
       await page.screenshot({ path: join(directory, "reloaded.png") });
     }
     const normal = (s: string) => s.replace(/[*_`~]/g, "").replace(/\s+/g, " ").trim();
@@ -325,7 +402,7 @@ async function execute() {
     if (live && !receipt.passed) process.exitCode = 1;
   } finally { await browser.close(); }
 }
-execute().catch(e => {
+if (import.meta.main) execute().catch(e => {
   const reason = e instanceof Error ? e.message : "";
   receipt.error = reason.includes("Timeout") ? "browser-wait-timeout" : /^[a-zA-Z0-9_:-]+$/.test(reason) ? reason : "browser-or-io-error";
   if (existsSync(directory) && (!live || lock !== undefined)) save();

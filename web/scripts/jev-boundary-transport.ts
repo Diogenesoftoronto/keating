@@ -7,7 +7,7 @@ import { answerDraftGateReview } from "../src/test/helpers/teaching-draft-judge"
 import { digest, REVIEW_MODEL, TUTOR_MODEL, sha, type BoundaryCase } from "./jev-boundary-cases";
 
 export const MAX_MICROUSD = 800_000;
-export const MAX_CALLS = 40;
+export const MAX_CALLS = 64;
 export const MAX_INPUT_TOKENS = 4_000_000;
 export const MAX_TOTAL_TOKENS = 4_100_000;
 export const MAX_TUTOR_OUTPUT = 384;
@@ -111,11 +111,18 @@ export function completedStream(value: AssistantMessage) {
 export function offlineModels(rejectFullState?: string): ProofModels {
   let alternative = false;
   const model = { ...gemini, provider: "fixture", id: "offline-tutor" };
-  return { mode: "preflight", model,
+  // Exercise hosted Jev's actual window rules, while the fixture backend and absent wire calls identify preflight.
+  const reviewerKey = { backend: "fixture" as const, model: REVIEW_MODEL, calibrationSha256: null };
+  return { mode: "preflight", model, reviewerKey,
     tutor: async () => assistant((alternative = !alternative) ? "AMBER-42: the perimeter is 24." : "The perimeter for AMBER-42 is 24 units.", model),
-    judge: async request => rejectFullState && digest(request.state) === rejectFullState
-      ? { ok: false, error: { code: "context-limit-exceeded", retryable: false } }
-      : answerDraftGateReview(request, { standard: "supported" }) };
+    judge: async request => {
+      const state = request.state as { turn: unknown };
+      if (rejectFullState && digest({ turn: state.turn }) === rejectFullState) {
+        return { ok: false, error: { code: "context-limit-exceeded", retryable: false } };
+      }
+      const answer = answerDraftGateReview(request, { standard: "supported" });
+      return answer.ok ? { ...answer, response: { ...answer.response, backend: reviewerKey } } : answer;
+    } };
 }
 
 /** The browser's BYOK adapter with its actual production path, or the same shared codec direct to TypeSafe. */

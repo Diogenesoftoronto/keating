@@ -506,6 +506,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       const reviewers = runtime?.teachingTiers?.map(tier => ({
         judgementModel: options.judgementModel ?? tier.judgementModel,
         maxQuestionChars: tier.maxQuestionChars,
+        fitsWire: tier.fitsWire,
         judge: observedJudge(createDraftGateJudgementCaller(runtime, tier.key), tier.key.model),
       }));
       const search = projectWebSearchEvidence(snapshot.messages, evidence?.sources ?? []);

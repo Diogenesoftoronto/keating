@@ -3,11 +3,14 @@ import { guardCalibrationCall, webJudgementCalibrationStore, type WebJudgementCa
 /** Settings-to-runtime assembly. No inference, downloads, or learner activation. */
 import {
   MAX_GATEWAY_QUESTION_CHARS,
+  MAX_TYPESAFE_BYOK_BODY_BYTES,
+  encodeSystemOneRequest,
   thresholdKey,
   GEMINI_DECISION_MODEL,
   isSha256Hex,
   type CalibrationTable,
   type JudgementBackendKey,
+  type JudgementRequest,
   type JudgementThresholds,
   type JudgementTier,
   type LocalLabelScorer,
@@ -62,6 +65,7 @@ export interface WebJudgementRuntime {
     readonly key: JudgementBackendKey;
     readonly judgementModel: TeachingDraftReviewer["judgementModel"];
     readonly maxQuestionChars?: number;
+    readonly fitsWire?: TeachingDraftReviewer["fitsWire"];
   }[];
   /** Pass directly to existing routeJudgement(s)/assessment helpers. */
   readonly policy: RouterPolicy;
@@ -199,7 +203,9 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
       return Object.freeze({ key, judgementModel: Object.freeze({ id: key.model,
         requestTokens: normalizeContextWindow(hosted ? hostedBudget(hostedRequestTokens) : localRequestTokens),
         stateQuestionTokens: normalizeContextWindow(hosted ? hostedBudget(hostedStateQuestionTokens) : localStateQuestionTokens),
-      }), ...(hosted && !google ? { maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS } : {}) });
+      }), ...(hosted && !google ? { maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS } : {}),
+      ...(hosted && settings.hostedProvider === "typesafe" ? { fitsWire: (request: JudgementRequest) =>
+        new TextEncoder().encode(JSON.stringify(encodeSystemOneRequest(request, key.model))).byteLength <= MAX_TYPESAFE_BYOK_BODY_BYTES } : {}) });
     });
   const judgementModel = teachingTiers[0]?.judgementModel ?? Object.freeze({
     id: pin?.model ?? (settings.backend === "hosted" ? hostedModel : settings.localModelId),
