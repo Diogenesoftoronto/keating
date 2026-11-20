@@ -10,6 +10,8 @@ export interface TeachingPolicyTurn {
   readonly conversation: readonly { readonly role: "user" | "assistant" | "tool"; readonly content: string }[];
   readonly learnerEvidence: readonly { readonly kind: string; readonly content: string }[];
   readonly availableTools: readonly string[];
+  /** The conversation host renders the interactive Lab adapter and delivers checkpoint observations. */
+  readonly inlineLabAvailable?: boolean;
   readonly toolResults: readonly { readonly name: string; readonly status: "success" | "error"; readonly content: string }[];
   readonly sources: readonly { readonly id: string; readonly url: string; readonly text: string }[];
   readonly assessment: "none" | "practice" | "assessed" | "unknown";

@@ -29,6 +29,9 @@ describe("specialist lesson controls", () => {
   test("media hosts preserve fallback content and controls", () => {
     expect(render(<AnimationPlayer scene="A source fragment"/>)).toContain("A source fragment");
     expect(render(<AnimatedScene payload={{topic:"Timing",kind:"hyperframes"}}/>)).toContain("Missing hyperframes HTML body");
-    expect(render(<FrustrationClip/>)).toContain("Play animation");
+    const reaction = render(<FrustrationClip/>);
+    expect(reaction).toContain('src="/landing/clips/office-rage.webp"');
+    expect(reaction).toContain('src="/landing/clips/office-rage.webm"');
+    expect(reaction).not.toMatch(/<button\b|<input\b|\scontrols[\s=>]/);
   });
 });

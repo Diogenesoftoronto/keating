@@ -7,7 +7,7 @@ import type { TeachingPolicyPlan } from "./teaching-policy-types.js";
 const componentKinds: Readonly<Record<string, ActivityKind>> = {
   Question: "question", Quiz: "question", Flashcards: "recall", Simulation: "simulation",
   LearningImage: "visual", ConceptMap: "visual", LanguagePractice: "practice",
-  CodingChallenge: "practice", MusicLab: "practice",
+  CodingChallenge: "practice", MusicLab: "practice", Lab: "practice",
 };
 const descriptions: Readonly<Record<ActivityKind, string>> = {
   prose: "a prose explanation", question: "a question", recall: "a recall activity",

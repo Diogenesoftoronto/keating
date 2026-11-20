@@ -285,6 +285,51 @@ export interface UiCodingChallengeNode {
   hint?: string;
 }
 
+export type UiLabAdapter =
+  | { kind: "code"; language: "sh" | "nix" | "kubernetes"; source: string }
+  | { kind: "code"; language: "wat"; source: string; exportName?: string; args?: (string | number)[] }
+  | { kind: "serial"; baudRate: 9600 | 115200; unit: string; requireDevice?: boolean }
+  | { kind: "midi"; requireDevice?: boolean };
+
+export interface UiLabCheckpoint {
+  id: string;
+  title: string;
+  hint?: string;
+  check: { kind: "output"; stdout: string; exitCode: number } | { kind: "notes"; notes: number[] } | { kind: "range"; min: number; max: number };
+}
+
+export type UiLabObservation =
+  | {kind: "output"; stdout: string; exitCode: number; truncated?: boolean}
+  | {kind: "notes"; notes: number[]; input: "device" | "screen" | "mixed"}
+  | {kind: "range"; value: number; input: "device" | "manual"};
+
+export interface UiLabNode {
+  type: "lab";
+  id: string;
+  title: string;
+  brief: string;
+  adapter: UiLabAdapter;
+  checkpoints: UiLabCheckpoint[];
+}
+
+/** Evaluate a measured attempt against the authored checkpoint on any capable client. */
+export function labCheckpointMatches(node: UiLabNode, point: UiLabCheckpoint, observation: UiLabObservation): boolean {
+  const check = point.check;
+  if (node.adapter.kind === "code" && check.kind === "output" && observation.kind === "output") {
+    return !observation.truncated && observation.exitCode === check.exitCode
+      && observation.stdout.replace(/\r?\n$/, "") === check.stdout.replace(/\r?\n$/, "");
+  }
+  if (node.adapter.kind === "midi" && check.kind === "notes" && observation.kind === "notes") {
+    return (!node.adapter.requireDevice || observation.input === "device") && observation.notes.length === check.notes.length
+      && check.notes.every((note, index) => note === observation.notes[index]);
+  }
+  if (node.adapter.kind === "serial" && check.kind === "range" && observation.kind === "range") {
+    return (!node.adapter.requireDevice || observation.input === "device")
+      && Number.isFinite(observation.value) && observation.value >= check.min && observation.value <= check.max;
+  }
+  return false;
+}
+
 /** Authored Strudel code is editable data until explicit playback in an isolated surface. */
 export interface UiMusicLabNode {
   type: "music-lab";
@@ -370,6 +415,7 @@ export type UiDocumentNode =
   | UiSimulationNode
   | UiCodingChallengeNode
   | UiMusicLabNode
+  | UiLabNode
   | UiLanguagePracticeNode
   | { type: "image"; id: string; alt: string; resource: UiArtifactResource }
   | { type: "media"; id: string; kind: "animation" | "audio" | "video"; resource: UiArtifactResource }
@@ -418,6 +464,7 @@ export interface UiCodingTiming {
 }
 
 export type UiAction =
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "observe-lab"; documentId: string; documentRevision: number; nodeId: string; attemptId: string; checkpointId: string; passed: boolean; evidence: string; observation: UiLabObservation; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "run-coding-challenge"; documentId: string; documentRevision: number; nodeId: string; runId: string; code: string; cases: UiCodingTestResult[]; durationMs: number; timing?: UiCodingTiming; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-language-practice"; documentId: string; documentRevision: number; nodeId: string; rounds: UiLanguageRoundResult[]; correct: number; objectiveTotal: number; pronunciationPracticed: number; totalMs: number; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "submit-answer"; documentId: string; documentRevision: number; nodeId: string; answer: UiAnswer; idempotencyKey: string }
@@ -490,7 +537,7 @@ const LIFECYCLES = new Set<DocumentLifecycle>(["draft", "streaming", "ready", "s
 const RETENTION_POLICIES = new Set<UiDocumentRetention>(["ephemeral", "resumable", "workspace"]);
 const GOAL_STEP_STATUSES = new Set<UiGoalStepStatus>(["not_started", "in_progress", "done"]);
 const ARTIFACT_FORMATS = new Set<UiArtifactFormat>(["markdown", "text", "json", "uri"]);
-const ACTION_TYPES = new Set<UiAction["type"]>(["run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task", "share-simulation"]);
+const ACTION_TYPES = new Set<UiAction["type"]>(["observe-lab", "run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task", "share-simulation"]);
 const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted", "completed", "rejected", "retryable"]);
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
@@ -532,6 +579,7 @@ const HANDOFF_KEYS = new Set(["type", "id", "target", "reason", "context"]);
 const MARKDOWN_KEYS = new Set(["type", "id", "markdown"]);
 const ACTION_BASE_KEYS = new Set(["schemaVersion", "type", "documentId", "documentRevision", "nodeId", "idempotencyKey"]);
 const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
+  "observe-lab": new Set([...ACTION_BASE_KEYS, "attemptId", "checkpointId", "passed", "evidence", "observation"]),
   "run-coding-challenge": new Set([...ACTION_BASE_KEYS, "runId", "code", "cases", "durationMs", "timing"]),
   "submit-answer": new Set([...ACTION_BASE_KEYS, "answer"]),
   "choose-option": new Set([...ACTION_BASE_KEYS, "optionIds"]),
@@ -852,6 +900,42 @@ function validateArtifactResource(value: unknown, requireUri = false): value is 
   return requireUri ? resource.uri !== undefined : resource.content !== undefined || resource.uri !== undefined;
 }
 
+function validateLabNode(value: Record<string, unknown>): boolean {
+  if (!hasOnlyKeys(value, new Set(["type", "id", "title", "brief", "adapter", "checkpoints"]))
+    || !boundedString(value.title, 512) || !boundedString(value.brief, 8192)
+    || !isRecord(value.adapter) || !boundedArray(value.checkpoints, 24) || value.checkpoints.length === 0) return false;
+  const adapter = value.adapter;
+  if (adapter.kind === "code") {
+    if (!boundedString(adapter.source, 32768, true)) return false;
+    if (adapter.language === "wat") {
+      if (!hasOnlyKeys(adapter, new Set(["kind", "language", "source", "exportName", "args"]))
+        || (adapter.exportName !== undefined && !boundedString(adapter.exportName, 256))
+        || (adapter.args !== undefined && (adapter.exportName === undefined || !boundedArray(adapter.args, 16)
+          || !adapter.args.every(arg => typeof arg === "number" ? Number.isFinite(arg) : boundedString(arg, 128))))) return false;
+    } else if ((adapter.language !== "sh" && adapter.language !== "nix" && adapter.language !== "kubernetes")
+      || !hasOnlyKeys(adapter, new Set(["kind", "language", "source"]))) return false;
+  } else if (adapter.kind === "serial") {
+    if (!hasOnlyKeys(adapter, new Set(["kind", "baudRate", "unit", "requireDevice"]))
+      || (adapter.baudRate !== 9600 && adapter.baudRate !== 115200) || !boundedString(adapter.unit, 32)) return false;
+  } else if (adapter.kind !== "midi" || !hasOnlyKeys(adapter, new Set(["kind", "requireDevice"]))) return false;
+  if (adapter.requireDevice !== undefined && typeof adapter.requireDevice !== "boolean") return false;
+  return value.checkpoints.every((point): point is UiLabCheckpoint => {
+    if (!isRecord(point) || !hasOnlyKeys(point, new Set(["id", "title", "hint", "check"]))
+      || !isContractId(point.id) || !boundedString(point.title, 512) || !isRecord(point.check)
+      || (point.hint !== undefined && !boundedString(point.hint, 2048))) return false;
+    const check = point.check;
+    if (adapter.kind === "serial") return check.kind === "range" && hasOnlyKeys(check, new Set(["kind", "min", "max"]))
+      && typeof check.min === "number" && Number.isFinite(check.min)
+      && typeof check.max === "number" && Number.isFinite(check.max) && check.min <= check.max;
+    if (adapter.kind === "midi") return check.kind === "notes" && hasOnlyKeys(check, new Set(["kind", "notes"]))
+      && boundedArray(check.notes, 64) && check.notes.length > 0
+      && check.notes.every(note => typeof note === "number" && Number.isInteger(note) && note >= 0 && note <= 127);
+    return check.kind === "output" && hasOnlyKeys(check, new Set(["kind", "stdout", "exitCode"]))
+      && boundedString(check.stdout, 8192, true) && typeof check.exitCode === "number"
+      && Number.isInteger(check.exitCode) && check.exitCode >= 0 && check.exitCode <= 255;
+  }) && uniqueField(value.checkpoints, "id");
+}
+
 function validateUiDocumentNode(value: unknown): value is UiDocumentNode {
   if (!isRecord(value) || !isContractId(value.id) || typeof value.type !== "string") return false;
   switch (value.type) {
@@ -900,6 +984,7 @@ function validateUiDocumentNode(value: unknown): value is UiDocumentNode {
         && isBoundedJsonValue(test.expected, { maximumDepth: 6, maximumItems: 128, maximumStringLength: 4096 }))
       && new Set(value.tests.map((test) => (test as { id: string }).id)).size === value.tests.length
       && (value.hint === undefined || boundedString(value.hint, 4096, true));
+    case "lab": return validateLabNode(value);
     case "music-lab": return hasOnlyKeys(value, MUSIC_LAB_KEYS) && boundedString(value.title, 512)
       && boundedString(value.code, 32768) && (value.brief === undefined || boundedString(value.brief, 4096, true))
       && (value.visualization === undefined || value.visualization === "pianoroll" || value.visualization === "scope")
@@ -945,12 +1030,27 @@ function hasActionBase(value: Record<string, unknown>): boolean {
     && isContractId(value.documentId) && validRevision(value.documentRevision) && isContractId(value.idempotencyKey);
 }
 
+function validateLabObservation(value: unknown): value is UiLabObservation {
+  if (!isRecord(value)) return false;
+  if (value.kind === "output") return hasOnlyKeys(value, new Set(["kind", "stdout", "exitCode", "truncated"]))
+    && boundedString(value.stdout, 8194, true) && typeof value.exitCode === "number" && Number.isInteger(value.exitCode)
+    && value.exitCode >= 0 && value.exitCode <= 255 && (value.truncated === undefined || typeof value.truncated === "boolean");
+  if (value.kind === "range") return hasOnlyKeys(value, new Set(["kind", "value", "input"]))
+    && Number.isFinite(value.value) && (value.input === "device" || value.input === "manual");
+  return value.kind === "notes" && hasOnlyKeys(value, new Set(["kind", "notes", "input"]))
+    && (value.input === "device" || value.input === "screen" || value.input === "mixed")
+    && boundedArray(value.notes, 64) && value.notes.length > 0
+    && value.notes.every(note => typeof note === "number" && Number.isInteger(note) && note >= 0 && note <= 127);
+}
+
 export function validateUiAction(value: unknown): value is UiAction {
   if (!isRecord(value) || !hasActionBase(value)) return false;
   const type = value.type as UiAction["type"];
   if (!hasOnlyKeys(value, ACTION_KEYS[type])) return false;
   if (type !== "retry" && !isContractId(value.nodeId)) return false;
   switch (type) {
+    case "observe-lab": return isContractId(value.attemptId) && isContractId(value.checkpointId)
+      && typeof value.passed === "boolean" && boundedString(value.evidence, 4096) && validateLabObservation(value.observation);
     case "run-coding-challenge": return isContractId(value.runId) && boundedString(value.code, 32768)
       && (value.timing === undefined || (isRecord(value.timing)
         && hasOnlyKeys(value.timing, new Set(["workingMs", "sinceLastRunMs", "runNumber"]))
@@ -1125,6 +1225,12 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
   if (!target) return false;
   const question = target.node.type === "question" ? target.node : target.question;
   switch (action.type) {
+    case "observe-lab": {
+      if (target.node.type !== "lab") return false;
+      const point = target.node.checkpoints.find(point => point.id === action.checkpointId);
+      return !!point && point.check.kind === action.observation.kind
+        && labCheckpointMatches(target.node, point, action.observation) === action.passed;
+    }
     case "run-coding-challenge": return target.node.type === "coding-challenge"
       && action.cases.length === target.node.tests.length
       && action.cases.every((item, index) => item.testId === (target.node as UiCodingChallengeNode).tests[index]?.id);

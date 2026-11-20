@@ -126,6 +126,8 @@ function blockForNode(node: UiDocumentNode, prefix: string): OpenUIPreviewBlock 
 		}
 		case "coding-challenge":
 			return { type: "artifact", id, kind: "coding", label: node.title, detail: `Coding challenge · ${node.language === "typescript" ? "TypeScript" : "JavaScript"} · ${plural(node.tests.length, "test")}` };
+		case "lab":
+			return { type: "artifact", id, kind: node.adapter.kind === "midi" ? "music" : node.adapter.kind === "code" ? "coding" : "artifact", label: node.title, detail: plural(node.checkpoints.length, "checkpoint") };
 		case "music-lab":
 			return { type: "artifact", id, kind: "music", label: node.title, detail: `Music lab${node.controls?.length ? ` · ${plural(node.controls.length, "control")}` : ""}` };
 		case "language-practice":

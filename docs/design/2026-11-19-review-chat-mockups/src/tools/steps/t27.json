@@ -1,0 +1,5 @@
+[{"wait":2500},
+ {"scrollTo":"x","find":"document.querySelectorAll('section.board')[3]","top":10},{"wait":1200},
+ {"shot":"/tmp/keating-design-shots/m-r2.png"},
+ {"scrollTo":"x","find":"document.querySelectorAll('section.board')[5]","top":10},{"wait":1200},
+ {"shot":"/tmp/keating-design-shots/m-c2.png"}]

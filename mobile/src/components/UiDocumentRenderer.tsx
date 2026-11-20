@@ -214,6 +214,13 @@ function UiNode({
   if (node.type === "notes") return <NotesNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
   if (node.type === "simulation") return <SimulationNode node={node} />;
   if (node.type === "coding-challenge") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><MarkdownText content={node.prompt} /><Text selectable>{node.starterCode}</Text><Text style={styles.notice}>Open this challenge in the web app to edit and run the sample tests.</Text></View>;
+  if (node.type === "lab") return <View style={styles.node}>
+    <Text style={styles.nodeTitle}>{node.title}</Text>
+    <MarkdownText content={node.brief} />
+    {node.adapter.kind === "code" && <Text selectable>{node.adapter.source}</Text>}
+    {node.checkpoints.map((point, i) => <Text key={point.id}>{i + 1}. {point.title}</Text>)}
+    <Text style={styles.notice}>Open this conversation in the web app to try the lab.</Text>
+  </View>;
   if (node.type === "music-lab") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text>{node.brief ? <MarkdownText content={node.brief} /> : null}<Text selectable>{node.code}</Text><Text style={styles.notice}>Open this lab in the web app for Strudel playback and controls.</Text></View>;
   if (node.type === "language-practice") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.language} · {node.rounds.length} rounds</Text><Text style={styles.notice}>Open this practice in the web app for word tiles, listening, and pronunciation recording.</Text></View>;
   if (node.type === "task" && node.diagram) return <SystemDesignWorkbench

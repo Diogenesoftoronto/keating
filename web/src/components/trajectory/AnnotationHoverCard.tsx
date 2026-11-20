@@ -91,7 +91,7 @@ export function AnnotationHoverCard({
 							) : null}
 						</div>
 
-						<p className={css({ margin: 0, fontSize: "0.78rem", lineHeight: 1.5, color: "var(--foreground)" })}>
+						<p className={cx("rv-margin-note", css({ margin: 0, fontSize: "0.78rem", lineHeight: 1.5, color: "var(--foreground)" }))}>
 							{annotation.note}
 						</p>
 

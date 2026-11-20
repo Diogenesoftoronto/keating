@@ -94,6 +94,7 @@ export function projectTeachingPolicyDecision(turn: TeachingPolicyTurn, outcome:
     activeWork: turn.activeWork, pendingSubmissions: turn.pendingSubmissions, domain: turn.domain,
     followsTutorTurn: turn.conversation.at(-1)?.role === "assistant",
     codePracticeLanguage: requestedCodePracticeLanguage(turn.learnerMessage), assessment: turn.assessment,
+    inlineLabAvailable: turn.inlineLabAvailable,
   });
   const active = recommended.continueInteraction;
   const link = turn.previousQuestionPresentation;

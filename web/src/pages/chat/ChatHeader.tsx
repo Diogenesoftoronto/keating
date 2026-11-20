@@ -438,6 +438,9 @@ function ChatOverflowMenu({
 
           Courses
         </Link>
+        <Link to="/labs/systems" className={menuItemClass} onClick={onClose}>
+          <KeatingGlyph name="terminal" size={16} />Systems lab
+        </Link>
         {import.meta.env.DEV && (
           <button
             className={cx(menuItemClass, "")}

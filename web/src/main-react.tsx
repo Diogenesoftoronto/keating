@@ -5,6 +5,7 @@ import "./base.css";
 import "../styled-system/styles.css";
 import "./components/keating-kit.css";
 import "./learner-accessibility.css";
+import "./keating-type.css";
 import "./hooks/keating-storage";
 // KaTeX CSS is imported by the components that actually render math
 // (MarkdownBlock, AssistantChatPanel, blog reader) so the entry/Landing chunk skips it.

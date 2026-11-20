@@ -1,0 +1,19 @@
+.teaching-lab .lesson-body { display: grid; gap: .6rem; min-width: 0; }
+.teaching-lab .lesson-body > p { margin: 0; }
+.teaching-lab-checkpoints { padding: 0; margin: 0; list-style: none; display: grid; gap: .2rem; }
+.teaching-lab-checkpoints li { display: flex; align-items: baseline; gap: .4rem; color: var(--ink-soft); font: 500 .72rem/1.4 var(--font-ui); }
+.teaching-lab-checkpoints li > span:first-child { width: 1rem; text-align: center; font-variant-numeric: tabular-nums; }
+.teaching-lab-checkpoints li[aria-current] { color: var(--ink); font-weight: 700; }
+.teaching-lab-checkpoints li[data-complete=true] { color: var(--green-deep); }
+.teaching-lab-target { border-top: 1px solid var(--line-soft); padding-top: .5rem; }
+.teaching-lab-target summary { cursor: pointer; }
+.teaching-lab-reading, .teaching-lab-target pre { max-height: 14rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: .55rem; margin: 0; font: .68rem/1.5 var(--font-code); background: var(--paper-deep); color: var(--ink); }
+.teaching-lab-code label > svg { display: inline-block; margin-inline-end: .35rem; vertical-align: middle; }
+.teaching-lab-code textarea { display: block; width: 100%; margin-block: .35rem; min-height: 6rem; padding: .5rem; resize: vertical; border: 1px solid var(--line); font: .72rem/1.5 var(--font-code); font-feature-settings: var(--code-features); color: var(--ink); background: var(--paper); }
+.teaching-lab-controls { display: flex; align-items: center; justify-content: flex-end; gap: .65rem; flex-wrap: wrap; }
+.teaching-lab-controls input { accent-color: var(--green-deep); }
+.teaching-lab-controls button, .teaching-lab button:not([class]) { border: 1px solid var(--line); padding: .26rem .55rem; min-height: 40px; border-radius: .15rem; cursor: pointer; }
+.teaching-lab-controls button { color: var(--primary-foreground); background: var(--primary); }
+.teaching-lab button:disabled { opacity: .55; cursor: default; }
+.teaching-lab :focus-visible { outline: 2px solid var(--green-deep); outline-offset: 2px; }
+@media (pointer: coarse) { .teaching-lab-controls button, .teaching-lab button:not([class]) { min-height: 44px; } }

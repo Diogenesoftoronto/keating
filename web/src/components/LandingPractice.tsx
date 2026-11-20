@@ -31,6 +31,6 @@ function PracticeLesson({ example }: { example: LandingExample }) {
     <details key={round} className="landing-practice__hint"><summary>Need a starting point?</summary><p>{practice.context}. {practice.hint}</p></details>
     <div className="landing-practice__exercise" data-question-count={reconstruction.questions.length}><QuestionRenderer key={round} data={reconstruction} submitLabel="Check answers" onSubmit={answers => { setResult(answers); posthog?.capture("landing_lesson_submitted", { example_id: example.id, question_count: reconstruction.questions.length, attempt: round + 1 }); }} /></div>
     {result && <div className="landing-practice__feedback" role="status"><p>{complete ? practice.success : `${correct} of ${practice.items.length} correct. ${practice.retry}`}</p><details><summary>Why it works</summary><p>{practice.feedback}</p></details></div>}
-    <footer className="landing-practice__footer"><p>Example lesson</p><button type="button" className="landing-practice__reset" onClick={() => { setResult(null); setRound(previous => previous + 1); }}>{result ? "Try again" : "Reset"}</button></footer>
+    <footer className="landing-practice__footer"><button type="button" className="landing-practice__reset" onClick={() => { setResult(null); setRound(previous => previous + 1); }}>{result ? "Try again" : "Reset"}</button></footer>
   </section>;
 }

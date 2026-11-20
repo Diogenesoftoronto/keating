@@ -1,0 +1,10 @@
+[{"wait":3000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Continue'))"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/o-2.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>/^(Continue|Skip|Next|Use|Decide later)/.test(b.textContent.trim())&&!b.disabled)"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/o-3.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>/^(Continue|Skip|Next)/.test(b.textContent.trim())&&!b.disabled)"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/o-4.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"}]

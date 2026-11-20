@@ -629,7 +629,10 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["@huggingface/transformers"],
+    // Discover the lab workers' packages before a learner's first run. A late
+    // optimizer reload would discard the running snippet and its editor state.
+    include: ["unkernel/web", "wabt", "yaml"],
+    exclude: ["@huggingface/transformers", "@keating/learner-contracts", "nix-eval"],
   },
   server: {
     port: 3000,

@@ -1,0 +1,111 @@
+.landing-video {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: .24rem;
+  background: var(--card);
+  text-align: start;
+}
+
+.landing-video[hidden] {
+  display: none;
+}
+
+.landing-video__picture {
+  aspect-ratio: var(--landing-video-ratio, 16 / 10);
+  overflow: hidden;
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+  background: #171a16;
+}
+
+.landing-video__picture video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.landing-video__controls {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .18rem .32rem;
+  border-top: 1px solid var(--line);
+}
+
+.landing-video__controls .k-icon {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+
+.landing-video__seek {
+  flex: 1 1 4rem;
+  min-width: 1.6rem;
+  height: 32px;
+  margin: 0;
+  accent-color: var(--green-deep);
+  cursor: pointer;
+}
+
+.landing-video__seek:disabled {
+  cursor: default;
+}
+
+.landing-video__time,
+.landing-video__controls .landing-video__captions {
+  font: 600 .52rem/1 var(--mono-body);
+}
+
+.landing-video__time {
+  padding-inline: .1rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.landing-video__captions[aria-pressed="true"] {
+  box-shadow: inset 0 -2px var(--green-deep);
+}
+
+.landing-video__notice {
+  margin: 0;
+  padding: 0 .52rem .3rem;
+  color: var(--ink-soft);
+}
+
+.landing-video :is(button, input):focus-visible {
+  outline: 2px solid var(--green-deep);
+  outline-offset: 1px;
+}
+
+.landing-video:fullscreen {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+}
+
+.landing-video:fullscreen .landing-video__picture {
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+@media (max-width: 400px) {
+  .landing-video__controls {
+    flex-wrap: wrap;
+    gap: .12rem;
+    padding-inline: .15rem;
+  }
+
+  .landing-video__seek {
+    order: -1;
+    flex-basis: 100%;
+  }
+
+  .landing-video__time {
+    font-size: .46rem;
+    margin-inline-end: auto;
+  }
+}

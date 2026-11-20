@@ -20,6 +20,7 @@ import {
   type UiSimulationReadout,
   type UiTaskSubmission,
   type UiCodingChallengeNode,
+  type UiLabNode,
   type UiLanguageRound,
 } from "./ui.js";
 import { WEB_OPENUI_COMPONENTS } from "./rendering.js";
@@ -44,7 +45,7 @@ export type OpenUISourceCompileResult =
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
-  "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice",
+  "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice", "Lab",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -293,6 +294,7 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   PersonBrief: ["id", "name", "profile", "questions", "sources", "lifecycle", "meetingAt"],
   Simulation: ["id", "title", "parameters", "readouts", "lifecycle", "brief"],
   CodingChallenge: ["id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "lifecycle", "hint"],
+  Lab: ["id", "title", "brief", "adapter", "checkpoints", "lifecycle"],
   MusicLab: ["id", "title", "code", "lifecycle", "brief", "controls", "visualization"],
 };
 
@@ -640,6 +642,10 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       starterCode: text(props.starterCode), entrypoint: text(props.entrypoint),
       tests: (Array.isArray(props.tests) ? props.tests : []) as UiCodingChallengeNode["tests"],
       ...(optionalText(props.hint) ? { hint: text(props.hint) } : {}),
+    }];
+    case "Lab": return [{
+      type: "lab", id: contractId(text(props.id, id), id), title: text(props.title), brief: text(props.brief),
+      adapter: props.adapter as UiLabNode["adapter"], checkpoints: props.checkpoints as UiLabNode["checkpoints"],
     }];
     case "MusicLab": return [{
       type: "music-lab", id: contractId(text(props.id, id), id), title: text(props.title, "Music lab"), code: text(props.code),

@@ -99,7 +99,7 @@ textarea.k-input { resize: vertical; }
 .k-prose { color: var(--ink); font: 0.7692rem/1.62 var(--k-reading); }
 .k-prose :is(p, ol, ul, blockquote) { max-width: 34em; }
 .k-prose > * + * { margin-top: 0.5288rem; }
-.k-prose code:not(pre code, .runnable-code-surface code) { font: .84em var(--mono-body); padding: 1px 0.2404rem; background: var(--paper-deep); border-radius: 3px; }
+.k-prose code:not(pre code, .runnable-code-surface code) { font: .84em var(--font-code, monospace); font-feature-settings: var(--code-features); padding: 1px 0.2404rem; background: var(--paper-deep); border-radius: 3px; }
 .k-prose :is(ol,ul) { padding-left: 1.0577rem; }
 .k-prose ol { list-style: decimal; }
 .k-prose ul { list-style: disc; }

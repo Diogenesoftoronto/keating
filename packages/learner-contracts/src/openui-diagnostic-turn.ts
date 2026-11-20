@@ -105,7 +105,7 @@ export interface OpenUiDiagnosticTurn {
 // Use independently observable node kinds. SystemDesign and Diagram share a single task representation.
 const COMPONENTS = [
   "question", "question-group", "quiz", "exam", "deck", "study-plan", "concept-map", "diagram",
-  "notes", "simulation", "coding-challenge", "music-lab", "language-practice", "markdown", "callout",
+  "notes", "simulation", "lab", "coding-challenge", "music-lab", "language-practice", "markdown", "callout",
   "goal", "image", "media", "artifact", "handoff", "task", "assignment", "practice", "draft",
   "fieldwork", "connect", "person", "audio-response", "video-response",
 ];

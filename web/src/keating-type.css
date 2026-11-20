@@ -1,0 +1,175 @@
+/* Keating's own faces, given a few deliberate jobs (board: docs/design/2026-11-19-review-chat-mockups/type/in-use.html).
+ *
+ * Keating Broadside: display only, 38px and up. Public headlines, plus one page title inside the product
+ * (Session reviews). Never app bars, card heads, session titles or anything under 24px.
+ * Keating Margin: the pen. Questions the tutor puts to the learner, and notes a reviewer writes in the margin.
+ * Not for transcripts, replies, headings in general, buttons or form fields. Code stays on Monaspace (base.css).
+ *
+ * Both faces ship one weight (400). Roles set the weight and turn synthesis off so no fake bold is drawn.
+ * Browsers load a face only when a role on screen uses it, so pages without these roles download nothing.
+ * Selectors carry an `html` prefix (and a doubled class where the component sheet is more specific) so the
+ * result does not depend on which lazy chunk's stylesheet arrives last. No motion here; that lives elsewhere. */
+
+@font-face {
+  font-family: "Keating Broadside";
+  src: url("./assets/fonts/keating-type/KeatingBroadside-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Keating Margin";
+  src: url("./assets/fonts/keating-type/KeatingMargin-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --font-broadside: "Keating Broadside", var(--mono-display, Georgia), Georgia, serif;
+  --font-margin: "Keating Margin", var(--font-ui, system-ui), system-ui, sans-serif;
+  --keating-type-tracking: normal;
+  --broadside-weight: 400;
+  --margin-weight: 400;
+}
+
+/* Accessibility preferences win over brand type.
+ * Dyslexia-friendly typography: both roles become Atkinson Hyperlegible; headlines get their weight back.
+ * Stronger contrast: Margin's monoline pen is light, so it yields to the interface face. Broadside is heavy
+ * enough to keep. */
+html[data-dyslexia-font="true"] {
+  --font-broadside: "Atkinson Hyperlegible", sans-serif;
+  --font-margin: "Atkinson Hyperlegible", sans-serif;
+  --keating-type-tracking: .035em;
+  --broadside-weight: 700;
+  --margin-weight: 700;
+}
+html[data-high-contrast="true"]:not([data-dyslexia-font="true"]) {
+  --font-margin: var(--font-ui, system-ui), system-ui, sans-serif;
+  --margin-weight: 600;
+}
+
+/* Broadside: public headlines ---------------------------------------------- */
+
+/* Standard ligatures (ff fi fl ffi ffl) need letter-spacing at 0, so the tracked-in display rule is undone. */
+/* A plain list, not :is(), so each headline keeps its own specificity for the rules below. */
+html .lp-hero h1,
+html .lp-close h2,
+html .pricing-page .pricing-heading h1 {
+  font-family: var(--font-broadside);
+  font-weight: var(--broadside-weight);
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-ligatures: common-ligatures;
+  letter-spacing: var(--keating-type-tracking);
+  text-wrap: balance;
+}
+
+html .lp-hero h1 {
+  font-size: 3.05rem;
+  line-height: .98;
+  max-width: 11em;
+}
+html .lp-close h2 {
+  font-size: 3.6rem;
+  line-height: .98;
+}
+html .pricing-page .pricing-heading h1 {
+  font-size: clamp(46px, 5.4vw, 68px);
+  line-height: .98;
+}
+
+/* In the product: the Session reviews index title, the one in-app page heading with its own row and fixed
+ * text. Other app bars, session titles and lesson card heads stay in the interface face. */
+html .rv-index-header [role=heading] {
+  font-family: var(--font-broadside);
+  font-weight: var(--broadside-weight);
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-ligatures: common-ligatures;
+  letter-spacing: var(--keating-type-tracking);
+  font-size: 2.15rem;
+  line-height: 1.1;
+  align-items: baseline;
+  /* The kit's subtitle rule (.k-title span) otherwise greys this span out; a headline is full ink. */
+  color: var(--ink, var(--foreground));
+}
+html .rv-index-header [role=heading] > svg { align-self: center; }
+
+/* The face is condensed, so phones keep headlines larger than the old display face could manage. */
+@media (max-width: 800px) {
+  html .lp-hero h1 { max-width: 12em; }
+}
+@media (max-width: 760px) {
+  html .pricing-page .pricing-heading h1 { font-size: clamp(46px, 10vw, 64px); }
+}
+@media (max-width: 600px) {
+  html .lp-hero h1 { font-size: 2.15rem; }
+  html .lp-close h2 { font-size: 2.45rem; }
+  html .rv-index-header [role=heading] { font-size: 1.9rem; }
+}
+@media (max-width: 580px) {
+  html .pricing-page .pricing-heading h1 { font-size: clamp(42px, 12vw, 52px); }
+}
+
+/* Margin: the tutor's own questions ---------------------------------------- */
+
+html .ch-greeting h1,
+html :is(.lesson-frame, .activity-quiz, .activity-game) .activity-prompt.activity-prompt,
+html .rv-desk-read > span,
+html .rv-margin-note {
+  font-family: var(--font-margin);
+  font-weight: var(--margin-weight);
+  font-synthesis: none;
+  font-kerning: normal;
+  font-feature-settings: normal;
+  font-variant-ligatures: common-ligatures contextual;
+  letter-spacing: var(--keating-type-tracking);
+}
+
+/* Empty chat: Keating asks what you want to understand, in its own hand. */
+html .ch-greeting h1 {
+  font-size: 1.5rem;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+/* A quiz question in a reply (chat lesson cards, quiz results, the landing practice demo). */
+html :is(.lesson-frame, .activity-quiz, .activity-game) .activity-prompt.activity-prompt {
+  font-size: .98rem;
+  line-height: 1.24;
+  text-wrap: pretty;
+}
+html .landing-practice__exercise .activity-game .activity-prompt.activity-prompt {
+  font-size: 21px;
+}
+
+@media (max-width: 639px) {
+  html .ch-greeting h1 { font-size: 1.32rem; }
+  html :is(.lesson-frame, .activity-quiz, .activity-game) .activity-prompt.activity-prompt { font-size: .92rem; }
+}
+
+/* Margin: what a reviewer wrote --------------------------------------------- */
+
+/* The quoted passage stays in the reading serif; the reviewer's words beside it are pen. */
+html .rv-desk-read > span,
+html .rv-margin-note {
+  font-size: .86rem;
+  line-height: 1.28;
+  color: var(--ink, var(--foreground));
+  overflow-wrap: anywhere;
+}
+
+/* The face has no other weight, so the fallbacks above carry the emphasis for those preferences; sizes stay. */
+html[data-dyslexia-font="true"] :is(.ch-greeting h1, .activity-prompt.activity-prompt, .rv-desk-read > span, .rv-margin-note) {
+  line-height: 1.45;
+}
+
+/* Light pen strokes on a dark page thin out under grayscale smoothing. */
+html.dark :is(.ch-greeting h1, .activity-prompt.activity-prompt, .rv-desk-read > span, .rv-margin-note) {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}

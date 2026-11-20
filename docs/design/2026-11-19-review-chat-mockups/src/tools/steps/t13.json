@@ -1,0 +1,8 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},{"goto":"http://localhost:3420/chat?session=11111111-2222-4333-8444-555555555555","settle":7500},
+ {"dragFrom":"document.querySelector('.chat-mascot-perch__bot')","dragTo":"[...document.querySelectorAll('.keating-bubble[data-quote-source-kind=\"message\"] p')].filter(p=>p.getBoundingClientRect().top>120).pop()","steps":22,"hold":500},{"wait":2600},
+ {"clickSel":"x","find":"[...document.querySelectorAll('.chat-mascot-menu [role=menuitem]')].find(b=>b.textContent.trim()==='Give me an example')"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/pick.png"},
+ {"eval":"JSON.stringify({ta:[...document.querySelectorAll('textarea')].map(t=>t.value.slice(0,200)),quote:[...document.querySelectorAll('[class*=quote],[data-quote]')].slice(0,4).map(e=>e.className.toString().slice(0,50)+'|'+e.textContent.slice(0,90)),state:document.querySelector('.chat-mascot-perch__bot .keating-bot')?.dataset.state,menu:!!document.querySelector('.chat-mascot-menu')})"},
+ {"dragFrom":"document.querySelector('.chat-mascot-perch__bot')","dragTo":"document.querySelector('.composer-root textarea')","steps":10,"hold":0},{"wait":2600},
+ {"shot":"/tmp/keating-design-shots/pick2.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-bot.js"}]

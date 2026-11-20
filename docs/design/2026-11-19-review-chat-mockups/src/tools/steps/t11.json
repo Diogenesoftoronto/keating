@@ -1,0 +1,7 @@
+[{"wait":2500},
+ {"shot":"/tmp/keating-design-shots/e-empty.png"},
+ {"move":[640,330]},{"wait":900},{"move":[700,360]},{"wait":900},
+ {"shot":"/tmp/keating-design-shots/e-empty-hover.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-overflow.js"},
+ {"eval":"document.documentElement.classList.add('dark');'ok'"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/e-empty-dark.png"}]

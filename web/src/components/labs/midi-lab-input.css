@@ -1,0 +1,24 @@
+.midi-lab-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; }
+.midi-lab-controls label { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.midi-lab-controls select, .midi-lab-controls button {
+  max-width: 100%; min-height: 44px; padding: 4px 8px;
+  color: var(--ink); border: 1px solid var(--line); border-radius: 3px; background: var(--paper); font: inherit;
+}
+.midi-lab-input p[role="status"] { color: var(--ink-soft); font-size: .85em; }
+.midi-lab-input p:empty { display: none; }
+.midi-lab-keyboard {
+  position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  max-width: 460px; margin-top: 9px; isolation: isolate;
+}
+.midi-lab-keyboard button { display: flex; justify-content: center; align-items: end; border-radius: 0 0 3px 3px; padding-bottom: 5px; font: 500 12px/1.1 var(--font-ui); cursor: pointer; }
+.midi-lab-keyboard .midi-lab-white { height: 90px; margin-right: 1px; background: #f5f1e6; color: #25271f; border: 1px solid #706f67; }
+.midi-lab-keyboard .midi-lab-black {
+  position: absolute; top: 0; transform: translateX(-50%); width: 9%; height: 58px;
+  background: #2d3029; color: #faf7f0; border: 1px solid #161812;
+}
+.midi-lab-keyboard button:enabled:active { background: var(--green-deep); color: var(--primary-foreground); }
+.midi-lab-input :focus-visible { z-index: 1; outline: 2px solid var(--green-deep); outline-offset: 1px; }
+.midi-lab-input button:disabled { cursor: default; opacity: .58; }
+@media (forced-colors: active) {
+  .midi-lab-keyboard .midi-lab-black { forced-color-adjust: none; color: Canvas; background: CanvasText; border-color: Canvas; }
+}

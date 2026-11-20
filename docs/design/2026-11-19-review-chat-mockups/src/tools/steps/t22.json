@@ -1,0 +1,6 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"goto":"http://localhost:3420/training-data","settle":6500},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-steps.js"},
+ {"shot":"/tmp/keating-design-shots/p-td2.png"},
+ {"goto":"http://localhost:3420/chat","settle":6500},
+ {"shot":"/tmp/keating-design-shots/p-chat-list.png"}]

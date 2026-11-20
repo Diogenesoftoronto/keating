@@ -113,7 +113,7 @@ function credentialCallbacks({
   onRecovered: (provider: string) => void;
 }): Pick<ChatPanelSetupCallbacks, "onApiKeyRequired" | "onAuthError"> {
   return {
-    onApiKeyRequired: async (provider: string, signal?: AbortSignal) => {
+    onApiKeyRequired: async (provider: string, signal?: AbortSignal, mode?: "existing-only") => {
       const sourceSessionId = sessionId();
       const sourceModel = modelKey(agent.context.model);
       const request = refs.sessionSwitchRequestsRef.current.current;
@@ -128,6 +128,7 @@ function credentialCallbacks({
       const apiKey = await getProviderApiKey(provider);
       if (!isCurrent()) return false;
       if (apiKey && !needsModelConsent) return true;
+      if (mode === "existing-only") return false;
       if (isNotOrganicProvider(provider)) {
         await persistTurn(sourceSessionId);
         if (!isCurrent()) return false;

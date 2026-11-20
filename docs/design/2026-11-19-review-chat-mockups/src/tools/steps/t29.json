@@ -1,0 +1,5 @@
+[{"wait":2000},
+ {"goto":"http://localhost:3420/courses","settle":6000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button,a')].find(b=>b.textContent.trim()==='Or assemble manually')"},{"wait":2000},
+ {"shot":"/tmp/keating-design-shots/c-new.png"},
+ {"eval":"JSON.stringify({path:location.pathname,els:[...document.querySelectorAll('[role=dialog] input,[role=dialog] textarea,[role=dialog] button, form input, form textarea, form button, main input, main textarea')].slice(0,30).map(e=>e.tagName+':'+(e.name||e.id||'')+':'+(e.placeholder||e.getAttribute('aria-label')||e.textContent||'').trim().slice(0,40))})"}]

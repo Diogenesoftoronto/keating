@@ -331,6 +331,14 @@ function TranscriptTurn({
 	return (
 		<article className="rv-page-turn" data-turn-id={message.id} data-role={message.role} data-active={active}>
 			<header className="rv-page-turn-heading">
+				{active && !readOnly && (
+					<svg key={message.id} className="rv-turn-bracket" width="0" height="0" viewBox="0 0 16 36"
+						preserveAspectRatio="none" aria-hidden="true" focusable="false">
+						<path pathLength="1" vectorEffect="non-scaling-stroke"
+							d="M14 2.3C9 2 4.3 2.2 4.8 8.5C5.7 16.4 4.4 22.8 3.8 27.6Q3.1 32.5 13.6 30.8" />
+						<path pathLength="1" vectorEffect="non-scaling-stroke" d="M9.4 27.6L14 30.7L10.6 34" />
+					</svg>
+				)}
 				<h2>{message.ordinal + 1} · {roleLabel}</h2>
 				{message.model && <small>{message.model}</small>}
 				{(active || readOnly) && <div className="rv-page-turn-actions">

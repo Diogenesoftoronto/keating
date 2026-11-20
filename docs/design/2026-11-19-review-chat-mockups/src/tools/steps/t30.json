@@ -1,0 +1,10 @@
+[{"wait":2000},
+ {"goto":"http://localhost:3420/courses","settle":6000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button,a')].find(b=>b.textContent.trim()==='Or assemble manually')"},{"wait":2000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/course-fill.js"},{"wait":500},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim().endsWith('Create blank course'))"},{"wait":7000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"shot":"/tmp/keating-design-shots/c-ws.png"},
+ {"goto":"http://localhost:3420/courses","settle":6000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"shot":"/tmp/keating-design-shots/c-list.png"}]

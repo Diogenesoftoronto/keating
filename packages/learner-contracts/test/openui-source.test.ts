@@ -22,7 +22,7 @@ describe("trusted OpenUI source compiler", () => {
     expect(document.retention).toBe("workspace");
     expect(document.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
-      "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab",
+      "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab", "lab",
       "task", "task",
     ]);
     expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))

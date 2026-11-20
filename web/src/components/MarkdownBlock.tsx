@@ -319,7 +319,7 @@ const COMPONENTS: Components = {
 			typeof code.props === "object"
 		) {
 			const props = code.props as { className?: string; children?: string };
-			const match = /language-(\w+)/.exec(props.className ?? "");
+			const match = /(?:^|\s)language-(\S+)/.exec(props.className ?? "");
 			const lang = match?.[1] ?? "";
 			const raw = props.children ?? "";
 			return <CodeBlock lang={lang}>{raw}</CodeBlock>;
