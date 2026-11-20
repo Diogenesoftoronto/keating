@@ -7,6 +7,9 @@ import { runFlueCase } from "../scripts/jev-boundary-flue";
 import { CASES, calibratedCase, digest, REVIEW_MODEL, TUTOR_MODEL } from "../scripts/jev-boundary-cases";
 import { liveModels, MAX_CALLS, MAX_MICROUSD, MAX_TUTOR_OUTPUT, offlineModels, openingWireOverlap, ProofLedger, relayOrigin } from "../scripts/jev-boundary-transport";
 
+const sealedPayload = (content: string) => ({ model: TUTOR_MODEL, stream: true, stream_options: { include_usage: true },
+  max_tokens: MAX_TUTOR_OUTPUT, messages: [{ role: "user", content }] });
+
 test("Flue preserves the complete accepted input across the estimated boundary and withholds only genuine provider or wire overflow", async () => {
   const dir = mkdtempSync(join(tmpdir(), "jev-boundary-proof-"));
   try {
@@ -54,10 +57,12 @@ test("an explicit provider overflow on dense history is visible in Flue before t
 test("wire adapter verifies Google and relay model identities, usage and request ids without contacting either service", async () => {
   const ledger = new ProofLedger();
   let tutorCount = 0;
+  const wireLengths: number[] = [];
   const bothDispatched = Promise.withResolvers<void>();
   const fixtureFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const request = new Request(input, init), payload = await request.json();
+    const request = new Request(input, init), body = await request.text(), payload = JSON.parse(body);
     if (request.url.includes("googleapis.com")) {
+      wireLengths.push(Buffer.byteLength(body));
       if (++tutorCount === 2) bothDispatched.resolve();
       await bothDispatched.promise;
       expect(payload.max_tokens).toBe(MAX_TUTOR_OUTPUT);
@@ -74,13 +79,15 @@ test("wire adapter verifies Google and relay model identities, usage and request
   }) as typeof fetch;
   const models = liveModels("under", ledger, "relay", "http://127.0.0.1:8800", { fetch: fixtureFetch,
     keys: { GEMINI_API_KEY: "unused-test-value", TYPESAFE_API_KEY: "unused-test-value" } });
-  const contexts = ["synthetic A", "synthetic B"].map(content => ({ messages: [{ role: "user" as const, content, timestamp: 1 }] }));
+  const contexts = ["synthetic A", "synthetic B 密🙂"].map(content => ({ messages: [{ role: "user" as const, content, timestamp: 1 }] }));
   const answers = await Promise.all(contexts.map(context => models.tutor(context)));
   expect(answers.every(answer => answer.stopReason === "stop")).toBe(true);
   expect((await models.judge({ state: "ab", questions: { value: { type: "noul", instructions: "Does it contain a?" } } })).ok).toBe(true);
   expect(ledger.rows.map(row => [row.role, row.reportedModel, row.usage?.input, row.usage?.output, row.requestId])).toEqual([
     ["tutor", TUTOR_MODEL, 35, 4, null], ["tutor", TUTOR_MODEL, 35, 4, null], ["reviewer", REVIEW_MODEL, 65, 1, "synthetic-request-id"],
   ]);
+  expect(ledger.rows.slice(0, 2).map(row => row.requestUtf8Bytes)).toEqual(wireLengths);
+  expect(ledger.rows.slice(0, 2).map(row => row.reservedInput)).toEqual(wireLengths.map(bytes => bytes + 4_096));
   expect(openingWireOverlap(ledger.rows, contexts.map(digest))).toBeGreaterThan(0);
   expect(openingWireOverlap(ledger.rows.slice(1), contexts.map(digest))).toBeNull();
   const local = ledger.rows.at(-1)!;
@@ -91,16 +98,19 @@ test("wire adapter verifies Google and relay model identities, usage and request
 });
 
 test("the shared reservation is atomic across roles and preserves the cost of missing usage", () => {
-  const ledger = new ProofLedger(530_000);
-  const first = ledger.reserve("under", "tutor", "a");
-  ledger.reserve("under", "tutor", "b");
-  expect(() => ledger.reserve("under", "tutor", "c")).toThrow("reservation-denied");
+  const body = JSON.stringify(sealedPayload("x".repeat(12_000)));
+  const perTutor = Math.ceil((Buffer.byteLength(body) + 4_096) * .25 + MAX_TUTOR_OUTPUT * 1.5);
+  const ledger = new ProofLedger(2 * perTutor + Math.ceil(64_000 * .042) + 700);
+  const first = ledger.reserve("under", "tutor", body);
+  ledger.reserve("under", "tutor", body);
+  expect(() => ledger.reserve("under", "tutor", body)).toThrow("reservation-denied");
   const review = ledger.reserve("under", "reviewer", "d");
   ledger.finish(review, null);
   expect(review.accountedMicrousd).toBe(review.reservedMicrousd);
-  expect(() => ledger.reserve("under", "tutor", "e")).toThrow("reservation-denied");
+  expect(review.usageMicrousd).toBeNull();
+  expect(() => ledger.reserve("under", "tutor", body)).toThrow("reservation-denied");
   ledger.finish(first, TUTOR_MODEL, { input: 2000, output: 20 });
-  expect(ledger.reserve("under", "tutor", "f").role).toBe("tutor");
+  expect(ledger.reserve("under", "tutor", body).role).toBe("tutor");
   expect(() => new ProofLedger(MAX_MICROUSD + 1)).toThrow();
   const calls = new ProofLedger();
   for (let index = 0; index < MAX_CALLS; index++) calls.finish(calls.reserve("at", "reviewer", "a"), REVIEW_MODEL, { input: 1, output: 1 });
@@ -109,4 +119,37 @@ test("the shared reservation is atomic across roles and preserves the cost of mi
   expect(() => relayOrigin("https://chat.keating.help.evil.test")).toThrow();
   expect(() => relayOrigin("http://private@127.0.0.1:8800")).toThrow();
   expect(calibratedCase("dense").full.stateCharacters).toBeGreaterThan(50_000);
+});
+
+test("sealed Gemini input reserves UTF-8 bytes plus framing, caps at the model window and rejects expanded payloads", () => {
+  const ledger = new ProofLedger();
+  const sample = sealedPayload("密🙂");
+  const actual = JSON.stringify(sample);
+  const row = ledger.reserve("dense", "tutor", actual);
+  expect(row.reservedInput).toBe(Buffer.byteLength(actual) + 4_096);
+  expect(row.reservedInput).toBeGreaterThan(actual.length + 4_096);
+  expect(ledger.reserve("dense", "tutor", JSON.stringify(sealedPayload("x".repeat(1_048_576)))).reservedInput).toBe(1_048_576);
+  for (const unsafe of [{ ...sample, tools: [{ type: "function" }] }, { ...sample, modalities: ["audio"] },
+    { ...sample, max_tokens: MAX_TUTOR_OUTPUT + 1 }, { ...sample, n: 2 },
+    { ...sample, messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "https://invalid.test/" } }] }] },
+    { ...sample, messages: [{ role: "assistant", tool_calls: [{}], content: "result" }] }]) {
+    expect(() => ledger.reserve("dense", "tutor", JSON.stringify(unsafe))).toThrow();
+  }
+  expect(ledger.rows).toHaveLength(2);
+});
+
+test("a Gemini overrun keeps its actual usage, invalidates the run and prevents another dispatch", () => {
+  const body = JSON.stringify(sealedPayload("fixture"));
+  for (const dimension of ["cached input", "output"]) {
+    const ledger = new ProofLedger();
+    const row = ledger.reserve("dense", "tutor", body);
+    const usage = dimension === "output" ? { input: 35, output: row.reservedOutput + 1 }
+      : { input: row.reservedInput, cached: 1, output: 1 };
+    expect(() => ledger.finish(row, TUTOR_MODEL, usage)).toThrow("provider-reported-usage-above-reservation");
+    expect(row.reservationExceeded).toBe(true);
+    expect(row.usage).toEqual(usage);
+    expect(row.usageMicrousd).toBeGreaterThan(0);
+    expect(row.accountedMicrousd).toBeGreaterThanOrEqual(row.reservedMicrousd);
+    expect(() => ledger.reserve("dense", "reviewer", "{}")).toThrow("proof-reservation-denied");
+  }
 });

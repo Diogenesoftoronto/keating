@@ -22,8 +22,28 @@ export type WireRow = {
   requestSha256: string; startedAt: string; status: number | null; requestId: string | null;
   semanticRequestHash: string | null; endpoint: string | null; method: "POST"; sentMs: number | null;
   headersAt: string | null; receivedMs: number | null; responseSha256: string | null; completedAt: string | null;
-  reportedModel: string | null; usage: Usage | null; accountedMicrousd: number; completed: boolean;
+  requestUtf8Bytes: number; reservationBasis: "text-wire-bytes-plus-4096" | "jev-request-limit";
+  reportedModel: string | null; usage: Usage | null; usageMicrousd: number | null; accountedMicrousd: number; reservationExceeded: boolean; completed: boolean;
 };
+
+const textRequestFields = new Set(["model", "messages", "stream", "stream_options", "max_tokens"]);
+function sealedTutorInput(body: string, bytes: number): number {
+  let payload;
+  try { payload = JSON.parse(body); } catch { throw new Error("unexpected-tutor-payload"); }
+  if (payload?.model !== TUTOR_MODEL || payload.max_tokens !== MAX_TUTOR_OUTPUT || payload.stream !== true
+      || Object.keys(payload).some(key => !textRequestFields.has(key))
+      || payload.stream_options?.include_usage !== true || Object.keys(payload.stream_options).length !== 1
+      || !Array.isArray(payload.messages) || !payload.messages.length) throw new Error("unexpected-tutor-payload");
+  for (const message of payload.messages) {
+    if (!["user", "assistant", "system"].includes(message?.role) || Object.keys(message).some(key => key !== "role" && key !== "content")) {
+      throw new Error("text-only-tutor-required");
+    }
+    if (typeof message.content === "string") continue;
+    if (!Array.isArray(message.content) || !message.content.every((part: { type?: string; text?: unknown } | null) =>
+      part?.type === "text" && typeof part.text === "string" && Object.keys(part).length === 2)) throw new Error("text-only-tutor-required");
+  }
+  return Math.min(google.contextWindow, bytes + 4_096);
+}
 
 /** Wall-clock overlap of two completed HTTP response bodies, identified by the actual private tutor contexts. */
 export function openingWireOverlap(rows: readonly WireRow[], contexts: readonly string[]): number | null {
@@ -50,22 +70,24 @@ export class ProofLedger {
     if (!Number.isSafeInteger(cap) || cap < 0 || cap > MAX_MICROUSD) throw new Error("invalid-cost-cap");
   }
   reserve(kind: BoundaryCase, role: WireRow["role"], body: string, target?: { url: string; semanticHash: string }) {
-    // Reserve the published *whole provider window*, even if the local estimator is inaccurate.
-    // An HTTP error or missing usage keeps its full reservation. Parallel calls reserve synchronously.
-    const reservedInput = role === "reviewer" ? JEV_REQUEST_TOKEN_LIMIT : google.contextWindow;
+    // No tools, media or external input can enter the sealed Gemini payload. Count every outgoing UTF-8
+    // byte and allow 4,096 more tokens for provider framing. Jev retains its full provider-window reservation.
+    const requestUtf8Bytes = Buffer.byteLength(body, "utf8");
+    const reservedInput = role === "reviewer" ? JEV_REQUEST_TOKEN_LIMIT : sealedTutorInput(body, requestUtf8Bytes);
     // Review responses are typed scores (free output). Hold the full native request window for their token accounting too.
     const reservedOutput = role === "reviewer" ? JEV_REQUEST_TOKEN_LIMIT : MAX_TUTOR_OUTPUT;
     const reservedMicrousd = amount(role, { input: reservedInput, output: reservedOutput });
     const spent = this.rows.reduce((sum, row) => sum + row.accountedMicrousd, 0);
     const tokens = this.rows.reduce((sum, row) => sum + (row.usage ? row.usage.input + (row.usage.cached ?? 0) : row.reservedInput), 0);
     const outputs = this.rows.reduce((sum, row) => sum + (row.usage?.output ?? row.reservedOutput), 0);
-    if (this.rows.length >= MAX_CALLS || reservedInput + tokens > MAX_INPUT_TOKENS ||
+    if (this.rows.some(row => row.reservationExceeded) || this.rows.length >= MAX_CALLS || reservedInput + tokens > MAX_INPUT_TOKENS ||
         reservedInput + reservedOutput + tokens + outputs > MAX_TOTAL_TOKENS || reservedMicrousd + spent > this.cap) {
       this.denied++; this.changed(); throw new Error("proof-reservation-denied");
     }
     const row: WireRow = { id: this.rows.length + 1, case: kind, role, reservedInput, reservedOutput, reservedMicrousd,
       requestSha256: sha(body), startedAt: new Date().toISOString(), status: null, requestId: null,
-      reportedModel: null, usage: null, accountedMicrousd: reservedMicrousd, completed: false,
+      requestUtf8Bytes, reservationBasis: role === "tutor" ? "text-wire-bytes-plus-4096" : "jev-request-limit",
+      reportedModel: null, usage: null, usageMicrousd: null, accountedMicrousd: reservedMicrousd, reservationExceeded: false, completed: false,
       endpoint: target?.url ?? null, semanticRequestHash: target?.semanticHash ?? null, method: "POST", sentMs: null,
       headersAt: null, receivedMs: null, responseSha256: null, completedAt: null };
     this.rows.push(row); this.changed();
@@ -87,11 +109,15 @@ export class ProofLedger {
     row.reportedModel = model && /^[\w.:/-]{1,160}$/.test(model) ? model : null;
     row.completed = true;
     row.completedAt = new Date().toISOString();
-    if (usage && Object.values(usage).every(n => Number.isSafeInteger(n) && n >= 0) && usage.input > 0) {
-      row.usage = usage;
-      row.accountedMicrousd = amount(row.role, usage);
+    if (usage && Object.values(usage).every(n => Number.isSafeInteger(n) && n >= 0) && usage.input + (usage.cached ?? 0) > 0) {
+      row.usage = { ...usage };
+      row.usageMicrousd = amount(row.role, usage);
+      row.reservationExceeded = usage.input + (usage.cached ?? 0) > row.reservedInput || usage.output > row.reservedOutput
+        || row.usageMicrousd > row.reservedMicrousd;
+      row.accountedMicrousd = row.reservationExceeded ? Math.max(row.usageMicrousd, row.reservedMicrousd) : row.usageMicrousd;
     }
     this.changed();
+    if (row.reservationExceeded) throw new Error("provider-reported-usage-above-reservation");
   }
 }
 type Tutor = (context: Context, options?: SimpleStreamOptions) => Promise<AssistantMessage>;
@@ -168,8 +194,6 @@ export function liveModels(kind: BoundaryCase, ledger: ProofLedger, reviewer: "r
         const wire = new Request(input, init);
         if (wire.url !== openAiGoogle + "/chat/completions" || wire.method !== "POST") throw new Error("unexpected-tutor-route");
         const body = await wire.clone().text();
-        const payload = JSON.parse(body);
-        if (payload.model !== TUTOR_MODEL || payload.max_tokens !== MAX_TUTOR_OUTPUT || payload.tools?.length) throw new Error("unexpected-tutor-payload");
         dispatched = ledger.reserve(kind, "tutor", body, { url: wire.url, semanticHash: digest(context) });
         const row = dispatched;
         row.sentMs = performance.now();

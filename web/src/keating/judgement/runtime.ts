@@ -200,12 +200,18 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const teachingTiers = eligible.filter(({ key }) => key.backend === "system-one" || settings.backend === "local" || localFallbackAvailable)
     .map(({ key }) => {
       const hosted = key.backend === "system-one";
-      return Object.freeze({ key, judgementModel: Object.freeze({ id: key.model,
+      const judgementModel = Object.freeze({ id: key.model,
         requestTokens: normalizeContextWindow(hosted ? hostedBudget(hostedRequestTokens) : localRequestTokens),
         stateQuestionTokens: normalizeContextWindow(hosted ? hostedBudget(hostedStateQuestionTokens) : localStateQuestionTokens),
-      }), ...(hosted && !google ? { maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS } : {}),
-      ...(hosted && settings.hostedProvider === "typesafe" ? { fitsWire: (request: JudgementRequest) =>
-        new TextEncoder().encode(JSON.stringify(encodeSystemOneRequest(request, key.model))).byteLength <= MAX_TYPESAFE_BYOK_BODY_BYTES } : {}) });
+      });
+      if (!hosted || google) return Object.freeze({ key, judgementModel });
+      const transport = { key, judgementModel, maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS };
+      if (settings.hostedProvider !== "typesafe") return Object.freeze(transport);
+      const fitsWire = (request: JudgementRequest) => {
+        const body = JSON.stringify(encodeSystemOneRequest(request, key.model));
+        return new TextEncoder().encode(body).byteLength <= MAX_TYPESAFE_BYOK_BODY_BYTES;
+      };
+      return Object.freeze({ ...transport, fitsWire });
     });
   const judgementModel = teachingTiers[0]?.judgementModel ?? Object.freeze({
     id: pin?.model ?? (settings.backend === "hosted" ? hostedModel : settings.localModelId),
