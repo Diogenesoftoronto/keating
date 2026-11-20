@@ -53,7 +53,9 @@ async function loadToy(key: string): Promise<RecessBotArt["toy"]> {
 const kitSheets = { blasters, packs, toppers };
 
 async function loadEquipment(ids: readonly string[]): Promise<RecessBotArt["equipment"]> {
-  const selected = HABIT_KIT.filter(piece => piece.parts > 0 && piece.art && ids.includes(piece.id));
+  const selected = HABIT_KIT.filter(piece =>
+    piece.parts > 0 && piece.art && ids.includes(piece.id)
+    && (piece.slot === "topper" || piece.slot === "pack" || piece.slot === "blaster"));
   const sprites = await Promise.all(selected.map(async ({ art, slot }) => {
     if (!art) return [];
     const image = await loadImage(kitSheets[art.sheet]).catch(() => null);

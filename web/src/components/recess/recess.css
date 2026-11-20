@@ -1,127 +1,270 @@
-.recess-game {
+.recess-root {
   --recess-paper: #f1ece0;
   --recess-card: #f6f2e8;
+  --recess-surface: color-mix(in srgb, var(--recess-paper) 68%, var(--recess-card));
   --recess-ink: #1c211b;
   --recess-soft: #4a5247;
   --recess-line: #c6c3b6;
+  --recess-line-soft: color-mix(in srgb, var(--recess-line) 65%, transparent);
+  --recess-field-line: #7d8277;
   --recess-green: #14743c;
-  --recess-wash: #ddebdd;
-  --recess-red: #b9432e;
-  --recess-mono: "JetBrains Mono", ui-monospace, monospace;
+  --recess-green-hover: #0f5f31;
+  --recess-primary-fg: #f8f6f0;
+  --recess-wash: #e1efe4;
+  --recess-red: #a93723;
+  --recess-red-wash: color-mix(in srgb, var(--recess-red) 9%, var(--recess-card));
+  --recess-mono: var(--mono-body, "JetBrains Mono", ui-monospace, monospace);
+  --recess-ui: var(--font-ui, system-ui, -apple-system, sans-serif);
+  --recess-serif: "Literata", Georgia, serif;
+  --recess-shadow-surface:
+    0 0 0 1px oklch(0 0 0 / 0.08),
+    0 2px 4px -2px oklch(0 0 0 / 0.06),
+    0 6px 16px -4px oklch(0 0 0 / 0.05);
+  --recess-shadow-pop:
+    0 0 0 1px oklch(0 0 0 / 0.08),
+    0 6px 16px -4px oklch(0 0 0 / 0.12),
+    0 16px 32px -8px oklch(0 0 0 / 0.10);
+  --recess-shadow-btn:
+    0 1px 2px oklch(0 0 0 / 0.08),
+    0 1px 0 oklch(0 0 0 / 0.05);
+  --recess-shadow-btn-primary:
+    0 1px 2px oklch(0 0 0 / 0.16),
+    inset 0 1px 0 oklch(1 0 0 / 0.16);
   display: grid;
   min-width: 0;
   gap: 10px;
+  font-family: var(--recess-ui);
 }
 
-.recess-game[data-theme="term"] {
+.recess-root[data-theme="term"] {
   --recess-paper: #0c1510;
   --recess-card: #11201a;
+  --recess-surface: color-mix(in srgb, var(--recess-paper) 55%, var(--recess-card));
   --recess-ink: #dcefe0;
   --recess-soft: #9dbfa8;
   --recess-line: #345644;
+  --recess-line-soft: color-mix(in srgb, var(--recess-line) 60%, transparent);
+  --recess-field-line: #5f8a70;
   --recess-green: #4be388;
-  --recess-wash: #123a24;
-  --recess-red: #ff6b52;
+  --recess-green-hover: #64ea9a;
+  --recess-primary-fg: #06110a;
+  --recess-wash: #143624;
+  --recess-red: #ff7b63;
+  --recess-red-wash: color-mix(in srgb, var(--recess-red) 13%, var(--recess-card));
+  --recess-shadow-surface: 0 0 0 1px oklch(1 0 0 / 0.10);
+  --recess-shadow-pop:
+    0 0 0 1px oklch(1 0 0 / 0.14),
+    0 14px 32px oklch(0 0 0 / 0.45);
+  --recess-shadow-btn: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --recess-shadow-btn-primary: 0 1px 2px oklch(0 0 0 / 0.35);
 }
 
 .recess-flight-panel { display: contents; }
 .recess-keycap { display: none; }
 
-.recess-toolbar {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px 14px;
+/* ── Icons & shared controls ────────────────────────────────────────── */
+.recess-icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+.recess-icon--play {
+  /* Physical nudge toward the play triangle's point; playback icons never mirror. */
+  transform: translateX(1px);
 }
 
-.recess-plan, .recess-controls, .recess-options {
-  display: flex;
-  align-items: end;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-width: 0;
+.recess-root :is(button, summary) {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.recess-root :is(button, select):disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.recess-root :is(button, select, input, textarea, summary):focus-visible {
+  outline: 2px solid var(--recess-green);
+  outline-offset: 2px;
 }
 
-.recess-plan { flex: 1 1 18rem; }
-.recess-controls { flex: 0 1 auto; }
-
-.recess-kicker {
-  flex-basis: 100%;
-  color: var(--recess-green);
-  font: 700 .68rem/1.2 var(--recess-mono);
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
-.recess-kicker::before { content: "▸ "; }
-
-.recess-game label, .recess-settings {
-  font-size: .8rem;
-}
-
-.recess-lesson, .recess-options > label:has(select) {
-  display: grid;
-  gap: 3px;
-  color: var(--recess-soft);
-  font: 600 .7rem var(--recess-mono);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-.recess-game select {
-  min-height: 40px;
+.recess-root select {
+  min-height: 38px;
   max-width: 100%;
-  padding: 5px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--recess-line);
-  border-radius: 3px;
+  border-radius: 6px;
   color: var(--recess-ink);
-  background: var(--recess-card);
-  font: 500 .84rem var(--recess-mono);
+  background: var(--recess-paper);
+  font: 500 0.85rem/1.3 var(--recess-ui);
   letter-spacing: 0;
   text-transform: none;
 }
 
-.recess-icon {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-
-/* Game keys: hard ink edge and a stepped drop, like the HUD sprites. */
+/* Primary and secondary action buttons: tactile press scale (0.96 / 150ms),
+   optical icon padding, and accessible light + dark primary contrast. */
 .recess-key {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 44px;
+  gap: 7px;
+  min-height: 40px;
   max-width: 100%;
-  padding: 6px 16px;
-  border: 2px solid var(--recess-ink);
-  border-radius: 3px;
+  padding: 8px 14px;
+  border: 1px solid var(--recess-line);
+  border-radius: 6px;
   color: var(--recess-ink);
-  background: var(--recess-card);
-  box-shadow: 0 3px 0 var(--recess-ink);
-  font: 700 .8rem/1.1 var(--recess-mono);
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  background: var(--recess-paper);
+  box-shadow: var(--recess-shadow-btn);
+  font: 600 0.85rem/1.2 var(--recess-ui);
+  letter-spacing: -0.005em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
-.recess-key:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--recess-ink); }
+.recess-key:has(> .recess-icon:first-child) {
+  padding-inline: 12px 14px;
+}
 
-.recess-game .recess-start[data-flight="false"] {
-  border-color: var(--recess-ink);
-  color: var(--recess-paper);
+.recess-key[data-primary="true"] {
+  border-color: transparent;
+  color: var(--recess-primary-fg);
+  background: var(--recess-green);
+  box-shadow: var(--recess-shadow-btn-primary);
+}
+.recess-key[data-primary="true"] svg[data-glyph] {
+  --glyph-accent: currentColor;
+}
+
+.recess-eureka {
+  border-color: color-mix(in srgb, var(--recess-green) 55%, var(--recess-line));
+  background: var(--recess-wash);
+  color: var(--recess-ink);
+}
+.recess-eureka .recess-icon { color: var(--recess-green); }
+
+.recess-stop .recess-icon { color: var(--recess-red); }
+
+@media (hover: hover) {
+  .recess-key:not(:disabled):hover {
+    border-color: var(--recess-soft);
+    background: var(--recess-surface);
+  }
+  .recess-key[data-primary="true"]:not(:disabled):hover {
+    border-color: transparent;
+    background: var(--recess-green-hover);
+  }
+  .recess-eureka:not(:disabled):hover {
+    border-color: var(--recess-green);
+    background: color-mix(in srgb, var(--recess-green) 16%, var(--recess-card));
+  }
+  .recess-stop:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--recess-red) 60%, var(--recess-line));
+    background: var(--recess-red-wash);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .recess-key,
+  .recess-chip,
+  .recess-pick,
+  .recess-strip-close,
+  .recess-settings-toggle,
+  .recess-gate-keys button,
+  .recess-answers button {
+    transition-property: scale, background-color, border-color, color, box-shadow;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  .recess-key:not(:disabled):active,
+  .recess-chip:not(:disabled):active,
+  .recess-pick:not(:disabled):active,
+  .recess-strip-close:not(:disabled):active,
+  .recess-settings-toggle:not(:disabled):active,
+  .recess-gate-keys button:not(:disabled):active,
+  .recess-answers button:not(:disabled):active {
+    scale: 0.96;
+  }
+}
+
+.recess-pips {
+  display: inline-flex;
+  gap: 3px;
+  margin-inline-start: 2px;
+}
+.recess-pips > i {
+  width: 5px;
+  height: 11px;
+  border-radius: 1.5px;
   background: var(--recess-green);
 }
-.recess-game[data-theme="term"] .recess-start[data-flight="false"] { color: #06110a; border-color: var(--recess-green); box-shadow: 0 3px 0 #1d6b3c; }
-.recess-start[data-flight="true"] .recess-icon { color: var(--recess-red); }
+.recess-pips > i[data-empty="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--recess-soft);
+}
 
-.recess-eureka { border-color: var(--recess-green); background: var(--recess-wash); box-shadow: 0 3px 0 var(--recess-green); }
-.recess-eureka:not(:disabled):active { box-shadow: 0 1px 0 var(--recess-green); }
-.recess-eureka .recess-icon { color: var(--recess-green); }
+.recess-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 6px;
+  margin-inline: -6px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--recess-green);
+  background: transparent;
+  font: 500 0.82rem/1.3 var(--recess-ui);
+  text-decoration: underline;
+  text-underline-position: from-font;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition-property: background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+@media (hover: hover) {
+  .recess-link:not(:disabled):hover {
+    background: var(--recess-wash);
+  }
+}
+.recess-disclosure .recess-icon {
+  transition-property: transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-disclosure[aria-expanded="true"] .recess-icon {
+  transform: rotate(180deg);
+}
+
+.recess-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid var(--recess-line);
+  border-radius: 6px;
+  color: var(--recess-ink);
+  background: var(--recess-card);
+  font: 500 0.78rem/1.25 var(--recess-ui);
+  touch-action: manipulation;
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-chip .recess-icon { color: var(--recess-green); }
+@media (hover: hover) {
+  .recess-chip:not(:disabled):hover {
+    border-color: var(--recess-green);
+    background: var(--recess-wash);
+  }
+}
+
+.recess-sr,
 .recess-count {
   position: absolute;
   width: 1px;
@@ -130,64 +273,696 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.recess-pips { display: inline-flex; gap: 3px; margin-left: 2px; }
-.recess-pips > i { width: 6px; height: 12px; background: var(--recess-green); }
-.recess-pips > i[data-empty="true"] { background: transparent; box-shadow: inset 0 0 0 1px var(--recess-soft); }
 
-.recess-game :is(button, summary) { cursor: pointer; }
-.recess-game :is(.recess-source button, .recess-answers button):not(:disabled):hover { border-color: var(--recess-green); }
-.recess-key:not(:disabled):hover { filter: brightness(1.04); }
-.recess-game :is(button, select):disabled { opacity: .55; cursor: default; }
-.recess-game :is(button, select, input, summary):focus-visible {
-  outline: 2px solid var(--recess-green);
-  outline-offset: 3px;
-}
-
-.recess-settings summary {
+/* ── Charge gauge (shared between strip header and flight HUD) ──────── */
+.recess-charge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 36px;
-  width: fit-content;
-  padding-block: 5px;
-  color: var(--recess-soft);
-  font: 600 .72rem var(--recess-mono);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  list-style: none;
+  gap: 6px;
+  flex: none;
+  font-variant-numeric: tabular-nums;
 }
-.recess-settings summary::-webkit-details-marker { display: none; }
-.recess-settings summary::after { content: "+"; color: var(--recess-green); }
-.recess-settings[open] summary::after { content: "−"; }
-.recess-options { gap: 8px 14px; padding-block: 2px 10px; }
-.recess-options > label:not(:has(select)) { display: flex; align-items: center; gap: 6px; min-height: 40px; }
-.recess-options input { accent-color: var(--recess-green); }
-.recess-options input[type="checkbox"] { width: 18px; height: 18px; }
-.recess-options input[type="range"] { width: 96px; }
-
-.recess-stage {
+.recess-charge > b {
+  color: var(--recess-soft);
+  font: 600 0.64rem/1 var(--recess-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.recess-charge-bar {
+  display: block;
+  width: 42px;
+  height: 7px;
   overflow: hidden;
-  border: 1px solid var(--recess-line);
-  border-radius: 8px;
-  min-width: 0;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--recess-ink) 45%, transparent);
   background: var(--recess-paper);
+}
+.recess-charge-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--recess-green);
+  transition-property: width, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-charge > em {
+  min-width: 3.4ch;
+  font: 600 0.75rem/1 var(--recess-mono);
+  font-style: normal;
+  text-align: end;
+}
+.recess-charge[data-tone="low"] > .recess-charge-bar > i { background: var(--recess-red); }
+.recess-charge[data-tone="low"] > em,
+.recess-charge[data-tone="empty"] > em { color: var(--recess-red); }
+@media (prefers-reduced-motion: no-preference) {
+  .recess-root[data-calm="false"] .recess-hud .recess-charge[data-tone="empty"] > b {
+    animation: recess-blink 1s steps(2) infinite;
+  }
+}
+@keyframes recess-blink { 50% { color: var(--recess-red); } }
+
+/* ── Chat shell integration: no composer hints or overlapping chrome ── */
+.recess-strip,
+.recess-chat-stage {
+  --recess-paper: var(--background);
+  --recess-ink: var(--foreground);
+  --recess-soft: var(--muted-foreground);
+  --recess-line: var(--border);
   color: var(--recess-ink);
 }
-
-.recess-stage-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 3px 12px;
-  min-width: 0;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--recess-line);
-  line-height: 1.25;
+[data-chat-thread]:has(.recess-strip) { position: relative; }
+[data-chat-thread]:has(.recess-strip) :is(.composer-root, .ch-study, .composer-hint, .chat-mascot-perch) {
+  display: none;
+}
+/* Float "Jump to latest" cleanly above the Recess strip so it never covers header controls. */
+[data-chat-thread]:has(.recess-strip) .ch-latest {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+[data-chat-thread]:has(.recess-chat-stage) .ch-latest {
+  display: none;
 }
 
-.recess-stage-heading strong { overflow-wrap: anywhere; font-size: .9rem; }
-.recess-stage-heading span { color: var(--recess-green); font: .7rem var(--recess-mono); }
+/* ── Recess strip (replaces the composer in-place) ──────────────────── */
+.recess-strip {
+  position: relative;
+  z-index: 2;
+  container: recess-strip / inline-size;
+  display: grid;
+  gap: 12px;
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--ch-column, 46rem);
+  padding: 12px 14px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--recess-card);
+  box-shadow: var(--recess-shadow-surface);
+  outline: none;
+  animation: recess-fade-in 200ms ease-out both;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .recess-strip {
+    animation: recess-enter-up 300ms ease-out both;
+  }
+}
+@keyframes recess-fade-in {
+  from { opacity: 0; }
+}
+@keyframes recess-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+}
+
+.recess-strip-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+}
+.recess-strip-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 7px;
+  border-radius: 6px;
+  background: var(--recess-wash);
+  color: var(--recess-green);
+  font: 700 0.68rem/1 var(--recess-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.recess-strip-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 600 0.94rem/1.3 var(--recess-ui);
+  text-wrap: balance;
+}
+.recess-strip-title .katex { font-size: 1em; }
+.recess-strip-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.recess-strip-close,
+.recess-settings-toggle {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--recess-soft);
+  background: transparent;
+  list-style: none;
+  touch-action: manipulation;
+  transition-property: background-color, color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+@media (hover: hover) {
+  .recess-strip-close:hover,
+  .recess-settings-toggle:hover {
+    color: var(--recess-ink);
+    background: var(--recess-wash);
+  }
+}
+.recess-settings-toggle[aria-expanded="true"] {
+  color: var(--recess-green);
+  background: var(--recess-wash);
+}
+
+/* ── Flight settings: an in-strip panel, not a popover ─────────────────
+   It opens inside the strip in the plan's place, so it never slides under the app header or
+   past a scroll edge, and it reads as part of the chat. Flat rows, label leading, control trailing;
+   groups are carried by space and a small mono heading, never nested cards. */
+.recess-strip[data-settings="open"] > :not(.recess-strip-head, .recess-panel) { display: none; }
+.recess-panel {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  max-height: min(64dvh, 34rem);
+  margin-inline: -4px;
+  padding: 0 4px 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  outline: none;
+  /* The last rows fade at the scroll edge so it is clear there is more below. */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+.recess-panel:not(:has(.recess-panel-stats)) { mask-image: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .recess-panel { animation: recess-panel-in 200ms ease-out both; }
+}
+@keyframes recess-panel-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+.recess-panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-inline: -4px;
+  padding: 0 4px 8px;
+  background: var(--recess-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.recess-panel-head h3 {
+  margin: 0;
+  color: var(--recess-ink);
+  font: 600 16px/1.25 var(--recess-ui);
+  text-wrap: balance;
+}
+.recess-panel-done {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--recess-field-line);
+  border-radius: 6px;
+  color: var(--recess-ink);
+  background: var(--recess-paper);
+  font: 600 14px/1.2 var(--recess-ui);
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  .recess-panel-done:hover { background: var(--recess-wash); }
+}
+.recess-panel-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.recess-panel-group > h4 {
+  margin: 0;
+  color: var(--recess-soft);
+  font: 600 11px/1.3 var(--recess-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.recess-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  min-width: 0;
+}
+.recess-row-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--recess-ink);
+  font: 500 15px/1.3 var(--recess-ui);
+}
+.recess-row-label > small {
+  color: var(--recess-soft);
+  font: 400 13px/1.35 var(--recess-ui);
+  text-wrap: pretty;
+}
+.recess-row > select {
+  flex: 0 1 12.5rem;
+  min-width: 0;
+  max-width: 60%;
+  min-height: 40px;
+  font-size: 15px;
+  border-color: var(--recess-field-line);
+  background-color: var(--recess-paper);
+}
+.recess-panel .recess-fine { font-size: 13px; line-height: 1.45; }
+
+/* Segmented radio group: one choice visible at a glance instead of hidden in a select. */
+.recess-segments {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--recess-soft) 12%, var(--recess-card));
+}
+.recess-segments--two { flex: 0 1 12.5rem; max-width: 60%; }
+.recess-segments > label {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--recess-soft);
+  font: 500 14px/1.2 var(--recess-ui);
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-segments > label > input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .recess-segments > label:not([data-checked]):hover { color: var(--recess-ink); background: var(--recess-wash); }
+}
+.recess-segments > label[data-checked] {
+  border-color: var(--recess-green);
+  color: var(--recess-ink);
+  background: var(--recess-wash);
+  font-weight: 600;
+}
+.recess-segments > label:has(> input:focus-visible) {
+  outline: 2px solid var(--recess-green);
+  outline-offset: 1px;
+}
+.recess-segments > label > input:focus-visible { outline: none; }
+
+.recess-range-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 12.5rem;
+  max-width: 52%;
+}
+.recess-range-field > input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--recess-green);
+}
+.recess-range-field > output {
+  min-width: 3ch;
+  color: var(--recess-ink);
+  font: 500 14px/1 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* Switch built on a native checkbox: keyboard, form and screen-reader behaviour come from the platform. */
+.recess-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  margin: 0;
+  border: 1px solid var(--recess-field-line);
+  border-radius: 999px;
+  background: var(--recess-paper);
+  cursor: pointer;
+  transition-property: background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-switch::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-start: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--recess-soft);
+  transition-property: translate, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-switch:checked {
+  border-color: var(--recess-green);
+  background: var(--recess-green);
+}
+.recess-switch:checked::before {
+  translate: 16px 0;
+  background: var(--recess-primary-fg);
+}
+[dir="rtl"] .recess-switch:checked::before { translate: -16px 0; }
+.recess-switch:disabled { opacity: 0.55; cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .recess-switch, .recess-switch::before, .recess-segments > label { transition: none; }
+}
+/* A 24px switch still gets a 44px target: the whole row is its label. */
+
+.recess-panel-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  color: var(--recess-soft);
+  font: 400 13px/1.4 var(--recess-ui);
+}
+.recess-panel-stats > div { display: flex; gap: 6px; min-width: 0; }
+.recess-panel-stats dt { color: var(--recess-soft); }
+.recess-panel-stats dd {
+  margin: 0;
+  color: var(--recess-ink);
+  font-family: var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+}
+.recess-panel-stats .recess-panel-worn { flex-basis: 100%; }
+.recess-panel-stats .recess-panel-worn dd { font-family: var(--recess-ui); }
+
+/* Narrow strip: rows stack label over control so nothing squeezes below a readable width. */
+@container recess-strip (max-width: 299px) {
+  .recess-row:has(> select, > .recess-segments, > .recess-range-field) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-height: 0;
+  }
+  .recess-row > :is(select, .recess-segments, .recess-range-field) {
+    width: 100%;
+    max-width: none;
+    flex-basis: auto;
+  }
+}
+
+/* Narrow strip (<480px): title gets its own full row so it never crushes to "Mito…" or disappears at 320px,
+   and the settings popover anchors cleanly across the strip's full width. */
+@container recess-strip (max-width: 479px) {
+  .recess-strip-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+  }
+  .recess-strip-mark { grid-row: 1; grid-column: 1; }
+  .recess-strip-tools { grid-row: 1; grid-column: 2; justify-self: end; gap: 4px; }
+  .recess-strip-title {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 0.95rem;
+  }
+  .recess-strip-head .recess-charge > b { display: none; }
+  .recess-strip-head .recess-charge-bar { width: 32px; }
+  .recess-plan-actions { width: 100%; }
+  .recess-plan-actions > .recess-key { flex: 1 1 100%; }
+  .recess-moves > .recess-key { flex: 1 1 100%; }
+  .recess-source-note { justify-content: space-between; width: 100%; }
+  .recess-dot { display: none; }
+}
+
+.recess-fine {
+  margin: 0;
+  color: var(--recess-soft);
+  font: 400 0.78rem/1.45 var(--recess-ui);
+  text-wrap: pretty;
+}
+.recess-fine--meta {
+  font-family: var(--recess-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Plan row & guidance ────────────────────────────────────────────── */
+.recess-plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.recess-plan-actions,
+.recess-moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+.recess-source-note {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--recess-soft);
+  font: 400 0.82rem/1.45 var(--recess-ui);
+}
+
+.recess-guide { display: grid; gap: 12px; }
+.recess-guide-reason {
+  margin: 0;
+  font: 400 0.96rem/1.55 var(--recess-serif);
+  text-wrap: pretty;
+  max-width: 62ch;
+}
+
+/* ── Lesson & chat picker ───────────────────────────────────────────── */
+.recess-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 8px;
+}
+.recess-picker--demos {
+  max-height: min(13.5rem, 34dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+.recess-pick {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: start;
+  border: 1px solid var(--recess-line);
+  border-radius: 6px;
+  color: inherit;
+  background: var(--recess-paper);
+  font: 600 0.84rem/1.3 var(--recess-ui);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition-property: border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-pick[aria-pressed="true"] {
+  border-color: var(--recess-green);
+  background: var(--recess-wash);
+}
+@media (hover: hover) {
+  .recess-pick:hover {
+    border-color: var(--recess-green);
+    background: var(--recess-surface);
+  }
+}
+.recess-pick small {
+  overflow: hidden;
+  color: var(--recess-soft);
+  font: 400 0.76rem/1.35 var(--recess-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Flight log (post-run review) ───────────────────────────────────── */
+.recess-log {
+  display: grid;
+  gap: 12px;
+  max-height: min(40dvh, 23rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block-end: 8px;
+  padding-inline-end: 2px;
+  border-block-end: 1px solid var(--recess-line-soft);
+}
+.recess-log-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0;
+}
+.recess-log-head strong {
+  font: 700 1rem/1.25 var(--recess-ui);
+  letter-spacing: -0.01em;
+}
+.recess-log[data-outcome="won"] .recess-log-head strong { color: var(--recess-green); }
+.recess-log-stats {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  color: var(--recess-soft);
+  font: 500 0.76rem/1.4 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.recess-log-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recess-log-list li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--recess-surface);
+}
+.recess-log-list li[data-correct="false"] {
+  background: var(--recess-red-wash);
+}
+.recess-log-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--recess-red) 14%, transparent);
+  color: var(--recess-red);
+  flex: none;
+}
+.recess-log-mark[data-state="ok"] {
+  background: var(--recess-wash);
+  color: var(--recess-green);
+}
+.recess-log-mark[data-state="partial"] {
+  background: color-mix(in srgb, var(--recess-soft) 15%, transparent);
+  color: var(--recess-soft);
+}
+.recess-log-q {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.recess-log-prompt {
+  font: 500 0.88rem/1.45 var(--recess-ui);
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+.recess-log-prompt s {
+  color: var(--recess-red);
+  text-decoration-thickness: 1.5px;
+}
+.recess-log-picked {
+  color: var(--recess-soft);
+  font: 400 0.8rem/1.4 var(--recess-ui);
+}
+.recess-log-a {
+  color: var(--recess-green);
+  font: 600 0.84rem/1.4 var(--recess-ui);
+}
+.recess-log-a::before {
+  content: "Answer: ";
+  color: var(--recess-soft);
+  font-weight: 500;
+}
+.recess-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+.recess-log .recess-takeaway {
+  margin: 0;
+  padding: 10px 12px;
+  border-inline-start: 3px solid var(--recess-green);
+  border-radius: 0 6px 6px 0;
+  background: var(--recess-surface);
+  color: var(--recess-ink);
+  font: 400 0.92rem/1.5 var(--recess-serif);
+  text-wrap: pretty;
+}
+.recess-md-line + .recess-md-line::before { content: " "; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .recess-log-head { animation: recess-enter-up 300ms ease-out both; }
+  .recess-log-list { animation: recess-enter-up 300ms ease-out 100ms both; }
+}
+
+/* ── Cited message highlight in the real chat ───────────────────────── */
+.keating-bubble.recess-cited {
+  border-radius: 6px;
+  outline: 2px solid var(--green-deep, #14743c);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .keating-bubble.recess-cited {
+    outline: none;
+    animation: recess-cite 2.6s ease-out;
+  }
+}
+@keyframes recess-cite {
+  0%, 40% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--green-deep, #14743c) 70%, transparent);
+    background: color-mix(in srgb, var(--green-deep, #14743c) 10%, transparent);
+  }
+}
+
+/* ── Active flight stage (covers the thread seamlessly) ─────────────── */
+.recess-chat-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  background: var(--recess-paper);
+  animation: recess-fade-in 200ms ease-out both;
+}
+.recess-chat-stage[data-calm="true"] { animation: none; }
 
 .recess-field {
   position: relative;
@@ -195,16 +970,15 @@
   flex-direction: column;
   justify-content: flex-end;
   isolation: isolate;
-  height: clamp(280px, 56svh, 508px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
-
 .recess-field:focus-visible {
   outline: 2px solid var(--recess-green);
   outline-offset: -2px;
 }
-
-.recess-game[data-phase="play"] .recess-field {
+.recess-root[data-phase="play"] .recess-field {
   cursor: crosshair;
   touch-action: none;
   user-select: none;
@@ -216,92 +990,53 @@
   justify-content: flex-end;
   flex: 1;
   min-height: 0;
-  gap: 8px;
+  gap: 12px;
   overflow: hidden;
-  padding: 12px clamp(12px, 4vw, 24px) 10px;
+  width: var(--recess-col-width, min(100%, var(--ch-column, 46rem)));
+  margin-inline-start: var(--recess-col-left, max(0px, (100% - var(--ch-column, 46rem)) / 2));
+  padding: 48px 0 14px;
 }
-
-.recess-game[data-phase="play"] .recess-page { opacity: var(--lesson-opacity, .36); }
-.recess-page :is(p, pre) {
-  margin: 0;
-  flex: none;
-  overflow-wrap: anywhere;
-}
-
-.recess-you {
-  align-self: flex-end;
-  max-width: 86%;
-  padding: 6px 9px;
-  border-radius: 4px;
-  background: var(--recess-card);
-  font-size: .82rem;
-}
-.recess-prose { font: .92rem/1.5 "Literata", Georgia, serif; }
-.recess-chat-turn {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  min-width: 0;
-  gap: .35em;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-}
-.recess-chat-turn :is(h1, h2, h3, h4, h5, h6, ul, ol, blockquote, hr) { margin: 0; }
-.recess-chat-turn :is(h1, h2, h3) { font-size: 1.1em; font-weight: 700; }
-.recess-chat-turn :is(h4, h5, h6) { font-size: 1em; font-weight: 700; }
-.recess-chat-turn :is(ul, ol) { padding-inline-start: 1.5em; }
-.recess-chat-turn ul { list-style: disc; }
-.recess-chat-turn ol { list-style: decimal; }
-.recess-chat-turn ul.contains-task-list { list-style: none; }
-.recess-chat-turn .task-list-item input { margin-inline-end: .4em; }
-.recess-chat-turn blockquote { padding-inline-start: .65em; border-inline-start: 2px solid var(--recess-green); }
-.recess-chat-turn table { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.recess-chat-turn :is(td, th) { padding: .18em .3em; border: 1px solid var(--recess-line); }
-.recess-chat-turn code { font-family: var(--recess-mono); }
-.recess-chat-turn :not(pre) > code { padding-inline: .2em; color: var(--recess-green); background: var(--recess-wash); }
-.recess-chat-turn .katex-display { margin: .2em 0; white-space: nowrap; }
-.recess-lesson-link { text-decoration: underline; text-underline-offset: .12em; }
-.recess-lesson-image { font-style: italic; }
-.recess-code {
-  padding: 7px 10px;
-  border-radius: 4px;
-  color: #4be388;
-  background: #101a14;
-  font: .8rem/1.5 var(--recess-mono);
-  white-space: pre-wrap;
-}
+.recess-root[data-phase="play"] .recess-page { opacity: var(--lesson-opacity, 0.36); }
+.recess-page :is(p, pre) { margin: 0; flex: none; overflow-wrap: anywhere; }
 .recess-page .w { display: inline-block; max-width: 100%; }
 .recess-page .term { border-bottom: 1px dotted var(--recess-green); }
 .recess-page .term.stir { color: var(--recess-red); }
-.recess-game[data-calm="false"] .recess-page .term.stir {
-  display: inline-block;
-  animation: recess-stir 140ms steps(2) 3;
+@media (prefers-reduced-motion: no-preference) {
+  .recess-root[data-calm="false"] .recess-page .term.stir {
+    display: inline-block;
+    animation: recess-stir 140ms steps(2) 3;
+  }
 }
 @keyframes recess-stir {
-  from { transform: translate(-1.5px, .5px) rotate(-.6deg); }
-  to { transform: translate(1.5px, -.5px) rotate(.6deg); }
+  from { transform: translate(-1.5px, 0.5px) rotate(-0.6deg); }
+  to { transform: translate(1.5px, -0.5px) rotate(0.6deg); }
 }
 
-.recess-dock {
-  position: relative;
-  flex: none;
-  min-height: 47px;
-  padding: 12px;
-  border-top: 1px solid var(--recess-line);
+.recess-turn { display: flex; }
+.recess-turn--you { justify-content: flex-end; }
+.recess-turn .you-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--recess-green) 28%, transparent);
+  border-radius: 6px;
   background: var(--recess-card);
-  color: var(--recess-soft);
-  font: .75rem var(--recess-mono);
+  font-family: var(--recess-ui);
+  line-height: 1.5;
 }
-
-.recess-dock img {
-  position: absolute;
-  width: 53px;
-  height: 53px;
-  object-fit: contain;
-  right: 22px;
-  bottom: 37px;
+.recess-turn .you-bubble p { margin: 0; }
+.recess-turn :is(p, ul, ol) { margin: 0 0 0.5em; }
+.recess-turn :is(p, ul, ol):last-child { margin-bottom: 0; }
+.recess-turn .katex-display { margin: 0.3em 0; }
+.recess-code {
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #4be388;
+  background: #101a14;
+  font: 0.8rem/1.5 var(--recess-mono);
+  white-space: pre-wrap;
 }
-.recess-game:not([data-phase="idle"]) .recess-dock img { visibility: hidden; }
+.recess-lesson-link { text-decoration: underline; text-underline-offset: 0.14em; }
+.recess-lesson-image { font-style: italic; }
 
 .recess-canvas {
   position: absolute;
@@ -312,241 +1047,523 @@
 }
 .recess-canvas[hidden] { display: none; }
 
+/* ── Flight HUD (never overflows horizontally, even at 320px) ───────── */
 .recess-hud {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
+  z-index: 5;
   display: flex;
-  min-height: 32px;
+  min-height: 36px;
   align-items: center;
-  gap: clamp(4px, 1vw, 10px);
-  padding: 4px 8px;
-  background: var(--recess-paper);
-  border-bottom: 1px solid var(--recess-line);
+  gap: clamp(6px, 1.2vw, 12px);
+  padding: 4px 12px;
+  background: color-mix(in srgb, var(--recess-paper) 92%, transparent);
+  border-bottom: 1px solid var(--recess-line-soft);
   pointer-events: none;
-  font: .7rem var(--recess-mono);
+  font: 500 0.74rem/1 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
 }
-
-.recess-hud :is(.recess-hearts, .recess-energy, .recess-power) { display: flex; gap: 2px; }
+.recess-hud :is(.recess-hearts, .recess-energy, .recess-power) {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
 .recess-hud :is(.recess-hearts, .recess-energy) svg { width: 13px; height: 13px; }
 .recess-hearts svg { fill: var(--recess-red); }
 .recess-energy svg { fill: var(--recess-green); stroke: var(--recess-green); stroke-width: 1.6; }
 .recess-hud svg[data-empty="true"] { fill: none; stroke: var(--recess-soft); stroke-width: 1; }
-.recess-hud :is(.recess-meter, .recess-boss) { overflow: hidden; background: var(--recess-line); height: 3px; }
-.recess-meter { flex: 0 1 34px; }
-.recess-boss { flex: 1 1 18px; }
+.recess-hud :is(.recess-meter, .recess-boss) {
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--recess-line);
+  height: 4px;
+}
+.recess-meter { flex: 0 1 32px; }
+.recess-boss { flex: 1 1 16px; min-width: 0; }
 .recess-boss[data-visible="false"] { visibility: hidden; }
 .recess-hud :is(.recess-meter, .recess-boss) > i { display: block; width: 100%; height: 100%; }
-.recess-meter > i, .recess-power > i { background: var(--recess-green); }
+.recess-meter > i,
+.recess-power > i { background: var(--recess-green); }
 .recess-boss > i { background: var(--recess-red); transform-origin: left; }
-.recess-power > i { width: 4px; height: 9px; }
+.recess-power > i { width: 4px; height: 10px; border-radius: 1px; }
 .recess-power > i[data-empty="true"] { background: var(--recess-line); }
-.recess-hud output { min-width: 4ch; text-align: right; }
-.recess-mult {
+.recess-hud-kit {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--recess-surface);
+  color: var(--recess-soft);
+  font: 600 0.66rem/1.1 var(--recess-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.recess-hud-kit[data-temp="true"] {
+  background: var(--recess-wash);
   color: var(--recess-green);
+}
+.recess-mult {
+  flex: none;
+  color: var(--recess-green);
+  font-weight: 700;
   border-bottom: 2px solid transparent;
   border-image: linear-gradient(90deg, var(--recess-green) calc(var(--combo) * 100%), transparent 0) 1;
 }
+.recess-hud output {
+  flex: none;
+  min-width: 4ch;
+  text-align: end;
+  font-weight: 700;
+}
 
+@media (max-width: 560px) {
+  .recess-hud { padding-inline: 8px; gap: 6px; font-size: 0.7rem; }
+  .recess-hud .recess-charge > b,
+  .recess-hud .recess-meter,
+  .recess-hud .recess-hud-kit { display: none; }
+  .recess-hud .recess-charge-bar { width: 28px; }
+  .recess-hud .recess-boss[data-visible="false"] { flex: 1 1 0; }
+}
+@media (max-width: 400px) {
+  .recess-hud .recess-power { display: none; }
+  .recess-hud .recess-charge-bar { width: 22px; }
+}
+
+/* ── Gate question card ─────────────────────────────────────────────── */
 .recess-gate {
   position: absolute;
-  inset: 44px auto auto 50%;
+  inset: 42px auto auto 50%;
   transform: translateX(-50%);
+  z-index: 3;
   display: grid;
-  gap: 3px;
-  max-width: calc(100% - 20px);
+  gap: 5px;
+  max-width: min(32rem, calc(100% - 20px));
   width: max-content;
-  padding: 7px 11px;
-  border: 2px solid var(--recess-ink);
-  border-radius: 3px;
+  padding: 9px 14px;
+  border: 1px solid var(--recess-line);
+  border-radius: 10px;
   background: var(--recess-card);
-  box-shadow: 0 3px 0 var(--recess-ink);
-  font-size: .82rem;
+  box-shadow: var(--recess-shadow-pop);
+  font: 500 0.86rem/1.35 var(--recess-ui);
   text-align: center;
   pointer-events: none;
 }
-.recess-gate span { color: var(--recess-soft); font: .72rem/1.4 var(--recess-mono); }
+.recess-gate strong {
+  font-weight: 600;
+  text-wrap: balance;
+}
+.recess-gate-kind {
+  color: var(--recess-green);
+  font: 700 0.64rem/1 var(--recess-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.recess-gate[data-kind="truefalse"] strong { font-size: 0.96rem; }
+.recess-gate .katex,
+.recess-gate-lanes .katex,
+.recess-gate-targets .katex,
+.recess-answers .katex { font-size: 1.02em; }
 
+.recess-gate-keys {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+  pointer-events: auto;
+}
+.recess-gate-keys button {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--recess-line);
+  border-radius: 5px;
+  color: var(--recess-ink);
+  background: var(--recess-paper);
+  box-shadow: var(--recess-shadow-btn);
+  font: 700 0.78rem/1 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  .recess-gate-keys button:hover {
+    border-color: var(--recess-green);
+    background: var(--recess-wash);
+    color: var(--recess-green);
+  }
+}
+
+.recess-choice-n {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 1.45em;
+  height: 1.45em;
+  margin-inline-end: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
+  color: var(--recess-primary-fg);
+  background: var(--recess-ink);
+  font: 700 0.72em/1 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+  vertical-align: 0.08em;
+}
+.recess-root[data-theme="term"] .recess-choice-n {
+  color: var(--recess-paper);
+  background: var(--recess-ink);
+}
+
+/* ── Lane gates & target gates ──────────────────────────────────────── */
+.recess-gate-lanes {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--lanes, 3), minmax(0, 1fr));
+  transform: translateY(var(--gate-y, -60px));
+  pointer-events: none;
+}
+.recess-gate-lanes[hidden] { display: none; }
+.recess-gate-lanes > span {
+  justify-self: center;
+  max-width: calc(100% - 14px);
+  padding: 6px 10px;
+  transform: translateY(-50%);
+  border: 1.5px solid var(--recess-ink);
+  border-radius: 6px;
+  background: var(--recess-card);
+  box-shadow: var(--recess-shadow-btn);
+  font: 600 0.82rem/1.3 var(--recess-ui);
+  text-align: center;
+  overflow-wrap: anywhere;
+  transition-property: opacity, border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-gate-lanes[style*="--lanes: 2"] > span { min-width: 7rem; font-size: 0.9rem; }
+.recess-gate-lanes[data-st="1"] > span { opacity: 0.28; }
+.recess-gate-lanes[data-st="1"][data-ok="0"] > [data-lane="0"],
+.recess-gate-lanes[data-st="1"][data-ok="1"] > [data-lane="1"],
+.recess-gate-lanes[data-st="1"][data-ok="2"] > [data-lane="2"],
+.recess-gate-lanes[data-st="1"][data-ok="3"] > [data-lane="3"] {
+  opacity: 1;
+  border-color: var(--recess-green);
+  background: var(--recess-wash);
+}
+.recess-gate-lanes[data-st="1"][data-pick="0"]:not([data-ok="0"]) > [data-lane="0"],
+.recess-gate-lanes[data-st="1"][data-pick="1"]:not([data-ok="1"]) > [data-lane="1"],
+.recess-gate-lanes[data-st="1"][data-pick="2"]:not([data-ok="2"]) > [data-lane="2"],
+.recess-gate-lanes[data-st="1"][data-pick="3"]:not([data-ok="3"]) > [data-lane="3"] {
+  opacity: 1;
+  border-color: var(--recess-red);
+  background: var(--recess-red-wash);
+}
+
+.recess-gate-targets {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.recess-gate-targets[hidden] { display: none; }
+.recess-gate-targets > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: min(195px, 42vw);
+  padding: 6px 10px;
+  border: 1.5px solid var(--recess-ink);
+  border-radius: 6px;
+  color: var(--recess-ink);
+  background: var(--recess-card);
+  box-shadow: var(--recess-shadow-btn);
+  font: 600 0.8rem/1.3 var(--recess-ui);
+  text-align: center;
+  overflow-wrap: anywhere;
+  opacity: var(--t-in, 1);
+  transform: translate3d(var(--tx, -999px), var(--ty, -999px), 0) translate(-50%, -50%);
+  transition-property: border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-gate-targets > [data-target="0"] { --tx: var(--t0-x, -999px); --ty: var(--t0-y, -999px); }
+.recess-gate-targets > [data-target="1"] { --tx: var(--t1-x, -999px); --ty: var(--t1-y, -999px); }
+.recess-gate-targets > [data-target="2"] { --tx: var(--t2-x, -999px); --ty: var(--t2-y, -999px); }
+.recess-gate-targets > [data-target="3"] { --tx: var(--t3-x, -999px); --ty: var(--t3-y, -999px); }
+.recess-gate-targets[data-st="1"] > span {
+  opacity: 0.28;
+  transition-property: opacity, border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-gate-targets[data-st="1"][data-ok="0"] > [data-target="0"],
+.recess-gate-targets[data-st="1"][data-ok="1"] > [data-target="1"],
+.recess-gate-targets[data-st="1"][data-ok="2"] > [data-target="2"],
+.recess-gate-targets[data-st="1"][data-ok="3"] > [data-target="3"] {
+  opacity: 1;
+  border-color: var(--recess-green);
+  background: var(--recess-wash);
+}
+.recess-gate-targets[data-st="1"][data-pick="0"]:not([data-ok="0"]) > [data-target="0"],
+.recess-gate-targets[data-st="1"][data-pick="1"]:not([data-ok="1"]) > [data-target="1"],
+.recess-gate-targets[data-st="1"][data-pick="2"]:not([data-ok="2"]) > [data-target="2"],
+.recess-gate-targets[data-st="1"][data-pick="3"]:not([data-ok="3"]) > [data-target="3"] {
+  opacity: 1;
+  border-color: var(--recess-red);
+  background: var(--recess-red-wash);
+  color: var(--recess-red);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+/* ── Second Wind & Explain It modal cards ───────────────────────────── */
 .recess-wind {
   position: absolute;
   inset: 50% auto auto 50%;
+  z-index: 6;
   display: grid;
-  gap: 8px;
-  width: min(390px, calc(100% - 24px));
-  max-height: calc(100% - 16px);
-  overflow: auto;
-  padding: 12px;
+  gap: 10px;
+  width: min(26rem, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 16px;
   transform: translate(-50%, -50%);
   background: var(--recess-card);
-  border: 2px solid var(--recess-green);
-  border-radius: 3px;
-  box-shadow: 0 4px 0 var(--recess-green);
+  border: 1.5px solid var(--recess-green);
+  border-radius: 12px;
+  box-shadow: var(--recess-shadow-pop);
   color: var(--recess-ink);
-  font-size: .9rem;
+  font: 400 0.92rem/1.45 var(--recess-ui);
   cursor: default;
+  animation: recess-fade-in 200ms ease-out both;
 }
-.recess-wind small { color: var(--recess-green); font: 700 .7rem var(--recess-mono); letter-spacing: .14em; text-transform: uppercase; }
-.recess-answers { display: grid; gap: 5px; }
+.recess-wind small {
+  color: var(--recess-green);
+  font: 700 0.68rem/1 var(--recess-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.recess-wind > strong {
+  font: 600 0.98rem/1.35 var(--recess-ui);
+  text-wrap: balance;
+}
+
+.recess-answers { display: grid; gap: 8px; }
 .recess-answers button {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   min-height: 44px;
-  padding: 6px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--recess-line);
-  border-radius: 3px;
+  border-radius: 6px;
   color: var(--recess-ink);
   background: var(--recess-paper);
-  font: inherit;
-  text-align: left;
+  font: 400 0.88rem/1.45 var(--recess-ui);
+  text-align: start;
   touch-action: manipulation;
+  transition-property: border-color, background-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
 }
-.recess-answers button > span { margin-right: 8px; color: var(--recess-green); font: 700 .8rem var(--recess-mono); }
-.recess-answers button[data-answer="correct"] { outline: 2px solid var(--recess-green); opacity: 1; }
-.recess-answers button[data-answer="incorrect"] { outline: 2px solid var(--recess-red); opacity: 1; }
-.recess-clock { width: 100%; height: 4px; accent-color: var(--recess-green); }
-
-.recess-note { margin: 0; color: var(--muted-foreground); font-size: .78rem; }
-.recess-condition { font-family: var(--recess-mono); font-size: .72rem; }
-.recess-help-touch { display: none; }
-@media (pointer: coarse) {
-  .recess-help-fine { display: none; }
-  .recess-help-touch { display: inline; }
-  .recess-game select { min-height: 44px; }
+@media (hover: hover) {
+  .recess-answers button:not(:disabled):hover {
+    border-color: var(--recess-green);
+    background: var(--recess-wash);
+  }
 }
-
-.recess-result {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px 14px;
-  border: 2px solid var(--recess-ink);
-  border-radius: 3px;
-  background: var(--recess-card);
-  box-shadow: 0 3px 0 var(--recess-ink);
+.recess-answer-index {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--recess-wash);
+  color: var(--recess-green);
+  font: 700 0.74rem/1 var(--recess-mono);
+  font-variant-numeric: tabular-nums;
+}
+.recess-answer-text {
+  min-width: 0;
   color: var(--recess-ink);
-  font-size: .86rem;
+  overflow-wrap: break-word;
 }
-.recess-result[data-outcome="won"] { border-color: var(--recess-green); box-shadow: 0 3px 0 var(--recess-green); }
-.recess-result :is(p, h3, ul) { margin: 0; }
-.recess-result h3 { font-size: 1.05rem; }
-.recess-result ul:empty { display: none; }
-.recess-result ul { display: grid; gap: 3px; padding-left: 1.2em; }
-.recess-result li span[data-correct="true"] { color: var(--recess-green); }
-.recess-result li span[data-correct="false"] { color: var(--recess-red); }
-.recess-result-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-.recess-result-heading > strong { font: 700 1.25rem var(--recess-mono); color: var(--recess-green); }
-.recess-result-heading small, .recess-result > p { color: var(--recess-soft); font-family: var(--recess-mono); font-size: .75rem; }
-.recess-result .recess-takeaway { color: var(--recess-green); font-family: inherit; font-size: .86rem; }
-.recess-result .recess-key { width: fit-content; margin-top: 6px; }
-.recess-hud output { font-weight: 700; }
-@media (pointer: coarse) {
-  .recess-hud { min-height: 38px; padding-inline: 10px; font-size: .82rem; }
-  .recess-hud :is(.recess-hearts, .recess-energy) svg { width: 16px; height: 16px; }
-  .recess-power > i { width: 5px; height: 12px; }
-  .recess-hud :is(.recess-meter, .recess-boss) { height: 4px; }
+.recess-answers button[data-answer="correct"] {
+  border-color: var(--recess-green);
+  background: var(--recess-wash);
+  opacity: 1;
+}
+.recess-answers button[data-answer="incorrect"] {
+  border-color: var(--recess-red);
+  background: var(--recess-red-wash);
+  opacity: 1;
+}
+.recess-clock {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  accent-color: var(--recess-green);
 }
 
-/* Firing charge: one gauge vocabulary for the HUD, the flight plan and the result. */
-.recess-charge { display: inline-flex; align-items: center; gap: 5px; flex: none; }
-.recess-charge > b { color: var(--recess-soft); font: 700 .62rem var(--recess-mono); letter-spacing: .08em; text-transform: uppercase; }
-.recess-charge-bar { display: block; width: 44px; height: 7px; box-shadow: inset 0 0 0 1px var(--recess-ink); background: var(--recess-paper); }
-.recess-charge-bar > i { display: block; height: 100%; background: var(--recess-green); }
-.recess-charge > em { min-width: 3.5ch; font-style: normal; font-weight: 700; }
-[data-tone="low"] > .recess-charge-bar > i, [data-tone="low"] .recess-charge-bar > i { background: var(--recess-red); }
-.recess-charge[data-tone="low"] > em, .recess-charge[data-tone="empty"] > em, [data-tone="empty"] .recess-charge > em { color: var(--recess-red); }
-.recess-game[data-calm="false"] .recess-hud .recess-charge[data-tone="empty"] > b { animation: recess-blink 1s steps(2) infinite; }
-@keyframes recess-blink { 50% { color: var(--recess-red); } }
-
-.recess-preflight { display: grid; gap: 3px; flex: 1 1 14rem; min-width: 0; }
-.recess-preflight .recess-charge { font: .8rem var(--recess-mono); color: var(--recess-ink); }
-.recess-preflight .recess-charge-bar { width: 72px; height: 9px; }
-.recess-preflight small { color: var(--recess-soft); font-size: .72rem; line-height: 1.35; }
-.recess-result .recess-result-charge { color: var(--recess-ink); font-family: var(--recess-mono); font-size: .78rem; }
-
-@media (max-width: 380px) {
-  .recess-hud .recess-charge > b { display: none; }
-  .recess-hud .recess-charge-bar { width: 30px; }
-  .recess-hud .recess-meter { display: none; }
+.recess-explain-hint {
+  margin: -4px 0 0;
+  color: var(--recess-soft);
+  font: 400 0.8rem/1.4 var(--recess-ui);
 }
-
-/* Lesson source: the current chat first, Practice second. One ruled strip, not two boxes. */
-.recess-source {
-  display: inline-flex;
-  flex: 1 1 100%;
-  max-width: 22rem;
-  border: 2px solid var(--recess-ink);
-  border-radius: 3px;
+.recess-explain textarea {
+  width: 100%;
+  min-height: 5rem;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid var(--recess-line);
+  border-radius: 6px;
+  color: var(--recess-ink);
+  background: var(--recess-paper);
+  font: 400 1rem/1.5 var(--recess-serif);
 }
-.recess-source button {
-  display: inline-flex;
+.recess-explain-actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  flex: 1 1 0;
-  min-height: 40px;
-  padding: 5px 12px;
-  border: 0;
-  color: var(--recess-ink);
-  background: var(--recess-card);
-  font: 700 .74rem var(--recess-mono);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  touch-action: manipulation;
+  gap: 14px;
 }
-.recess-source button + button { border-left: 2px solid var(--recess-ink); }
-.recess-source button[aria-pressed="true"] { color: var(--recess-paper); background: var(--recess-ink); }
-.recess-source button:not([aria-pressed="true"]) .recess-icon { color: var(--recess-green); }
-.recess-source-note { flex: 1 1 100%; margin: 0; color: var(--recess-soft); font-size: .78rem; line-height: 1.4; }
-.recess-page .recess-empty { color: var(--recess-soft); font-style: italic; }
+.recess-explain-result {
+  display: grid;
+  gap: 10px;
+}
+.recess-explain-verdict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 600 0.88rem/1.4 var(--recess-ui);
+}
+.recess-explain-result[data-level="sound"] .recess-explain-verdict { color: var(--recess-green); }
+.recess-explain-result blockquote {
+  margin: 0;
+  padding: 8px 12px;
+  border-inline-start: 3px solid var(--recess-green);
+  border-radius: 0 6px 6px 0;
+  background: var(--recess-surface);
+  font: 400 0.92rem/1.5 var(--recess-serif);
+  text-wrap: pretty;
+}
+.recess-explain-result .recess-key { justify-self: start; }
 
-@media (width > 640px) and (height > 500px), (width > 640px) and (pointer: fine) {
-  .recess-game {
-    color: var(--recess-ink);
-    background: var(--recess-paper);
-  }
-  .recess-game[data-phase="idle"] {
-    grid-template-columns: minmax(15rem, 23%) minmax(0, 1fr);
-    gap: 0;
-    border: 1px solid var(--recess-line);
-    border-radius: 4px;
-  }
-  .recess-game[data-phase="idle"] .recess-flight-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: clamp(13px, 1.6vw, 24px);
-    border-inline-end: 1px solid var(--recess-line);
-    background: var(--recess-card);
-  }
-  .recess-game[data-phase="idle"] :is(.recess-toolbar, .recess-plan) { align-items: stretch; gap: 12px; }
-  .recess-game[data-phase="idle"] :is(.recess-plan, .recess-lesson, .recess-controls, .recess-start) { flex: 1 1 100%; }
-  .recess-game[data-phase="idle"] .recess-source button { padding-inline: 6px; white-space: nowrap; }
-  .recess-game[data-phase="idle"] .recess-start { min-height: 48px; }
-  .recess-game[data-phase="idle"] .recess-settings { border-block: 1px solid var(--recess-line); }
-  .recess-game[data-phase="idle"] .recess-note { margin: 0; color: var(--recess-soft); }
-  .recess-game[data-phase="idle"] .recess-stage {
-    display: flex;
-    flex-direction: column;
-    border: 0;
-    border-radius: 0;
-  }
-  .recess-game[data-phase="idle"] .recess-stage-heading { padding: 12px clamp(14px, 2vw, 28px); }
-  .recess-game[data-phase="idle"] .recess-field { contain: size; flex: 1; height: auto; min-height: 20rem; }
-  .recess-game[data-phase="idle"] .recess-page { justify-content: flex-start; padding-block-start: clamp(18px, 4vh, 40px); }
-  .recess-page { width: min(100%, 52rem); margin-inline: auto; }
-  .recess-dock { padding-inline: clamp(12px, 2vw, 28px); }
-  .recess-hud { padding-inline: clamp(12px, 2vw, 28px); font-size: .8rem; }
+/* ── Flight dock (Eureka + Land) ────────────────────────────────────── */
+.recess-dock {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 62px;
+  padding: 10px max(16px, (100% - var(--ch-column, 46rem)) / 2);
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--recess-line-soft);
+  background: var(--recess-paper);
+  color: var(--recess-soft);
+}
+.recess-dock img {
+  position: absolute;
+  width: 53px;
+  height: 53px;
+  object-fit: contain;
+  right: 22px;
+  bottom: 37px;
+}
+.recess-root:not([data-phase="idle"]) .recess-dock img { visibility: hidden; }
+.recess-flight-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 @media (width > 640px) and (pointer: fine) {
   .recess-keycap {
     display: inline-block;
-    margin-inline-start: 5px;
-    padding: 3px 5px;
+    margin-inline-start: 4px;
+    padding: 2px 5px;
     border: 1px solid var(--recess-line);
-    border-radius: 2px;
+    border-radius: 4px;
     color: var(--recess-soft);
-    background: var(--recess-paper);
-    font: 500 .65rem/1 var(--recess-mono);
+    background: var(--recess-card);
+    font: 500 0.65rem/1.1 var(--recess-mono);
     letter-spacing: normal;
-    text-transform: none;
+  }
+}
+
+/* ── Mobile & touch ergonomics ──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .recess-strip {
+    padding: 12px;
+    border-radius: 12px 12px 0 0;
+  }
+  .recess-gate {
+    top: 40px;
+    padding: 7px 10px;
+    max-width: calc(100% - 16px);
+    font-size: 0.8rem;
+  }
+  .recess-gate-lanes > span {
+    font-size: 0.74rem;
+    padding: 4px 6px;
+  }
+  .recess-gate-lanes[style*="--lanes: 4"] > span {
+    font-size: 0.68rem;
+    padding: 4px 5px;
+  }
+  .recess-gate-targets > span {
+    max-width: min(128px, 36vw);
+    padding: 4px 6px;
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+  .recess-chat-stage .recess-dock {
+    justify-content: stretch;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+  }
+  .recess-flight-bar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .recess-root select {
+    font-size: 16px; /* iOS zooms below 16px; 1rem is 20.8px under the app's 130% root */
+  }
+}
+
+@media (pointer: coarse) {
+  .recess-strip-close,
+  .recess-settings-toggle {
+    width: 44px;
+    height: 44px;
+  }
+  .recess-key {
+    min-height: 44px;
+  }
+  .recess-link {
+    min-height: 44px;
+    padding: 8px;
+    margin-inline: -8px;
+  }
+  .recess-chip {
+    min-height: 40px;
+    padding: 8px 12px 8px 10px;
+  }
+  .recess-root select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .recess-gate-keys button {
+    min-width: 44px;
+    min-height: 40px;
+  }
+  .recess-hud {
+    min-height: 38px;
+    padding-inline: 10px;
   }
 }

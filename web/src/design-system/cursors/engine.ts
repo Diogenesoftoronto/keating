@@ -8,14 +8,16 @@ import { cursorVariables } from "./drawings";
 import { cursorBusy, cursorPreferenceForced, onCursorBusy } from "./preference";
 import { resolvePixel, type PixelMode, type PixelTarget } from "./resolve";
 
-const SPRINGS: Record<PixelMode, object> = {
-	rest: { type: "spring", stiffness: 900, damping: 46, mass: 0.6 },
-	frame: { type: "spring", stiffness: 520, damping: 30 },
-	line: { type: "spring", stiffness: 520, damping: 32 },
-	bar: { type: "spring", stiffness: 520, damping: 32 },
-	tag: { type: "spring", stiffness: 800, damping: 44, mass: 0.6 },
-	hide: { type: "spring", stiffness: 700, damping: 40 },
+/** Same feel as the Motion springs this used to start on every move; now one integrator retargets instead. */
+const SPRINGS: Record<PixelMode, { stiffness: number; damping: number; mass: number }> = {
+	rest: { stiffness: 900, damping: 46, mass: 0.6 },
+	frame: { stiffness: 520, damping: 30, mass: 1 },
+	line: { stiffness: 520, damping: 32, mass: 1 },
+	bar: { stiffness: 520, damping: 32, mass: 1 },
+	tag: { stiffness: 800, damping: 44, mass: 0.6 },
+	hide: { stiffness: 700, damping: 40, mass: 1 },
 };
+const STEP = 1 / 240;
 const IDLE_MS = 900;
 const STYLE_ID = "keating-cursor-variables";
 const ROOT = 'html[data-keating-cursors="on"]';
@@ -73,10 +75,66 @@ export function startKeatingCursors(): () => void {
 	};
 	promote();
 
+	// motionAllowed() builds a MediaQueryList per call; the engine asks every frame, so keep one live list here.
+	const reduceQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+	const moving = () => html.getAttribute("data-reduce-motion") !== "true" && !reduceQuery?.matches;
 	const at = { x: 0, y: 0, held: false, inside: false, node: null as Element | null };
-	let last = "", live = false, frame = 0, idle = 0, recheck = 0, top: Element | null = null;
+	let last = "", live = false, frame = 0, idle = 0, recheck = 0, top: Element | null = null, stale = false;
+	// What the pointer is over changes far less often than it moves: resolve once per element, held and busy state.
+	let resolved: { node: Element; held: boolean; busy: boolean; at: number; target: PixelTarget } | null = null;
+	const RESOLVE_MS = 250; // still notices an element that turns disabled or busy under a moving pointer
 
-	const measure = (text: string) => { meter.textContent = text; return meter.offsetWidth; };
+	const widths = new Map<string, number>();
+	const measure = (text: string) => {
+		let width = widths.get(text);
+		if (width === undefined) {
+			meter.textContent = text;
+			width = meter.offsetWidth;
+			if (widths.size > 64) widths.clear();
+			widths.set(text, width);
+		}
+		return width;
+	};
+
+	// ── the spring: x, y, width, height chase their goals; the loop sleeps once they arrive ──
+	const now = { x: 0, y: 0, w: 6, h: 6 }, speed = { x: 0, y: 0, w: 0, h: 0 }, goal = { x: 0, y: 0, w: 6, h: 6 };
+	let spring = SPRINGS.rest, motionFrame = 0, motionAt = 0;
+	const keys = ["x", "y", "w", "h"] as const;
+	function paint() {
+		px.style.transform = `translate3d(${now.x}px,${now.y}px,0)`;
+		px.style.width = `${Math.max(0, now.w)}px`;
+		px.style.height = `${Math.max(0, now.h)}px`;
+	}
+	function snap() {
+		for (const k of keys) { now[k] = goal[k]; speed[k] = 0; }
+		if (motionFrame) cancelAnimationFrame(motionFrame);
+		motionFrame = 0;
+		paint();
+	}
+	function step(time: number) {
+		let dt = Math.min(1 / 30, (time - motionAt) / 1000);
+		motionAt = time;
+		const { stiffness, damping, mass } = spring;
+		while (dt > 0) {
+			const h = Math.min(STEP, dt);
+			dt -= h;
+			for (const k of keys) {
+				speed[k] += ((-stiffness * (now[k] - goal[k]) - damping * speed[k]) / mass) * h;
+				now[k] += speed[k] * h;
+			}
+		}
+		let resting = true;
+		for (const k of keys) if (Math.abs(speed[k]) > 0.5 || Math.abs(now[k] - goal[k]) > 0.1) { resting = false; break; }
+		if (resting) { snap(); return; }
+		paint();
+		motionFrame = requestAnimationFrame(step);
+	}
+	function chase(box: { x: number; y: number; w: number; h: number }, mode: PixelMode, instant: boolean) {
+		goal.x = box.x; goal.y = box.y; goal.w = box.w; goal.h = box.h;
+		spring = SPRINGS[mode];
+		if (instant) { snap(); return; }
+		if (!motionFrame) { motionAt = performance.now(); motionFrame = requestAnimationFrame(step); }
+	}
 	function place(target: PixelTarget) {
 		const vw = window.innerWidth, vh = window.innerHeight;
 		if (target.mode === "frame" && target.el) {
@@ -109,36 +167,46 @@ export function startKeatingCursors(): () => void {
 	}
 	function apply() {
 		frame = 0;
+		if (stale && at.inside) { stale = false; at.node = document.elementFromPoint(at.x, at.y); }
 		if (!at.inside || !at.node?.isConnected) {
 			px.removeAttribute("data-live");
 			live = false; last = "";
 			return;
 		}
-		const target = resolvePixel(at.node, {
-			styleOf: node => getComputedStyle(node),
-			viewport: { width: window.innerWidth, height: window.innerHeight },
-			held: at.held,
-			busy: cursorBusy(),
-		});
-		const root = topLayerRoot(at.node);
-		if (root !== top) { top = root; if (root) promote(); }
+		const busy = cursorBusy();
+		let target: PixelTarget;
+		const stamp = performance.now();
+		if (resolved && resolved.node === at.node && resolved.held === at.held && resolved.busy === busy && stamp - resolved.at < RESOLVE_MS) target = resolved.target;
+		else {
+			target = resolvePixel(at.node, {
+				styleOf: node => getComputedStyle(node),
+				viewport: { width: window.innerWidth, height: window.innerHeight },
+				held: at.held,
+				busy,
+			});
+			resolved = { node: at.node, held: at.held, busy, at: stamp, target };
+			const root = topLayerRoot(at.node);
+			if (root !== top) { top = root; if (root) promote(); }
+		}
 		const box = place(target);
-		px.dataset.mode = target.mode;
-		px.toggleAttribute("data-warn", !!target.warn);
-		px.toggleAttribute("data-spin", !!target.spin);
-		px.setAttribute("data-live", "");
+		if (px.dataset.mode !== target.mode) px.dataset.mode = target.mode;
+		if (px.hasAttribute("data-warn") !== !!target.warn) px.toggleAttribute("data-warn", !!target.warn);
+		if (px.hasAttribute("data-spin") !== !!target.spin) px.toggleAttribute("data-spin", !!target.spin);
+		if (!live) px.setAttribute("data-live", "");
 		const key = [target.mode, box.x, box.y, box.w, box.h].map(v => typeof v === "number" ? Math.round(v) : v).join();
 		if (key === last) return;
 		last = key;
-		animate(px, { x: box.x, y: box.y, width: box.w, height: box.h }, !live || !motionAllowed() ? { duration: 0 } : SPRINGS[target.mode]);
+		// Once shrunk away (text, the game), the pixel just keeps its place: no spring to run for something unseen.
+		const unseen = target.mode === "hide" && now.w < 0.5 && now.h < 0.5;
+		chase(box, target.mode, !live || !moving() || unseen);
 		live = true;
 	}
 	const schedule = () => { if (!frame) frame = requestAnimationFrame(apply); };
-	const refresh = () => { last = ""; schedule(); };
-	/** After something changes under a still pointer (a press, a scroll, a menu closing), look again. */
+	const refresh = () => { last = ""; resolved = null; schedule(); };
+	/** After something changes under a still pointer (a press, a scroll, a menu closing), look again: once per frame, however many events. */
 	function look() {
 		if (!at.inside) return;
-		at.node = document.elementFromPoint(at.x, at.y);
+		stale = true;
 		refresh();
 	}
 	function sparks() {
@@ -166,7 +234,11 @@ export function startKeatingCursors(): () => void {
 		at.held = true;
 		if (at.inside) {
 			sparks();
-			if (px.dataset.mode === "rest" && motionAllowed()) animate(px, { scale: [0.4, 1] }, { type: "spring", stiffness: 600, damping: 14 });
+			if (px.dataset.mode === "rest" && motionAllowed()) {
+				px.removeAttribute("data-pop");
+				void px.offsetWidth; // restart the pop
+				px.setAttribute("data-pop", "");
+			}
 		}
 		refresh();
 	};
@@ -202,6 +274,7 @@ export function startKeatingCursors(): () => void {
 		document.removeEventListener("mouseout", onOut, passive);
 		stopBusy();
 		if (frame) cancelAnimationFrame(frame);
+		if (motionFrame) cancelAnimationFrame(motionFrame);
 		window.clearTimeout(idle);
 		window.clearTimeout(recheck);
 		layer.remove();

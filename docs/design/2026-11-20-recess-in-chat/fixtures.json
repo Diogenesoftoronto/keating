@@ -1,0 +1,46 @@
+{
+ "cells": [
+  {
+   "role": "learner",
+   "text": "What is the difference between mitosis and meiosis?"
+  },
+  {
+   "role": "tutor",
+   "text": "**Mitosis** produces two identical daughter cells, whereas **meiosis** produces four genetically different gametes.\n\nMitosis happens in four stages:\n\n1. **Prophase** condenses the chromosomes.\n2. **Metaphase** lines the chromosomes up in the middle.\n3. **Anaphase** pulls the sister chromatids apart.\n4. **Telophase** forms two new nuclei.\n\nYour body uses mitosis for growth and repair, for example healing a cut. Meiosis makes sex cells, for example sperm and egg cells."
+  },
+  {
+   "role": "learner",
+   "text": "Why are the gametes different from each other?"
+  },
+  {
+   "role": "tutor",
+   "text": "Gametes differ because **crossing over** swaps DNA between paired chromosomes. Meiosis halves the chromosome number, so a fertilised egg ends up with a full set. Prophase, metaphase and anaphase all happen in meiosis too, but twice. A common mistake is to think meiosis copies cells; it is not copying but reshuffling."
+  }
+ ],
+ "serEstar": [
+  {
+   "role": "learner",
+   "text": "When do I use ser and when do I use estar in Spanish?"
+  },
+  {
+   "role": "tutor",
+   "text": "Both verbs mean *to be*, but they split the job. Use **ser** for permanent traits and identity, like origin or profession: *soy de México*. Use **estar** for temporary states and locations: *estoy cansado* means you are tired right now.\n\nA handy way to remember it is **DOCTOR** for ser (description, occupation, characteristic, time, origin, relationship) and **PLACE** for estar (position, location, action, condition, emotion)."
+  },
+  {
+   "role": "learner",
+   "text": "So for being tired I say estoy cansada?"
+  },
+  {
+   "role": "tutor",
+   "text": "Exactly. Tiredness is a **condition**, so it takes **estar**. Say *estoy cansada*, not *soy cansada*. Location also takes estar, even for permanent places: *Madrid está en España*.\n\nQuick check: which verb goes with a profession, like teacher?"
+  },
+  {
+   "role": "learner",
+   "text": "ser"
+  },
+  {
+   "role": "tutor",
+   "text": "Right! A profession is part of **DOCTOR**, so *soy profesora* uses **ser**. Next time we can practise adjectives that change meaning with each verb."
+  }
+ ]
+}

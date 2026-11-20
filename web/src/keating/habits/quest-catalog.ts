@@ -1,11 +1,36 @@
+export type RecessWeaponId = "pulse" | "gavel" | "scatter" | "beam" | "wave" | "burst";
+export type RecessHelperId = "drone" | "scribe" | "sentinel" | "aegis";
+
+export interface RecessLoadout {
+  weapon: RecessWeaponId;
+  weaponName: string;
+  helper: RecessHelperId;
+  helperName: string;
+  perks: {
+    /** Extra charge recovered from sparks and cells (Flask pack). */
+    chargeGain: number;
+    /** Extra graze radius in px (Hourglass pack). */
+    grazeRadius: number;
+    /** Score multiplier bonus on kills (Calculator pack). */
+    scoreBonus: number;
+    /** Focus speed multiplier (Keycap boots). */
+    focusSpeed: number;
+    /** Starting spark progress toward Power 2 / first helper (any equipped topper). */
+    headStart: number;
+  };
+}
+
 export interface HabitKitPiece {
   id: string;
   name: string;
-  slot: "topper" | "visor" | "pack" | "blaster" | "boots" | "trail" | "perch";
+  slot: "topper" | "visor" | "pack" | "blaster" | "helper" | "boots" | "trail" | "perch";
   subject: string;
   blueprints: number;
   parts: number;
   art?: { sheet: "toppers" | "packs" | "blasters"; cell: number };
+  weapon?: RecessWeaponId;
+  helper?: RecessHelperId;
+  recessEffect?: string;
 }
 
 export interface HabitQuest {
@@ -23,20 +48,72 @@ export interface HabitQuest {
 }
 
 export const HABIT_KIT: readonly HabitKitPiece[] = [
-  { id: "jetpack", name: "Jetpack", slot: "pack", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "packs", cell: 0 } },
-  { id: "blaster", name: "Blaster", slot: "blaster", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "blasters", cell: 0 } },
-  { id: "star", name: "First-quest star", slot: "topper", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "toppers", cell: 7 } },
-  { id: "protractor", name: "Protractor topper", slot: "topper", subject: "maths", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 0 } },
-  { id: "sprout", name: "Leaf-sprout topper", slot: "topper", subject: "biology", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 2 } },
-  { id: "tilde", name: "Tilde topper", slot: "topper", subject: "spanish", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 6 } },
-  { id: "keyboots", name: "Keycap boots", slot: "boots", subject: "coding", blueprints: 2, parts: 5 },
-  { id: "hourglass", name: "Hourglass pack", slot: "pack", subject: "history", blueprints: 2, parts: 6, art: { sheet: "packs", cell: 2 } },
-  { id: "quill", name: "Quill topper", slot: "topper", subject: "literature", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 3 } },
-  { id: "metronome", name: "Metronome topper", slot: "topper", subject: "music", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 1 } },
-  { id: "gavel", name: "Gavel blaster", slot: "blaster", subject: "law", blueprints: 2, parts: 5, art: { sheet: "blasters", cell: 1 } },
-  { id: "flask", name: "Flask pack", slot: "pack", subject: "chemistry", blueprints: 8, parts: 12, art: { sheet: "packs", cell: 1 } },
-  { id: "calc", name: "Calculator pack", slot: "pack", subject: "finance", blueprints: 8, parts: 12, art: { sheet: "packs", cell: 4 } },
+  { id: "jetpack", name: "Jetpack", slot: "pack", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "packs", cell: 0 },
+    recessEffect: "Balanced flight thrusters." },
+  { id: "blaster", name: "Pulse blaster", slot: "blaster", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "blasters", cell: 0 },
+    weapon: "pulse", recessEffect: "Twin pulse bolts with homing wing shots at Power 3." },
+  { id: "drone", name: "Spark drone", slot: "helper", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "toppers", cell: 7 },
+    helper: "drone", recessEffect: "Companion wingman at Power 2+ that mirrors your fire." },
+  { id: "star", name: "First-quest star", slot: "topper", subject: "standard", blueprints: 0, parts: 0, art: { sheet: "toppers", cell: 7 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "gavel", name: "Gavel blaster", slot: "blaster", subject: "law", blueprints: 2, parts: 5, art: { sheet: "blasters", cell: 1 },
+    weapon: "gavel", recessEffect: "Heavy piercing shockwave bolts that punch through rows." },
+  { id: "megaphone", name: "Megaphone scatter", slot: "blaster", subject: "workshop", blueprints: 0, parts: 4, art: { sheet: "blasters", cell: 2 },
+    weapon: "scatter", recessEffect: "Wide 3-to-7-bolt acoustic fan; Shift tightens the cone." },
+  { id: "magnifier", name: "Lens beam", slot: "blaster", subject: "workshop", blueprints: 0, parts: 5, art: { sheet: "blasters", cell: 3 },
+    weapon: "beam", recessEffect: "High-speed piercing prism ray along your aim line." },
+  { id: "tuningfork", name: "Harmonic fork", slot: "blaster", subject: "workshop", blueprints: 0, parts: 5, art: { sheet: "blasters", cell: 5 },
+    weapon: "wave", recessEffect: "Braided sine-wave bolts that sweep wide lanes." },
+  { id: "pipette", name: "Pipette burst", slot: "blaster", subject: "workshop", blueprints: 0, parts: 4, art: { sheet: "blasters", cell: 6 },
+    weapon: "burst", recessEffect: "Rapid-fire droplet stream with fast cadence." },
+  { id: "scribe", name: "Magnet scribe", slot: "helper", subject: "workshop", blueprints: 0, parts: 4, art: { sheet: "packs", cell: 7 },
+    helper: "scribe", recessEffect: "Companion at Power 2+ that pulls sparks and cells from 2× farther." },
+  { id: "sentinel", name: "Sentinel pod", slot: "helper", subject: "workshop", blueprints: 0, parts: 6, art: { sheet: "toppers", cell: 4 },
+    helper: "sentinel", recessEffect: "Companion at Power 2+ that auto-locks foes with homing ticks." },
+  { id: "aegis", name: "Aegis prism", slot: "helper", subject: "workshop", blueprints: 0, parts: 6, art: { sheet: "packs", cell: 3 },
+    helper: "aegis", recessEffect: "Orbiting shield companion at Power 2+ that parries enemy bullets." },
+  { id: "protractor", name: "Protractor topper", slot: "topper", subject: "maths", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 0 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "sprout", name: "Leaf-sprout topper", slot: "topper", subject: "biology", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 2 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "tilde", name: "Tilde topper", slot: "topper", subject: "spanish", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 6 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "keyboots", name: "Keycap boots", slot: "boots", subject: "coding", blueprints: 2, parts: 5,
+    recessEffect: "15% faster movement while holding Shift to focus." },
+  { id: "hourglass", name: "Hourglass pack", slot: "pack", subject: "history", blueprints: 2, parts: 6, art: { sheet: "packs", cell: 2 },
+    recessEffect: "Wider close-call graze radius for faster Eureka refills." },
+  { id: "quill", name: "Quill topper", slot: "topper", subject: "literature", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 3 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "metronome", name: "Metronome topper", slot: "topper", subject: "music", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 1 },
+    recessEffect: "Head start toward Power 2 and your first helper." },
+  { id: "flask", name: "Flask pack", slot: "pack", subject: "chemistry", blueprints: 8, parts: 12, art: { sheet: "packs", cell: 1 },
+    recessEffect: "25% stronger charge refills from sparks and charge cells." },
+  { id: "calc", name: "Calculator pack", slot: "pack", subject: "finance", blueprints: 8, parts: 12, art: { sheet: "packs", cell: 4 },
+    recessEffect: "10% bonus points on cleared enemies." },
 ];
+
+export const RECESS_WEAPONS = HABIT_KIT.filter((piece): piece is HabitKitPiece & { weapon: RecessWeaponId } => Boolean(piece.weapon));
+export const RECESS_HELPERS = HABIT_KIT.filter((piece): piece is HabitKitPiece & { helper: RecessHelperId } => Boolean(piece.helper));
+
+export function resolveRecessLoadout(equipped: Readonly<Record<string, string>> | readonly string[]): RecessLoadout {
+  const ids = Array.isArray(equipped) ? equipped : Object.values(equipped);
+  const blasterPiece = RECESS_WEAPONS.find(piece => ids.includes(piece.id)) ?? RECESS_WEAPONS[0]!;
+  const helperPiece = RECESS_HELPERS.find(piece => ids.includes(piece.id)) ?? RECESS_HELPERS[0]!;
+  const hasTopper = HABIT_KIT.some(piece => piece.slot === "topper" && ids.includes(piece.id));
+  return {
+    weapon: blasterPiece.weapon,
+    weaponName: blasterPiece.name,
+    helper: helperPiece.helper,
+    helperName: helperPiece.name,
+    perks: {
+      chargeGain: ids.includes("flask") ? 1.25 : 1,
+      grazeRadius: ids.includes("hourglass") ? 34 : 26,
+      scoreBonus: ids.includes("calc") ? 1.1 : 1,
+      focusSpeed: ids.includes("keyboots") ? 1.15 : 1,
+      headStart: hasTopper ? 4 : 0,
+    },
+  };
+}
 
 export const HABIT_QUESTS: readonly HabitQuest[] = [
   { id: "receipt", subject: "maths", title: "Work out the tax on a receipt",

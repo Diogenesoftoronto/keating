@@ -1,4 +1,5 @@
 import { ChatStorageLine } from "../components/chat/storage-line";
+import { RECESS_OPEN_SESSION_EVENT } from "../components/recess/recess-events";
 import { APP_ORIGIN } from "../lib/hosted-navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
@@ -1010,6 +1011,16 @@ function ChatContent() {
   const openSessionMaterials = useCallback((sessionId: string) => {
     saveSessionWorkspacePrefs(sessionId, { open: true, selectedKey: MATERIALS_LIST_KEY });
     void openSession(sessionId);
+  }, [openSession]);
+
+  // Recess's "Practise another chat" asks for a switch; Recess reopens in that chat on arrival.
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const sessionId = (event as CustomEvent<{ sessionId?: unknown }>).detail?.sessionId;
+      if (typeof sessionId === "string" && sessionId) void openSession(sessionId);
+    };
+    window.addEventListener(RECESS_OPEN_SESSION_EVENT, onOpen);
+    return () => window.removeEventListener(RECESS_OPEN_SESSION_EVENT, onOpen);
   }, [openSession]);
 
   const [headerMeta, setHeaderMeta] = useState<Awaited<ReturnType<typeof sessions.getMetadata>>>(null);

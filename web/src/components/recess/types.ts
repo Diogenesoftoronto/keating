@@ -1,13 +1,28 @@
+import type { RecessHelperId, RecessWeaponId } from "../../keating/habits/quest-catalog";
+
 export type RecessLessonTurn = { role: "learner" | "tutor"; text: string };
 export type RecessCondition = { charge: number; tune: number; shine: number };
 export type RecessControl = "follow" | "twin" | "thrust";
 export type RecessTheme = "paper" | "term";
 
+export type RecessQuestionKind = "cloze" | "name" | "formula" | "swap" | "correction" | "apply"
+  | "truefalse" | "why" | "example" | "order" | "meaning" | "oddone" | "compare";
+
 export interface RecessQuestion {
+  /** Markdown with $maths$ allowed; rendered in the DOM. */
   q: string;
-  /** The first choice is correct. The engine shuffles choices before display. */
+  kind?: RecessQuestionKind;
+  /** Stable for the same lesson: lets a result point back at the question it came from. */
+  id?: string;
+  /** The tutor turn (index into the lesson) and a verbatim plain excerpt that support the correct answer. */
+  source?: { turn: number; quote: string };
+  /** Two to four choices, the first correct. The engine shuffles them (true/false keeps True on the left) and draws one lane per choice. */
   a: readonly string[];
 }
+
+export type RecessExplainLevel = "sound" | "partial" | "missed";
+/** The open question for the "explain it" pause: chosen before the run, graded while play is paused. */
+export interface RecessExplainItem { prompt: string; reference: string }
 
 export interface RecessPack {
   id: string;
@@ -27,6 +42,7 @@ export interface RecessPack {
   wall: readonly string[];
   tldr: string;
   revive?: readonly RecessQuestion[];
+  explain?: RecessExplainItem;
   boss?: {
     name: string;
     taunts?: { intro?: string; phase?: readonly string[]; low?: string; defeat?: string };
@@ -35,6 +51,8 @@ export interface RecessPack {
 
 export interface RecessCheckResult {
   q: string;
+  kind?: RecessQuestionKind;
+  id?: string;
   right: string;
   picked: string | null;
   ok: boolean;
@@ -51,6 +69,7 @@ export interface RecessResult {
   gates: RecessCheckResult[];
   myths: { wrong: string; right: string }[];
   wind: RecessCheckResult | null;
+  explain?: (RecessExplainItem & { answer: string; level: RecessExplainLevel }) | null;
   tldr: string | null;
   care: {
     /** Legacy flat cost; kept for older readers. `chargeDelta` is authoritative when present. */
@@ -83,6 +102,10 @@ export interface RecessHud {
   charge: number;
   meter: number;
   boss: number;
+  weapon?: RecessWeaponId;
+  weaponTemp?: boolean;
+  helpers?: number;
+  helperKind?: RecessHelperId;
 }
 
 export interface RecessWind {

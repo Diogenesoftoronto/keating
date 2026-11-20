@@ -78,8 +78,8 @@ export function createHabitsState(now: number, mode: HabitsMode, seed: string, z
     pauseUntil: null, lastRescueAt: null, rescueAttempts: null, awayDismissals: [],
     inventory: { sparks: 0, cogs: 0, polish: 0, parts: 0, shards: 0, shields: 0, vouchers: 0 },
     crates: [], pity: { misses: 0, belowRare: 0, belowMasterwork: 0 }, draws: null,
-    keepsakes: [], quests: {}, blueprints: {}, ownedKit: ["jetpack", "blaster"],
-    equippedKit: { pack: "jetpack", blaster: "blaster" }, collectedFinishes: [], collectedTints: [], collectedRelics: [],
+    keepsakes: [], quests: {}, blueprints: {}, ownedKit: ["jetpack", "blaster", "drone"],
+    equippedKit: { pack: "jetpack", blaster: "blaster", helper: "drone" }, collectedFinishes: [], collectedTints: [], collectedRelics: [],
     workshopLP: 0, workshopBoost: null, overchargeUntil: null, shelfBonus: null,
     dailyBountyClaimed: null, weekendBountyClaimed: null, shortcuts: null, recessRewards: null, recessBest: 0, lastResult: "",
   };
@@ -525,19 +525,20 @@ export function applyHabitsCommand(state: HabitsState, command: HabitsCommand): 
       return say(state, "Quest accepted. Take the time you need.");
     }
     case "craft": {
-      const piece = HABIT_KIT.find(item => item.id === command.kitId && item.blueprints > 0);
+      const piece = HABIT_KIT.find(item => item.id === command.kitId && (item.blueprints > 0 || item.parts > 0));
       if (!piece || state.ownedKit.includes(piece.id)) return false;
-      if (state.inventory.parts < piece.parts || (state.blueprints[piece.id] ?? 0) < piece.blueprints) {
+      if (state.inventory.parts < piece.parts || (piece.blueprints > 0 && (state.blueprints[piece.id] ?? 0) < piece.blueprints)) {
         return reject(state, "This kit piece still needs blueprint pieces or parts.");
       }
       state.inventory.parts -= piece.parts;
-      state.blueprints[piece.id] -= piece.blueprints;
+      if (piece.blueprints > 0) state.blueprints[piece.id] -= piece.blueprints;
       state.ownedKit.push(piece.id);
       return say(state, `${piece.name} crafted.`);
     }
     case "equip": {
       const piece = HABIT_KIT.find(item => item.id === command.kitId);
-      if (!piece || !state.ownedKit.includes(piece.id)) return false;
+      if (!piece || (!state.ownedKit.includes(piece.id) && !(piece.parts === 0 && piece.blueprints === 0 && piece.id === "drone"))) return false;
+      if (!state.ownedKit.includes(piece.id)) state.ownedKit.push(piece.id);
       if (state.equippedKit[piece.slot] === piece.id) delete state.equippedKit[piece.slot];
       else state.equippedKit[piece.slot] = piece.id;
       return true;

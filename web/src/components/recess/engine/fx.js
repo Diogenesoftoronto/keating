@@ -148,8 +148,12 @@ void main(){
   gl_FragColor=col;
 }`;
   function post(canvas) {
-    const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false, depth: false, stencil: false });
+    // The glow pass is a luxury: on software WebGL it costs most of the frame, so it never starts there.
+    const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false, depth: false, stencil: false, failIfMajorPerformanceCaveat: true });
     if (!gl) return null;
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) || "") : "";
+    if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) { gl.getExtension("WEBGL_lose_context")?.loseContext(); return null; }
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || "shader"); return s; };
     const vs = sh(gl.VERTEX_SHADER, VS);
     const prog = (src, names) => {

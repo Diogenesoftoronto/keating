@@ -1,37 +1,31 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
 import { Button, Sheet } from "../../design-system/kit";
 import { currentHabitsScope, dispatchHabits, readHabits, subscribeHabits } from "../../keating/habits/store";
 import type { HabitsCommand, HabitsMode, HabitsSnapshot } from "../../keating/habits/contracts";
 import type { HabitLesson } from "../../keating/habits/lesson";
-import { compileLessonPack } from "../../keating/habits/director";
 import { HabitChallengeForm, type ChallengeGoal } from "./HabitChallengeForm";
 import { CarePanel, HabitsPanel, QuestsPanel } from "./HabitPanels";
-import type { RecessResult } from "../recess/types";
 import "./study-game.css";
 
-const RecessGame = lazy(() => import("../recess/RecessGame").then(module => ({ default: module.RecessGame })));
 const HabitRankings = lazy(() => import("./HabitRankings").then(module => ({ default: module.HabitRankings })));
 const areas = [
-  { id: "recess", label: "Recess" }, { id: "care", label: "Care" }, { id: "quests", label: "Quests and kit" },
+  { id: "care", label: "Care" }, { id: "quests", label: "Quests and kit" },
   { id: "habits", label: "Habits" }, { id: "rankings", label: "Rankings" },
 ] as const;
-const standard = { charge: 0.75, tune: 0.75, shine: 0.75 };
 export type StudyGameArea = (typeof areas)[number]["id"];
 export interface StudyGameContext {
   sessionId?: string;
   lesson: HabitLesson;
   model?: Model<Api>;
 }
-type RunSettlement = Extract<HabitsCommand, { type: "runEnd" }>["result"];
 
-export default function StudyGameDialog({ initialArea, context, mode, onClose, onDraft, onRecessEnd }: {
+export default function StudyGameDialog({ initialArea, context, mode, onClose, onDraft }: {
   initialArea: StudyGameArea;
   context: StudyGameContext;
   mode: HabitsMode;
   onClose(): void;
   onDraft(prompt: string): void;
-  onRecessEnd?: (result: RecessResult) => void;
 }) {
   const [selected, setSelected] = useState(initialArea);
   const [state, setState] = useState<HabitsSnapshot | null>(null);
@@ -41,12 +35,7 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
   const writing = useRef(false);
   const activity = useRef<HTMLDivElement>(null);
   const scope = useSyncExternalStore(subscribeHabits, currentHabitsScope, () => "device");
-  const area = mode === "off" ? "recess" : selected;
-  const compileCurrentLesson = useCallback(async (signal: AbortSignal) => {
-    if (scope !== currentHabitsScope()) return null;
-    const pack = await compileLessonPack(context.model, context.lesson, signal);
-    return scope === currentHabitsScope() ? pack : null;
-  }, [context.model, context.lesson, scope]);
+  const area = selected;
 
   useEffect(() => {
     let active = true;
@@ -85,17 +74,11 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
     }
   }
 
-  function settleRun(result: RunSettlement) {
-    if (currentHabitsScope() !== scope) return;
-    if (result.quit && (result.care.chargeDelta ?? 0) >= 0) return;
-    void act({ type: "runEnd", runId: crypto.randomUUID(), scope, result });
-  }
-
   const snapshot = state?.scope === scope ? state : null;
   const panelProps = snapshot && { state: snapshot, pending, act: (command: HabitsCommand) => void act(command), solve: setGoal };
   return <Sheet open onClose={onClose} title="Study with Keating" className="study-game-dialog">
     <nav className="habit-nav" aria-label="Keating activities">
-      {areas.filter(item => mode !== "off" || item.id === "recess").map(item => <Button
+      {areas.map(item => <Button
         key={item.id} variant="ghost" aria-pressed={area === item.id} onClick={() => { setSelected(item.id); setGoal(null); setError(""); }}>
         {item.label}
       </Button>)}
@@ -109,20 +92,6 @@ export default function StudyGameDialog({ initialArea, context, mode, onClose, o
         onSolve={command => act(command.kind === "lesson" && context.sessionId
           ? { ...command, lesson: { sessionId: context.sessionId, title: context.lesson.find(turn => turn.role === "learner")?.text.slice(0, 72) || "Lesson review" } }
           : command)} onDraft={onDraft} onCancel={() => setGoal(null)} />
-        : area === "recess" ? <Suspense fallback={<p role="status">Opening Recess…</p>}><RecessGame
-          key={scope}
-          lesson={context.lesson} condition={mode === "off" ? standard : snapshot?.condition ?? standard}
-          kit={mode === "off" ? [] : Object.values(snapshot?.equippedKit ?? {})}
-          settlingCharge={pending || (mode !== "off" && snapshot === null && !error)}
-          onAbandon={chargeDelta => settleRun({ quit: true, care: { chargeDelta, used: 0, cogs: 0, sparks: 0 } })}
-          onEnd={result => {
-            if (currentHabitsScope() !== scope) return;
-            settleRun(result);
-            onRecessEnd?.(result);
-          }}
-          onQuiz={onDraft}
-          compilePack={context.model ? compileCurrentLesson : undefined}
-        /></Suspense>
         : area === "rankings" ? <Suspense fallback={<p role="status">Opening rankings…</p>}><HabitRankings enabled
           onVerifiedStudy={receipt => { void act({ type: "rankedStudy", scope, receipt }); }} /></Suspense>
         : !panelProps ? (!error && <p role="status">Opening study progress…</p>)

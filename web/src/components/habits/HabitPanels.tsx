@@ -76,11 +76,23 @@ export function CarePanel({ state, pending, act, solve, onClose }: PanelProps & 
   </div>;
 }
 
+const slotLabels: Record<string, string> = {
+  blaster: "Weapon",
+  helper: "Companion",
+  pack: "Pack",
+  topper: "Topper",
+  boots: "Boots",
+  visor: "Visor",
+  trail: "Trail",
+  perch: "Perch",
+};
+
 export function QuestsPanel({ state, pending, act, solve }: PanelProps) {
   const [tab, setTab] = useState<"today" | "expeditions" | "journal" | "workshop" | "kit">("today");
   const quests = HABIT_QUESTS.filter(quest => tab === "journal" ? state.quests[quest.id]?.completedAt
     : tab === "expeditions" ? quest.expedition : !quest.expedition);
-  const kit = HABIT_KIT.filter(piece => tab === "workshop" ? !state.ownedKit.includes(piece.id) : state.ownedKit.includes(piece.id));
+  const owned = state.ownedKit.includes("drone") ? state.ownedKit : [...state.ownedKit, "drone"];
+  const kit = HABIT_KIT.filter(piece => tab === "workshop" ? !owned.includes(piece.id) : owned.includes(piece.id));
   return <div>
     <nav className="habit-subnav" aria-label="Quests and kit">
       {(["today", "expeditions", "journal", "workshop", "kit"] as const).map(id => <Button key={id} variant="ghost" aria-pressed={tab === id} onClick={() => setTab(id)}>{id[0]!.toUpperCase() + id.slice(1)}</Button>)}
@@ -90,14 +102,24 @@ export function QuestsPanel({ state, pending, act, solve }: PanelProps) {
       {state.weekendBountyUntil ? `Weekend bounty · 4 bonus parts until ${formatDeadline(state.weekendBountyUntil)}` : `Daily bounty · 2 bonus parts until ${formatDeadline(state.dailyBountyUntil!)}`}.
     </p>}
     {tab === "workshop" || tab === "kit" ? <ul className="habit-list habit-workshop">{kit.map(piece => {
-      const built = state.ownedKit.includes(piece.id);
-      const equipped = state.equippedKit[piece.slot] === piece.id;
+      const built = owned.includes(piece.id);
+      const equipped = state.equippedKit[piece.slot] === piece.id || (piece.id === "drone" && !state.equippedKit.helper);
       const pieces = state.blueprints[piece.id] ?? 0;
+      const craftable = piece.blueprints > 0 || piece.parts > 0;
+      const costLine = !craftable
+        ? "Earned on your first completed quest"
+        : piece.blueprints > 0
+          ? `${pieces}/${piece.blueprints} blueprint pieces · ${piece.parts} parts`
+          : `${piece.parts} parts`;
       return <li key={piece.id}>
         {piece.art && <Sprite url={catalogueArt[piece.art.sheet]} cell={piece.art.cell} />}
-        <div><strong>{piece.name}</strong><p className="habit-muted">{built ? piece.slot : `${pieces}/${piece.blueprints} blueprint pieces · ${piece.parts} parts`}</p></div>
+        <div>
+          <strong>{piece.name}</strong>
+          <p className="habit-muted">{built ? (slotLabels[piece.slot] ?? piece.slot) : `${slotLabels[piece.slot] ?? piece.slot} · ${costLine}`}</p>
+          {piece.recessEffect && <p className="habit-muted">{piece.recessEffect}</p>}
+        </div>
         {built ? <Button variant="outline" disabled={pending || equipped} onClick={() => act({ type: "equip", kitId: piece.id })}>{equipped ? "Equipped" : "Put it on"}</Button>
-          : <Button variant="outline" disabled={pending || pieces < piece.blueprints || state.inventory.parts < piece.parts} onClick={() => act({ type: "craft", kitId: piece.id })}>Build</Button>}
+          : <Button variant="outline" disabled={pending || !craftable || (piece.blueprints > 0 && pieces < piece.blueprints) || state.inventory.parts < piece.parts} onClick={() => act({ type: "craft", kitId: piece.id })}>Build</Button>}
         {!built && pieces >= piece.blueprints && state.inventory.parts < piece.parts && piece.parts - state.inventory.parts <= 2
           && <Button variant="ghost" onClick={() => solve({ kind: "teach", target: { kind: "workshop", id: piece.id }, title: "Study for workshop parts", objective: `explain the idea behind the ${piece.name}` })}>Earn parts</Button>}
       </li>;

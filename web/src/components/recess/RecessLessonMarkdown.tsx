@@ -41,3 +41,16 @@ export const RecessLessonMarkdown = memo(function RecessLessonMarkdown({ text }:
     {normalizeLatexDelimiters(text)}
   </ReactMarkdown>;
 });
+
+const inlineComponents: Components = {
+  ...components,
+  p: ({ children }) => <span className="recess-md-line">{children}</span>,
+  h1: ({ children }) => <strong>{children}</strong>, h2: ({ children }) => <strong>{children}</strong>, h3: ({ children }) => <strong>{children}</strong>,
+};
+
+/** Questions, answers and the flight log: Markdown and maths, laid out inline, no word spans. */
+export const RecessInlineMarkdown = memo(function RecessInlineMarkdown({ text }: { text: string }) {
+  return <ReactMarkdown skipHtml remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={inlineComponents}>
+    {normalizeLatexDelimiters(text)}
+  </ReactMarkdown>;
+});
