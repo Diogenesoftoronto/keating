@@ -8,6 +8,7 @@ import {
 	Chip,
 	Eyebrow,
 } from "../../../design-system/kit";
+import { saveCursorPreference, useCursorPreference } from "../../../design-system/cursors";
 import { useKeatingUiSettings } from "../../../hooks/use-ui-settings";
 import { FONT_FAMILY_OPTIONS } from "../../../keating/ui-settings";
 import {
@@ -15,7 +16,7 @@ import {
 	subscribeDeclaredProfile,
 	updateDeclaredProfile,
 } from "../../../keating/learner-profile-store";
-import { readThemePreference, saveThemePreference } from "../../../theme-sync";
+import { readThemePreference, saveThemePreference, THEME_PALETTES } from "../../../theme-sync";
 import { isCanvasFeatureEnabled } from "../../../lib/feature-flags";
 import {
 	CompanionSetting,
@@ -50,16 +51,22 @@ export function DisplaySettings() {
 	return (
 		<>
 			<Row id="theme">
-				<Segmented
+				<SelectField
 					label="Theme"
 					value={theme}
-					onChange={saveThemePreference}
-					options={[
-						{ value: "system", label: "System" },
-						{ value: "light", label: "Paper" },
-						{ value: "dark", label: "Terminal" },
-					]}
-				/>
+					placeholder="Choose a theme"
+					onValueChange={(value) => {
+						if (value === "system") {
+							saveThemePreference(value);
+							return;
+						}
+						const palette = THEME_PALETTES.find((option) => option.value === value);
+						if (palette) saveThemePreference(palette.value);
+					}}
+				>
+					<option value="system">System</option>
+					{THEME_PALETTES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+				</SelectField>
 			</Row>
 			<Row id="reply-typeface">
 				<Segmented<typeof settings.replyTypeface>
@@ -115,6 +122,7 @@ export function DisplaySettings() {
 export function MotionSettings() {
 	const profile = useProfile();
 	const [settings, update] = useKeatingUiSettings();
+	const cursors = useCursorPreference();
 	return (
 		<>
 			<Row id="motion-mode">
@@ -135,6 +143,13 @@ export function MotionSettings() {
 					labelledBy="effects-label"
 					checked={settings.visualEffects}
 					onChange={(visualEffects) => update({ visualEffects })}
+				/>
+			</Row>
+			<Row id="cursors">
+				<Switch
+					labelledBy="cursors-label"
+					checked={cursors}
+					onChange={saveCursorPreference}
 				/>
 			</Row>
 			<SavedHint />

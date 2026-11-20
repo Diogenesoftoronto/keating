@@ -1,4 +1,4 @@
-import { readThemePreference } from "../../theme-sync";
+import { readThemePreference, THEME_PALETTES } from "../../theme-sync";
 import {
 	loadModelPrefs,
 	loadKeatingUiSettings,
@@ -80,9 +80,7 @@ export const groups: Group[] = [
 		glyph: "gear",
 		summary: "Display, motion and chat layout",
 		currentSummary: () =>
-			({ light: "Paper", dark: "Terminal", system: "System theme" })[
-				readThemePreference()
-			] +
+			(THEME_PALETTES.find(({ value }) => value === readThemePreference())?.label ?? "System theme") +
 			" · " +
 			(loadKeatingUiSettings().visualEffects ? "Effects on" : "Effects off"),
 		sections: [

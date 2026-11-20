@@ -19,6 +19,7 @@
 .chat-mascot-perch__hint { border: 0; border-radius: 0; background: transparent; color: var(--ink-faint); }
 .chat-mascot-perch__bot:is(:hover, :focus-visible) .chat-mascot-perch__hint { color: var(--green-deep); }
 
+.chat-mascot-perch__bot[data-cursor-tag] { cursor: grab; }
 .chat-mascot-perch__bot[data-companion-held="true"] { cursor: grabbing; }
 .chat-mascot-perch__bot[data-companion-held="true"] .keating-bot__motion {
   transform-origin: 50% 25%;

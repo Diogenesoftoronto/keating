@@ -270,6 +270,8 @@ function Companion({ state, busy, session, onSeatedChange, games }: Props & { se
 				data-resting={!busy && !typing && !reaction && !panel}
 				aria-label="Study with Keating"
 				title="Study with Keating"
+				data-cursor-tag={lively && !peek ? "pick me up" : undefined}
+				data-cursor-tag-held={lively && !peek ? "let go to drop" : undefined}
 				aria-haspopup="menu"
 				aria-expanded={!!panel}
 				aria-controls={panel ? menuId : undefined}

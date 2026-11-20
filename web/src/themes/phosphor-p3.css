@@ -36,6 +36,8 @@ html.dark[data-theme="p3"] {
   --colors-accent-surface: rgb(255 176 0 / 13%);
   --colors-accent-surface-foreground: #ffc64d;
   --colors-green-wash: rgb(255 176 0 / 13%);
+  --k-wash: color-mix(in srgb, var(--colors-primary) 13%, var(--colors-paper));
+  --k-hard-shadow: 3px 3px 0 color-mix(in srgb, var(--colors-primary) 32%, transparent);
   --colors-phosphor: #ffb000;
   --colors-phosphor-dim: #b37a00;
   --colors-sidebar-primary: #ffb000;

@@ -67,13 +67,17 @@ describe("provider default pinning", () => {
 	});
 
 	it("renders a recovery action for an unavailable selection", () => {
-		const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={[{
-			...other,
-			action: <button type="button">Add key or sign in</button>,
-		}]} selected={other.id} error="Provider is not connected." errorAction={<button type="button">Open provider settings</button>}
+		const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={[
+			{ ...other, providerStatus: "setup-required" }, { ...cloud, providerStatus: "connected" }, browser,
+		]} selected={other.id} error="Provider is not connected." errorAction={<button type="button">Open provider settings</button>}
 			onSelect={() => {}} onClose={() => {}} />);
+		expect(html).toContain('data-provider-status="connected"');
+		expect(html).toContain('data-provider-status="setup-required"');
+		expect(html.match(/data-provider-status=/g)).toHaveLength(2);
+		expect(html).toContain('aria-label="Other provider setup help"');
+		expect(html).toMatch(/popover="auto" role="tooltip"[^>]*>Connect Other provider to use this model/);
+		expect(html).not.toContain("model-picker__item-action");
 		expect(html).toContain("Provider is not connected.");
-		expect(html).toContain("Add key or sign in");
 		expect(html).toContain("Open provider settings");
 	});
 });

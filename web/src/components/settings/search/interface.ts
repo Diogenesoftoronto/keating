@@ -63,6 +63,13 @@ export const interfaceEntries = [
 		"animation",
 	),
 	row(
+		"cursors",
+		"Keating cursors",
+		"motion",
+		"Drawn cursors and the green pixel that follows them. Off uses your system cursors.",
+		"pointer mouse arrow hand",
+	),
+	row(
 		"materials",
 		"Open materials automatically",
 		"layout",

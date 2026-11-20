@@ -20,7 +20,7 @@ import { addRecentModel, getRecentModels } from "../keating/ui-settings";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { ThinkingLevelControl } from "./ThinkingLevelControl";
 import { promptKeatingApiKey } from "./KeatingApiKeyPromptDialog";
-import { ModelPicker } from "./ModelPicker";
+import { ModelPicker, type PickerItem } from "./ModelPicker";
 import { getModelCatalogStatus, refreshCloudModelCatalog } from "../lib/models-dev-catalog";
 import { ModelDownloadBar, ModelCacheControls } from "./ModelDownloadBar";
 import { useCachedModelSize, refreshCachedModelSizes } from "../hooks/useCachedModelSize";
@@ -126,7 +126,8 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
   }
  }, []);
  const providers = Array.from(new Set(models.map(entry => entry.model.provider)));
- const unavailableProviders = providerAvailability.filter(provider => provider.cloud && !provider.configured);
+ const hostedProviders = new Map(providerAvailability.filter(provider => provider.cloud).map(provider => [provider.id, provider]));
+ const unavailableProviders = [...hostedProviders.values()].filter(provider => !provider.configured);
  const unavailableProviderIds = new Set(unavailableProviders.map(provider => provider.id));
  const providerSetupNotice = unavailableProviders.length > 0 ? <div>
   <p>Browse all supported chat models. Connect a provider to use its models.</p>
@@ -139,8 +140,10 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
  const items = models.filter(entry => !excludeKeys?.includes(entry.key) &&
   (!provider || entry.model.provider === provider) &&
   (!capability || (capability === "reasoning" ? entry.model.reasoning : entry.model.input.includes("image"))))
- .map(({ key, model }) => ({
+ .map<PickerItem>(({ key, model }) => ({
   id: key, name: model.name, group: displayModelProvider(model.provider),
+  providerStatus: hostedProviders.get(model.provider)?.configured ? "connected"
+   : unavailableProviderIds.has(model.provider) ? "setup-required" : undefined,
   pinnedLabel: key === modelKey(NOTORGANIC_DEFAULT_MODEL) ? "Provider default" : undefined,
   recent: recentKeys.has(key),
   summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : "",
@@ -151,10 +154,6 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
     <ModelDownloadBar progress={local.download} modelName={model.name} onCancel={() => localModel.cancel()}/>}
    {model.provider === "browser" && !local.loading && <BrowserCache id={model.id}/>}
   </div>,
-  action: unavailableProviderIds.has(model.provider) ? <span>
-   This provider is not connected. <button type="button" onClick={() => void requestProviderAccess(model.provider)}>Add key or sign in</button>{" "}
-   <button type="button" onClick={openProviderSettings}>Open settings</button>
-  </span> : undefined,
  }));
  const thinkingControl = onThinkingLevelChange && level ? <ThinkingLevelControl model={currentModel} level={level} disabled={thinkingDisabled}
   onChange={next => { setLevel(next); onThinkingLevelChange(next); }}/> : undefined;

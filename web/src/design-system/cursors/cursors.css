@@ -1,0 +1,79 @@
+/*
+ * Keating cursors. Board: docs/design/2026-11-20-cursor-mockups/cursor-mockups.html
+ *
+ * Two layers. The tip is an ordinary cursor image (drawings.ts), so it moves with the hardware pointer.
+ * Behind it the pixel (engine.ts) follows on Motion springs and takes a shape for each kind of element.
+ *
+ * The --kc-* variables exist only under html[data-keating-cursors="on"]. Every `cursor: <keyword>` in the
+ * app is rewritten at build time to `var(--kc-…, <keyword>)` (scripts/postcss-keating-cursors.cjs), so the
+ * rules below only cover what no stylesheet declares: the page itself and the browser's own defaults.
+ * They sit in the base layer with no specificity, so any cursor a component sets still wins.
+ */
+@layer base {
+	:where(html[data-keating-cursors="on"]) { cursor: var(--kc-arrow, auto); }
+	:where(html[data-keating-cursors="on"]:active) { cursor: var(--kc-press, auto); }
+	:where(html[data-keating-cursors="on"]) :is(label, input, option) { cursor: var(--kc-arrow, default); }
+	/* Anything you press gets the hand, which most of the app never asked for. */
+	:where(html[data-keating-cursors="on"]) :is(
+		button, select, summary, label[for], input[type="checkbox"], input[type="radio"], input[type="button"], input[type="submit"],
+		[role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="switch"], [role="checkbox"], [role="radio"]
+	) { cursor: var(--kc-hand, pointer); }
+	:where(html[data-keating-cursors="on"]) input[type="range"] { cursor: var(--kc-ew, ew-resize); }
+	:where(html[data-keating-cursors="on"]) :is(:is(button, select, input, textarea):disabled, [aria-disabled="true"]) { cursor: var(--kc-no, not-allowed); }
+	:where(html[data-keating-cursors="on"]) a:any-link { cursor: var(--kc-hand, pointer); }
+	:where(html[data-keating-cursors="on"]) a:any-link[target="_blank"] { cursor: var(--kc-out, pointer); }
+	:where(html[data-keating-cursors="on"]) :is(
+		textarea, input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"],
+		input[type="password"], input[type="number"], input[type="tel"], [contenteditable]:not([contenteditable="false"])
+	) { cursor: var(--kc-text, text); }
+
+	/* With a custom arrow on the page, text no longer gets the caret by itself. Reading text asks for it… */
+	:where(html[data-keating-cursors="on"]) :is(p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, td, th, dd, dt, figcaption) { cursor: var(--kc-text, text); }
+	/* …the review page marks instead of merely selecting… */
+	:where(html[data-keating-cursors="on"]) .rv-page-turn-body :is(p, li, blockquote, h1, h2, h3, h4, h5, h6, td, th) { cursor: var(--kc-mark, text); }
+	/* …and text inside something you press keeps that thing's cursor. */
+	:where(html[data-keating-cursors="on"]) :is(
+		a, button, summary, label, select, [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="menuitemradio"],
+		[role="menuitemcheckbox"], [role="option"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"],
+		[class*="cursor_"], [draggable="true"], [data-cursor]
+	) :is(p, li, blockquote, h1, h2, h3, h4, h5, h6, pre, td, th, dd, dt, figcaption) { cursor: inherit; }
+}
+
+/* ── the pixel ── */
+.kc-layer {
+	--kc-green: #1e9b50; --kc-deep: #14743c; --kc-chip: #1c211b; --kc-chip-ink: #f1ece0; --kc-dot: #4be388; --kc-warn: #b9432e;
+	position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+	background: none; color: inherit; overflow: hidden; pointer-events: none; z-index: 2147483000; contain: strict;
+}
+.kc-layer:not(:popover-open):not([data-plain]) { display: none; }
+:where(.dark) .kc-layer { --kc-green: #2fb866; --kc-deep: #4be388; --kc-chip: #dcefe0; --kc-chip-ink: #0c1510; --kc-dot: #14743c; --kc-warn: #e0705c; }
+.kc-px { position: absolute; left: 0; top: 0; width: 6px; height: 6px; opacity: 0; will-change: transform, width, height; }
+.kc-px[data-live] { opacity: 1; }
+.kc-px > i { position: absolute; display: block; }
+.kc-fill { inset: 0; background: var(--kc-green); border-radius: 1px; transition: background-color .14s, opacity .14s; }
+.kc-c { width: 7px; height: 7px; border: 0 solid var(--kc-deep); opacity: 0; transition: opacity .12s; }
+.kc-c[data-c="tl"] { left: 0; top: 0; border-width: 1.8px 0 0 1.8px; }
+.kc-c[data-c="tr"] { right: 0; top: 0; border-width: 1.8px 1.8px 0 0; }
+.kc-c[data-c="bl"] { left: 0; bottom: 0; border-width: 0 0 1.8px 1.8px; }
+.kc-c[data-c="br"] { right: 0; bottom: 0; border-width: 0 1.8px 1.8px 0; }
+.kc-dot { left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; background: var(--kc-dot); border-radius: 1px; opacity: 0; transition: opacity .12s; }
+.kc-tag {
+	position: absolute; left: 17px; top: 0; height: 100%; display: flex; align-items: center; white-space: nowrap; opacity: 0; transition: opacity .12s;
+	font: 500 10.5px/1 var(--font-mono, ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace); color: var(--kc-chip-ink);
+}
+.kc-tag[data-meter] { height: auto; visibility: hidden; }
+.kc-px[data-mode="frame"] .kc-fill { opacity: .05; }
+.kc-px[data-mode="frame"] .kc-c { opacity: 1; }
+.kc-px[data-mode="line"] .kc-fill, .kc-px[data-mode="bar"] .kc-fill { background: var(--kc-deep); }
+.kc-px[data-mode="tag"] .kc-fill { background: var(--kc-chip); border-radius: 3px; }
+.kc-px[data-mode="tag"] .kc-tag, .kc-px[data-mode="tag"] .kc-dot { opacity: 1; }
+.kc-px[data-mode="hide"] .kc-fill { opacity: 0; }
+.kc-px[data-warn] .kc-dot, .kc-px[data-warn][data-mode="rest"] .kc-fill { background: var(--kc-warn); }
+.kc-px[data-idle][data-mode="rest"] .kc-fill { animation: kc-blink 1.1s steps(1) infinite; }
+.kc-px[data-spin][data-mode="rest"] .kc-fill { animation: kc-spin .8s steps(8) infinite; }
+@keyframes kc-blink { 50% { opacity: 0; } }
+@keyframes kc-spin { to { transform: rotate(360deg); } }
+.kc-spark { position: absolute; left: 0; top: 0; width: 1.8px; height: 6px; margin: -3px 0 0 -.9px; background: var(--kc-deep); }
+html[data-reduce-motion="true"] .kc-px .kc-fill { animation: none; }
+@media (prefers-reduced-motion: reduce) { .kc-px .kc-fill { animation: none; } }
+@media print { .kc-layer { display: none; } }

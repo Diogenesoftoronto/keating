@@ -149,6 +149,7 @@ import { tutorialRedirectBeforeLoad } from "./lib/tutorial-redirect";
 import { blogRedirectBeforeLoad } from "./lib/blog-redirect";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
 import { BrowserModelDownloadStatus } from "./components/ModelDownloadBar";
+import { KeatingCursors } from "./design-system/cursors";
 
 const PaperGlassOverlay = lazy(() => import("./design-system/shaders/PaperGlassOverlay"));
 
@@ -508,6 +509,7 @@ export function App() {
   return (
     <>
       <KeatingUiPreferencesSync />
+      <KeatingCursors />
       <RouterProvider router={router} />
       <BrowserModelDownloadStatus />
     </>

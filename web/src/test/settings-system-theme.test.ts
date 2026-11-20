@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
-import { initThemeSync, saveThemePreference } from "../theme-sync";
+import { initThemeSync, readLastDarkTheme, readThemePreference, saveThemePreference } from "../theme-sync";
 
-test("System follows media changes and explicit Paper overrides the OS", () => {
+test("Theme preferences preserve the system default and replace palette overrides on selection", () => {
 	const globals = [
 		"window",
 		"document",
@@ -14,11 +14,13 @@ test("System follows media changes and explicit Paper overrides the OS", () => {
 	const media = Object.assign(new EventTarget(), { matches: false });
 	const classes = new Set<string>();
 	const stored = new Map<string, string>();
+	const dataset: Record<string, string> = {};
+	const browser = Object.assign(new EventTarget(), { matchMedia: () => media });
 	const replacements = [
-		Object.assign(new EventTarget(), { matchMedia: () => media }),
+		browser,
 		{
 			documentElement: {
-				dataset: {},
+				dataset,
 				classList: {
 					contains: (name: string) => classes.has(name),
 					toggle: (name: string, on: boolean) =>
@@ -44,12 +46,25 @@ test("System follows media changes and explicit Paper overrides the OS", () => {
 		);
 		initThemeSync();
 		expect(classes.has("light")).toBe(true);
+		expect(readLastDarkTheme()).toBe("dark");
 		media.matches = true;
 		media.dispatchEvent(new Event("change"));
 		expect(classes.has("dark")).toBe(true);
 		saveThemePreference("light");
 		media.dispatchEvent(new Event("change"));
 		expect(classes.has("dark")).toBe(false);
+		saveThemePreference("midnight");
+		expect(classes.has("dark")).toBe(true);
+		expect(dataset.theme).toBe("midnight");
+		saveThemePreference("light");
+		expect(readLastDarkTheme()).toBe("midnight");
+		stored.set("theme", "p3");
+		browser.dispatchEvent(Object.assign(new Event("storage"), { key: "theme" }));
+		expect(readThemePreference()).toBe("p3");
+		expect(dataset.theme).toBe("p3");
+		saveThemePreference("dark");
+		expect(classes.has("dark")).toBe(true);
+		expect(dataset.theme).toBeUndefined();
 		saveThemePreference("system");
 		expect(classes.has("dark")).toBe(true);
 		media.matches = false;

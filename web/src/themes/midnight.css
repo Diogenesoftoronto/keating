@@ -37,6 +37,8 @@ html.dark[data-theme="midnight"] {
   --colors-accent-surface: rgb(124 192 255 / 14%);
   --colors-accent-surface-foreground: #a3d3ff;
   --colors-green-wash: rgb(124 192 255 / 14%);
+  --k-wash: color-mix(in srgb, var(--colors-primary) 15%, var(--colors-paper));
+  --k-hard-shadow: 3px 3px 0 color-mix(in srgb, var(--colors-primary) 32%, transparent);
   --colors-phosphor: #8ccaff;
   --colors-phosphor-dim: #3f86c9;
   --colors-sidebar-primary: #7cc0ff;
