@@ -6,7 +6,7 @@ test("selecting a saved mark keeps the range and opens Rewrite", async () => {
 	const { chromium } = createRequire(resolve(import.meta.dir, "../../../spikes/flue-host/package.json"))("playwright");
 	const entry = resolve(import.meta.dir, "trajectory-selection-fixture.tsx");
 	const build = await Bun.build({
-		entrypoints: [entry], target: "browser", external: ["*?url"],
+		entrypoints: [entry], target: "browser", external: ["*?url", "*.svg"],
 		define: { "process.env.NODE_ENV": '"production"', "import.meta.env": "{}" },
 		files: { [entry]: `
 			import { createRoot } from "react-dom/client";
@@ -60,6 +60,57 @@ test("selecting a saved mark keeps the range and opens Rewrite", async () => {
 		await page.getByRole("button", { name: /Rewrite/ }).click();
 		await mark.click();
 		expect(await page.evaluate(() => document.body.dataset.opened)).toBe("note");
+	} finally {
+		await browser.close();
+	}
+}, 30000);
+
+test("the selection toolbar goes away once nothing is selected", async () => {
+	const { chromium } = createRequire(resolve(import.meta.dir, "../../../spikes/flue-host/package.json"))("playwright");
+	const entry = resolve(import.meta.dir, "trajectory-selection-dismiss-fixture.tsx");
+	const build = await Bun.build({
+		entrypoints: [entry], target: "browser", external: ["*?url", "*.svg"],
+		define: { "process.env.NODE_ENV": '"production"', "import.meta.env": "{}" },
+		files: { [entry]: `
+			import { createRoot } from "react-dom/client";
+			import { TrajectoryCanvas } from "../components/trajectory/TrajectoryCanvas";
+			const text = "The first call waits at this line.";
+			createRoot(document.querySelector("main")).render(<TrajectoryCanvas mode="transcript" transcript="continuous" onActivateMessage={() => {}} hideControls
+				messages={[{ id: "m", role: "assistant", ordinal: 1, text }]} artifacts={[]} annotations={[]}
+				onTextSelection={selection => document.body.dataset.opened = selection.intent}
+			/>);
+		` },
+	});
+	if (!build.success) throw new AggregateError(build.logs, "Review fixture build failed");
+	const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
+	try {
+		const page = await browser.newPage({ reducedMotion: "reduce" });
+		page.on("pageerror", (error: Error) => console.error(error.message));
+		await page.setContent('<main style="margin:120px;height:400px"></main><p id="away" style="margin:40px">Elsewhere</p>');
+		await page.addStyleTag({ content: await Bun.file(resolve(import.meta.dir, "../../styled-system/styles.css")).text() });
+		await page.addScriptTag({ type: "module", content: await build.outputs.find(o => o.path.endsWith(".js"))!.text() });
+		const words = page.locator("[data-message-text]");
+		await words.waitFor({ timeout: 4000 });
+		const toolbar = page.getByRole("toolbar", { name: "Annotate selection" });
+		const select = async () => {
+			const bounds = (await words.boundingBox())!;
+			const y = bounds.y + 6;
+			await page.mouse.move(bounds.x + 1, y);
+			await page.mouse.down();
+			await page.mouse.move(bounds.x + 80, y, { steps: 8 });
+			await page.mouse.up();
+			await toolbar.waitFor({ timeout: 2000 });
+		};
+		await select();
+		await page.locator("#away").click();
+		await toolbar.waitFor({ state: "detached", timeout: 2000 });
+		await select();
+		await page.evaluate(() => getSelection()!.removeAllRanges());
+		await toolbar.waitFor({ state: "detached", timeout: 2000 });
+		await select();
+		await page.getByRole("button", { name: /Rewrite/ }).click();
+		expect(await page.evaluate(() => document.body.dataset.opened)).toBe("rewrite");
+		expect(await toolbar.count()).toBe(0);
 	} finally {
 		await browser.close();
 	}

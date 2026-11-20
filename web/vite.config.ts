@@ -506,7 +506,8 @@ export default defineConfig({
         // 6MB for headroom. The asset-cache runtime rule below catches anything
         // that still doesn't fit, so an offline reload still works for chunks
         // exceeding this cap.
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB
+        // The generated NodePod boot chunk must be available for offline startup.
+        maximumFileSizeToCacheInBytes: 6_500_000,
         runtimeCaching: [
           {
             // Online reloads must load the deployed page and its current

@@ -7,6 +7,7 @@ import { CodeLanguageIcon } from "./CodeLanguageIcon";
 import { MidiLabInput, midiNoteName as pitch } from "./labs/MidiLabInput";
 import { HardwareLabInput } from "./labs/HardwareLabInput";
 import { LessonFrame } from "./lesson/LessonFrame";
+import { LessonToggle } from "./lesson/LessonToggle";
 import "./labs/teaching-lab.css";
 
 interface TeachingLabProps {
@@ -138,40 +139,45 @@ function Practice({ node, disabled = false, receipts = [], onAction }: TeachingL
     mark({ kind: "range", value, input }, observation, diagnostic);
   }
 
+  const statusTone = !checkpoint ? "ok" : feedback.endsWith("— complete.") ? "ok" : feedback ? "warn" : undefined;
+  const coaching = onAction && checkpoint && !disabled;
+  const runButton = adapter.kind === "code" && <button type="button" className="lesson-primary k-lift" data-glyph-surface="inverse" disabled={working ? false : inactive || !source.trim()} onClick={() => {
+    if (working) { controller.current?.abort(); setFeedback("Run stopped."); } else void runCode();
+  }}><KeatingGlyph name={working ? "stop" : "play"} size={13} />{working ? "Stop run" : "Run and check"}</button>;
   return <LessonFrame title={node.title} glyph={adapter.kind === "midi" ? "music" : adapter.kind === "serial" ? "chip" : "terminal"}
     kind="Lab" className="teaching-lab" data-teaching-lab={node.id}
-    tools={<span>{marks.size} / {checkpoints.length}</span>}>
+    tools={<span className="lesson-meta teaching-lab-count"><KeatingGlyph name="checklist" size={13} />{marks.size} / {checkpoints.length}</span>}
+    footer={(coaching || pending || runButton) ? <>
+      {pending && <button type="button" className="lesson-quiet" disabled={disabled} onClick={() => deliver(pending)}><KeatingGlyph name="refresh" size={13} />Retry saving checkpoint</button>}
+      {coaching && <small className="lesson-foot-meta teaching-lab-coaching">Keating receives your first miss and completion for each checkpoint.</small>}
+      {runButton}
+    </> : undefined}>
     <p>{node.brief}</p>
-    <ol className="teaching-lab-checkpoints" aria-label="Lab checkpoints">
-      {checkpoints.map((item, index) => <li key={item.id} data-complete={marks.has(item.id)} aria-current={checkpoint?.id === item.id ? "step" : undefined}>
-        {marks.has(item.id) ? <KeatingGlyph name="check" size={15} /> : <span>{index + 1}</span>}
-        {item.title}{marks.has(item.id) && <span className="lesson-sr"> — complete</span>}
+    <ol className="lesson-group teaching-lab-checkpoints" aria-label="Lab checkpoints">
+      {checkpoints.map((item, index) => <li key={item.id} data-complete={marks.has(item.id)} data-done={marks.has(item.id) || undefined} aria-current={checkpoint?.id === item.id ? "step" : undefined}>
+        {marks.has(item.id) ? <span className="lesson-index"><KeatingGlyph name="check" size={13} /></span> : <span className="lesson-index">{index + 1}</span>}
+        <span>{item.title}</span>{marks.has(item.id) && <span className="lesson-sr"> — complete</span>}
       </li>)}
     </ol>
-    {checkpoint && <div className="teaching-lab-target">
-      {checkpoint.check.kind === "notes" ? <><strong>Play</strong> {checkpoint.check.notes.map(pitch).join(" · ")}</>
-        : checkpoint.check.kind === "range" && adapter.kind === "serial" ? <><strong>Target</strong> {checkpoint.check.min}–{checkpoint.check.max} {adapter.unit}</>
-        : checkpoint.check.kind === "output" ? <details><summary>Expected result</summary><pre>Exit {checkpoint.check.exitCode}{"\n"}{checkpoint.check.stdout}</pre></details> : null}
+    {checkpoint && <div className="teaching-lab-target" data-glyph-host>
+      {checkpoint.check.kind === "notes" ? <p><KeatingGlyph name="target" size={13} /><span className="lesson-label">Play</span> {checkpoint.check.notes.map(pitch).join(" · ")}</p>
+        : checkpoint.check.kind === "range" && adapter.kind === "serial" ? <p><KeatingGlyph name="target" size={13} /><span className="lesson-label">Target</span> {checkpoint.check.min}–{checkpoint.check.max} {adapter.unit}</p>
+        : checkpoint.check.kind === "output" ? <details><summary><KeatingGlyph name="target" size={13} />Expected result</summary><pre>Exit {checkpoint.check.exitCode}{"\n"}{checkpoint.check.stdout}</pre></details> : null}
     </div>}
     {adapter.kind === "code" && <div className="teaching-lab-code">
-      <label><CodeLanguageIcon language={adapter.language} />{environment ? SYSTEM_ENVIRONMENT_LABELS[environment] : adapter.language}
+      <label><span className="lesson-label" data-glyph-host><CodeLanguageIcon language={adapter.language} />{environment ? SYSTEM_ENVIRONMENT_LABELS[environment] : adapter.language}</span>
         <textarea aria-label={node.title + " code"} value={source} onChange={e => { setSource(e.target.value); setReading(""); setFeedback(""); }}
           readOnly={inactive || working} spellCheck={false} autoCapitalize="off" /></label>
-      <div className="teaching-lab-controls">
-        {environment === "linux" && <label><input type="checkbox" checked={trace} disabled={working || inactive} onChange={e => setTrace(e.target.checked)} /> Trace commands</label>}
-        <button type="button" disabled={working ? false : inactive || !source.trim()} onClick={() => {
-          if (working) { controller.current?.abort(); setFeedback("Run stopped."); } else void runCode();
-        }}>{working ? "Stop run" : "Run and check"}</button>
-      </div>
+      {environment === "linux" && <div className="teaching-lab-controls">
+        <LessonToggle glyph="route" checked={trace} disabled={working || inactive} onChange={setTrace} hint="Prints each command as it runs">Trace commands</LessonToggle>
+      </div>}
     </div>}
     {adapter.kind === "midi" && <>
       <MidiLabInput disabled={inactive} notes={checkpoint?.check.kind === "notes" ? checkpoint.check.notes : []} onNote={noteOn} />
-      {phrase.length > 0 && <p aria-label="Played notes">Played · {phrase.map(pitch).join(" · ")}</p>}
+      {phrase.length > 0 && <p className="lesson-hint" aria-label="Played notes">Played · {phrase.map(pitch).join(" · ")}</p>}
     </>}
     {adapter.kind === "serial" && <HardwareLabInput disabled={inactive} baudRate={adapter.baudRate} unit={adapter.unit} onSample={sample} />}
     {reading && <pre className="teaching-lab-reading" aria-label="Observed result">{reading}</pre>}
-    <div role="status">{feedback || (!checkpoint ? "All checkpoints complete." : "")}</div>
-    {onAction && checkpoint && !disabled && <small className="teaching-lab-coaching">Keating receives your first miss and completion for each checkpoint.</small>}
-    {pending && <button type="button" disabled={disabled} onClick={() => deliver(pending)}>Retry saving checkpoint</button>}
+    <div role="status" className="lesson-status teaching-lab-status" data-tone={statusTone} data-empty={!(feedback || !checkpoint) || undefined}>{feedback || (!checkpoint ? "All checkpoints complete." : "")}</div>
   </LessonFrame>;
 }

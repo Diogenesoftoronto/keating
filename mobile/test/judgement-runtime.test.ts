@@ -1,6 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
 import type { JudgementRequest } from "@keating/learner-contracts";
-import { createMobileJudgementRuntime } from "../src/lib/judgement/runtime";
+import { createMobileJudgementRuntime, mobileTeachingDraftReviewers } from "../src/lib/judgement/runtime";
+import { MOBILE_JULIA_MODEL } from "../src/lib/judgement/julia-contract";
+import { MOBILE_LOCAL_JUDGEMENT_MODEL } from "../src/lib/judgement/local-scorer";
 import { reviewMobileQuestionChecks } from "../src/lib/judgement/grading";
 import { notOrganicJudgementRequest, setAccountFetchForTests } from "../src/lib/notorganic-account/client";
 import { clearDeviceSession, saveDeviceSession, setAccountCredentialStoreForTests } from "../src/lib/notorganic-account/credentials";
@@ -12,6 +14,27 @@ import { DEFAULT_UI_SETTINGS, normalizeUiSettings } from "../src/lib/ui-settings
 const request: JudgementRequest = { state: { answer: { text: "Nested learner answer" } }, questions: { ready: { type: "noul", instructions: "Is it ready?" } } };
 function response(model = "jev-1.13.0") { return Response.json({ model, answers: { ready: { type: "noul", noul: 0.9 } } }); }
 const config = { ...defaultNotOrganicAccountConfig(), issuer: "https://gateway.test" };
+
+test("permitted native reviewers retain their own budgets in the configured order", () => {
+  const limits = (options: Parameters<typeof createMobileJudgementRuntime>[0]) =>
+    mobileTeachingDraftReviewers(createMobileJudgementRuntime(options).policy).map(tier => [tier.judgementModel, tier.maxQuestionChars]);
+  const gateway = [{ id: "judgement", requestTokens: 64_000, stateQuestionTokens: 32_000 }, 96_000];
+  expect(limits({ hostedEnabled: false })).toEqual([]);
+  expect(limits({ hostedEnabled: true })).toEqual([gateway]);
+  for (const model of ["judgement-jev/jev-1.14.0", "custom-model"]) {
+    const known = model.startsWith("judgement-jev/");
+    expect(limits({ hostedEnabled: true, calibration: { backend: { backend: "system-one", model, calibrationSha256: null },
+      fileSha256: "a".repeat(64), questionCount: 0, table: { entries: {} } } }))
+      .toEqual([[{ id: model, requestTokens: known ? 64_000 : null, stateQuestionTokens: known ? 32_000 : null }, 96_000]]);
+  }
+  for (const [localModel, limit] of [[MOBILE_JULIA_MODEL, 2_048], [MOBILE_LOCAL_JUDGEMENT_MODEL, 4_096]] as const) {
+    expect(limits({ hostedEnabled: true, localEnabled: true, localModel })).toEqual([
+      [{ id: localModel, requestTokens: limit, stateQuestionTokens: limit }, undefined], gateway,
+    ]);
+  }
+  expect(limits({ hostedEnabled: false, localEnabled: true, localModel: "custom-local" }))
+    .toEqual([[{ id: "custom-local", requestTokens: null, stateQuestionTokens: null }, undefined]]);
+});
 const session = { issuer: config.issuer, accessToken: "private-capability", accessExpiresAt: Date.now() + 60_000,
   refreshToken: "private-refresh", refreshExpiresAt: Date.now() + 600_000, scope: "infer:balanced judgement:evaluate" };
 

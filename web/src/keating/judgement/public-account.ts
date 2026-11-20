@@ -1,6 +1,6 @@
 /** Browser account capabilities go to Not Organic; its TypeSafe key stays server-side. */
 import {
-  createSystemOneCaller, isSha256Hex,
+  createSystemOneCaller, isSha256Hex, MAX_GATEWAY_QUESTION_CHARS,
   type JudgementTier, type JudgementBackendKey,
 } from "@keating/learner-contracts";
 import {
@@ -101,7 +101,7 @@ export function createPublicAccountJudgementBackend(options: PublicAccountJudgem
           }
           const state = typeof body.state === "string" ? body.state : JSON.stringify(body.state);
           const questions = Object.values(body.questions);
-          if (state.length > 96_000 || questions.length > 64 || JSON.stringify(body.questions).length > 96_000
+          if (state.length > 96_000 || questions.length > 64 || JSON.stringify(body.questions).length > MAX_GATEWAY_QUESTION_CHARS
             || questions.some(question => (question.type === "choice" || question.type === "score")
               && Object.keys(question.criteria as object).length > 64)) {
             return { ok: false, status: 422, json: async () => ({}) };

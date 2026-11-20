@@ -270,7 +270,7 @@ test("a long candidate may slide its own review window without removing the othe
   const seen = new Map<number, number>();
   const result = await runTeachingDrafts({
     turn: {...turn, conversation}, ruleIds: [],
-    judgementModel: { id: jev.model, requestTokens: null, stateQuestionTokens: 6000 },
+    judgementModel: { id: jev.model, requestTokens: null, stateQuestionTokens: 4200 },
     generate: async ({attempt}) => ({ ...generated(attempt),
       reply: {text: String(attempt) + (attempt === 1 ? "L".repeat(10_000) : "X"), toolCalls: []} }),
     judge: async request => {

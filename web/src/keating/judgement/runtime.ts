@@ -1,7 +1,8 @@
-import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER, MODEL_PREFERENCES } from "@keating/runtime-config";
+import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER, hostedJudgementTokenLimits, JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT } from "@keating/runtime-config";
 import { guardCalibrationCall, webJudgementCalibrationStore, type WebJudgementCalibrationStore } from "./calibration";
 /** Settings-to-runtime assembly. No inference, downloads, or learner activation. */
 import {
+  MAX_GATEWAY_QUESTION_CHARS,
   thresholdKey,
   GEMINI_DECISION_MODEL,
   isSha256Hex,
@@ -11,9 +12,10 @@ import {
   type JudgementTier,
   type LocalLabelScorer,
   type RouterPolicy,
+  type TeachingDraftReviewer,
 } from "@keating/learner-contracts";
 import { desktopOfflineBridge, DESKTOP_OFFLINE_MODEL, type DesktopOfflineBridge } from "../../lib/desktop-offline";
-import { DEFAULT_JUDGEMENT_MODEL_SETTINGS, JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementModelSettings, type JudgementModelSettings } from "../judgement-model";
+import { DEFAULT_JUDGEMENT_MODEL_SETTINGS, loadJudgementModelSettings, normalizeContextWindow, type JudgementModelSettings } from "../judgement-model";
 import { createDesktopLocalLabelScorer } from "./local-scorer";
 import { createWebJudgementCaller, WEB_JUDGEMENT_MODEL_ALIAS, type WebJudgementCallerOptions } from "./transport";
 import { createPublicAccountJudgementBackend, type JudgementAccountClient } from "./public-account";
@@ -54,8 +56,13 @@ export interface WebJudgementRuntimeOptions {
 
 export interface WebJudgementRuntime {
   readonly settings: JudgementModelSettings;
-  /** Effective budgets of the active judgement model, or null when a limit is unknown. */
-  readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
+  /** Budgets of the preferred permitted reviewer, or null when a limit is unknown. */
+  readonly judgementModel?: TeachingDraftReviewer["judgementModel"];
+  readonly teachingTiers?: readonly {
+    readonly key: JudgementBackendKey;
+    readonly judgementModel: TeachingDraftReviewer["judgementModel"];
+    readonly maxQuestionChars?: number;
+  }[];
   /** Pass directly to existing routeJudgement(s)/assessment helpers. */
   readonly policy: RouterPolicy;
 }
@@ -106,12 +113,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     ...(requested.hostedProvider === GOOGLE_DECISION_PROVIDER ? { hostedProvider: GOOGLE_DECISION_PROVIDER } as const : {}),
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
-    requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
-      && requested.requestTokens >= 512 && requested.requestTokens <= 2_000_000 ? requested.requestTokens : null,
-    stateQuestionTokens: typeof requested.stateQuestionTokens === "number" && Number.isSafeInteger(requested.stateQuestionTokens)
-      && requested.stateQuestionTokens >= 512 && requested.stateQuestionTokens <= 2_000_000 ? requested.stateQuestionTokens
-      : typeof requested.contextWindowTokens === "number" && Number.isSafeInteger(requested.contextWindowTokens)
-        && requested.contextWindowTokens >= 512 && requested.contextWindowTokens <= 2_000_000 ? requested.contextWindowTokens : null,
+    requestTokens: normalizeContextWindow(requested.requestTokens),
+    stateQuestionTokens: normalizeContextWindow(requested.stateQuestionTokens) ?? normalizeContextWindow(requested.contextWindowTokens),
   });
   const installation = settings.backend !== "off" && options.calibration === undefined ? options.calibrationStore ?? webJudgementCalibrationStore() : null;
   if (installation) void installation.ensureLoaded();
@@ -123,6 +126,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const hostedModel = google ? GEMINI_DECISION_MODEL
     : settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
     : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
+  let localFallbackAvailable = false;
 
   if (settings.backend !== "off" && !google) {
     const key = calibrationKey("local", settings.localModelId, calibration?.local);
@@ -138,8 +142,9 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
       localScorer: scorer ?? (async () => null), localModel: key.model,
       calibrationSha256: key.calibrationSha256, gateway: "none",
     });
-    tiers.push(Object.freeze({ key, call: local.call, isAvailable: () => scorer !== undefined
-      && (settings.localModelId !== JULIA_BROWSER_MODEL_ID || juliaBrowserModel.status().installed) }));
+    const available = () => scorer !== undefined && (settings.localModelId !== JULIA_BROWSER_MODEL_ID || juliaBrowserModel.status().installed);
+    localFallbackAvailable = available();
+    tiers.push(Object.freeze({ key, call: local.call, isAvailable: available }));
     Object.assign(entries, calibratedEntries(key, calibration?.local));
   }
 
@@ -169,36 +174,36 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     calibration: Object.freeze({ entries: Object.freeze(entries) }),
     ...(options.pinnedBackend ? { pinnedBackend: Object.freeze({ ...options.pinnedBackend }) } : {}),
   });
-  const isJevModel = MODEL_PREFERENCES.judgement.aliases.some(alias => hostedModel === alias) || /^jev-\d/.test(hostedModel);
-  const localNativeContextWindow = options.localScorer?.contextWindowTokens
+  const hostedDefaults = google
+    ? { requestTokens: JEV_REQUEST_TOKEN_LIMIT, stateQuestionTokens: JEV_STATE_QUESTION_TOKEN_LIMIT }
+    : hostedJudgementTokenLimits(hostedModel, settings.hostedProvider === "typesafe" ? "typesafe" : "notorganic");
+  const localNativeContextWindow = (options.localScorer?.modelId === settings.localModelId ? options.localScorer.contextWindowTokens : null)
     ?? (settings.localModelId === JULIA_MODEL_ID || settings.localModelId === JULIA_BROWSER_MODEL_ID ? JULIA_MODEL.contextTokens
       : settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
       ? DESKTOP_OFFLINE_MODEL.contextWindow : null);
   const localRequestTokens = localNativeContextWindow ?? settings.requestTokens ?? null;
   const localStateQuestionTokens = localNativeContextWindow ?? settings.stateQuestionTokens ?? null;
   const hostedRequestTokens = options.hosted?.requestTokens ?? settings.requestTokens
-    ?? (isJevModel || google ? JEV_REQUEST_TOKEN_LIMIT : null);
+    ?? hostedDefaults.requestTokens;
   const hostedStateQuestionTokens = options.hosted?.stateQuestionTokens ?? options.hosted?.contextWindowTokens ?? settings.stateQuestionTokens
-    ?? (isJevModel || google ? JEV_STATE_QUESTION_TOKEN_LIMIT : null);
-  const localFallbackAvailable = options.localScorer?.modelId === settings.localModelId
-    || settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
-    || settings.localModelId === JULIA_MODEL_ID && Boolean((options.desktopBridge ?? desktopOfflineBridge())?.supportedJudgementModels?.includes(JULIA_MODEL_ID))
-    || settings.localModelId === JULIA_BROWSER_MODEL_ID && juliaBrowserModel.status().installed;
-  const activeRequestLimits = google ? [hostedRequestTokens, GEMINI_DECISION_INPUT_LIMIT] : settings.backend === "hosted"
-    ? [hostedRequestTokens, ...(localFallbackAvailable ? [localRequestTokens] : [])]
-    : settings.backend === "local" ? [localRequestTokens] : [];
-  const activeStateQuestionLimits = google ? [hostedStateQuestionTokens, GEMINI_DECISION_INPUT_LIMIT] : settings.backend === "hosted"
-    ? [hostedStateQuestionTokens, ...(localFallbackAvailable ? [localStateQuestionTokens] : [])]
-    : settings.backend === "local" ? [localStateQuestionTokens] : [];
-  const minimumKnown = (values: readonly (number | null)[]) => {
-    const known = values.filter((value): value is number => typeof value === "number"
-      && Number.isSafeInteger(value) && value >= 512 && value <= 2_000_000);
-    return known.length ? Math.min(...known) : null;
-  };
-  const judgementModel = Object.freeze({
-    id: settings.backend === "hosted" ? hostedModel : settings.localModelId,
-    requestTokens: minimumKnown(activeRequestLimits),
-    stateQuestionTokens: minimumKnown(activeStateQuestionLimits),
+    ?? hostedDefaults.stateQuestionTokens;
+  const hostedBudget = (value: number | null) => google
+    ? Math.min(value ?? GEMINI_DECISION_INPUT_LIMIT, GEMINI_DECISION_INPUT_LIMIT)
+    : value;
+  const pin = policy.pinnedBackend;
+  const eligible = orderedTiers.filter(({ key }) => !pin
+    || key.backend === pin.backend && key.model === pin.model && key.calibrationSha256 === pin.calibrationSha256);
+  const teachingTiers = eligible.filter(({ key }) => key.backend === "system-one" || settings.backend === "local" || localFallbackAvailable)
+    .map(({ key }) => {
+      const hosted = key.backend === "system-one";
+      return Object.freeze({ key, judgementModel: Object.freeze({ id: key.model,
+        requestTokens: normalizeContextWindow(hosted ? hostedBudget(hostedRequestTokens) : localRequestTokens),
+        stateQuestionTokens: normalizeContextWindow(hosted ? hostedBudget(hostedStateQuestionTokens) : localStateQuestionTokens),
+      }), ...(hosted && !google ? { maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS } : {}) });
+    });
+  const judgementModel = teachingTiers[0]?.judgementModel ?? Object.freeze({
+    id: pin?.model ?? (settings.backend === "hosted" ? hostedModel : settings.localModelId),
+    requestTokens: null, stateQuestionTokens: null,
   });
-  return Object.freeze({ settings, policy, judgementModel });
+  return Object.freeze({ settings, policy, judgementModel, teachingTiers: Object.freeze(teachingTiers) });
 }

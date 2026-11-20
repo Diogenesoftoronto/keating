@@ -153,7 +153,7 @@ export function ReviewDesk({
 	}, [passes?.rubric, allowMotion]);
 
 	const ordered = orderReviewNotes(annotations, data.messages);
-	const turnNumbers = new Map(data.messages.map((message) => [message.id, message.ordinal + 1]));
+	const turnNumbers = new Map(data.messages.map((message) => [message.id, message.turnNumber ?? message.ordinal + 1]));
 	const proposals = [...(passes?.critique ?? [])].sort(
 		(a, b) =>
 			(turnNumbers.get(a.messageId ?? "") ?? Infinity) - (turnNumbers.get(b.messageId ?? "") ?? Infinity) ||

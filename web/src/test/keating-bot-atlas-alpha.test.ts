@@ -30,6 +30,14 @@ describe("Keatingbot sprite atlases", () => {
 		}
 	});
 
+	test("credit-recovery sheets are transparent PNGs, not opaque boxes", async () => {
+		for (const name of ["wallet-refresh-v1", "credits-ready-v1", "insufficient-funds-v3"]) {
+			const bytes = new Uint8Array(await Bun.file(new URL(`../../public/brand/keatingbot-${name}.png`, import.meta.url)).arrayBuffer());
+			// IHDR colour type sits at byte 25; 6 is truecolour with alpha.
+			expect({ name, colourType: bytes[25] }).toEqual({ name, colourType: 6 });
+		}
+	});
+
 	test("the session-start scenes are installed as full-body sheets", async () => {
 		for (const state of ONBOARDING) {
 			expect(await Bun.file(new URL(`keatingbot-body-${state}.avif`, ATLAS_DIR)).exists()).toBe(true);

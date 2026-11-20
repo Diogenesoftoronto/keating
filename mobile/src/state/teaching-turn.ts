@@ -27,6 +27,7 @@ import { contractId, createTurnTrace, type TurnTrace } from "@/state/turn-trace"
 import {
   type AccountPedagogy,
   buildTurnSystemPrompt,
+  mobileTeachingHistory,
   teacherSystemPrompt,
   cancelledTurnEnding,
   credentialFailure,
@@ -167,7 +168,7 @@ function openTurn(
 
 /** Recent history with attachments re-read from disk, and the learner message that triggered the turn. */
 async function providerHistory(messages: ChatMessage[]) {
-  const providerMessages = await Promise.all(messages.slice(-40).map(async (message) => (
+  const providerMessages = await Promise.all(messages.map(async (message) => (
     message.attachments?.length
       ? { ...message, attachments: await hydrateMessageAttachments(message.attachments) }
       : message
@@ -360,8 +361,9 @@ function releaseTurn(run: TurnRun): void {
 
 async function runTurnBody(run: TurnRun, apiKey: string | null, messages: ChatMessage[], replayEvents: readonly AgentStreamEvent[] | undefined) {
   const { env, controller, settings, sessionId } = run;
-  if (settings.provider === "litert") assertOfflineModelMedia(messages.slice(-40), settings.model);
-  const { providerMessages, triggeringMessage } = await providerHistory(messages);
+  const history = mobileTeachingHistory(messages);
+  if (settings.provider === "litert") assertOfflineModelMedia(history.recent, settings.model);
+  const { providerMessages, triggeringMessage } = await providerHistory(history.recent);
   const recallIdentity = env.quizIdentityRef.current;
   const teacherPrompt = teacherSystemPrompt({
     persona: env.personaRef.current,
@@ -370,7 +372,7 @@ async function runTurnBody(run: TurnRun, apiKey: string | null, messages: ChatMe
     accountPedagogy: env.activePedagogyRef.current,
   });
   const { localRecall, savedMemory, memoryCurrent } = await recallContext(run, triggeringMessage, recallIdentity);
-  await prepareActivityRound(env, { controller, sessionId, triggeringMessage, recallIdentity }, run.round);
+  await prepareActivityRound(env, { controller, sessionId, triggeringMessage, recallIdentity, reviewHistory: history.reviewHistory }, run.round);
   const systemPrompt = buildTurnSystemPrompt({
     teacherPrompt,
     localRecall,

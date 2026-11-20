@@ -249,7 +249,7 @@ export function MessageDiagnostics({ sessionId, sourceIds, timestamps, role, tea
     </summary>
     <div className={inlineContent} role="region" aria-label="Message diagnostics details" tabIndex={0}>
       <div className={inspectorOutcome}>
-        <strong>{releasedDraft && snapshot ? `${releasedDraft} of ${snapshot.attempts.length}` : issue?.label ?? outcome}</strong>
+        <strong>{releasedDraft ?? issue?.label ?? outcome}</strong>
         {flaggedCount > 0 && <p className={muted}>{flaggedCount} {flaggedCount === 1 ? "check flagged" : "checks flagged"} during draft review.</p>}
         {snapshot && <p className={muted}>{snapshot.judgeModel ?? "No reviewer dispatched"} · {snapshot.standard} response · {(snapshot.elapsedMs / 1000).toFixed(1)} s</p>}
       </div>

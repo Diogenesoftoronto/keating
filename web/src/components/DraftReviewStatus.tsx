@@ -3,7 +3,7 @@ import { DraftContentInspection } from "./DraftContentInspection";
 import { PairReviewDetails } from "./PairReviewDetails";
 import { JudgementStateInspector } from "./JudgementStateInspector";
 import { DraftAttentionList, DraftCheckGrid, DraftStageStepper, DraftTimeBar, DraftTimeline, useDraftElapsed } from "./DraftProgress";
-import { diagnoseDraft } from "../keating/judgement/draft-progress";
+import { diagnoseDraft, learnerDraftGuidance } from "../keating/judgement/draft-progress";
 import { describeReviewCause } from "../keating/judgement/draft-failure";
 import type { TeachingDraftPhase, TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { css, cx } from "../../styled-system/css";
@@ -49,6 +49,9 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     ["backend-unavailable", "backend-unauthorized", "review-unavailable"].includes(snapshot.reason ?? "");
   const reviewedCount = snapshot.attempts.filter(attempt => attempt.status !== "generation-error").length;
   const combining = snapshot.phase === "revising" && !!snapshot.synthesisSourceAttempts?.length;
+  const staged = (snapshot.phase === "drafting" || snapshot.phase === "revising" || snapshot.phase === "checking")
+    && (snapshot.repairSourceAttempt || snapshot.parallelAttempts?.includes(snapshot.attempt))
+    ? learnerDraftGuidance(snapshot, 0) : undefined;
   const bestEffort = snapshot.phase === "released" && snapshot.reason === "best-effort-draft";
   const description = snapshot.phase === "released"
     ? bestEffort ? "The best available response is shown. Some review concerns remain; you can flag a problem below."
@@ -61,9 +64,9 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
         : describeReviewCause(snapshot.reason ?? "") ?? (snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."
         : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry.")
       : combining ? "Combining the completed drafts into one coherent response. The merged response still awaits its own review."
-      : snapshot.pairReviews && (snapshot.phase === "drafting" || snapshot.phase === "checking")
+      : staged?.detail ?? (snapshot.pairReviews && (snapshot.phase === "drafting" || snapshot.phase === "checking")
         ? "Candidate replies are generated and checked independently."
-        : descriptions[snapshot.phase];
+        : descriptions[snapshot.phase]);
   if (!showDeveloperDetails) return null;
   const feedback = (kind: TeachingDraftFeedbackKind) => recordTeachingDraftFeedback(sessionId, status.id, kind);
   const copy = async () => {
@@ -75,7 +78,7 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     display: "grid", gap: ".875rem", padding: "1rem", border: "1px solid var(--line-soft, var(--border))", borderRadius: ".75rem" })}>
     <div role="status" aria-live="polite" aria-atomic="true" className={css({ display: "grid", gap: ".375rem" })}>
       <div className={css({ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" })}>
-        <span className={css({ fontSize: ".875rem", fontWeight: 600, marginRight: "auto" })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
+        <span className={css({ fontSize: ".875rem", fontWeight: 600, marginRight: "auto" })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : staged?.headline ?? titles[snapshot.phase]}</span>
         {active && snapshot.attempt > 0 && <span className={chip}>{snapshot.pairReviews ? `${snapshot.attempts.length} of ${snapshot.maxAttempts} drafts finished` : `Attempt ${snapshot.attempt} of ${snapshot.maxAttempts}`}</span>}
         <span className={chip}>{snapshot.judgeModel ?? "no reviewer"}</span>
         <span className={chip}>{snapshot.reasoning} reasoning · {snapshot.standard}</span>
@@ -110,6 +113,8 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
         {snapshot.synthesisSourceAttempts?.length ? <p className={muted}>Source attempts: {snapshot.synthesisSourceAttempts.join(", ")}</p> : null}
         {snapshot.attempts.map(attempt => attempt.synthesisSourceAttempts?.length
           ? <p key={attempt.attempt} className={muted}>Draft {attempt.attempt} merged attempts {attempt.synthesisSourceAttempts.join(", ")}</p> : null)}
+        {snapshot.attempts.map(attempt => attempt.repairSourceAttempt
+          ? <p key={attempt.attempt} className={muted}>Draft {attempt.attempt} revised draft {attempt.repairSourceAttempt}.</p> : null)}
         <button className={button} type="button" onClick={() => { void copy(); }}>{copiedId === status.id ? "Review copied" : "Copy review"}</button>
         {copyFailed && <p role="status" className={muted}>Clipboard access was unavailable.</p>}
     </details>

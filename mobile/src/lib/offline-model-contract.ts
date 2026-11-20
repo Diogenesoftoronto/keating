@@ -1,5 +1,8 @@
 import type { ChatMessage } from "./types";
 
+/** max_num_tokens in the Android and iOS LiteRT engine configurations. */
+export const MOBILE_LITERT_CONTEXT_TOKENS = 4_096;
+
 export const OFFLINE_MODEL = {
   id: "minicpm5-2b-int4",
   name: "MiniCPM5 2B",

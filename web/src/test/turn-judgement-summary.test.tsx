@@ -1,11 +1,31 @@
-import { expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { AssistantRuntimeProvider, ThreadPrimitive, useAuiState, useExternalStoreRuntime, type ThreadMessageLike } from "@assistant-ui/react";
+import { fauxAssistantMessage } from "@earendil-works/pi-ai";
+import type { FlueConversationMessage } from "@flue/sdk";
 import type { TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { projectThreadMessages } from "../components/AssistantChatPanel";
 import { TurnJudgementSummary, summarizeTurnJudgements } from "../components/TurnJudgementSummary";
 import { DraftCheckHeatmap, ReplyReviewConfidence } from "../components/MessageDecisionVisuals";
 import { DraftProgressCard } from "../components/DraftProgress";
 import { MessageDraftDecision } from "../components/MessageDraftDecision";
+import { TurnProcessSummary, useSearchStepCovered } from "../components/TurnProgress";
+import * as glyphRuntime from "../design-system/glyphs/runtime";
+import * as motion from "../design-system/motion";
+import type { FlueConversation } from "../keating/flue/conversation";
+import { rememberTurnReceipt, resetTurnReceipts } from "../keating/judgement/turn-receipts";
+import { mountRoomUi, settle, textOf } from "./helpers/room-ui-mount";
 import type { JudgementLabelRecord, TurnJudgementRecord } from "../keating/judgement/turn-records";
+
+beforeEach(() => {
+  // The reconciler fixture exercises React handlers without a browser or SVG DOM.
+  spyOn(glyphRuntime, "bindGlyph").mockReturnValue({ update() {}, dispose() {} });
+  spyOn(motion, "useMotionAllowed").mockReturnValue(false);
+});
+afterEach(() => {
+  spyOn(glyphRuntime, "bindGlyph").mockRestore();
+  spyOn(motion, "useMotionAllowed").mockRestore();
+});
 
 const snapshot = { phase: "released", attempt: 2, maxAttempts: 2, reasoning: "low", standard: "supported", elapsedMs: 1200, judgeModel: "jev", selectedAttempt: 2, reason: null,
   attempts: [1, 2].map(attempt => ({ attempt, reasoning: "low", standard: "supported", generationMs: 1, judgementMs: 1, status: attempt === 1 ? "fail" : "pass", variant: "default",
@@ -129,6 +149,166 @@ test("the release summary uses recorded checks and preserves best-effort status"
   expect(bestEffort).toContain("Keating released draft 1 as a best-effort reply.");
   expect(bestEffort).not.toContain("Draft 1 passed review");
   expect(renderToStaticMarkup(<MessageDraftDecision snapshot={{ ...snapshot, phase: "withheld", selectedAttempt: null }} />)).toBe("");
+});
+
+test("release diagnostics compare the parallel alternative or the actual revision source", () => {
+  const [first, second] = snapshot.attempts;
+  const parallel: TeachingDraftSnapshot = { ...snapshot, parallelAttempts: [1, 2], selectedAttempt: 1,
+    attempts: [{ ...second!, attempt: 1 }, { ...first!, attempt: 2 }] };
+  const decision = renderToStaticMarkup(<MessageDraftDecision snapshot={parallel} />);
+  expect(decision).toContain("Draft 2 was flagged on “Mastery overclaimed”. Draft 1 passed that check and was released.");
+  expect(decision).toContain("Started in parallel with draft 2.");
+  expect(renderToStaticMarkup(<DraftCheckHeatmap snapshot={parallel} />)).toContain("Draft 2 · parallel draft");
+
+  const repaired: TeachingDraftSnapshot = { ...parallel, attempt: 3, selectedAttempt: 3,
+    attempts: [...parallel.attempts, { ...second!, attempt: 3, repairSourceAttempt: 2 }] };
+  expect(renderToStaticMarkup(<MessageDraftDecision snapshot={repaired} />)).toContain("Revised draft 2.");
+  expect(renderToStaticMarkup(<DraftCheckHeatmap snapshot={repaired} />)).toContain("Draft 2 · source of revision");
+});
+
+test("the folded chat receipt counts genuine passes on a released best-effort answer", async () => {
+  const id = "receipt-with-review-concerns";
+  const shown = { ...snapshot.attempts[0]!, checks: [
+    ...snapshot.attempts[0]!.checks,
+    { id: "quality_scope", source: "jev", severity: "minor", status: "unknown", probability: .5 } as const,
+  ] };
+  rememberTurnReceipt(id, 400, { ...snapshot, reason: "best-effort-draft", selectedAttempt: 1, attempts: [shown] });
+  function Receipt() { return <TurnProcessSummary sessionId={id} />; }
+  function Conversation() {
+    const runtime = useExternalStoreRuntime<ThreadMessageLike>({
+      messages: [{ id: "assistant-400", role: "assistant", content: "A checked reply.", status: { type: "complete", reason: "stop" } }],
+      convertMessage: message => message, isRunning: false, onNew: async () => {},
+    });
+    return <AssistantRuntimeProvider runtime={runtime}>
+      <ThreadPrimitive.Messages components={{ AssistantMessage: Receipt, UserMessage: () => null }} />
+    </AssistantRuntimeProvider>;
+  }
+  const ui = mountRoomUi();
+  try {
+    await ui.render(<Conversation />);
+    const summary = ui.button("1 of 3 checks passed");
+    expect(summary.props["aria-expanded"]).toBe(false);
+    summary.props.onClick();
+    await settle();
+    expect(ui.text()).toContain("1 passed, 1 failed, 1 inconclusive");
+  } finally {
+    await ui.unmount();
+    resetTurnReceipts();
+  }
+});
+
+test("a Flue reply and its search step use the receipt for the same projected turn", async () => {
+  const sessionId = "native-receipt-sources";
+  const answer = "Three times three is nine.";
+  const originals = [
+    { role: "user" as const, content: "First example?", timestamp: 10 },
+    fauxAssistantMessage(answer, { timestamp: 100 }),
+    { role: "user" as const, content: "Next example?", timestamp: 20 },
+    fauxAssistantMessage("Three times three", { timestamp: 190 }),
+    fauxAssistantMessage(answer, { timestamp: 200 }),
+  ];
+  const nativeText = (id: string, role: "user" | "assistant", text: string, timestamp?: number): FlueConversationMessage => ({
+    id, role, purpose: role, display: "visible", timestamp: new Date(800).toISOString(),
+    ...(timestamp === undefined ? {} : { metadata: { timestamp } }), parts: [{ type: "text", text, state: "done" }],
+  });
+  const search = (id: string): FlueConversationMessage => ({
+    id, role: "assistant", purpose: "assistant", display: "visible", parts: [
+      { type: "dynamic-tool", toolName: "web_search", toolCallId: id, input: { query: "square number" }, state: "output-available", output: {} },
+    ],
+  });
+  const native = [
+    nativeText("entry_U1", "user", "First example?", 10), search("entry_S1"), nativeText("entry_A1", "assistant", answer),
+    nativeText("entry_U2", "user", "Next example?", 20), search("entry_S2"), nativeText("entry_A2", "assistant", answer, 900),
+    nativeText("entry_U3", "user", "Another question?"), nativeText("entry_orphan", "assistant", "An unmatched response.", 200),
+  ];
+  const agent = { getSnapshot: () => ({ conversation: { messages: native } }), context: { messages: originals },
+    legacyMessages: [], localMessages: [] } as unknown as FlueConversation;
+  const rows = projectThreadMessages(agent, originals, false, false, undefined);
+  expect(rows.find(row => row.id === "entry_A1")?.metadata?.custom?.keatingDiagnosticTimestamps).toEqual([100]);
+  expect(rows.find(row => row.id === "entry_A2")?.metadata?.custom?.keatingDiagnosticTimestamps).toEqual([190, 200]);
+  expect(rows.find(row => row.id === "entry_orphan")?.metadata?.custom?.keatingDiagnosticTimestamps).toEqual([]);
+  // Only the second of the identical replies was reviewed. The orphan's display date
+  // coincides with that receipt. Neither the first turn nor the orphan can claim it.
+  rememberTurnReceipt(sessionId, 200, snapshot);
+  const olderRows: ThreadMessageLike[] = [
+    { id: "assistant-9-500", role: "assistant", content: "An older reply." },
+    { id: "historic-reply", role: "assistant", createdAt: new Date(600), content: "An imported reply." },
+  ];
+  rememberTurnReceipt(sessionId, 500, snapshot);
+  rememberTurnReceipt(sessionId, 600, snapshot);
+  function Receipt() {
+    const id = useAuiState(({ message }) => message.id);
+    return <article data-id={id}>{useSearchStepCovered(sessionId) ? "Search covered" : <TurnProcessSummary sessionId={sessionId} />}</article>;
+  }
+  function Conversation() {
+    const runtime = useExternalStoreRuntime<ThreadMessageLike>({ messages: [...rows, ...olderRows],
+      convertMessage: message => message, isRunning: false, onNew: async () => {} });
+    return <AssistantRuntimeProvider runtime={runtime}>
+      <ThreadPrimitive.Messages components={{ AssistantMessage: Receipt, UserMessage: () => null }} />
+    </AssistantRuntimeProvider>;
+  }
+  const ui = mountRoomUi();
+  try {
+    await ui.render(<Conversation />);
+    const rendered = new Map(ui.all("article").map(row => [row.props["data-id"], textOf(row)]));
+    expect(rendered.get("entry_S1")).toBe("");
+    expect(rendered.get("entry_A1")).toBe("");
+    expect(rendered.get("entry_S2")).toBe("Search covered");
+    expect(rendered.get("entry_A2")).toContain("2 checks passed");
+    expect(rendered.get("entry_orphan")).toBe("");
+    for (const row of olderRows) expect(rendered.get(row.id)).toContain("2 checks passed");
+  } finally {
+    await ui.unmount();
+    resetTurnReceipts();
+  }
+});
+
+test("stopping after a checked opening keeps its counts and covers only that turn’s search", async () => {
+  const sessionId = "stopped-opening";
+  const opening = { ...snapshot.attempts[1]!, checks: [
+    ...snapshot.attempts[1]!.checks,
+    { id: "requested_part_missing", source: "jev", severity: "minor", status: "fail", probability: .99 } as const,
+    { id: "quality_scope", source: "jev", severity: "minor", status: "unknown", probability: .5 } as const,
+  ] };
+  const stopped: TeachingDraftSnapshot = { ...snapshot, phase: "cancelled", reason: "cancelled",
+    attempt: 3, maxAttempts: 3, parallelAttempts: [1, 2], attempts: [snapshot.attempts[0]!, opening], selectedAttempt: 2 };
+  rememberTurnReceipt(sessionId, 1100, stopped);
+  rememberTurnReceipt(sessionId, 2100, { ...stopped, selectedAttempt: null });
+  rememberTurnReceipt(sessionId, 3100, { ...stopped, selectedAttempt: 1 });
+  rememberTurnReceipt(sessionId, 4100, { ...stopped, attempts: [{ ...opening, checks: [] }] });
+  const rows: ThreadMessageLike[] = [1100, 2100, 3100, 4100].flatMap(timestamp => [
+    { id: `user-${timestamp}`, role: "user", content: "Give me an example." },
+    { id: `entry_search_${timestamp}`, role: "assistant",
+      content: [{ type: "tool-call", toolCallId: `q${timestamp}`, toolName: "web_search", args: { query: "example" }, result: {} }] },
+    { id: `entry_reply_${timestamp}`, role: "assistant", content: timestamp === 1100 ? "The checked opening." : "Response stopped",
+      status: { type: "incomplete", reason: "cancelled" }, metadata: { custom: { keatingDiagnosticTimestamps: [timestamp] } } },
+  ]);
+  function Receipt() {
+    const id = useAuiState(({ message }) => message.id);
+    return <article data-id={id}>{useSearchStepCovered(sessionId) ? "Search covered" : <TurnProcessSummary sessionId={sessionId} />}</article>;
+  }
+  function Conversation() {
+    const runtime = useExternalStoreRuntime<ThreadMessageLike>({ messages: rows, convertMessage: message => message, isRunning: false, onNew: async () => {} });
+    return <AssistantRuntimeProvider runtime={runtime}><ThreadPrimitive.Messages components={{ AssistantMessage: Receipt, UserMessage: () => null }} /></AssistantRuntimeProvider>;
+  }
+  const ui = mountRoomUi();
+  try {
+    await ui.render(<Conversation />);
+    const rendered = new Map(ui.all("article").map(row => [row.props["data-id"], textOf(row)]));
+    expect(rendered.get("entry_search_1100")).toBe("Search covered");
+    expect(rendered.get("entry_reply_1100")).toContain("You stopped after the opening");
+    expect(rendered.get("entry_reply_1100")).toContain("2 passed, 1 failed, 1 inconclusive");
+    for (const timestamp of [2100, 3100, 4100]) {
+      expect(rendered.get(`entry_search_${timestamp}`)).toBe("");
+      expect(rendered.get(`entry_reply_${timestamp}`)).toBe("");
+    }
+    ui.button("You stopped after the opening").props.onClick();
+    await settle();
+    expect(ui.text()).toContain("Showed draft 2 as the opening");
+  } finally {
+    await ui.unmount();
+    resetTurnReceipts();
+  }
 });
 
 test("alternate reply answers retain the model's scores and the original selected label", () => {

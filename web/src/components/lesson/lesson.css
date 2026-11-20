@@ -12,7 +12,7 @@
 .lesson-head small, .lesson-tools, .lesson-foot small, .lesson-round small, .shared-activity__card small, .shared-activity__meta, .lesson-plan small, .shared-activity__rating small {font:.5rem/1.5 var(--font-mono);color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .lesson-body {padding:.48rem .58rem}
 .lesson-body > *, .lesson-head > *, .lesson-frame fieldset {min-width:0;max-width:100%}
-.lesson-frame :is(p,legend,textarea,summary,label) { font-family:var(--font-ui); }
+:where(.lesson-frame) :where(p,legend,textarea,summary,label) { font-family:var(--font-ui); }
 .lesson-foot, .shared-activity__nav { border-top:1px solid var(--line-soft); }
 .lesson-body > .shared-activity__nav {margin:0 -.58rem -.48rem}
 .lesson-primary, .lesson-frame :is(.activity-main-action,.shared-activity__primary,.shared-task__submit) {margin-inline-start:auto;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;border:1px solid var(--ink);border-radius:.1923rem;background:var(--ink);color:var(--paper);padding:.26rem .48rem;box-shadow:none;font:600 .6rem/1.4 var(--font-ui);cursor:pointer}
@@ -59,11 +59,9 @@
 .shared-activity__card-note,.shared-activity__hint,.shared-activity__review {font:.57rem/1.5 var(--font-ui)}
 .lesson-frame .kc-meter-row {min-width:0}
 .lesson-foot .submission-attachments {max-width:100%;min-width:0}
-@container (max-width: 17rem) {
-  .lesson-frame :is(.shared-task__submit,.shared-activity__primary,.activity-main-action,.lesson-primary){width:100%}
-}
 @media (pointer: coarse) {
-  .lesson-frame :is(button,summary,label:has(input[type=checkbox]),.shared-activity__choice){min-height:44px}
+  .lesson-frame :is(summary,label:has(input[type=checkbox]),.shared-activity__choice){min-height:44px}
+  .lesson-frame button{min-height:1.73rem}
   .lesson-frame button:has(>svg:only-child){min-width:44px}
 }
 
@@ -88,7 +86,7 @@
 .activity-game.activity-quiz {border:1px solid var(--line);border-radius:.1923rem;background:var(--paper);font:.625rem/1.45 var(--font-ui);box-shadow:none;padding:.5rem .58rem;gap:.42rem}
 .activity-quiz .activity-quiz-header {border-bottom:1px solid var(--line)}
 .activity-quiz nav {display:flex;flex-flow:row wrap;align-items:center;border-top:1px solid var(--line-soft)}
-.activity-game.activity-quiz .activity-main-action,.lesson-frame.activity-game .activity-main-action {margin-inline-start:auto;background:var(--ink);color:var(--paper);border-radius:.1923rem;box-shadow:none;min-height:1.5rem;padding:.26rem .48rem;font:600 .6rem/1.45 var(--font-ui)}
+.activity-game.activity-quiz .activity-main-action,.lesson-frame.activity-game .activity-main-action {margin-inline-start:auto;background:var(--ink);color:var(--paper);border-radius:.1923rem;box-shadow:none;min-height:1.154rem;padding:0 .385rem;font:600 .505rem/1.2 var(--font-ui)}
 .activity-quiz .activity-quiz-topic{font-size:.67rem}
 .lesson-frame .activity-completion,.activity-quiz .activity-completion{padding:.3rem;gap:.3rem}
 .lesson-frame .activity-completion strong,.activity-quiz .activity-completion strong{font-size:.67rem}
@@ -96,8 +94,6 @@
 
 .lesson-frame .lesson-feedback{background:transparent}
 .lesson-frame :is(.shared-activity__review,.shared-activity__hint) summary{cursor:pointer}
-.lesson-frame[data-task] [data-task-paper-hint]{font:.55rem/1.5 var(--font-ui)}
-.lesson-frame[data-task] label{font-size:.6rem}
 .lesson-frame[data-task] [data-task-brief] {border:0;padding:0}
 .lesson-frame[data-task] [data-task-brief] > div:empty {display:none}
 
@@ -107,7 +103,7 @@
 .lesson-round>.kc-meter-row>span:last-child {display:none}
 .shared-activity__choice[data-state=wrong]:has(input:checked){border-inline-start:3px dashed var(--destructive);background:var(--paper)}
 .shared-activity__choice[data-state=correct]:has(input:checked){border-color:var(--accent-green)}
-@media(max-width:420px){.lesson-frame :is(button,summary,.lesson-step a,.shared-activity__choice,label:has(input[type=checkbox])){min-height:44px}
+@media(max-width:420px){.lesson-frame :is(summary,.lesson-step a,.shared-activity__choice,label:has(input[type=checkbox])){min-height:44px}.lesson-frame button{min-height:1.73rem}
 .lesson-step a{display:inline-flex;align-items:center}.lesson-frame button:has(>svg:only-child){min-width:44px}}
 
 .lesson-constraints,.lesson-constraint {display:flex;flex-wrap:wrap;align-items:center;gap:.25rem;max-width:100%}
@@ -137,7 +133,7 @@ body .lesson-body .flashcard-timer button.keating-select {
 
 .lesson-frame .activity-completion-symbol{width:1.2rem;height:1.2rem;border:0;background:transparent;transform:none;animation:none}
 .lesson-frame .activity-completion-symbol svg{width:.85rem;height:.85rem}
-.lesson-score .kc-stat b{font-family:var(--mono-display,var(--font-mono));font-size:1.04rem}
+.lesson-score .kc-stat b{font-family:var(--mono-display,var(--font-mono));font-size:.9rem}
 .lesson-stats{align-items:flex-start;gap:.85rem}
 
 html[data-reduce-motion="true"] .lesson-frame :is(.activity-stage,.activity-completion-symbol,.activity-answer,.activity-main-action){animation:none;transition:none}
@@ -171,9 +167,247 @@ html[data-reduce-motion="true"] .lesson-frame :is(.activity-stage,.activity-comp
 .lesson-document > h3, .lesson-document[data-openui-diagnostic-nodes~="concept-map"] > div > h4 {
   font: 600 .673rem/1.4 var(--font-ui);
 }
-.lesson-document > [role=status]:has(> p) { border: 0; border-inline-start: 2px solid var(--line); border-radius: 0; padding: .36rem .5rem; font: .625rem/1.45 var(--font-ui); }
+.lesson-document > [role=status]:has(> p):not(:has(> .lesson-status)) { border: 0; border-inline-start: 2px solid var(--line); border-radius: 0; padding: .36rem .5rem; font: .625rem/1.45 var(--font-ui); }
 
 html:is([data-fx="off"],[data-reduce-motion="true"]) .lesson-head.k-halftone::after { display: none; }
 @media (forced-colors: active), (prefers-reduced-motion: reduce) {
   .lesson-head.k-halftone::after { display: none; }
+}
+
+/* ── Lesson vocabulary, board L3 (2026-11-20) ─────────────────────────────
+   One set of parts for every OpenUI component that lives inside a reply.
+   Use these classes (or let the scoped rules below catch bare elements)
+   instead of per-component borders, Panda boxes or new colours.
+   Board: docs/design/2026-11-19-review-chat-mockups/lessons-mockups.html, L1 to L4. */
+
+/* Well colour: paper-deep in light; in dark paper-deep is darker than the page, so lift it with 7% ink (board L3/L4). */
+.lesson-frame, .lesson-document { --lesson-well: var(--paper-deep); }
+.dark :is(.lesson-frame, .lesson-document), .lesson-frame.dark { --lesson-well: color-mix(in srgb, var(--paper-deep) 93%, var(--ink) 7%); }
+
+/* NO BOXES IN BOXES (owner, 2026-11-20: "ew boxes in boxes look"). The lesson frame is the only
+   bordered thing. Inside it: fields are filled wells with no border, lists are flat rows on soft
+   rules, stages are the grid texture without an outline, and nothing nests a card.
+   Bare-element defaults live in Panda's base layer so any component class still wins. */
+@layer base {
+  :where(.lesson-frame) :where(textarea, input:not([type=checkbox],[type=radio],[type=range],[type=file]), select) {
+    border: 0; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep));
+    color: var(--ink); padding: .3rem .43rem; font: .6rem/1.45 var(--font-ui); box-shadow: none;
+  }
+  :where(.lesson-frame) :where(textarea, input, select):hover { background: color-mix(in srgb, var(--lesson-well, var(--paper-deep)) 92%, var(--ink) 6%); }
+  :where(.lesson-frame) textarea { min-height: 3.4rem; resize: vertical; }
+  :where(.lesson-frame) ::placeholder { color: var(--ink-soft); opacity: .7; }
+  :where(.lesson-frame) input[type=range] { width: 100%; min-width: 0; accent-color: var(--accent-green); height: 1.1rem; margin: 0; background: transparent; cursor: pointer; }
+  :where(.lesson-body) > :where(h3, h4) { margin: 0; font: 600 .625rem/1.4 var(--font-ui); color: var(--ink); }
+}
+.lesson-field { border: 0; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); color: var(--ink); padding: .3rem .43rem; font: .6rem/1.45 var(--font-ui); box-shadow: none; }
+.lesson-label { display: block; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); letter-spacing: .02em; }
+
+/* Sections inside the body: a quiet heading and soft dividers, no nested cards. */
+.lesson-section { display: grid; gap: .34rem; min-width: 0; }
+.lesson-section + .lesson-section { border-top: 1px solid var(--line-soft); padding-top: .42rem; }
+.lesson-section-title { margin: 0; font: 600 .625rem/1.4 var(--font-ui); color: var(--ink); }
+.lesson-hint { margin: 0; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+
+/* Rows: a list of things with soft top rules, the trailing edge holds mono meta. */
+.lesson-rows { display: grid; list-style: none; margin: 0; padding: 0; }
+.lesson-rows > * { display: flex; align-items: baseline; gap: .34rem; min-width: 0; padding: .3rem 0; border-top: 1px solid var(--line-soft); }
+.lesson-rows > * > :is(small,.lesson-meta):last-child { margin-inline-start: auto; }
+.lesson-meta { font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.lesson-index { display: grid; place-items: center; flex: none; width: 1rem; height: 1rem; background: var(--lesson-well, var(--paper-deep)); font: .5rem/1 var(--font-mono); }
+
+/* Grouped lists (steps, checks): flat rows on soft rules. Never a box, never a box per row.
+   A per-row note is a quiet "Add a note" action that opens a filled well under the row. */
+.lesson-group { display: grid; border-bottom: 1px solid var(--line-soft); }
+.lesson-group > * { padding: .32rem 0; min-width: 0; border-top: 1px solid var(--line-soft); }
+
+/* Progress: a 6px track and a solid fill. No border, no outline. */
+.lesson-progress { position: relative; display: block; flex: 1; min-width: 2rem; height: .29rem; background: var(--paper-deep); border: 0; overflow: hidden; }
+.lesson-progress > i, .lesson-progress > u { display: block; height: 100%; background: var(--accent-green); }
+.lesson-progress[data-tone=ink] > :is(i,u) { background: var(--ink); }
+
+/* Stages: anything drawn (diagram, chart, visualiser, image placeholder, recorder) sits on the 10px grid. */
+.lesson-stage { position: relative; min-width: 0; border: 0; border-radius: .1923rem; background-color: var(--paper); overflow: hidden; }
+.lesson-body > .lesson-stage:first-child { margin-top: -.48rem; }
+.lesson-stage.lesson-bleed, .lesson-body > .lesson-bleed { margin-inline: -.58rem; max-width: none; width: auto; border-radius: 0; }
+.lesson-body > .lesson-bleed:last-child { margin-bottom: -.48rem; }
+
+/* Sliders: thin track, green thumb. */
+.lesson-range { width: 100%; min-width: 0; accent-color: var(--accent-green); height: 1.1rem; margin: 0; background: transparent; cursor: pointer; }
+
+/* Readouts: a mono label over a display number. */
+.lesson-readouts { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+.lesson-readout { display: grid; gap: .05rem; min-width: 0; }
+.lesson-readout > small { font: .5rem/1.4 var(--font-mono); color: var(--ink-soft); }
+.lesson-readout > b { font: 700 .9rem/1.15 var(--mono-display, var(--font-mono)); font-variant-numeric: tabular-nums; }
+
+/* Quiet actions: text-plus-glyph ghost buttons; the one primary is .lesson-primary. */
+.lesson-quiet { display: inline-flex; align-items: center; gap: .24rem; border: 0; background: transparent; box-shadow: none; padding: .24rem .34rem; color: var(--ink-soft); font: .55rem/1.4 var(--font-mono); cursor: pointer; border-radius: .1923rem; }
+.lesson-quiet:hover:not(:disabled) { color: var(--ink); background: var(--k-wash); }
+.lesson-foot > .lesson-quiet:first-child, .lesson-foot > .k-bloom:first-child { margin-inline-start: -.34rem; }
+.lesson-foot-meta { display: inline-flex; align-items: center; gap: .24rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+
+/* Status line: a square dot and words. */
+.lesson-status { display: inline-flex; align-items: center; gap: .24rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.lesson-status::before { content: ""; width: .29rem; height: .29rem; background: currentColor; }
+.lesson-status[data-tone=ok] { color: var(--accent-green); }
+.lesson-status[data-tone=warn] { color: var(--amber); }
+.lesson-status[data-tone=bad] { color: var(--destructive); }
+
+/* Prose-only frames (Explanation) read at the reply's reading size. */
+.lesson-frame[data-lesson=prose] .lesson-body { font: .66rem/1.6 var(--font-ui); }
+
+/* Figures: image on the grid, caption in mono under a soft rule. */
+.lesson-figure { margin: 0; display: grid; }
+.lesson-figure > img { display: block; width: 100%; height: auto; }
+.lesson-figure > figcaption { padding: .3rem .58rem; border-top: 1px solid var(--line-soft); font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+
+/* HIERARCHY, COLOUR, GLYPHS (owner, 2026-11-20: "hierarchy, colour use, icons are not being
+   utilized where they should"). Exactly four text levels inside a frame:
+     1 frame title   .lesson-head strong     600 .673rem UI
+     2 section head  .lesson-section-title   600 .625rem UI, always led by a 13px glyph in green ink
+     3 body          .6rem UI (reading-size .66rem only for prose frames)
+     4 meta / label  .5rem mono, --ink-soft (counts, durations, field labels, hints, statuses)
+   No bold field labels, no 1rem+ headings, no centred body copy except a stage's readout. */
+.lesson-section-title { display: flex; align-items: center; gap: .3rem; }
+.lesson-section-title > svg, .lesson-section-title > .keating-glyph { flex: none; color: var(--accent-green); }
+.lesson-section-title > .lesson-meta { margin-inline-start: auto; font-weight: 400; }
+.lesson-head > svg:first-child { color: var(--accent-green); }
+
+/* Colour carries meaning, from one palette:
+     green  (--accent-green, wash --k-wash)  progress fills, checked/done rows, the live state, section glyphs
+     amber  (--amber)                         hints, "judged on" criteria, partly right, near a limit
+     red    (--destructive)                   wrong, failed, recording live
+     ink    (--ink)                           the one primary button per frame
+   Never a second green (no #1fa05a buttons), never blue, never a bright fill on a secondary action. */
+.lesson-done, .lesson-group > [data-done=true] { color: var(--ink); }
+.lesson-group > [data-done=true] { background: linear-gradient(90deg, var(--k-wash), transparent 70%); }
+.lesson-group > [data-done=true] :is(svg, input[type=checkbox]) { color: var(--accent-green); accent-color: var(--accent-green); }
+.lesson-criteria { display: grid; gap: .16rem; list-style: none; margin: 0; padding: 0; }
+.lesson-criteria > li { display: flex; align-items: baseline; gap: .3rem; font: .6rem/1.45 var(--font-ui); }
+.lesson-criteria > li > svg { flex: none; color: var(--amber); transform: translateY(.08rem); }
+.lesson-live { color: var(--destructive); }
+.lesson-live::before { content: ""; display: inline-block; width: .29rem; height: .29rem; margin-inline-end: .2rem; background: currentColor; animation: lesson-blink 1s steps(2, jump-none) infinite; }
+@keyframes lesson-blink { 50% { opacity: .2; } }
+html[data-reduce-motion="true"] .lesson-live::before { animation: none; }
+@media (prefers-reduced-motion: reduce) { .lesson-live::before { animation: none; } }
+
+/* RELATIVE SIZE (owner, 2026-11-20: "buttons are huge, way too big relative to the other stuff").
+   Board pixels (1px = .04808rem). Controls never outgrow the body text they sit beside.
+     action button (primary or ghost)  24px tall  (1.154rem), label 10.5px (.505rem) 600, padding 0 8px, glyph 13px
+     icon button                        28px square (1.346rem); 22px (1.058rem) in dense rows; glyph 15/13px
+     field well                         min 28px tall (1.346rem), text 12.5px (.6rem)
+     section glyph 13px, head glyph 16px, readout number at most 18.7px (.9rem)
+   No full-width buttons, on any width. Touch: buttons 36px (1.73rem), rows and choices 44px; was 44px hit
+   areas through padding on coarse pointers (rules above), not through bigger visuals on desktop. */
+@layer base {
+  :where(.lesson-frame) :where(button, .k-button, a[role=button]):not(.shared-activity__choice, .activity-answer, .shared-activity__card, .lesson-face, .shared-activity__rating) {
+    min-height: 1.154rem; font-size: .505rem; line-height: 1.2;
+  }
+  :where(.lesson-frame) :where(input:not([type=checkbox],[type=radio],[type=range],[type=file]), select) { min-height: 1.346rem; }
+}
+.lesson-primary, .lesson-frame :is(.activity-main-action,.shared-activity__primary,.shared-task__submit) {
+  min-height: 1.154rem; padding: 0 .385rem; gap: .24rem; font: 600 .505rem/1.2 var(--font-ui);
+}
+.lesson-quiet { min-height: 1.154rem; font-size: .505rem; }
+.lesson-frame .k-button.k-md { min-height: 1.154rem; padding: 0 .385rem; font-size: .505rem; }
+
+/* Guards against app-wide phone rules (panda.config globalCss, body:not(.chat-shell-active)):
+   those inflate every button glyph to 1.5rem and every select to 48px on non-chat pages under 768px. */
+.lesson-frame svg[data-glyph] { width: auto; height: auto; flex: none; }
+.lesson-frame select { min-height: 1.346rem; padding: .3rem 1.2rem .3rem .43rem; }
+
+/* The head never wraps (board L3/L4 decision 1): the title may take two lines, the kind hides in narrow frames. */
+.lesson-head { flex-wrap: nowrap; }
+.lesson-head > strong { flex: 0 1 auto; }
+.lesson-head > small { flex: none; white-space: nowrap; }
+.lesson-tools { flex: none; display: inline-flex; align-items: center; gap: .24rem; white-space: nowrap; }
+@container (max-width: 25rem) { .lesson-head > small { display: none; } }
+
+/* Checkboxes: a 14px square drawn in the palette, not the browser's white box (which glares in dark). */
+:is(.lesson-frame, .lesson-document) input[type=checkbox] {
+  appearance: none; flex: none; display: inline-grid; place-items: center; width: .673rem; height: .673rem; margin: 0;
+  border: 1px solid var(--ink-soft); border-radius: 2px; background: transparent; cursor: pointer; vertical-align: -.1rem;
+  min-width: 0; min-height: 0; padding: 0; align-self: center;
+}
+:is(.lesson-frame, .lesson-document) input[type=checkbox]::before {
+  content: ""; width: .4rem; height: .4rem; background: var(--paper); transform: scale(0);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+:is(.lesson-frame, .lesson-document) input[type=checkbox]:checked { border-color: var(--accent-green); background: var(--accent-green); }
+:is(.lesson-frame, .lesson-document) input[type=checkbox]:checked::before { transform: scale(1); }
+:is(.lesson-frame, .lesson-document) input[type=checkbox]:disabled { opacity: .55; cursor: default; }
+:is(.lesson-frame, .lesson-document) input[type=checkbox]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (forced-colors: active) { :is(.lesson-frame, .lesson-document) input[type=checkbox] { appearance: auto; } }
+
+/* ── Toggles, checks and the writing surface (owner, 2026-11-20: "check boxes could use some work … a
+   microphone icon checkbox … depending on what they are for"; "i didn't like that generic text box") ── */
+
+/* LessonToggle: a capability switch drawn as its glyph. Off = soft ink (or the struck-through glyph),
+   on = green glyph on the wash, label in ink. The checkbox underneath is visually hidden. */
+.lesson-toggle { position: relative; display: inline-flex; align-items: center; gap: .3rem; min-width: 0; padding: .14rem .38rem .14rem .14rem; border-radius: .1923rem; color: var(--ink-soft); font: .5rem/1.4 var(--font-mono); cursor: pointer; user-select: none; transition: background-color .12s steps(2), color .12s steps(2); }
+.lesson-toggle:hover { background: var(--k-wash); color: var(--ink); }
+.lesson-toggle__mark { display: grid; place-items: center; flex: none; width: 1.058rem; height: 1.058rem; border-radius: .1923rem; color: var(--ink-soft); transition: background-color .12s steps(2), color .12s steps(2); }
+.lesson-toggle[data-on] { color: var(--ink); }
+.lesson-toggle[data-on] .lesson-toggle__mark { background: var(--k-wash); color: var(--accent-green); box-shadow: inset 2px 0 0 var(--accent-green); }
+.lesson-toggle__text { display: grid; min-width: 0; }
+.lesson-toggle__text > small { font: inherit; color: var(--ink-soft); opacity: .8; }
+.lesson-toggle:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 1px; }
+.lesson-toggle:has(input:disabled) { opacity: .5; cursor: default; }
+.lesson-toggle:has(input:disabled):hover { background: transparent; }
+.lesson-toggles { display: flex; flex-wrap: wrap; gap: .12rem .5rem; margin-inline-start: -.14rem; }
+@media (pointer: coarse) { .lesson-toggle { min-height: 44px; } }
+
+/* Step checks: the tick stamps in (stepped, like the glyphs) and the done row's wash sweeps across. */
+@keyframes lesson-check-in { 0% { transform: scale(0) rotate(-20deg); } 60% { transform: scale(1.3) rotate(4deg); } 100% { transform: scale(1) rotate(0); } }
+.lesson-frame input[type=checkbox]:checked::before { animation: lesson-check-in .28s steps(4, end); }
+.lesson-group > * { background-repeat: no-repeat; background-size: 0% 100%; transition: background-size .36s steps(6, end); }
+.lesson-group > [data-done=true] { background-size: 100% 100%; }
+html[data-reduce-motion="true"] .lesson-frame input[type=checkbox]::before, html[data-reduce-motion="true"] .lesson-group > * { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) { .lesson-frame input[type=checkbox]::before, .lesson-group > * { animation: none; transition: none; } }
+
+/* Writing surface: every free-text answer in a lesson is a sheet of ruled paper — faint rules that scroll
+   with the text, a margin rule, and a green underline while you write. Base layer, so code editors and
+   any component with its own textarea class keep theirs. */
+@layer base {
+  :where(.lesson-frame) textarea:where(:not([spellcheck=false],[aria-label*=" code"],[aria-label*="solution"],[class*="code"])) {
+    --lesson-rule: 1.6em;
+    line-height: 1.6; padding: .3rem .5rem .3rem 1.25rem;
+    background-color: var(--lesson-well, var(--paper-deep));
+    background-image:
+      linear-gradient(90deg, transparent .85rem, color-mix(in srgb, var(--amber) 45%, transparent) .85rem, color-mix(in srgb, var(--amber) 45%, transparent) calc(.85rem + 1px), transparent calc(.85rem + 1px)),
+      repeating-linear-gradient(180deg, transparent 0 calc(var(--lesson-rule) - 1px), var(--line-soft) calc(var(--lesson-rule) - 1px) var(--lesson-rule));
+    background-position: 0 0, 0 .3rem;
+    background-attachment: local, local;
+    transition: box-shadow .16s steps(3, end);
+  }
+  :where(.lesson-frame) textarea:where(:not([spellcheck=false],[aria-label*=" code"],[aria-label*="solution"],[class*="code"])):focus { box-shadow: inset 0 -2px 0 var(--accent-green); outline: none; }
+}
+.lesson-frame textarea:not([spellcheck=false],[aria-label*=" code"],[aria-label*="solution"],[class*="code"]):focus-visible { outline: none; }
+/* The section's pen leans in while you write. */
+.lesson-section-title > svg { transition: transform .16s steps(3, end); }
+.lesson-section:has(textarea:focus) .lesson-section-title > svg,
+.lesson-section-title:has(+ textarea:focus) > svg { transform: rotate(-14deg) translate(-1px, -1px); }
+@media (forced-colors: active) { :where(.lesson-frame) textarea { background-image: none; border: 1px solid CanvasText; } }
+
+/* The document wrapper's own title and lede sit at levels 1 and 3, not above the frames they introduce. */
+.lesson-document > .lesson-document__title { margin: 0; font: 600 .673rem/1.4 var(--font-ui); color: var(--ink); }
+.lesson-document > .lesson-document__lede { margin: 0; font: .6rem/1.5 var(--font-ui); color: var(--ink-soft); }
+.lesson-document > .lesson-document__inactive { display: grid; gap: .24rem; border: 0; border-inline-start: 2px solid var(--line); padding: .3rem .5rem; font: .55rem/1.5 var(--font-ui); color: var(--ink-soft); }
+.lesson-document > .lesson-document__inactive p { margin: 0; }
+
+/* From lane O3: shared parts it repeated. */
+.lesson-status[data-tone=none]::before { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+/* A footer row that lives inside the body (question, language, shared quiz) reaches the frame edges. */
+.lesson-body > .lesson-foot { max-width: none; margin: .2rem -.58rem -.48rem; }
+/* The kit Select trigger inside a frame is a well like every other field. */
+body .lesson-frame button.keating-select.keating-select { border: 0; background: var(--lesson-well, var(--paper-deep)); box-shadow: none; min-height: 1.346rem; padding: .3rem .43rem; font: .6rem/1.45 var(--font-ui); }
+/* Same guard for fields: the app-wide ≤768px rule gives every input/textarea/select 44px and .75rem padding
+   on non-chat pages (review, materials, courses), which also show lesson frames. Keep 16px text on phones
+   (stops iOS zooming on focus) but not the padding or the height. */
+@media (max-width: 768px) {
+  /* Zero specificity: beats Panda's base layer (unlayered wins) but loses to every component class. */
+  :where(body:not(.chat-shell-active) .lesson-frame) :where(input:not([type=checkbox],[type=radio],[type=range],[type=file]), select) { min-height: 1.346rem; padding: .3rem .43rem; }
+  :where(body:not(.chat-shell-active) .lesson-frame) :where(textarea) { min-height: 3.4rem; padding: .3rem .5rem .3rem 1.25rem; }
+  /* The same rules make every bare button 44–48px tall with .75rem 1rem padding and 1rem text. */
+  :where(body:not(.chat-shell-active) .lesson-frame) :where(button, [role=button]) { min-width: 0; min-height: 1.73rem; padding: .24rem .34rem; font-size: .505rem; }
 }

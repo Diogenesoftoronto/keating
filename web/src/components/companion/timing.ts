@@ -56,6 +56,7 @@ export const companionTiming = {
 	typing: [10, 0],
 	carrying: [10, 0],
 	climbing: [10, 0],
+	"wall-climb": [8, 0],
 	pushing: [10, 0],
 	dancing: [10, 0],
 	juggling: [10, 0],

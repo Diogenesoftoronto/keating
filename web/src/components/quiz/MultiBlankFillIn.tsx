@@ -1,9 +1,7 @@
 import { KeatingGlyph } from "../../design-system/glyphs";
 /** Multi-blank fill-in question: the template with one input per blank, answers joined by "|". */
 import { useMemo, useRef } from "react";
-import { css, cx } from "../../../styled-system/css";
 import { parseQuestionTemplate } from "../question-template";
-import { quizStyles, sm } from "./quiz-styles";
 
 export function MultiBlankFillIn({
 	question,
@@ -32,29 +30,26 @@ export function MultiBlankFillIn({
 
 	let blankCounter = 0;
 	return (
-		<div className={css({ minWidth: 0 })}>
-			<div className={css({ fontSize: "0.875rem", fontWeight: 500, lineHeight: "1.75rem", overflowWrap: "break-word" })}>
+		<div>
+			<div className="quiz-blanks">
 				{parts.map((part, idx) => {
 					if (!part.isBlank) {
-						return <span key={idx} className={css({ whiteSpace: "pre-wrap", overflowWrap: "break-word" })}>{part.text}</span>;
+						return <span key={idx}>{part.text}</span>;
 					}
 					const bIdx = blankCounter++;
 					const blankDef = blanks[bIdx];
 					const isCorrect = revealed && values[bIdx]?.trim().toLowerCase() === correctAnswers[bIdx]?.trim().toLowerCase();
 					const isWrong = revealed && values[bIdx]?.trim() && !isCorrect;
 					return (
-						<span key={idx} className={css({ display: "inline-flex", maxWidth: "100%", alignItems: "baseline", gap: "0.25rem", marginInline: "0.25rem", verticalAlign: "baseline" })}>
+						<span key={idx} className="quiz-blank">
 							<input
 								ref={(el) => { blankRefs.current[bIdx] = el; }}
 								type="text"
 								disabled={revealed}
 								aria-label={blankDef?.hint ? `${blankDef.hint} blank` : `Blank ${bIdx + 1}`}
 								title={blankDef?.hint}
-								className={cx(
-									quizStyles.fieldBase, "activity-field",
-									css({ display: "inline-block", height: "1.75rem", width: "7rem", paddingInline: "0.5rem", textAlign: "center", [sm]: { width: "10rem" }, "&::placeholder": { color: "color-mix(in srgb, var(--muted-foreground) 50%, transparent)" } }),
-									isCorrect ? quizStyles.inputCorrect : isWrong ? quizStyles.inputWrong : quizStyles.inputNeutral,
-								)}
+								className="quiz-field"
+								data-result={isCorrect ? "correct" : isWrong ? "wrong" : undefined}
 								placeholder={blankDef?.placeholder ?? "___"}
 								value={values[bIdx] ?? ""}
 								onChange={(e) => setValue(bIdx, e.target.value)}

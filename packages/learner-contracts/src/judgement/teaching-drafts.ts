@@ -30,7 +30,7 @@ export { DECISION_PLANNING_NOTICE, describeDecisionPlanningFailure, isDecisionPl
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
 export type TeachingDraftRefinement = "ordinary" | "extended";
-/** `interactive` and `prose` drafts compete blind; `default` is an unpaired turn. */
+/** The ordinary teaching prompt uses `default`. A recommended activity can pair `interactive` and `prose` alternatives. */
 export type TeachingDraftVariant = "interactive" | "prose" | "default";
 export type TeachingDraftPhase = "planning" | "drafting" | "checking" | "revising" | "selecting" | "released" | "withheld" | "cancelled";
 export interface TeachingDraftFeedback {
@@ -48,6 +48,8 @@ export interface TeachingDraftAttempt {
   readonly predictionQuestionOnly?: true;
   /** One saved comprehension item, with grade_question_checks as the sole available tool. */
   readonly gradeOnly?: true;
+  /** The earlier attempt whose outstanding checks prompted this repair. */
+  readonly repairSourceAttempt?: number;
   /** Content-free provenance; the merged response receives its own full review. */
   readonly synthesisSourceAttempts?: readonly number[];
   /** Only the text ending at the checkpoint was reviewed for publication. */
@@ -113,6 +115,9 @@ export interface TeachingDraftSnapshot {
   readonly finalComparison?: TeachingDraftFinalComparison;
   /** Present on Jev's paired path. Includes only attempt IDs, judgements and timing. */
   readonly pairReviews?: readonly TeachingDraftPairReview[];
+  /** The two independent generations actually dispatched together on this round. */
+  readonly parallelAttempts?: readonly [number, number];
+  readonly repairSourceAttempt?: number;
   readonly synthesisSourceAttempts?: readonly number[];
   /** Preference from a policy captured before this turn; no background job is awaited. */
   readonly backgroundActivity?: BackgroundActivityGuidance;
@@ -153,6 +158,8 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly selectionOmittedForBudget: readonly number[];
 }
 export interface TeachingDraftGenerationInput {
+  /** Already approved prose. Return only the missing addition, without tools. */
+  readonly continuation?: { readonly text: string };
   /** The prompt variant actually sent for this attempt. */
   readonly variant?: TeachingDraftVariant;
   /** One independent reply to the current ungraded question. Hosts omit tool schemas for this candidate. */
@@ -190,9 +197,18 @@ export interface SubmittedComprehensionAnswer {
   readonly answer: string;
 }
 
+export interface TeachingDraftReviewer {
+  readonly judge: JudgementCaller;
+  readonly judgementModel: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
+  readonly maxQuestionChars?: number;
+}
 export interface TeachingDraftOptions<T> {
   /** Host-only input. Never reconstructed from learner prose or a teaching decision. */
   readonly submittedComprehension?: SubmittedComprehensionAnswer;
+  /** Hosted query answering can generate its two opening alternatives concurrently. */
+  readonly parallelDrafts?: boolean;
+  /** Commits an independently reviewed, immutable prefix while its addition is prepared. */
+  readonly onAnswerStage?: (stage: { readonly reply: TeachingPolicyReply; readonly value: T }) => void;
   /** Ephemeral developer inspection only; never copied into snapshots or receipts. */
   readonly onDraftContent?: (candidate: TeachingDraftCandidateText) => void;
   /** Hosted reply comparison is experimental and must be explicitly selected. */
@@ -204,9 +220,21 @@ export interface TeachingDraftOptions<T> {
   /** Used only in explicit live mode; may select only an already approved, tool-free reply. */
   readonly activityLearning?: (input: ActivitySelectionInput) => Promise<ActivitySelection>;
   readonly turn: TeachingPolicyTurn;
+  /** The host selects previously observed source excerpts for this candidate. */
+  readonly reviewResearch?: (reply: TeachingPolicyReply) => {
+    readonly sources: TeachingPolicyTurn["sources"];
+    /** Every proposed operation is a read-only search recognized by the host. */
+    readonly searchOnly: boolean;
+  };
+  /** Shorter observed search passages for an otherwise oversized review. Supplied evidence stays intact. */
+  readonly compactResearchSources?: (replies: readonly TeachingPolicyReply[]) => TeachingPolicyTurn["sources"];
   readonly judge: JudgementCaller;
   /** The active judge's declared request and state-plus-longest-question budgets. */
-  readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
+  readonly judgementModel?: TeachingDraftReviewer["judgementModel"];
+  /** Permitted reviewers in preference order. The reviewer that completes planning also reviews the drafts. */
+  readonly reviewers?: readonly TeachingDraftReviewer[];
+  /** Optional transport limit on JSON.stringify(questions).length for each review request. */
+  readonly maxQuestionChars?: number;
   /** Primary model selected for planning diagnostics; null when no route was configured. */
   readonly configuredDecisionModel?: string | null;
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
@@ -224,7 +252,7 @@ export interface TeachingDraftOptions<T> {
   readonly check?: (reply: TeachingPolicyReply) => readonly TeachingPolicyCheck[];
   readonly signal?: AbortSignal;
   readonly now?: () => number;
-  /** Decides which paired variant is drafted first, so neither always holds `draft_1`. */
+  /** Assigns the interactive and prose alternatives to attempt numbers when both are requested. */
   readonly random?: () => number;
   /** A record-derived reason to review plan progress this turn; see `advancePlanReview`. */
   readonly planReview?: PlanReviewHostTrigger | null;

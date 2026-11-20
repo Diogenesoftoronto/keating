@@ -66,6 +66,13 @@ export function toModelMessages(messages: AgentMessage[]): Message[] {
 
 /** Epoch-ms timestamps before this are fixtures or legacy placeholders, not real send times. */
 const PLAUSIBLE_TIMESTAMP_MS = Date.UTC(2020, 0, 1);
+const generatedTimeNotes = new WeakSet<TextContent>();
+
+/** Offset of learner text after the host's leading timing part and the newline between text parts. */
+export function learnerTextStart(message: Message): number | undefined {
+  const first = message.role === "user" && Array.isArray(message.content) ? message.content[0] : undefined;
+  return first?.type === "text" && generatedTimeNotes.has(first) ? first.text.length + 1 : undefined;
+}
 /** A shorter pause carries no teaching signal and would only add noise. */
 const NOTABLE_GAP_MS = 30 * 60_000;
 
@@ -124,6 +131,8 @@ export function toModelMessagesWithTime(messages: AgentMessage[], timeZone?: str
     const note = notes.get(message);
     if (!note || (message.role !== "user" && message.role !== "user-with-attachments")) return message;
     const content = typeof message.content === "string" ? [{ type: "text" as const, text: message.content }] : message.content;
-    return { ...message, content: [{ type: "text" as const, text: note }, ...content] } as AgentMessage;
+    const timePart: TextContent = { type: "text", text: note };
+    generatedTimeNotes.add(timePart);
+    return { ...message, content: [timePart, ...content] } as AgentMessage;
   }));
 }

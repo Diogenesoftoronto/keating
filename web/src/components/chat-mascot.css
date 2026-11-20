@@ -18,3 +18,59 @@
 /* The hint is a bare plus, not a badge: one fewer ring beside the bot. It brightens when you point at him. */
 .chat-mascot-perch__hint { border: 0; border-radius: 0; background: transparent; color: var(--ink-faint); }
 .chat-mascot-perch__bot:is(:hover, :focus-visible) .chat-mascot-perch__hint { color: var(--green-deep); }
+
+.chat-mascot-perch__bot[data-companion-held="true"] { cursor: grabbing; }
+.chat-mascot-perch__bot[data-companion-held="true"] .keating-bot__motion {
+  transform-origin: 50% 25%;
+  transform: rotate(var(--companion-held-angle, 0deg)) scaleY(var(--companion-held-stretch, 1));
+}
+.chat-mascot-perch__bot[data-companion-held="true"] .keating-bot__sprite {
+  animation: none;
+  background-position: var(--companion-held-x, 0%) var(--companion-held-y, 0%);
+}
+.chat-mascot-perch__snack:not(:empty) {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--foreground);
+  background: var(--background);
+  font: 600 11px/1.4 system-ui;
+  white-space: nowrap;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-mascot-perch__bot[data-companion-held="true"] .keating-bot__motion { transform: none; }
+}
+
+.chat-mascot-perch__bot[data-grip="right"] .keating-bot[data-state="wall-climb"] { transform: scaleX(-1); }
+
+.chat-mascot-perch__bot[data-grip-rest="true"] .keating-bot__sprite { animation-play-state: paused !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-companion-reaction="magnifier"] [data-simulation-plot] { position: relative; overflow: hidden; }
+  [data-companion-reaction="magnifier"] [data-simulation-plot]::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 12%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 12%, transparent));
+    border-right: 1px solid var(--primary);
+    pointer-events: none;
+    animation: companion-read-plot 1.25s ease-in-out both;
+  }
+  :is([data-companion-reaction="flashcards"], [data-companion-reaction="tea-break"]) .shared-activity__card-stack {
+    transform-origin: 50% 90%;
+    animation: companion-riffle-cards .7s ease-out;
+  }
+}
+@keyframes companion-read-plot {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(850%); }
+}
+@keyframes companion-riffle-cards {
+  25% { transform: translateY(-3px) rotate(-2deg); }
+  60% { transform: translateY(-1px) rotate(1deg); }
+}

@@ -1,22 +1,52 @@
 import { test, expect } from "bun:test";
 import { contextCases, rolloutCases, makeTrial, digest, type Trial } from "../scripts/context-window/cases.js";
 import { runSuite, summarize, replayProvider, type Receipt } from "../scripts/context-window/benchmark.js";
-import { htmlReport } from "../scripts/context-window/report.js";
+import { htmlReport, markdownReport, reportData } from "../scripts/context-window/report.js";
 import type { BenchmarkProvider, ProviderResult } from "../scripts/context-window/providers.js";
+import { estimatedStateQuestionTokens, measureStateComposition } from "../packages/learner-contracts/src/judgement/state-metrics.js";
+import type { TeachingPolicyTurn } from "../packages/learner-contracts/src/judgement/teaching-policy-types.js";
 const ok = (trial: Trial): ProviderResult => ({ status: "ok", returnedModel: "test-v1", answers: Object.fromEntries(Object.entries(trial.expected).map(([id, value]) => [id, { value, confidence: null, probabilities: null }])), usage: null, latencyMs: 12, raw: {} });
 const receipt = (trial: Trial, outcome: ProviderResult): Receipt => ({ version: 1, trialId: trial.id, providerId: "test", providerKind: "system-one", requestedModel: "test-v1", requestSha256: trial.requestSha256, repetition: 0, outcome, status: outcome.status === "ok" ? "completed" : "provider-error" });
 
 test("production window preserves pinned/recent records and distinguishes loss from misjudgement", () => {
   const fixture = contextCases()[0]!;
-  const full = makeTrial(fixture, .9, "head", "full", 4000), clipped = makeTrial(fixture, .9, "head", "windowed", 4000);
-  expect(full.cueRetained).toBe(true); expect(clipped.cueRetained).toBe(false);
-  expect(clipped.expected.evidence_verdict).toBe("insufficient_context"); expect(clipped.fullExpected.evidence_verdict).toBe("contradicted");
-  expect(clipped.after.fillRatio!).toBeLessThanOrEqual(.65); expect(clipped.turnsDropped).toBeGreaterThan(0);
-  expect(clipped.after.pinned.plan).toBe(true); expect(clipped.after.pinned.pendingSubmissions).toBe(true);
-  for (const placement of ["recent", "pinned"] as const) expect(makeTrial(fixture, .9, placement, "windowed", 4000).cueRetained).toBe(true);
-  expect(makeTrial(fixture, .75, "head", "windowed", 4000).turnsDropped).toBe(0);
-  const report = summarize([clipped], [receipt(clipped, ok(clipped))]);
+  const full = makeTrial(fixture, .9, "head", "full", 4000);
+  const fits = makeTrial(fixture, .9, "head", "windowed", 4000);
+  expect(fits.before.fillRatio!).toBeLessThan(1);
+  expect(fits.turnsDropped).toBe(0);
+  expect(fits.requestSha256).toBe(full.requestSha256);
+
+  const retained = makeTrial(fixture, 1.3, "head", "windowed", 4000);
+  expect(retained.before.fillRatio!).toBeGreaterThan(1);
+  expect(retained.turnsDropped).toBeGreaterThan(0);
+  expect((retained.request.state as { turn: TeachingPolicyTurn }).turn.earlierLearnerExcerpts).toContain(fixture.evidence);
+  expect(retained.cueRetained).toBe(true);
+  expect(retained.expected).toEqual(fixture.expected);
+
+  const earlierHistory = { ...fixture, turn: { ...fixture.turn, earlierLearnerExcerpts: ["First study request.", "Second study request."] } };
+  const lost = makeTrial(earlierHistory, 1.2, "head", "windowed", 4000);
+  expect(lost.before.fillRatio!).toBeGreaterThan(1);
+  expect(lost.after.fillRatio!).toBeLessThanOrEqual(1);
+  expect(lost.turnsDropped).toBeGreaterThan(0);
+  expect(lost.cueRetained).toBe(false);
+  expect(lost.expected.evidence_verdict).toBe("insufficient_context");
+  expect(lost.fullExpected.evidence_verdict).toBe("contradicted");
+  expect(lost.after.pinned.plan).toBe(true);
+  expect(lost.after.pinned.pendingSubmissions).toBe(true);
+  for (const placement of ["recent", "pinned"] as const) expect(makeTrial(fixture, 1.2, placement, "windowed", 4000).cueRetained).toBe(true);
+  const report = summarize([lost], [receipt(lost, ok(lost))]);
   expect(report.models.test!.accuracyAllPlannedLabels).toBe(1); expect(report.models.test!.fullContextAgreement).toBe(0);
+});
+
+test("an optional excerpt cannot cost another whole turn at the supported boundary", () => {
+  const fixture = contextCases()[0]!;
+  const full = makeTrial(fixture, 1.01, "head", "full", 4000);
+  const { turn } = full.request.state as { turn: TeachingPolicyTurn };
+  const nextLearner = turn.conversation.findIndex((message, index) => index > 0 && message.role === "user");
+  const oneFewerTurn = { ...full.request, state: { turn: { ...turn, conversation: turn.conversation.slice(nextLearner) } } };
+  expect(full.before.estimatedStateQuestionTokens).toBeGreaterThan(4000);
+  expect(estimatedStateQuestionTokens(oneFewerTurn)).toBeLessThanOrEqual(4000);
+  expect(makeTrial(fixture, 1.01, "head", "windowed", 4000).turnsDropped).toBe(1);
 });
 
 test("failures and stop-loss rows remain in accuracy and selection denominators", async () => {
@@ -56,4 +86,23 @@ test("reports omit raw learner records and safely serialize script-like metadata
   const row = receipt(trial, { ...ok(trial), raw: "PRIVATE_RAW_RESPONSE" } as ProviderResult);
   const html = htmlReport([trial], [row]);
   expect(html).not.toContain("PRIVATE_LEARNER_TEXT"); expect(html).not.toContain("PRIVATE_RAW_RESPONSE"); expect(html).not.toContain("</script><script>alert(1)</script>");
+  for (const report of [html, markdownReport([trial], [row])]) {
+    expect(report).toContain("Each report uses the estimates, window changes and labels recorded in its own plan.");
+    expect(report).not.toContain("aiming for 65%");
+  }
+});
+
+test("reporting a frozen below-limit trim uses its saved request, window trace and label", () => {
+  const full = makeTrial(contextCases()[0]!, .9, "head", "full", 4000);
+  const { turn } = full.request.state as { turn: TeachingPolicyTurn };
+  const turnsDropped = 12;
+  const request = { ...full.request, state: { turn: { ...turn, conversation: turn.conversation.slice(turnsDropped * 2) } } };
+  const saved: Trial = { ...full, path: "windowed", request, requestSha256: digest(request), turnsDropped,
+    cueRetained: false, expected: { evidence_verdict: "insufficient_context" },
+    after: measureStateComposition(request, 4000) };
+  const result = reportData([saved], [receipt(saved, ok(saved))]);
+  expect(result.trials[0]).toMatchObject({ cueRetained: false, turnsDropped, requestSha256: saved.requestSha256,
+    before: full.before, after: saved.after });
+  expect(result.models.test!.accuracyAllPlannedLabels).toBe(1);
+  expect(result.models.test!.fullContextAgreement).toBe(0);
 });

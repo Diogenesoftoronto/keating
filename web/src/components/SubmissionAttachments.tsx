@@ -17,8 +17,9 @@ async function downloadAttachment(id: string, fallback: string) {
   link.href = url; link.download = local.metadata.name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function AttachmentLinks({ attachments, courseId }: { attachments: UiSubmissionAttachment[]; courseId?: string }) {
-  return <ul>{attachments.map((file) => <li key={file.id}><a href={attachmentUrl(file.id, courseId)} download onClick={(event) => { event.preventDefault(); void downloadAttachment(file.id, attachmentUrl(file.id, courseId)); }}>{file.name}</a> <small>({Math.ceil(file.sizeBytes / 1024)} KB)</small></li>)}</ul>;
+export function AttachmentLinks({ attachments, courseId, className }: { attachments: UiSubmissionAttachment[]; courseId?: string; className?: string }) {
+  if (className && !attachments.length) return null;
+  return <ul className={className} data-glyph-host={className ? true : undefined}>{attachments.map((file) => <li key={file.id}>{className ? <KeatingGlyph name="clip" size={13} /> : null}<a href={attachmentUrl(file.id, courseId)} download onClick={(event) => { event.preventDefault(); void downloadAttachment(file.id, attachmentUrl(file.id, courseId)); }}>{file.name}</a> <small>({Math.ceil(file.sizeBytes / 1024)} KB)</small></li>)}</ul>;
 }
 export function SubmissionAttachments({ value, onChange, disabled, onBusyChange }: {
   value: UiSubmissionAttachment[]; onChange: (files: UiSubmissionAttachment[]) => void; disabled?: boolean; onBusyChange?: (busy: boolean) => void;
@@ -56,7 +57,7 @@ export function SubmissionAttachments({ value, onChange, disabled, onBusyChange 
 
   return <div className="submission-attachments">
     <div className="submission-attachments__toolbar">
-      <button type="button" className="submission-attachments__button submission-attachments__add" disabled={disabled || busy || limitReached} aria-describedby={`${inputId}-limits`} onClick={() => input.current?.click()}>
+      <button type="button" className="submission-attachments__button submission-attachments__add k-bloom" disabled={disabled || busy || limitReached} aria-describedby={`${inputId}-limits`} onClick={() => input.current?.click()}>
         <KeatingGlyph name="clip" /><span className="submission-attachments__label">{busy ? "Attaching…" : "Attach files"}</span>
       </button>
       <span id={`${inputId}-limits`} className="assignment-control__hint">{limitReached ? "10-file limit reached" : "Up to 10 files · 25 MB each"}</span>

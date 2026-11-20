@@ -3059,12 +3059,47 @@ function WebGroundingHint({
   );
 }
 
+/** Once Flue captures a streamed opening, its row can also carry the local stop controls. */
+function capturedStoppedReplies(
+  native: readonly FlueConversationMessage[],
+  local: readonly AgentMessage[],
+  originals: readonly AgentMessage[],
+): Map<string, AgentMessage> {
+  const captures = new Map<string, AgentMessage>();
+  const stopped = new Set(local.filter(message => message.role === "assistant" && message.stopReason === "aborted"
+    && message.content.length === 1 && message.content[0]?.type === "text" && message.content[0].text.length > 0));
+  if (!stopped.size) return captures;
+  const stoppedBySource = new Map<string, { message: AgentMessage; learner: string }>();
+  let learner: string | undefined;
+  originals.forEach((message, index) => {
+    const id = learningMessageId(message, index);
+    if (message.role === "user" || message.role === "user-with-attachments") learner = id;
+    else if (learner && stopped.has(message)) stoppedBySource.set(id, { message, learner });
+  });
+  const sources = learningRowSourceIds(native.map(message => ({ id: message.id, role: message.role, content: message.parts,
+    createdAt: message.role === "user" && typeof message.metadata?.timestamp === "number" ? new Date(message.metadata.timestamp) : undefined })), originals);
+  let learnerSources: readonly string[] = [];
+  native.forEach((message, index) => {
+    if (message.role === "user") { learnerSources = sources[index]!; return; }
+    const part = message.parts[0];
+    if (message.role !== "assistant" || message.parts.length !== 1 || part?.type !== "text") return;
+    const matching = sources[index]!.flatMap(id => {
+      const source = stoppedBySource.get(id);
+      const original = source?.message;
+      return source && learnerSources.includes(source.learner) && original?.role === "assistant"
+        && original.content[0]?.type === "text" && original.content[0].text === part.text ? [original] : [];
+    });
+    if (matching.length === 1) captures.set(message.id, matching[0]!);
+  });
+  return captures;
+}
+
 /**
  * Thread rows for assistant-ui. Without native Flue history the legacy agent
  * messages are projected directly; otherwise legacy, native and local messages
  * are merged by time.
  */
-function projectThreadMessages(
+export function projectThreadMessages(
   agent: FlueConversation | null,
   messages: AgentMessage[],
   isRunning: boolean,
@@ -3100,13 +3135,17 @@ function projectThreadMessages(
   };
   if (!native || !agent) return decorate(messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider)));
   const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.legacyMessages, speechEnabled)));
-  const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.localMessages, speechEnabled)));
+  const localMessages = filterSpeechMessages(agent.localMessages, speechEnabled);
+  const localError = localMessages.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
+  const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
+  const nativeStops = capturedStoppedReplies(visibleNative, localMessages, agent.context.messages);
+  const captured = new Set(nativeStops.values());
+  const local = mergeConsecutiveAssistantMessages(foldToolResults(captured.size
+    ? localMessages.filter(message => !captured.has(message)) : localMessages));
   // Native history replaces the legacy projection, but preparation and
   // provider latency still need the same immediate assistant activity cue.
   const pendingStatus = messages.at(-1) as (AgentMessage & { __keatingPrefillStatus?: boolean }) | undefined;
   if (pendingStatus?.__keatingPrefillStatus) local.push(pendingStatus);
-  const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
-  const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
   const totalMessages = legacy.length + visibleNative.length + local.length;
   const at = (row: ThreadMessageLike) => row.createdAt?.getTime() ?? 0;
   // Native user rows borrow local timestamps by index, so sorting by them can
@@ -3116,14 +3155,23 @@ function projectThreadMessages(
     const captured = message.timestamp ? Date.parse(message.timestamp) : NaN;
     return { row, time: Number.isFinite(captured) ? captured : at(row) };
   });
-  return decorate([
+  const rows = [
     ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, provider)),
     ...interleaveLocalRows(
       nativeRows,
       local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
       at,
     ),
-  ]);
+  ];
+  if (!nativeStops.size) return decorate(rows);
+  return decorate(rows.map((row, index) => {
+    const original = row.id && nativeStops.get(row.id);
+    if (!original) return row;
+    const stoppedRow = toAssistantMessage(original, index, rows.length, false, provider);
+    return { ...row, status: stoppedRow.status, metadata: { ...row.metadata, custom: {
+      ...row.metadata?.custom, ...stoppedRow.metadata?.custom,
+    } } };
+  }));
 }
 
 function AssistantThread({

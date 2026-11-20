@@ -1,48 +1,47 @@
-.simulation .simulation__parameters input[type="range"] {
-	box-sizing: border-box;
-	height: 44px;
-	min-height: 44px;
-	padding: 0;
+/* Simulation, board L3 vocabulary: brief as body copy, mono pickers, the chart on the grid stage,
+   ruler sliders (LessonSlider), mono readouts, a glyph-led table disclosure. No boxes inside the frame. */
+.simulation .simulation__brief { max-width: 65ch; font: .6rem/1.5 var(--font-ui); }
+.simulation .simulation__brief p { margin-block: 0; }
+
+.simulation__pickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem .48rem; }
+.simulation__picker { display: grid; gap: .08rem; min-width: 0; }
+.simulation .keating-select__value { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; }
+.simulation .simulation__pickers button.simulation__select {
+  min-height: 1.346rem; border: 0; border-radius: .1923rem; background: var(--lesson-well, var(--paper-deep)); box-shadow: none; font: .6rem/1.45 var(--font-ui); padding-block: .1rem;
 }
+@container (max-width: 26rem) { .simulation__pickers { grid-template-columns: minmax(0, 1fr); } }
 
-.simulation .simulation__readouts {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0.75rem 1rem;
-	margin: 0;
-	border-top: 1px solid var(--border);
-	padding-top: 0.75rem;
-}
+/* The chart sits on the 10px grid (board L4, decision 8): HTML labels over the plot, a short end
+   value, "Now" as a dashed ink line with an amber point, mono axis titles top-left and along the bottom. */
+.simulation__figure { margin: 0; display: grid; gap: 0; padding: .3rem .58rem .34rem .67rem; }
+.simulation__figure details { display: none; } /* The complete table below also lists undefined samples. */
+.simulation__axis, .simulation__xaxis > *, .simulation__figure :is(.kc-ends > span, .kc-now > em) { font: .48rem/1.3 var(--font-mono); background: var(--paper); padding-inline: .14rem; }
+.simulation__axis { justify-self: start; max-width: 100%; margin-inline-start: -.14rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+.simulation__figure .kc-plot { gap: 0; }
+.simulation__figure .kc-line-layout { --kc-line-height: 6.3rem; grid-template-columns: minmax(0, 1fr) 2.6rem; gap: .3rem; margin: .5rem 0 .3rem; }
+.simulation__figure .kc-ends > span { color: var(--ink); font-weight: 500; }
+.simulation__figure .kc-ends > span > b { font-weight: 500; }
+.simulation__figure .kc-line line { stroke: var(--line-soft); }
+.simulation__figure .kc-sample { width: .19rem; height: .19rem; outline: 0; background-color: var(--green-deep) !important; }
+.simulation__figure .kc-sample:is(:hover, :focus-visible) { width: .38rem; height: .38rem; outline: 1.5px solid var(--paper); }
+.simulation__figure :is(.kc-xlabels, .kc-legend) { display: none; }
+.simulation__xaxis { display: flex; justify-content: space-between; align-items: baseline; gap: .3rem; margin-inline-end: 2.9rem; color: var(--ink-soft); min-width: 0; }
+.simulation__xaxis > b { font-weight: 400; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.simulation__xaxis > span { flex: none; }
+.simulation__caption { justify-self: start; margin-top: .2rem; background: var(--paper); padding-inline: .14rem; margin-inline-start: -.14rem; }
 
-.simulation .simulation__readout {
-	display: flex;
-	min-width: 0;
-	flex-direction: column;
-	gap: 0.25rem;
-}
+.simulation__parameters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr)); gap: .5rem .87rem; }
 
-.simulation .simulation__readout[data-primary] {
-	grid-column: 1 / -1;
-	flex-direction: row;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 1rem;
-}
+.simulation .simulation__readouts { gap: .4rem 1.15rem; }
 
-.simulation .keating-select__value {white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
-.simulation__pickers {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.48rem}
-.simulation__figure {margin:0;min-width:0}
-.simulation__figure details {display:none} /* The complete table below also lists undefined samples. */
-.simulation input[type=range]{width:100%;accent-color:var(--ink)}
-.simulation .k-field {min-width:0}
-@media(max-width:640px){.simulation__pickers{grid-template-columns:minmax(0,1fr)}}
+.simulation .simulation__table > summary { display: inline-flex; align-items: center; gap: .24rem; cursor: pointer; color: var(--ink-soft); font: .505rem/1.4 var(--font-mono); list-style: none; padding: .2rem .34rem; margin-inline-start: -.34rem; border-radius: .1923rem; }
+.simulation .simulation__table > summary::-webkit-details-marker { display: none; }
+.simulation .simulation__table > summary:hover { color: var(--ink); background: var(--k-wash); }
+.simulation .simulation__table > summary > svg { color: var(--accent-green); }
+.simulation .simulation__table[open] > summary { color: var(--ink); }
+.simulation .kc-table { overflow: auto; }
 
-.simulation .kc-ends .kc-label,.simulation .kc-stat .kc-label {white-space:normal;overflow-wrap:anywhere}
-.simulation .lesson-foot > .k-btn {margin-inline-start:auto}
-.simulation .lesson-foot > p {flex:1 1 8rem;font: .5rem/1.5 var(--font-mono);color:var(--ink-soft)}
-.simulation .kc-table {overflow:auto}
-.simulation .lesson-head,.simulation .lesson-foot {text-align:start}
-
-.simulation.lesson-frame {border-color:var(--line)}
-.simulation .simulation__pickers .k-field button.simulation__select {border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:transparent;box-shadow:none}
-.simulation .simulation__parameters .k-input {border-color:var(--line)}
+.simulation .lesson-foot > .k-button { margin-inline-start: auto; }
+.simulation .lesson-foot > .simulation__share-status { flex: 1 1 8rem; margin: 0; min-width: 0; }
+.simulation .lesson-head, .simulation .lesson-foot { text-align: start; }
+.simulation__figure [data-sparse] .kc-sample { width: .34rem; height: .34rem; }

@@ -16,8 +16,11 @@ class Hit {
 	contains(hit: Hit | null): boolean {
 		return !!hit && (hit === this || this.contains(hit.parent ?? null));
 	}
+	matches(query: string): boolean {
+		return query.split(",").some((s) => this.selectors.includes(s.trim()));
+	}
 	closest(query: string): Hit | null {
-		return query.split(",").some((s) => this.selectors.includes(s.trim()))
+		return this.matches(query)
 			? this
 			: (this.parent?.closest(query) ?? null);
 	}
@@ -42,6 +45,18 @@ test("learner messages, excluded output and other threads never become a source"
 	expect(hit(new Hit(["p"], new Hit(["[data-quote-exclude]"], source)))).toBeNull();
 	expect(hit(new Hit(["button"], paragraph), paragraph)).toBeNull();
 	expect(hit(new Hit([".composer-root"]))).toBeNull();
+});
+test("OpenUI targets expose a snack, inspection, or a rest while keeping question hints first", () => {
+	const deck = new Hit(["[data-deck]"], chat);
+	const simulation = new Hit(["[data-simulation]"], chat);
+	const task = new Hit(["[data-task]"], chat);
+	const activeQuestion = new Hit([questionSelector.split(",")[0]], task);
+	expect(hit(bot, new Hit([], deck))).toMatchObject({ kind: "snack", el: deck });
+	expect(hit(new Hit([], simulation))).toMatchObject({ kind: "watch", el: simulation });
+	expect(hit(task)).toMatchObject({ kind: "rest", el: task });
+	expect(hit(activeQuestion)?.kind).toBe("question");
+	expect(hit(new Hit(["button"], deck), deck)).toBeNull();
+	expect(hit(new Hit(["[data-deck]"]))).toBeNull();
 });
 test("reveal only opens the existing authored hint", () => {
 	const details = ["About this round", "Need a hint?", "Show answer"].map((text) => ({

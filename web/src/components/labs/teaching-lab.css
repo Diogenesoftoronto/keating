@@ -1,19 +1,35 @@
-.teaching-lab .lesson-body { display: grid; gap: .6rem; min-width: 0; }
+/* Teaching lab, board L3 vocabulary: checkpoints are flat rows with an index square (green when met),
+   the target is a mono-labelled line, code is a well, the run button is the footer's one primary. */
 .teaching-lab .lesson-body > p { margin: 0; }
-.teaching-lab-checkpoints { padding: 0; margin: 0; list-style: none; display: grid; gap: .2rem; }
-.teaching-lab-checkpoints li { display: flex; align-items: baseline; gap: .4rem; color: var(--ink-soft); font: 500 .72rem/1.4 var(--font-ui); }
-.teaching-lab-checkpoints li > span:first-child { width: 1rem; text-align: center; font-variant-numeric: tabular-nums; }
-.teaching-lab-checkpoints li[aria-current] { color: var(--ink); font-weight: 700; }
-.teaching-lab-checkpoints li[data-complete=true] { color: var(--green-deep); }
-.teaching-lab-target { border-top: 1px solid var(--line-soft); padding-top: .5rem; }
-.teaching-lab-target summary { cursor: pointer; }
-.teaching-lab-reading, .teaching-lab-target pre { max-height: 14rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: .55rem; margin: 0; font: .68rem/1.5 var(--font-code); background: var(--paper-deep); color: var(--ink); }
-.teaching-lab-code label > svg { display: inline-block; margin-inline-end: .35rem; vertical-align: middle; }
-.teaching-lab-code textarea { display: block; width: 100%; margin-block: .35rem; min-height: 6rem; padding: .5rem; resize: vertical; border: 1px solid var(--line); font: .72rem/1.5 var(--font-code); font-feature-settings: var(--code-features); color: var(--ink); background: var(--paper); }
-.teaching-lab-controls { display: flex; align-items: center; justify-content: flex-end; gap: .65rem; flex-wrap: wrap; }
-.teaching-lab-controls input { accent-color: var(--green-deep); }
-.teaching-lab-controls button, .teaching-lab button:not([class]) { border: 1px solid var(--line); padding: .26rem .55rem; min-height: 40px; border-radius: .15rem; cursor: pointer; }
-.teaching-lab-controls button { color: var(--primary-foreground); background: var(--primary); }
-.teaching-lab button:disabled { opacity: .55; cursor: default; }
-.teaching-lab :focus-visible { outline: 2px solid var(--green-deep); outline-offset: 2px; }
-@media (pointer: coarse) { .teaching-lab-controls button, .teaching-lab button:not([class]) { min-height: 44px; } }
+.teaching-lab .teaching-lab-count { display: inline-flex; align-items: center; gap: .2rem; }
+.teaching-lab .teaching-lab-count > svg { color: var(--accent-green); }
+.teaching-lab-checkpoints { padding: 0; margin: 0; list-style: none; }
+.teaching-lab-checkpoints li { display: flex; align-items: center; gap: .34rem; color: var(--ink-soft); font: .6rem/1.4 var(--font-ui); }
+.teaching-lab-checkpoints li[aria-current] { color: var(--ink); }
+.teaching-lab-checkpoints li[aria-current] .lesson-index { background: var(--ink); color: var(--paper); }
+.teaching-lab-checkpoints li[data-complete=true] .lesson-index { background: var(--k-wash); color: var(--accent-green); }
+.teaching-lab-target :is(p, summary) { display: flex; align-items: center; gap: .3rem; margin: 0; font: .6rem/1.45 var(--font-ui); }
+.teaching-lab-target :is(p, summary) > svg { flex: none; color: var(--amber); }
+.teaching-lab-target summary { cursor: pointer; list-style: none; color: var(--ink-soft); font: .505rem/1.4 var(--font-mono); min-height: 1.154rem; }
+.teaching-lab-target summary::-webkit-details-marker { display: none; }
+.teaching-lab-target details[open] > summary, .teaching-lab-target summary:hover { color: var(--ink); }
+.teaching-lab-reading, .teaching-lab-target pre { max-height: 14rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: .3rem .43rem; margin: 0; border-radius: .1923rem; font: .55rem/1.5 var(--font-code, var(--font-mono)); background: var(--lesson-well, var(--paper-deep)); color: var(--ink); }
+.teaching-lab-code > label { display: grid; gap: .12rem; }
+.teaching-lab-code .lesson-label { display: inline-flex; align-items: center; gap: .24rem; font-family: var(--font-mono); }
+.teaching-lab-code textarea, .lesson-frame.teaching-lab .teaching-lab-code textarea { display: block; width: 100%; min-height: 6rem; resize: vertical; font: .6rem/1.5 var(--font-code, var(--font-mono)); font-feature-settings: var(--code-features); }
+.teaching-lab-controls { display: flex; align-items: center; flex-wrap: wrap; gap: .3rem .6rem; font: .55rem/1.4 var(--font-ui); }
+.teaching-lab-status[data-empty] { display: none; }
+.teaching-lab .lesson-foot > .teaching-lab-coaching { flex: 1 1 10rem; min-width: 0; }
+.teaching-lab .lesson-foot > .lesson-primary { margin-inline-start: auto; }
+/* Device controls (serial): quiet glyph-and-text actions, filled wells, a mono reading. */
+.teaching-lab .hardware-lab-input { display: grid; gap: .3rem; }
+.teaching-lab .hardware-lab-input > p { margin: 0; font: .55rem/1.45 var(--font-ui); color: var(--ink-soft); }
+.teaching-lab .hardware-lab-input > p:empty { display: none; }
+.teaching-lab .hardware-lab-input .teaching-lab-controls button {
+  display: inline-flex; align-items: center; gap: .24rem; border: 0; background: transparent; box-shadow: none; padding: 0 .34rem;
+  color: var(--ink-soft); font: .505rem/1.2 var(--font-mono); cursor: pointer; border-radius: .1923rem;
+}
+.teaching-lab .hardware-lab-input .teaching-lab-controls button:hover:not(:disabled) { color: var(--ink); background: var(--k-wash); }
+.teaching-lab .hardware-lab-input .teaching-lab-controls button > svg { color: var(--accent-green); }
+.teaching-lab .hardware-lab-input input { width: 7em; }
+.teaching-lab :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

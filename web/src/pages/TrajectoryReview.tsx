@@ -31,6 +31,7 @@ import {
 } from "../keating/learner-response";
 import { assertTextReviewCandidateGeneration } from "../keating/trajectory-generation";
 import { collectReviewToolOutcomes, reviewMessageDisplay } from "../keating/trajectory-message-display";
+import { foldToolSteps } from "../components/trajectory/tool-activity";
 import {
 	initialReviewWorkspaceUiState,
 	reviewWorkspaceUiReducer,
@@ -58,7 +59,26 @@ function labelForRole(role: string): string {
 	return role.replaceAll(/([a-z])([A-Z])/g, "$1 $2");
 }
 
-function normalizedMessages(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[] = [], turns: readonly TurnJudgementRecord[] = []): TrajectorySessionMessage[] {
+/**
+ * Messages as a teacher reviews them: learner messages and tutor replies. Tool
+ * calls and their results are agent steps, not turns, and travel with the reply
+ * they led to. A step stays a turn of its own only when something is pinned to
+ * it already (a note, a draft receipt, a judgement, or a generated candidate).
+ */
+function reviewTurns(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[], turns: readonly TurnJudgementRecord[], annotations: readonly TrajectoryAnnotation[], candidates: readonly ReviewGenerationCandidate[]) {
+	const proseIds = new Set<string>();
+	const all = normalizedMessages(sessionId, messages, receipts, turns, proseIds);
+	const pinned = new Set(annotations.flatMap((annotation) => "messageId" in annotation.target ? [annotation.target.messageId] : []));
+	for (const { target } of candidates) {
+		if (target.kind === "response") pinned.add(target.messageId);
+	}
+	return foldToolSteps(all, {
+		hasProse: (message) => proseIds.has(message.id),
+		keep: (message) => pinned.has(message.id) || Boolean(message.draftReview || message.turnJudgement),
+	});
+}
+
+function normalizedMessages(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[] = [], turns: readonly TurnJudgementRecord[] = [], proseIds?: Set<string>): TrajectorySessionMessage[] {
 	const toolOutcomes = collectReviewToolOutcomes(messages);
 	const receiptByTimestamp = new Map(receipts.map((receipt) => [receipt.messageTimestamp, receipt]));
 	const turnByAssistant = new Map(turns.map((turn) => [turn.assistantTimestamp, turn]));
@@ -69,6 +89,7 @@ function normalizedMessages(sessionId: string, messages: readonly AgentMessage[]
 		const display = reviewMessageDisplay(message, toolOutcomes);
 		const rawSource = reviewArtifactDisplayText(anchor.text);
 		const displayText = learnerResponseReviewText(rawSource);
+		if (display.markdown || entry.errorMessage) proseIds?.add(anchor.id);
 		return {
 			...anchor,
 			role: entry.role === "user-with-attachments" ? "user" : entry.role === "toolResult" ? "tool" : anchor.role,
@@ -225,9 +246,11 @@ export function TrajectoryReview() {
 		return () => { cancelled = true; };
 	}, [reviewState.session]);
 	const judgementReview = useTurnJudgementReview(reviewState.session?.id, draftReceipts);
-	const messages = useMemo(
-		() => reviewState.session ? normalizedMessages(reviewState.session.id, reviewState.session.messages, draftReceipts, judgementReview.records) : [],
-		[draftReceipts, judgementReview.records, reviewState.session],
+	const { turns: messages, hostOf: stepHosts } = useMemo(
+		() => reviewState.session
+			? reviewTurns(reviewState.session.id, reviewState.session.messages, draftReceipts, judgementReview.records, reviewState.annotations, reviewState.candidates)
+			: { turns: [] as TrajectorySessionMessage[], hostOf: new Map<string, string>() },
+		[draftReceipts, judgementReview.records, reviewState.annotations, reviewState.candidates, reviewState.session],
 	);
 	const artifacts = useMemo<NormalizedTrajectoryArtifact[]>(
 		() => reviewState.artifacts.map((snapshot) => ({
@@ -313,11 +336,16 @@ export function TrajectoryReview() {
 	}
 	if (!reviewState.session || !reviewState.review) return pageError(reviewState.error ?? "The review could not be loaded.");
 
+	function selectTurn(requestedId: string) {
+		// A pass may point at a tool step. Open the turn that carries it.
+		const messageId = stepHosts.get(requestedId) ?? requestedId;
+		if (messages.some((message) => message.id === messageId)) {
+			dispatchUi({ type: "select-turn", id: messageId, targetKey: `message:${messageId}` });
+		}
+	}
+
 	const callbacks: TrajectoryReviewWorkspaceCallbacks = {
-		onSelectTurn: (messageId) => {
-			const message = messages.find((entry) => entry.id === messageId);
-			if (message) dispatchUi({ type: "select-turn", id: messageId, targetKey: `message:${message.id}` });
-		},
+		onSelectTurn: selectTurn,
 		onSelectArtifact: (artifactId) => {
 			const artifact = artifacts.find((entry) => entry.id === artifactId);
 			if (artifact) dispatchUi({ type: "select-artifact", id: artifactId, targetKey: reviewTargetKey({ kind: "artifact", artifact: artifact.reference }) });
@@ -549,8 +577,7 @@ export function TrajectoryReview() {
 		},
 		onDismissRubric: passes.clearRubric,
 		onRevealProposal: (proposal) => {
-			if (!proposal.messageId) return;
-			dispatchUi({ type: "select-turn", id: proposal.messageId, targetKey: `message:${proposal.messageId}` });
+			if (proposal.messageId) selectTurn(proposal.messageId);
 		},
 	};
 

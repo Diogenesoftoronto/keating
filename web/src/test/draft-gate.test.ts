@@ -32,11 +32,12 @@ import type {
 import { projectActiveWork } from "@keating/learner-contracts";
 import { buildActivityLearningBatch } from "../../../packages/learner-contracts/src/judgement/activity-learning";
 import { parseReviewNotice, SAVED_GRADE_EXPLANATION_NOTICE, withheldSummary, withReviewNotice } from "../keating/judgement/review-notice";
+import { learnerTimeNote, toModelMessagesWithTime } from "../keating/flue/model-messages";
 import { createDraftGateJudgementCaller, withTeachingDraftGate, type TeachingDraftReceipt } from "../keating/judgement/draft-gate";
 import { DEFAULT_TEACHER_PERSONA } from "../keating/persona";
 import operationalProtocolMarkdown from "../keating/prompts/operational-protocol.md?raw";
 import { configureJudgementDiagnostics, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
-import type { WebJudgementRuntime } from "../keating/judgement/runtime";
+import { createWebJudgementRuntime, type WebJudgementRuntime } from "../keating/judgement/runtime";
 import { answerDraftGateReview as answer } from "./helpers/teaching-draft-judge";
 import { MemoryStorage } from "./helpers/memory-storage";
 import { presentationsFromAssistantText } from "../keating/judgement/active-work-host";
@@ -151,6 +152,40 @@ describe("private teaching draft stream", () => {
     }]);
   });
 
+  test.each([false, true])("Flue keeps complete under-limit messages and excerpts the learner's own words on overflow (%s)", async overflow => {
+    const firstAt = Date.UTC(2026, 8, 28, 14), nextAt = firstAt + 86_400_000;
+    const quotedNote = learnerTimeNote(firstAt, null, "UTC")!;
+    const currentNote = learnerTimeNote(nextAt, firstAt + 1000, "UTC")!;
+    const input = context();
+    input.messages = toModelMessagesWithTime([
+      { role: "user", content: [{ type: "text", text: quotedNote }, { type: "text", text: "My opening request." }], timestamp: firstAt },
+      { ...message("A previous answer." + (overflow ? "x".repeat(32_000) : "")), timestamp: firstAt + 500 },
+      { role: "user", content: "Now a second part.", timestamp: firstAt + 750 },
+      { ...message("The second part."), timestamp: firstAt + 1000 },
+      { role: "user", content: "Please continue.", timestamp: nextAt },
+    ], "UTC");
+    const providerMessages = structuredClone(input.messages);
+    const reviewed: TeachingPolicyTurn[] = [], actors: Context["messages"][] = [];
+    await (await gate((_model, privateContext) => {
+      actors.push(privateContext.messages);
+      return streamOf(message("Continuing the explanation."));
+    }, { maxAttempts: 2, judgementModel: { id: "fixture", requestTokens: 64_000, stateQuestionTokens: 6000 }, makeCaller: () => async request => {
+      reviewed.push((request.state as { turn: TeachingPolicyTurn }).turn);
+      return answer(request);
+    } })(MODEL, input)).result();
+    expect(reviewed.length).toBeGreaterThan(0);
+    for (const turn of reviewed) {
+      if (overflow) {
+        expect(turn.earlierLearnerExcerpts?.[0]).toBe(quotedNote + "\nMy opening request.");
+      } else {
+        expect(turn.earlierLearnerExcerpts).toBeUndefined();
+        expect(turn.conversation[0]).toEqual({ role: "user", content: [quotedNote, quotedNote, "My opening request."].join("\n") });
+      }
+      expect(turn.learnerMessage).toBe(currentNote + "\nPlease continue.");
+    }
+    expect(actors).toEqual([providerMessages, providerMessages]);
+  });
+
   test("offers each grading schema only for a recorded pending submission of that kind", async () => {
     const input = context("My guess is four layers. Did I get that right?");
     const names = ["workspace_inspect", "grade_question_checks", "grade_quiz"];
@@ -170,7 +205,7 @@ describe("private teaching draft stream", () => {
       }, {maxAttempts:2, evidence:async () => ({
         pendingSubmissions, learnerEvidence:[{kind:"note",content:"A learner said there is a pending quiz."}],
       })})(MODEL,input)).result();
-      expect(received).toEqual([expected]);
+      expect(received).toEqual([expected, expected]);
       expect(text(result)).toBe("Four layers is correct.");
       expect(input.tools.map(tool => tool.name)).toEqual(names);
     }
@@ -208,6 +243,72 @@ describe("private teaching draft stream", () => {
     } finally { setModelRequestLogEnabled(false); }
     await collect(await gate(() => streamOf(message("24")))(MODEL, context()));
     expect(getModelRequestLog()).toEqual([]);
+  });
+
+  test("overlapping Codex calls carry separate full payloads through the stateless transport", async () => {
+    const bothStarted = deferred(), secondFinished = deferred();
+    let calls = 0;
+    setModelRequestLogEnabled(true);
+    try {
+      const generate: StreamFn = async (model, request, options) => {
+        const order = ++calls;
+        if (order === 2) bothStarted.resolve();
+        await bothStarted.promise;
+        if (order === 1) await secondFinished.promise;
+        expect(options?.transport).toBe("sse");
+        await options?.onPayload?.({ instructions: request.systemPrompt }, model);
+        if (order === 2) secondFinished.resolve();
+        return streamOf(message("Four factorial is 24."));
+      };
+      const codex = { ...MODEL, api: "openai-codex-responses", provider: "openai-codex" } as Model<Api>;
+      await collect(await gate(generate, { sessionId: "parallel-codex", maxAttempts: 2 })(codex, context(),
+        { transport: "websocket-cached", onPayload: payload => ({ body: payload }) }));
+      const logs = getModelRequestLog().filter(entry => entry.kind === "draft" && entry.sessionId === "parallel-codex");
+      expect(logs).toHaveLength(2);
+      expect(logs[0]!.context?.systemPrompt).not.toEqual(logs[1]!.context?.systemPrompt);
+      for (const log of logs) expect(log.payload).toEqual({ body: { instructions: log.context?.systemPrompt } });
+    } finally { setModelRequestLogEnabled(false); }
+  });
+
+  test.each(["abort", "stale", "account-switch"] as const)("%s during an answer addition preserves only the already shown opening", async mode => {
+    const controller = new AbortController(), entered = deferred(), finish = deferred();
+    const events: AssistantMessageEvent[] = [], receipts: TeachingDraftReceipt[] = [], publications: number[] = [];
+    let calls = 0, current = true;
+    let account = "original";
+    const output = await gate(async () => {
+      if (++calls === 1) return streamOf(message("Approved opening."));
+      if (calls === 2) return streamOf(message("REJECTED PRIVATE"));
+      entered.resolve();
+      await finish.promise;
+      return streamOf(message("Late addition."));
+    }, { maxAttempts: 3, isCurrent: () => current, requestIdentity: () => account, onReceipt: receipt => receipts.push(receipt),
+      onPublished: event => publications.push(event.messageTimestamp),
+      makeCaller: () => async request => {
+        const outcome = answer(request, { standard: "supported" });
+        if (!outcome.ok || !request.questions.requested_part_missing) return outcome;
+        return { ...outcome, response: { ...outcome.response, answers: { ...outcome.response.answers,
+          requested_part_missing: { type: "noul", noul: 1 } } } };
+      } })(MODEL, context("Define a square number and give an example."), { signal: controller.signal });
+    const finished = (async () => { for await (const event of output) events.push(event); })();
+    await entered.promise;
+    if (mode === "abort") controller.abort();
+    else if (mode === "account-switch") { account = "replacement"; controller.abort(); }
+    else { current = false; controller.abort(); }
+    finish.resolve();
+    await finished;
+    expect(events.filter(event => event.type === "text_delta").map(event => event.delta)).toEqual(["Approved opening."]);
+    expect(events.at(-1)?.type).toBe("error");
+    expect(text(await output.result())).toBe("Approved opening.");
+    if (mode === "abort") {
+      expect(receipts).toHaveLength(1);
+      expect(receipts[0]).toMatchObject({ messageTimestamp: 2, snapshot: { phase: "cancelled", selectedAttempt: 1 } });
+      expect(JSON.stringify(receipts)).not.toMatch(/Approved opening|REJECTED|Late addition/);
+      expect(publications).toEqual([2]);
+    } else {
+      expect(receipts).toEqual([]);
+      expect(publications).toEqual([]);
+    }
+    expect(JSON.stringify(events)).not.toMatch(/REJECTED|PRIVATE|Late addition/);
   });
 
 	test("public output is independent of provider chunk boundaries and contains no private thinking", async () => {
@@ -277,21 +378,21 @@ describe("private teaching draft stream", () => {
         return outcome;
       },
     })(MODEL, context()));
-    expect(calls).toBe(1);
+    expect(calls).toBe(2);
     expect(text(result)).toBe("24");
     expect(updates.every(update => update.maxAttempts === 10)).toBe(true);
     expect(updates.at(-1)?.phase).toBe("released");
   });
 
-  test("ordinary semantic failures get one repair then release honest best effort", async () => {
+  test("two rejected openings get one repair before releasing honest best effort", async () => {
     let calls = 0;
     const updates: TeachingDraftSnapshot[] = [];
     const { events, result } = await collect(await gate(() => { calls++; return streamOf(message("REJECTED PRIVATE DRAFT")); }, {
       onProgress: update => updates.push(update),
     })(MODEL, context()));
-    expect(calls).toBe(2);
+    expect(calls).toBe(3);
     expect(updates.at(-1)?.phase).toBe("released");
-    expect(updates.at(-1)?.attempts).toHaveLength(2);
+    expect(updates.at(-1)?.attempts).toHaveLength(3);
     expect(updates.at(-1)?.reason).toBe("best-effort-draft");
     expect(text(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
     expect(JSON.stringify(events)).toContain("REJECTED PRIVATE DRAFT");
@@ -384,7 +485,7 @@ describe("private teaching draft stream", () => {
     let calls = 0;
     const generate: StreamFn = () => streamOf(message(++calls === 1 ? "REJECTED PRIVATE DRAFT" : "4 factorial is 24.", calls === 1));
     const judge: JudgementCaller = async (request) => {
-      if ((request.state as { reply?: unknown }).reply && calls === 1) { checking.resolve(); await release.promise; }
+      if ((request.state as { reply?: { text: string } }).reply?.text.includes("REJECTED")) { checking.resolve(); await release.promise; }
       return answer(request);
     };
     const output = await gate(generate, { makeCaller: () => judge, onProgress: (snapshot) => progress.push(snapshot) })(MODEL, context());
@@ -404,7 +505,7 @@ describe("private teaching draft stream", () => {
     expect(calls).toBe(2);
   });
 
-  test("review waits for the terminal result rather than partial text or text_end", async () => {
+  test.each(["browser", "desktop-offline"])("%s uses one generation lease and reviews the terminal result", async provider => {
     const started = deferred();
     const privateStream = createAssistantMessageEventStream();
     const progress: TeachingDraftSnapshot[] = [];
@@ -418,7 +519,7 @@ describe("private teaching draft stream", () => {
       const reply = (request.state as { reply?: { text: string } }).reply;
       if (reply) reviewed.push(reply.text);
       return answer(request);
-    } })(MODEL, context());
+    } })({ ...MODEL, provider }, context());
     await started.promise;
     // Allow the awaiting continuation to run while no terminal event exists.
     await new Promise(resolve => setTimeout(resolve, 5));
@@ -630,11 +731,11 @@ describe("private teaching draft stream", () => {
     const output = await gate((_model, next, options) => {
       seen.push({ context: structuredClone(next), options });
       next.messages[0]!.content = "provider mutation";
-      return streamOf(message(seen.length === 1 ? "REJECTED PRIVATE DRAFT" : "4 factorial is 24."));
+      return streamOf(message(seen.length <= 2 ? "REJECTED PRIVATE DRAFT" : "4 factorial is 24."));
     }, { basePrompt: () => customBase })(MODEL, original, auth);
     await collect(output);
     expect(original).toEqual(before);
-    expect(seen).toHaveLength(2);
+    expect(seen).toHaveLength(3);
     for (const seenCall of seen) {
       expect(seenCall.context.systemPrompt).toContain("Use a calm, spare voice.");
       expect(seenCall.context.systemPrompt).toContain("OPENUI GRAMMAR");
@@ -649,7 +750,9 @@ describe("private teaching draft stream", () => {
       expect(seenCall.options?.reasoning).toBe("low");
     }
     expect(JSON.stringify(seen[1]!.context)).not.toContain("REJECTED PRIVATE DRAFT");
-    expect(JSON.stringify(seen[1]!.context)).toContain("revisionChecks");
+    expect(JSON.stringify(seen[1]!.context)).not.toContain("revisionChecks");
+    expect(JSON.stringify(seen[2]!.context)).not.toContain("REJECTED PRIVATE DRAFT");
+    expect(JSON.stringify(seen[2]!.context)).toContain("revisionChecks");
     expect(auth).toEqual({ apiKey: "fixture-auth", headers: { "x-fixture": "kept" }, maxTokens: 321, reasoning: "low" });
   });
 
@@ -658,11 +761,11 @@ describe("private teaching draft stream", () => {
     await collect(await gate((_model, _context, options) => { seen.push(options!); return streamOf(message("24")); }, {
       maxReasoning: "off",
     })(MODEL, context(), { reasoning: "high" }));
-    expect(seen).toHaveLength(1);
-    expect(seen[0]).not.toHaveProperty("reasoning");
+    expect(seen).toHaveLength(2);
+    for (const call of seen) expect(call).not.toHaveProperty("reasoning");
   });
 
-  test("one private reply per pair addresses the existing Question while the other keeps real tool schemas", async () => {
+  test("Question feedback keeps its focused and tool-capable candidates while other requests use an opening pair", async () => {
     const session = "feedback-pair", display = "shown-question";
     const surface = 'Given seven red tiles and two blue tiles.\n\n```openui lifecycle=ephemeral id=tiles\nroot = LearningSurface([guess], "Tiles", "", "ephemeral")\nguess = Question([{ question: "Which color is more likely on one random draw, and why?", type: "text" }], "ephemeral", "Predict", "Explain your choice.")\n```';
     const node = presentationsFromAssistantText(surface, {sessionId:session, messageId:display},null)[0]!;
@@ -725,12 +828,14 @@ describe("private teaching draft stream", () => {
           ...("pending" in c ? {pendingSubmissions:[{kind:"comprehension",id:"real-check",questionIds:["q"]}]} : {}),
         })})(MODEL,input)).result();
         expect(asked).toBe(!("pending" in c));
-        expect(privateContexts).toHaveLength(4);
-        expect(new Set(privateContexts.map(row=>row.systemPrompt)).size).toBe(4);
+        const expectedCandidates = c.focus ? 4 : 2;
+        expect(privateContexts, c.learner).toHaveLength(expectedCandidates);
+        expect(new Set(privateContexts.map(row=>row.systemPrompt)).size).toBe(expectedCandidates);
         expect(privateContexts.map(row=>row.tools?.map(tool=>tool.name))).toEqual(c.focus
-          ? [[],["workspace_inspect"],[],["workspace_inspect"]] : Array.from({length:4},()=>["workspace_inspect"]));
+          ? [[],["workspace_inspect"],[],["workspace_inspect"]] : [["workspace_inspect"],["workspace_inspect"]]);
         const snapshot = receipts[0]!.snapshot;
-        expect(snapshot.pairReviews?.map(pair=>pair.feedbackOnlyAttempts)).toEqual(c.focus ? [[1],[3]] : [[],[]]);
+        expect(snapshot.pairReviews?.map(pair=>pair.feedbackOnlyAttempts)).toEqual(c.focus ? [[1],[3]] : undefined);
+        expect(snapshot.parallelAttempts).toEqual(c.focus ? undefined : [1,2]);
         expect(snapshot.attempts.filter(a=>a.feedbackOnly).map(a=>a.attempt)).toEqual(c.focus ? [1,3] : []);
         if (c.focus) {
           expect(privateContexts[0]!.systemPrompt).toContain("Reply to the existing question in the conversation.");
@@ -928,7 +1033,7 @@ describe("private teaching draft stream", () => {
     }
   });
 
-  test("publishes only the winning Jev candidate's native tool events across both private pairs", async () => {
+  test("publishes only the winning Jev candidate's native tool events from the opening pair", async () => {
     const input = context("Please open the lesson note.");
     input.tools = [{ name: "workspace_inspect", description: "Read a workspace file",
       parameters: {type:"object",properties:{path:{type:"string"}},required:["path"],additionalProperties:false} }];
@@ -938,12 +1043,11 @@ describe("private teaching draft stream", () => {
       const outcome = answer(request);
       if (!outcome.ok) return outcome;
       const answers = { ...outcome.response.answers };
-      for (const id of ["draft_pair_choice","draft_choice"]) {
-        const question = request.questions[id];
-        if (question?.type !== "choice") continue;
+      const question = request.questions.draft_choice;
+      if (question?.type === "choice") {
         const keys = Object.keys(question.criteria);
         const choice = keys.at(-1)!;
-        answers[id] = {type:"choice",choice,confidence:1,probabilities:Object.fromEntries(keys.map(key => [key, Number(key === choice)]))};
+        answers.draft_choice = {type:"choice",choice,confidence:1,probabilities:Object.fromEntries(keys.map(key => [key, Number(key === choice)]))};
       }
       return {ok:true,response:{...outcome.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
     };
@@ -955,13 +1059,13 @@ describe("private teaching draft stream", () => {
       call.arguments = {path:`lesson-${id}.md`};
       return streamOf(proposal);
     }, {makeCaller:()=>judge, onReceipt:receipt=>receipts.push(receipt)})(MODEL,input));
-    expect(generated).toBe(4);
-    expect(receipts.map(r=>r.snapshot.selectedAttempt)).toEqual([4]);
-    expect(result.usage.totalTokens).toBe(4*18);
-    expect(result.content).toEqual([{type:"text",text:"Candidate 4"},
-      {type:"toolCall",id:"candidate-4",name:"workspace_inspect",arguments:{path:"lesson-4.md"}}]);
+    expect(generated).toBe(2);
+    expect(receipts.map(r=>r.snapshot.selectedAttempt)).toEqual([2]);
+    expect(result.usage.totalTokens).toBe(2*18);
+    expect(result.content).toEqual([{type:"text",text:"Candidate 2"},
+      {type:"toolCall",id:"candidate-2",name:"workspace_inspect",arguments:{path:"lesson-2.md"}}]);
     expect(events.filter(event=>event.type==="toolcall_end")).toHaveLength(1);
-    expect(JSON.stringify(events)).not.toMatch(/lesson-[123]\.md|Candidate [123]|PRIVATE/);
+    expect(JSON.stringify(events)).not.toMatch(/lesson-1\.md|Candidate 1|PRIVATE/);
   });
 
   test("releases approved tool calls only after live schema validation", async () => {
@@ -1156,6 +1260,66 @@ describe("private judgement transport boundary", () => {
     settings: { backend, localModelId: local.model, gatewayPath: "/api/judgement" }, policy: { tiers, calibration: { entries: {} } },
   });
 
+  test.each([true, false])("hosted teaching plans against its own window before trying the smaller local reviewer (hosted available %s)", async hostedAvailable => {
+    const history = Array.from({ length: 36 }, (_, index) => ({
+      role: "user" as const, content: `Exchange ${index}. ${"Keep the explanation about grouping counters. ".repeat(14)}`, timestamp: index,
+    }));
+    const input = context();
+    input.messages = [...history, ...input.messages];
+    const expected = history.map(({ role, content }) => ({ role, content }));
+    const hostedTurns: TeachingPolicyTurn[] = [];
+    const localCounts = new Set<number>();
+    const mixed = createWebJudgementRuntime({
+      settings: { backend: "hosted", localModelId: local.model, gatewayPath: "/api/judgement" }, calibration: {},
+      hosted: { fetch: async (_url, init) => {
+        const request = JSON.parse(init.body) as JudgementRequest;
+        const turn = (request.state as { turn: TeachingPolicyTurn }).turn;
+        hostedTurns.push(turn);
+        if (!hostedAvailable) return new Response(null, { status: 403 });
+        const outcome = answer(request);
+        if (!outcome.ok) throw new Error("Expected a fixture judgement");
+        return Response.json({ model: "judgement-jev/jev-1.14.0", answers: outcome.response.answers });
+      } },
+      localScorer: { modelId: local.model, contextWindowTokens: 2_048, scoreLabels: async ({ state, instructions, labels }) => {
+        localCounts.add((state as { turn: TeachingPolicyTurn }).turn.conversation.length);
+        const quality = instructions.startsWith("Does `reply` make substantive progress") || instructions.startsWith("Does the scope of the reply fit");
+        const choice = quality ? "yes" : labels[0];
+        return labels.map(label => Number(label === choice));
+      } },
+    });
+    configureJudgementDiagnostics({ enabled: true, details: true });
+    const stream = await gate(() => streamOf(message("Four factorial is 24.")), {
+      makeCaller: undefined, makeRuntime: () => mixed, maxAttempts: 1,
+    })(MODEL, input);
+    expect(text(await stream.result())).toBe("Four factorial is 24.");
+    expect(hostedTurns.length).toBeGreaterThan(0);
+    for (const turn of hostedTurns) expect(turn.conversation).toEqual(expected);
+    if (hostedAvailable) {
+      expect(localCounts.size).toBe(0);
+    } else {
+      expect(hostedTurns).toHaveLength(1);
+      expect(localCounts.size).toBeGreaterThan(0);
+      expect(Math.max(...localCounts)).toBeLessThan(history.length);
+    }
+    expect(getJudgementDiagnostics().events).toEqual([]);
+  });
+
+  test("an account change during hosted planning stops before the local fallback sees the previous account's evidence", async () => {
+    let account = "first", hostedCalls = 0, localCalls = 0, actorCalls = 0;
+    const mixed = createWebJudgementRuntime({
+      settings: { backend: "hosted", localModelId: local.model, gatewayPath: "/api/judgement" }, calibration: {},
+      hosted: { fetch: async () => { hostedCalls++; account = "second"; return new Response(null, { status: 403 }); } },
+      localScorer: { modelId: local.model, contextWindowTokens: 2_048, scoreLabels: async () => { localCalls++; return null; } },
+    });
+    const stream = await gate(() => { actorCalls++; return streamOf(message("private")); }, {
+      makeCaller: undefined, makeRuntime: () => mixed, requestIdentity: () => account,
+    })(MODEL, context());
+    expect((await stream.result()).stopReason).toBe("aborted");
+    expect(hostedCalls).toBe(1);
+    expect(localCalls).toBe(0);
+    expect(actorCalls).toBe(0);
+  });
+
   test("honors off/local/hosted permissions without capturing drafts even when detailed diagnostics are enabled", async () => {
     configureJudgementDiagnostics({ enabled: true, details: true });
     const calls: string[] = [];
@@ -1233,37 +1397,149 @@ describe("draft checker sources", () => {
     expect(await reviewedStates(failed)).toContain('"sources":[]');
   });
 
-  test("five large searches fit the hosted review budget and retain unique recent source links", async () => {
+  test("independent text-only search reports reach Jev in full and raw provider metadata stays private", async () => {
+    const input = context("Compare the two findings.");
+    const first = "  " + "An earlier observation. ".repeat(60) + "End of the first report.\n";
+    const second = "[Search note] " + "An independent observation. ".repeat(62) + "End of the second report.";
+    const raw = JSON.stringify({ debug: { results: [{ url: "https://private.test/internal", snippet: "PRIVATE_DIAGNOSTIC" }] } });
+    for (const [index, content] of [first, raw, second].entries()) {
+      input.messages.push({ role: "toolResult", toolName: "client-web-search", toolCallId: "report-" + index,
+        content: index === 0 ? [{ type: "text", text: content }, { type: "text", text: raw }] : [{ type: "text", text: content }],
+        isError: false, timestamp: 3 + index });
+    }
+    const turns: TeachingPolicyTurn[] = [];
+    await collect(await gate(() => streamOf(message("The two findings agree.")), { maxAttempts: 2,
+      makeCaller: () => async request => { turns.push((request.state as { turn: TeachingPolicyTurn }).turn); return answer(request); },
+    })(MODEL, input));
+    expect(turns.length).toBeGreaterThan(0);
+    for (const turn of turns) {
+      expect(turn.toolResults.map(tool => tool.content)).toEqual([first, "Web search completed.", second]);
+      expect(turn.sources).toEqual([]);
+      expect(JSON.stringify(turn)).not.toContain("PRIVATE_DIAGNOSTIC");
+    }
+  });
+
+  test.each([
+    { draftText: "", names: ["client-web-search"], searchOnly: true },
+    { draftText: "The rule applies here.", names: ["client-web-search"], searchOnly: false },
+    { draftText: "", names: ["client-web-search", "workspace_inspect"], searchOnly: false },
+  ])("scopes review to a pure research step (searchOnly=$searchOnly, calls=$names, prose='$draftText')", async ({ draftText, names, searchOnly }) => {
+    const input = context("Look up the applicable statute.");
+    input.tools = names.map(name => ({ name, description: name, parameters: { type: "object", properties: {} } }));
+    const proposed = message(draftText);
+    proposed.stopReason = "toolUse";
+    for (const name of names) proposed.content.push({ type: "toolCall", id: name, name, arguments: {} });
+    const reviewed: JudgementRequest[] = [];
+    await collect(await gate(() => streamOf(proposed), {
+      domain: "law", maxAttempts: 2,
+      makeCaller: () => async request => {
+        if (request.questions.quality_scope) reviewed.push(request);
+        const outcome = answer(request);
+        if (!outcome.ok || !request.questions.fresh_sources_needed) return outcome;
+        return { ...outcome, response: { ...outcome.response, answers: { ...outcome.response.answers, fresh_sources_needed: { type: "noul", noul: .95 } } } };
+      },
+    })(MODEL, input));
+    expect(reviewed.length).toBeGreaterThan(0);
+    for (const { questions } of reviewed) {
+      expect(Boolean(questions.research_skipped)).toBe(!searchOnly);
+      expect(Boolean(questions.law_authority_missing)).toBe(!searchOnly);
+      expect(questions.quality_scope!.instructions.includes("intermediate step")).toBe(searchOnly);
+      expect(questions.tool_success_invented).toBeDefined();
+      expect(questions.instruction_override).toBeDefined();
+    }
+  });
+
+  test("overflow prioritizes each draft's observed citations and both candidates' sources in comparison", async () => {
+    const query = "Compare the published guidance.";
+    const input = context(query);
+    const cited = "https://earlier.test/handbook_(edition)";
+    const other = "https://earlier.test/standard";
+    const failed = "https://failed.test/report";
+    const invented = "https://earlier.test/handbook_(edition)/invented";
+    const search = (id: string, results: { url: string; snippet: string }[], isError = false): Context["messages"][number] => ({
+      role: "toolResult", toolName: "client-web-search", toolCallId: id, timestamp: 2, isError,
+      content: [{ type: "text", text: JSON.stringify({ results }) }],
+    });
+    input.messages.push(search("cited", [
+      { url: cited, snippet: "front material ".repeat(30) + "The returned passage for the claim." },
+      { url: other, snippet: "The independent standard." },
+    ]));
+    for (const batch of ["a", "b"]) {
+      input.messages.push(search(batch, Array.from({ length: 8 }, (_, i) => ({
+        url: `https://recent.test/${batch}/${i}`, snippet: "Recent result. ".repeat(400),
+      }))));
+    }
+    input.messages.push(search("failed", [{ url: failed, snippet: "Failed payload." }], true));
+    const replies = [`[Handbook](<${cited}>) [unreturned](${invented}) [failed](${failed})`, `[Standard](${other})`];
+    const planning: TeachingPolicyTurn[] = [], comparisons: TeachingPolicyTurn[] = [];
+    const reviews = new Map<string, TeachingPolicyTurn>();
+    let next = 0;
+    const { result } = await collect(await gate(() => streamOf(message(replies[next++]!)), {
+      maxAttempts: 2, judgementModel: { id: "fixture", requestTokens: 16_000, stateQuestionTokens: 8000 },
+      makeCaller: () => async request => {
+        const state = request.state as { turn: TeachingPolicyTurn; reply?: { text: string }; candidates?: unknown };
+        if (state.reply) reviews.set(state.reply.text, state.turn);
+        else (state.candidates ? comparisons : planning).push(state.turn);
+        return answer(request);
+      },
+    })(MODEL, input));
+    expect(replies).toContain(text(result));
+    expect(planning[0]!.sources.map(source => source.url)).not.toContain(cited);
+    expect(reviews.get(replies[0]!)!.sources[0]).toMatchObject({ url: cited, text: expect.stringContaining("The returned passage for the claim.") });
+    expect(reviews.get(replies[1]!)!.sources[0]).toMatchObject({ url: other, text: "The independent standard." });
+    expect(comparisons.length).toBeGreaterThan(0);
+    expect(comparisons[0]!.sources.map(source => source.url)).toEqual(expect.arrayContaining([cited, other]));
+    for (const turn of [...planning, ...reviews.values(), ...comparisons]) {
+      expect(turn.learnerMessage).toBe(query);
+      expect(turn.sources).toHaveLength(16);
+      expect(JSON.stringify(turn.sources).length).toBeLessThanOrEqual(12_000);
+      expect(turn.sources.some(source => source.url === failed || source.url === invented)).toBe(false);
+    }
+  });
+
+  test("planning, candidate review and comparison retain every distinct fitting search result and its complete passages", async () => {
     const ctx = withSearch();
     const searches = Array.from({ length: 5 }, (_, index) => ({
       role: "toolResult" as const, toolName: "client-web-search", toolCallId: `search-${index}`, isError: false, timestamp: index + 2,
       content: [{ type: "text" as const, text: `UNTRUSTED WEB SEARCH RESULTS\n${JSON.stringify({
-        results: Array.from({ length: 8 }, (_, item) => ({
+        privateMetadata: [{ url: "https://unrelated.test/internal", token: "PRIVATE_PROVIDER_METADATA" }],
+        results: Array.from({ length: 10 }, (_, item) => ({
           url: item === 0 ? "https://example.test/shared" : `https://example.test/${index}/${item}`,
-          title: `Source ${index}/${item}`,
-          snippet: `Finding ${index}/${item}. ` + "source details ".repeat(111) + "RAW_SEARCH_TAIL",
+          ...(item !== 9 ? { title: `Source ${index}/${item}`,
+            snippet: `Finding ${index}/${item}. ` + "source details ".repeat(index === 4 && item === 8 ? 230 : 60) + "RAW_SEARCH_TAIL" } : {}),
         })),
       })}` }],
     }));
     ctx.messages.splice(1, 1, ...searches);
     const observed: TeachingPolicyTurn[] = [];
+    const phases = new Set<string>();
     const { result } = await collect(await gate((_model, draft) => {
       expect(draft.messages.filter(item => item.role === "toolResult")).toEqual(searches);
       return streamOf(message("24"));
     }, {
       judgementModel: { id: "judgement", requestTokens: 64_000, stateQuestionTokens: 32_000 },
-      makeCaller: () => async request => { observed.push((request.state as { turn: TeachingPolicyTurn }).turn); return answer(request); },
+      makeCaller: () => async request => {
+        const state = request.state as { turn: TeachingPolicyTurn; reply?: unknown; candidates?: unknown };
+        observed.push(state.turn);
+        phases.add(state.candidates ? "comparison" : state.reply ? "review" : "planning");
+        return answer(request);
+      },
     })(MODEL, ctx));
     expect(text(result)).toBe("24");
-    expect(observed.length).toBeGreaterThan(1);
-    const turn = observed[0]!;
-    const urls = turn.sources.map(source => source.url);
-    expect(urls).toHaveLength(16);
-    expect(new Set(urls).size).toBe(urls.length);
-    expect(urls).toContain("https://example.test/4/7");
-    expect(urls).toContain("https://example.test/shared");
-    expect(turn.sources.find(source => source.url.endsWith("/shared"))?.text).toContain("Finding 4/0");
-    expect(turn.toolResults).toHaveLength(1);
-    expect(JSON.stringify(turn)).not.toContain("RAW_SEARCH_TAIL");
+    expect(phases).toEqual(new Set(["planning", "review", "comparison"]));
+    for (const turn of observed) {
+      const urls = turn.sources.map(source => source.url);
+      expect(urls).toHaveLength(46);
+      expect(new Set(urls).size).toBe(urls.length);
+      expect(urls).not.toContain("https://unrelated.test/internal");
+      const shared = turn.sources.find(source => source.url.endsWith("/shared"))!;
+      for (let batch = 0; batch < 5; batch++) expect(shared.text).toContain(`Finding ${batch}/0`);
+      const long = turn.sources.find(source => source.url.endsWith("/4/8"))!;
+      expect(long.text.length).toBeGreaterThan(3000);
+      expect(long.text.endsWith("RAW_SEARCH_TAIL")).toBe(true);
+      expect(turn.sources.find(source => source.url.endsWith("/4/9"))?.text).toBe("");
+      expect(turn.toolResults).toHaveLength(1);
+      expect(JSON.stringify(turn)).not.toContain("PRIVATE_PROVIDER_METADATA");
+    }
   });
 });

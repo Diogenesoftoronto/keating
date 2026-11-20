@@ -1,0 +1,73 @@
+/* LessonSlider, board L4 decision 7 (board px, 1px = .04808rem). A 22px track: 2px line, a printed
+   ruler below it (major every 25%, minor every 5%), a 4px green-ink fill to a 12px square ink thumb with
+   a paper ring, a faint 1px start tick, and a mono ink tag over the thumb while dragging or focused.
+   The value rests at the end of the label row with a dotted underline; click it to type. A transparent
+   native range covers the track for keyboard, touch and assistive tech. */
+.lesson-slider { --half: .288rem; display: grid; gap: .1rem; min-width: 0; }
+.lesson-slider__row { display: flex; align-items: baseline; justify-content: space-between; gap: .38rem; min-width: 0; }
+.lesson-slider__row > .lesson-label, .lesson-frame .lesson-slider__row > label.lesson-label { min-width: 0; overflow-wrap: anywhere; font: .48rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.lesson-slider__value, .lesson-frame .lesson-slider .lesson-slider__value {
+  flex: none; min-height: 0; border: 0; background: none; box-shadow: none; padding: 0 .144rem; margin: 0 -.144rem 0 0; border-radius: .096rem;
+  color: var(--ink); font: 500 .53rem/1.5 var(--font-mono); font-variant-numeric: tabular-nums; cursor: text;
+  text-decoration: underline dotted var(--k-ink-faint, var(--ink-soft)); text-underline-offset: .144rem;
+}
+.lesson-slider__value:hover:not(:disabled) { background: var(--k-wash); }
+.lesson-slider__value:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.lesson-slider__well, .lesson-frame .lesson-slider .lesson-slider__well {
+  flex: none; width: 5.5em; min-height: 0; border: 0; border-radius: .096rem; background: var(--lesson-well, var(--paper-deep)); color: var(--ink);
+  padding: 0 .144rem; font: 500 .53rem/1.5 var(--font-mono); text-align: end; font-variant-numeric: tabular-nums; box-shadow: inset -1.5px 0 0 -.5px var(--ink);
+}
+
+.lesson-slider__track { position: relative; height: 1.058rem; min-width: 0; touch-action: none; }
+.lesson-slider__rail {
+  position: absolute; inset: 0 var(--half); pointer-events: none;
+  background:
+    linear-gradient(var(--line), var(--line)) 0 .433rem / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, var(--k-ink-faint, var(--ink-soft)) 0 1px, transparent 1px 25%) 0 .721rem / calc(100% + 1px) .24rem no-repeat,
+    repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 5%) 0 .721rem / calc(100% + 1px) .144rem no-repeat;
+}
+.lesson-slider__rail > * { position: absolute; display: block; }
+.lesson-slider__fill { left: 0; top: .385rem; height: .192rem; width: calc(var(--at) * 100%); background: var(--green-deep); }
+.lesson-slider__start { top: .096rem; left: calc(var(--from) * 100%); width: 1px; height: .77rem; background: var(--k-ink-faint, var(--ink-soft)); opacity: .75; }
+.lesson-slider__thumb {
+  top: .192rem; left: calc(var(--at) * 100%); width: calc(var(--half) * 2); height: calc(var(--half) * 2);
+  margin-inline-start: calc(var(--half) * -1); background: var(--ink); box-shadow: 0 0 0 2px var(--paper);
+}
+.lesson-slider__tag {
+  position: absolute; bottom: calc(100% + .24rem); left: 50%; transform: translateX(-50%); padding: .048rem .24rem; white-space: nowrap;
+  background: var(--ink); color: var(--paper); font: 500 .457rem/1.4 var(--font-mono); font-variant-numeric: tabular-nums;
+  display: none; pointer-events: none; z-index: 1;
+}
+/* The tag overlays (never pushes layout) while dragging or focused; at rest the value lives in the label row. */
+.lesson-slider[data-active] .lesson-slider__tag, .lesson-slider:has(.lesson-slider__input:focus-visible) .lesson-slider__tag { display: block; }
+/* k-lift feel: the square thumb lifts a pixel with a green-ink offset on hover and while dragging. */
+.lesson-slider__track:hover .lesson-slider__thumb, .lesson-slider[data-active] .lesson-slider__thumb {
+  transform: translate(-1px, -1px); box-shadow: 0 0 0 2px var(--paper), 3px 3px 0 1px var(--green-deep);
+}
+.lesson-slider:has(.lesson-slider__input:focus-visible) .lesson-slider__thumb { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-reduce-motion="true"]) .lesson-slider__thumb { transition: transform 120ms ease, box-shadow 120ms ease; }
+}
+
+.lesson-slider__input, .lesson-frame .lesson-slider .lesson-slider__input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; opacity: 0; cursor: pointer; min-height: 0;
+  -webkit-appearance: none; appearance: none; background: transparent;
+}
+/* The native thumb is as wide as the drawn one so pointer positions land on the same track. */
+.lesson-slider__input::-webkit-slider-thumb { -webkit-appearance: none; width: .577rem; height: 1.058rem; }
+.lesson-slider__input::-moz-range-thumb { width: .577rem; height: 1.058rem; border: 0; }
+.lesson-slider__input:disabled { cursor: default; }
+
+.lesson-slider[data-disabled] { opacity: .54; }
+
+/* Coarse pointers keep a 44px hit area through the invisible input, not a bigger drawing. */
+@media (pointer: coarse) {
+  .lesson-slider__input, .lesson-frame .lesson-slider .lesson-slider__input { top: -11px; bottom: -11px; height: auto; }
+  .lesson-slider__value, .lesson-frame .lesson-slider .lesson-slider__value { min-height: 44px; padding-inline: .3rem; }
+}
+@media (forced-colors: active) {
+  .lesson-slider__rail { forced-color-adjust: none; background: linear-gradient(CanvasText, CanvasText) 0 .433rem / 100% 2px no-repeat; }
+  .lesson-slider__fill { background: Highlight; forced-color-adjust: none; }
+  .lesson-slider__start, .lesson-slider__thumb { background: CanvasText; box-shadow: none; forced-color-adjust: none; }
+  .lesson-slider__tag { background: CanvasText; color: Canvas; forced-color-adjust: none; }
+}

@@ -2,11 +2,9 @@ import { Meter } from "../../design-system/charts";
 /** Post-quiz feedback panels: per-level remediation and benchmark comparison against past sessions. */
 import { useMemo, useState } from "react";
 import { KeatingGlyph } from "../../design-system/glyphs";
-import { css, cx } from "../../../styled-system/css";
 import type { Quiz } from "../../keating/core";
 import type { TopicStats } from "../QuizRenderer";
 import { isCorrect } from "./quiz-scoring";
-import { quizStyles, shared } from "./quiz-styles";
 
 export function RemediationDashboard({
 	quiz,
@@ -38,40 +36,35 @@ export function RemediationDashboard({
 	if (!hasMissed) return null;
 
 	return (
-		<div className={quizStyles.section}>
-			<div className={quizStyles.sectionTitle}>
-				<KeatingGlyph name="book" size={14} className={css({ color: "var(--primary)" })} />
+		<section className="lesson-section quiz-review-panel">
+			<h4 data-glyph-host className="lesson-section-title">
+				<KeatingGlyph name="target" size={13} />
 				<span>Review these</span>
-			</div>
-			<div className={css({ display: "grid", gap: "0.875rem" })}>
+			</h4>
+			<ul className="lesson-rows">
 				{levels.map((level) => {
 					const s = stats[level];
 					if (!s || s.missed === 0) return null;
 					return (
-						<div key={level} className={shared.stack1}>
-							<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" })}>
-								<span className={css({ textTransform: "capitalize", fontWeight: 500 })}>{level}</span>
-								<span className={shared.mutedText}>{s.missed}/{s.total} missed</span>
-							</div>
-							<div className={shared.rowCenter2}>
-								<Meter value={s.missed} max={s.total} label={level + " missed"}/>
-								<button
-									type="button"
-									disabled={requested.has(level)}
-									onClick={() => {
-										onRequestRemediation?.(level);
-										setRequested((prev) => new Set(prev).add(level));
-									}}
-									className={css({ flexShrink: 0, fontSize: "0.625rem", fontWeight: 500, color: "var(--primary)", _hover: { textDecoration: "underline" }, _disabled: { color: "var(--muted-foreground)", textDecoration: "none" } })}
-								>
-									{requested.has(level) ? <>Requested <KeatingGlyph name="check" size={14} /></> : "Review"}
-								</button>
-							</div>
-						</div>
+						<li key={level}>
+							<span>{level}</span>
+							<Meter value={s.missed} max={s.total} label={level + " missed"} tone="bad" valueText={`${s.missed}/${s.total} missed`}/>
+							<button
+								type="button"
+								className="lesson-quiet"
+								disabled={requested.has(level)}
+								onClick={() => {
+									onRequestRemediation?.(level);
+									setRequested((prev) => new Set(prev).add(level));
+								}}
+							>
+								{requested.has(level) ? <><KeatingGlyph name="check" size={13} /> Requested</> : <><KeatingGlyph name="book" size={13} /> Review</>}
+							</button>
+						</li>
 					);
 				})}
-			</div>
-		</div>
+			</ul>
+		</section>
 	);
 }
 
@@ -93,33 +86,29 @@ export function BenchmarkComparison({
 	const maxBar = Math.max(pct, avgPct, qPct, 1);
 
 	return (
-		<div className={quizStyles.section}>
-			<div className={quizStyles.sectionTitle}>
-				<KeatingGlyph name="trend" size={14} className={css({ color: "var(--primary)" })} />
-				<span>vs {stats.count} past sessions</span>
-			</div>
-			<div className={shared.stack2}>
+		<section className="lesson-section quiz-review-panel">
+			<h4 data-glyph-host className="lesson-section-title">
+				<KeatingGlyph name="trend" size={13} />
+				<span>Against {stats.count} past sessions</span>
+			</h4>
+			<ul className="lesson-rows">
 				{[
 					{ label: "Your score", value: pct },
 					{ label: "Session avg", value: avgPct },
 					{ label: "Top quartile", value: qPct },
 				].map((row) => (
-					<div key={row.label} className={shared.stack1}>
-						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" })}>
-							<span className={shared.mutedText}>{row.label}</span>
-							<span className={cx("font-terminal", css({ fontVariantNumeric: "tabular-nums" }))}>
-								{Math.round(row.value)}%
-							</span>
-						</div>
-						<Meter value={row.value} max={maxBar} label={row.label}/>
-					</div>
+					<li key={row.label}>
+						<span>{row.label}</span>
+						<Meter value={row.value} max={maxBar} label={row.label} tone={row.label === "Your score" ? "series1" : "ink"}/>
+						<span className="lesson-meta">{Math.round(row.value)}%</span>
+					</li>
 				))}
-			</div>
+			</ul>
 			{typeof partialCreditPoints === "number" && stats.avgPartialCreditPoints > 0 && (
-				<div className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+				<p className="lesson-hint">
 					Average partial credit {stats.avgPartialCreditPoints.toFixed(2)}/{total}
-				</div>
+				</p>
 			)}
-		</div>
+		</section>
 	);
 }

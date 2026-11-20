@@ -1,4 +1,8 @@
-.quiz-countdown {display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;font: .53rem/1.4 var(--font-mono);max-width:100%}.quiz-countdown__digits{display:inline-flex;align-items:center;gap:.15rem}.quiz-countdown .kc-meter{min-width:1.6rem}
-
-.quiz-countdown .kc-meter-row>span:last-child{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}
-.quiz-countdown .kc-meter-row{width:2rem}
+/* The per-question timer in the frame head: clock glyph, mono digits, the tiny meter (board L1). */
+.quiz-countdown { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .24rem; max-width: 100%; font: .5rem/1.4 var(--font-mono); color: var(--ink-soft); }
+.quiz-countdown__digits { display: inline-flex; align-items: center; gap: .18rem; font: 600 .55rem/1 var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.quiz-countdown[data-urgency=warning] .quiz-countdown__digits, .quiz-countdown[data-urgency=warning] > small { color: var(--amber); }
+.quiz-countdown[data-urgency=critical] .quiz-countdown__digits, .quiz-countdown[data-urgency=critical] > small { color: var(--destructive); }
+.quiz-countdown .kc-meter { min-width: 1.6rem; }
+.quiz-countdown .kc-meter-row { width: 2rem; }
+.quiz-countdown .kc-meter-row > span:last-child { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }

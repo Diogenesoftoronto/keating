@@ -35,6 +35,8 @@ export interface ProviderRequestOptions {
   tools?: ProviderToolDefinition[];
   /** Provider-native assistant call plus the local results being continued. */
   continuation?: ProviderToolContinuation;
+  /** Untrusted text sent with user authority after the conversation and any native tool results. */
+  additionalUserText?: string;
 }
 
 export interface ProviderToolDefinition {
@@ -344,14 +346,19 @@ export function buildProviderRequest(
     supportsTemperature = settings.provider !== "openai" && settings.provider !== "minimax",
     tools = [],
     continuation,
+    additionalUserText,
   } = options;
   const history = recentMessages(messages);
+  const extraUserMessage = additionalUserText ? [{ role: "user", content: additionalUserText }] : [];
   const commonHeaders: Record<string, string> = { "Content-Type": "application/json" };
   if (stream) commonHeaders.Accept = "text/event-stream";
 
   if (settings.provider === "openai") {
     if (apiKey) commonHeaders.Authorization = `Bearer ${apiKey}`;
     const effort = openAiReasoningEffort(reasoningLevel);
+    const input = continuation?.provider === "openai"
+      ? continuation.results.map(result => ({ type: "function_call_output", call_id: result.callId, output: JSON.stringify(result.output) }))
+      : openAiHistoryInput(history, tools.length > 0);
     return {
       url: openAiResponsesUrl(settings.baseUrl),
       init: {
@@ -361,13 +368,7 @@ export function buildProviderRequest(
         body: JSON.stringify({
           model: settings.model,
           instructions: systemPrompt,
-          input: continuation?.provider === "openai"
-            ? continuation.results.map((result) => ({
-                type: "function_call_output",
-                call_id: result.callId,
-                output: JSON.stringify(result.output),
-              }))
-            : openAiHistoryInput(history, tools.length > 0),
+          input: [...input, ...extraUserMessage],
           ...(continuation?.provider === "openai" ? { previous_response_id: continuation.previousResponseId } : {}),
           ...(tools.length ? {
             tools: tools.map((tool) => ({
@@ -427,6 +428,7 @@ export function buildProviderRequest(
                 })),
               },
             ]) : []),
+            ...extraUserMessage,
           ],
         }),
       },
@@ -464,6 +466,7 @@ export function buildProviderRequest(
                 })),
               },
             ]) : []),
+            ...(additionalUserText ? [{ role: "user", parts: [{ text: additionalUserText }] }] : []),
           ],
           ...(tools.length ? {
             tools: [{
@@ -525,6 +528,7 @@ export function buildProviderRequest(
               content: JSON.stringify(result.output),
             })),
           ]) : []),
+          ...extraUserMessage,
         ],
         ...(tools.length ? {
           tools: tools.map((tool) => ({

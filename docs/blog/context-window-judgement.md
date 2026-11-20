@@ -8,9 +8,9 @@ The next benchmark asks a different question: can a verifier apply several rules
 
 The September 24 OpenCode proposal called for a context-size experiment and a visible state inspector. The implementation now records the size of each judgement-state section, its estimated context fill, the window evictions, and the lesson state that remains pinned. The inspector shows these counts during review and after release without exposing draft contents.
 
-Keating's current window starts removing old complete conversation turns at 80% of its estimated 32,000-token budget and aims for 65%. It does not summarize them. Active lesson state, pending submissions, recorded tool results, and learner evidence sit outside that conversation eviction.
+The September 2026 benchmark used a 32,000-token estimate. Its window began removing old conversation turns at 80% and aimed for 65%. As of November 20, 2026, Keating keeps the full conversation while the request fits its supported limits. If it must trim history, it removes the fewest whole turns needed, starting with the oldest. Short excerpts of earlier learner messages can still fit alongside the recent conversation. Active lesson state, pending submissions, recorded tool results, and learner evidence remain pinned.
 
-The audit found a defect in preflight: it kept testing the original request after removing each turn, so an oversized request could empty the whole conversation. Preflight now rebuilds the request after every removal. A regression test verifies that a useful recent suffix survives.
+The September audit found that preflight kept measuring the original request after removing turns. An oversized request could empty the whole conversation. The fix measured each candidate window using its actual contents. A regression test checked that a useful recent suffix survived.
 
 A context benchmark must distinguish loss from reasoning. If the only test result was evicted, “insufficient context” can be the correct answer to the visible request. We therefore report both correctness against the remaining evidence and agreement with the original full-context answer. A fluent guess should not get credit for retrieving evidence it never received.
 

@@ -1,7 +1,6 @@
 import { LessonFrame } from "./lesson/LessonFrame";
 import "./specialist-lessons.css";
 import { useEffect, useRef, useState } from "react";
-import { ChartFrame } from "../design-system/charts";
 import { browserThemeSource, watchAppContext } from "../keating/interactive-page/theme";
 import type { UiMusicLabNode } from "@keating/learner-contracts";
 import { MarkdownBlock } from "./MarkdownBlock";
@@ -15,7 +14,7 @@ export function MusicLab({ node, disabled = false }: { node: UiMusicLabNode; dis
 	function syncAppearance() {
 		const root = browserThemeSource();
 		if (!root || !frame.current?.contentWindow) return;
-		const tokens = ["--series-1", "--ink", "--ink-soft", "--line", "--paper", "--paper-deep", "--accent-green"];
+		const tokens = ["--series-1", "--ink", "--ink-soft", "--line", "--line-soft", "--paper", "--paper-deep", "--accent-green", "--green-deep"];
 		const palette = Object.fromEntries(tokens.map(token => [token, root.readVariable(token).trim()]));
 		frame.current.contentWindow.postMessage({ type: "keating-music-appearance", palette, reducedMotion: root.reducedMotion() }, "*");
 	}
@@ -37,9 +36,13 @@ export function MusicLab({ node, disabled = false }: { node: UiMusicLabNode; dis
 		if (disabled) player?.postMessage({ type: "keating-music-stop" }, "*");
 		return () => player?.postMessage({ type: "keating-music-stop" }, "*");
 	}, [disabled, node.id]);
-	return <LessonFrame glyph="wave" title={node.title} kind="Music lab" tools={<span className="learning-lab__language">Strudel</span>} className="learning-lab music-lab" data-music-lab={node.id} aria-label={node.title}>
+	return <LessonFrame glyph="music" title={node.title} kind="Music lab" tools={<span className="lesson-meta">Strudel</span>} className="learning-lab music-lab" data-music-lab={node.id} aria-label={node.title}>
 		{node.brief ? <div className="learning-lab__brief"><MarkdownBlock content={node.brief} /></div> : null}
-		{disabled ? <pre>{node.code}</pre> : <ChartFrame title={node.visualization === "scope" ? "Waveform" : "Pattern"} reading="Sound starts when you press Play."><iframe key={node.id} ref={frame} className="music-lab__frame" style={{ height }} title={`${node.title}: Strudel instrument, visualization and playback`} sandbox="allow-scripts" allow="autoplay" referrerPolicy="no-referrer" onLoad={syncAppearance} srcDoc={frameDocument} /></ChartFrame>}
-		<div className="music-lab__credit">{disabled && <span>Sound starts when you press Play.</span>}<a href="https://strudel.cc/technical-manual/project-start/" target="_blank" rel="noreferrer">Powered by Strudel</a></div>
+		{disabled
+			? <pre className="music-lab__code">{node.code}</pre>
+			: <div className="lesson-stage lesson-bleed music-lab__stage" aria-label={`${node.visualization === "scope" ? "Waveform" : "Pattern"}. Sound starts when you press Play.`} role="group">
+				<iframe key={node.id} ref={frame} className="music-lab__frame" style={{ height }} title={`${node.title}: Strudel instrument, visualization and playback`} sandbox="allow-scripts" allow="autoplay" referrerPolicy="no-referrer" onLoad={syncAppearance} srcDoc={frameDocument} />
+			</div>}
+		<p className="lesson-hint music-lab__credit"><span>Sound starts when you press Play.</span><a href="https://strudel.cc/technical-manual/project-start/" target="_blank" rel="noreferrer">Powered by Strudel</a></p>
 	</LessonFrame>;
 }

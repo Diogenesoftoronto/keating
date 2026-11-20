@@ -4,14 +4,14 @@
  * default), and the same timeline folded into chips under the finished reply.
  */
 import { useEffect, useId, useMemo, useState } from "react";
-import { useAuiState } from "@assistant-ui/react";
+import { useAuiState, type ThreadMessage } from "@assistant-ui/react";
 import { KeatingGlyph } from "../design-system/glyphs";
 import { Progress, Timeline } from "../design-system/charts";
 import { KeatingBot } from "./KeatingBot";
 import type { TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { keatingStorage } from "../hooks/keating-storage";
 import { teachingDraftIsActive, type TeachingDraftStatus } from "../keating/judgement/draft-status";
-import { turnGuidance, turnStages, turnSteps, turnSummary, type TurnStage, type TurnStep } from "../keating/judgement/turn-progress";
+import { hasShownTurnReceipt, turnGuidance, turnStages, turnSteps, turnSummary, type TurnStage, type TurnStep } from "../keating/judgement/turn-progress";
 import { useTurnReceipt } from "../keating/judgement/turn-receipts";
 import { useDraftElapsed } from "./DraftProgress";
 import { citationsFromCalls, isWebSearchToolName, type WebSearchCall } from "./web-search-result";
@@ -113,27 +113,44 @@ export function TurnProgressCard({ status, prefill }: { status: TeachingDraftSta
 
 const loadReceipts = (sessionId: string) => keatingStorage.getTeachingDraftReceipts(sessionId);
 
-function receiptTimestamps(message: {
-  id: string;
-  createdAt?: Date;
-  metadata: { custom?: Record<string, unknown> };
-}): readonly number[] {
-  const source = message.metadata.custom?.keatingDiagnosticTimestamps as readonly number[] | undefined;
-  if (source?.length) return source;
-  const legacy = /^assistant-\d+-(\d+)$/.exec(message.id);
-  if (legacy) return [Number(legacy[1])];
-  return message.createdAt ? [message.createdAt.getTime()] : [];
+function receiptTimestamps(message: ThreadMessage): readonly number[] {
+  const sources = message.metadata.custom?.keatingDiagnosticTimestamps;
+  // The receipt store checks the most recent source first when rows combine.
+  if (Array.isArray(sources) && sources.length) {
+    return sources.filter((timestamp): timestamp is number => typeof timestamp === "number" && Number.isFinite(timestamp));
+  }
+  // Native capture and display timestamps cannot identify a review receipt.
+  if (message.id.startsWith("entry_")) return [];
+  const legacy = /^assistant-(?:\d+-)?(\d+)$/.exec(message.id);
+  const timestamp = Number(legacy?.[1]);
+  return Number.isFinite(timestamp) && timestamp > 0 ? [timestamp] : message.createdAt ? [message.createdAt.getTime()] : [];
+}
+
+function receiptIsVisible(message: ThreadMessage, snapshot: TeachingDraftSnapshot): boolean {
+  const status = message.status;
+  if (snapshot.phase === "cancelled") {
+    return status?.type !== "running" && hasShownTurnReceipt(snapshot);
+  }
+  return status?.type === "complete" && hasShownTurnReceipt(snapshot);
 }
 
 function SummaryChips({ snapshot, calls }: { snapshot: TeachingDraftSnapshot; calls: readonly WebSearchCall[] }) {
   const summary = turnSummary(snapshot, calls, citationsFromCalls(calls).length);
   return <span className="turn-chips">
-    {summary.checked
+    {snapshot.phase === "cancelled"
+      ? <span className="turn-chip"><KeatingGlyph name="stop" size={12} />You stopped after the opening</span>
+      : snapshot.reason === "remaining-part-unresolved"
+      ? <span className="turn-chip"><KeatingGlyph name="alert" size={12} />Requested part still open</span>
+      : summary.checked
       ? <span className="turn-chip" data-tone="ok"><KeatingGlyph name="check" size={12} />Checked</span>
-      : <span className="turn-chip" data-tone="bad"><KeatingGlyph name="x" size={12} />Not checked</span>}
+      : summary.checks > 0
+      ? <span className="turn-chip"><KeatingGlyph name="alert" size={12} />Review concerns</span>
+      : <span className="turn-chip" data-tone="bad"><KeatingGlyph name="x" size={12} />No check results</span>}
     {summary.searches > 0 && <span className="turn-chip">{summary.searches} {summary.searches === 1 ? "search" : "searches"} · {summary.sources} {summary.sources === 1 ? "source" : "sources"}</span>}
-    {summary.drafts > 1 && <span className="turn-chip">{summary.drafts} drafts{summary.fixes ? ` · ${summary.fixes} ${summary.fixes === 1 ? "fix" : "fixes"}` : ""}</span>}
-    {summary.checked && summary.checks > 0 && <span className="turn-chip">{summary.checks} checks passed</span>}
+    {summary.drafts > 1 && <span className="turn-chip">{summary.drafts} drafts{summary.fixes ? ` · ${summary.fixes} ${summary.fixes === 1 ? "revision" : "revisions"}` : ""}</span>}
+    {summary.checks > 0 && <span className="turn-chip">{snapshot.phase === "cancelled"
+      ? `${summary.passed} passed, ${summary.failed} failed, ${summary.inconclusive} inconclusive`
+      : <>{summary.passed < summary.checks ? `${summary.passed} of ` : ""}{summary.checks} {summary.checks === 1 ? "check" : "checks"} passed</>}</span>}
   </span>;
 }
 
@@ -145,7 +162,7 @@ export function TurnProcessSummary({ sessionId }: { sessionId: string | undefine
   const snapshot = useTurnReceipt(sessionId, receiptTimestamps(message), loadReceipts);
   const calls = useTurnSearchCalls("message");
   const steps = useMemo(() => snapshot ? turnSteps(snapshot, calls) : [], [snapshot, calls]);
-  if (!snapshot || message.status?.type !== "complete" || snapshot.phase !== "released") return null;
+  if (!snapshot || !receiptIsVisible(message, snapshot)) return null;
   return <section className="turn-summary" aria-label="How this reply was made" data-quote-exclude="">
     <button type="button" className="turn-toggle turn-summary__toggle" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
       <span>How this reply was made</span>
@@ -187,8 +204,9 @@ export function useSearchStepCovered(sessionId: string | undefined): boolean {
   });
   const live = useAuiState(({ thread }) => thread.isRunning && thread.messages.at(-1)?.id === lastReply?.id);
   const ownId = useAuiState(({ message }) => message.id);
-  const receipt = useTurnReceipt(lastReply ? sessionId : undefined, lastReply ? receiptTimestamps(lastReply) : [], loadReceipts);
+  const receipt = useTurnReceipt(lastReply?.role === "assistant" ? sessionId : undefined,
+    lastReply?.role === "assistant" ? receiptTimestamps(lastReply) : [], loadReceipts);
   if (!lastReply) return false;
   if (live) return true;
-  return lastReply.id !== ownId && lastReply.status?.type === "complete" && receipt?.phase === "released";
+  return lastReply.id !== ownId && Boolean(receipt && receiptIsVisible(lastReply, receipt));
 }

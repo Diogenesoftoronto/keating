@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 
 interface ReadingPort extends EventTarget {
   readonly readable: ReadableStream<Uint8Array> | null;
@@ -139,22 +140,22 @@ export function HardwareLabInput({ disabled, baudRate, unit, onSample }: {
     <p>Send one number per line at {baudRate} baud{unit ? ` (${unit})` : ""}.</p>
     <div className="teaching-lab-controls">
       {serialAPI() && (phase === "idle"
-        ? <button type="button" disabled={disabled} onClick={connect}>Connect device</button>
+        ? <button type="button" disabled={disabled} onClick={connect}><KeatingGlyph name="link" size={13} />Connect device</button>
         : <button type="button" disabled={phase === "closing"} onClick={disconnect}>
-            {phase === "connecting" ? "Cancel connection" : "Disconnect device"}
+            <KeatingGlyph name="x" size={13} />{phase === "connecting" ? "Cancel connection" : "Disconnect device"}
           </button>)}
       {phase === "reading" && <>
-        <span>{latest === null ? "Waiting for a number…" : `Device reading: ${latest} ${unit}`.trimEnd()}</span>
+        <span className="lesson-meta">{latest === null ? "Waiting for a number…" : `Device reading: ${latest} ${unit}`.trimEnd()}</span>
         <button type="button" disabled={disabled || latest === null}
-          onClick={() => { if (latest !== null) onSample(latest, "device"); }}>Check reading</button>
+          onClick={() => { if (latest !== null) onSample(latest, "device"); }}><KeatingGlyph name="check" size={13} />Check reading</button>
       </>}
     </div>
     <p role="status">{notice || (!serialAPI() ? "Serial input is unavailable in this browser. Enter a reading below." : "")}</p>
     <div className="teaching-lab-controls">
-      <label>Manual reading{unit ? ` (${unit})` : ""} <input className="k-input" type="text" inputMode="decimal" size={9} maxLength={64}
+      <label><span className="lesson-label">Manual reading{unit ? ` (${unit})` : ""}</span> <input type="text" inputMode="decimal" size={9} maxLength={64}
         value={manual} disabled={disabled} onChange={event => setManual(event.target.value)} /></label>
       <button type="button" disabled={disabled || manualValue === null}
-        onClick={() => { if (manualValue !== null) onSample(manualValue, "manual"); }}>Check manual reading</button>
+        onClick={() => { if (manualValue !== null) onSample(manualValue, "manual"); }}><KeatingGlyph name="check" size={13} />Check manual reading</button>
     </div>
   </div>;
 }

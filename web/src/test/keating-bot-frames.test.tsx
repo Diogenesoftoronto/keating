@@ -28,8 +28,8 @@ describe("Keatingbot authored atlas frames", () => {
 			expect(html).toContain('role="img" aria-label="Keating is listening"');
 		}
 	});
-	test("all 64 companion gestures resolve to installed full-body sheets", async () => {
-    expect(new Set(KEATING_BOT_COMPANION_STATES).size).toBe(64);
+	test("all companion gestures resolve to installed full-body sheets", async () => {
+    expect(new Set(KEATING_BOT_COMPANION_STATES).size).toBe(65);
     for (const state of KEATING_BOT_COMPANION_STATES) {
       const variant = keatingBotSpriteVariant("head", state);
       expect(variant).toBe("body");

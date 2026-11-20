@@ -6,7 +6,7 @@ import type { QuizResult } from "./QuizRenderer";
 import { isOpenEnded, questionCredit } from "./QuizRenderer";
 import { formatQuizDuration, isQuickQuizAnswer } from "./quiz/game";
 import { QuizGradesContext } from "./quiz-grades-context";
-import { css, cx } from "../../styled-system/css";
+import "./quiz/quiz.css";
 
 export interface StoredQuizResult {
   id: string;
@@ -26,6 +26,7 @@ type QuestionStatus =
   | { kind: "open-pending"; hint: "close" | "some" | "review" };
 
 const shared = { mutedText: "lesson-muted" };
+const cx = (...names: (string | undefined | false)[]) => names.filter(Boolean).join(" ");
 const iconTone = {correct:"lesson-ok",wrong:"lesson-bad",partial:"lesson-partly",pending:"lesson-muted"};
 
 function objectiveCorrect(q: QuizQuestion, answer: string): boolean {
@@ -111,20 +112,20 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
 
   return (
     <LessonFrame glyph="quiz" title={quiz.topic} kind="Quiz result" tools={new Date(data.timestamp).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})} footer={<>
-        <button type="button" onClick={()=>setShowDetails(v=>!v)} aria-expanded={showDetails}>All answers <KeatingGlyph name={showDetails ? "chevu" : "chev"} size={13}/></button>
-        {onReview && <button type="button" className="lesson-primary k-lift" onClick={()=>onReview(data)}>Review topic</button>}
+        <button type="button" className="lesson-quiet" onClick={()=>setShowDetails(v=>!v)} aria-expanded={showDetails}><KeatingGlyph name={showDetails ? "chevu" : "chev"} size={13}/>All answers</button>
+        {onReview && <button type="button" className="lesson-primary" data-glyph-surface="inverse" onClick={()=>onReview(data)}><KeatingGlyph name="book" size={13}/>Review topic</button>}
       </>}>
       <LessonScore score={allPending ? "Pending review" : `${earned} of ${decided}`} percent={allPending ? undefined : percentage} time={totalTime ?? undefined} correct={correctWhole} partly={partly} missed={decided-correctWhole-partly}/>
-      <div>
+      <div className="quiz-result-meta" data-glyph-host>
         {pendingCount > 0 && (
-          <span className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
-            <KeatingGlyph name="help" size={12} className={iconTone.pending} />
+          <span className="quiz-meta">
+            <KeatingGlyph name="help" size={13} className={iconTone.pending} />
             {pendingCount} pending review
           </span>
         )}
         {result.flagged && result.flagged.length > 0 && (
-          <span className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
-            <KeatingGlyph name="flag" size={12} className={iconTone.partial} />
+          <span className="quiz-meta">
+            <KeatingGlyph name="flag" size={13} className={iconTone.partial} />
             {result.flagged.length} flagged
           </span>
         )}
@@ -132,7 +133,7 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
         {result.examTimedOut && <span>Exam time expired</span>}
       </div>
 
-      <div className="lesson-results">
+      <div className="lesson-results quiz-result-rows">
           {statuses.map(({ q, status }, idx) => {
             const answer = (result.answers[q.id] ?? "").trim();
             const timeMs = result.timing?.perQuestionMs[q.id];
@@ -176,33 +177,28 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
                   type="button"
                   onClick={() => toggleQuestion(q.id)}
                   aria-expanded={isExpanded}
-                  className={css({ display: "flex", minHeight: "2.75rem", width: "100%", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem", textAlign: "left" })}
+                  className="quiz-result-toggle"
                 >
-                  <KeatingGlyph name={glyph} size={12} className={cx(css({ marginTop: "0.125rem", flexShrink: 0 }), iconClass)} />
-                  <span className={css({ minWidth: 0, flex: "1 1 12rem", overflowWrap: "anywhere", lineHeight: 1.625 })}>
-                    <span className={css({ marginRight: "0.25rem", color: "color-mix(in srgb, var(--foreground) 70%, transparent)" })}>{idx + 1}.</span>
-                    {q.question}
+                  <KeatingGlyph name={glyph} size={13} className={iconClass} />
+                  <span className="quiz-result-question">
+                    <span className="lesson-meta">{idx + 1}.</span> {q.question}
                   </span>
-                  {!pending && <span>{fullyCorrect ? "Correct" : partial ? "Partly" : "Not quite"}</span>}
-                  {pending && (
-                    <span className={css({ flexShrink: 0, borderRadius: "0.25rem", background: "var(--muted)", padding: "0.125rem 0.375rem", fontSize: "0.5625rem", textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--muted-foreground)" })}>
-                      Pending review
-                    </span>
-                  )}
-                  {isExpanded ? <KeatingGlyph name="chevu" size={12} className={css({ flexShrink: 0, color: "color-mix(in srgb, var(--foreground) 60%, transparent)" })} /> : <KeatingGlyph name="chev" size={12} className={css({ flexShrink: 0, color: "color-mix(in srgb, var(--foreground) 60%, transparent)" })} />}
+                  {!pending && <span className={cx("lesson-meta", iconClass)}>{fullyCorrect ? "Correct" : partial ? "Partly" : "Not quite"}</span>}
+                  {pending && <span className="lesson-status">Pending review</span>}
+                  <KeatingGlyph name={isExpanded ? "chevu" : "chev"} size={13} className="lesson-muted" />
                 </button>
                 {(typeof timeMs === "number" || timedOut) && (
-                  <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.625rem", marginTop: "0.25rem", paddingLeft: "1.25rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" })}>
+                  <div className="quiz-result-detail quiz-result-meta">
                     {typeof timeMs === "number" && <span aria-label={`Time on question: ${timeMs} milliseconds`}>{formatQuizDuration(timeMs)}</span>}
                     {timedOut && <span>Timed out</span>}
                     {quick && <span title="Answered within the first quarter of the time budget. Timing does not indicate correctness.">Quick answer</span>}
                   </div>
                 )}
                 {isExpanded && (
-                  <div className={css({ marginTop: "0.375rem", display: "grid", gap: "0.25rem", paddingLeft: "1.25rem" })}>
+                  <div className="quiz-result-detail">
                     <p>
                       <span className={shared.mutedText}>You:</span>{" "}
-                      <span className={fullyCorrect ? iconTone.correct : pending ? css({ color: "var(--foreground)" }) : partial ? iconTone.partial : iconTone.wrong}>
+                      <span className={fullyCorrect ? iconTone.correct : pending ? undefined : partial ? iconTone.partial : iconTone.wrong}>
                         {answer || "(blank)"}
                       </span>
                     </p>
@@ -213,19 +209,19 @@ export function QuizResultCard({ data, onReview }: QuizResultCardProps) {
                       <span className={iconTone.correct}>{q.correctAnswer}</span>
                     </p>
                     {status.kind === "open-pending" && (
-                      <p className={css({ fontSize: "0.625rem", fontStyle: "italic", color: "var(--muted-foreground)" })}>
+                      <p className="lesson-hint">
                         Your teacher is judging this answer in chat. Heuristic hint: {hintLabel} (not a grade).
                       </p>
                     )}
                     {status.kind === "open-graded" && status.note && (
-                      <p className={css({ display: "flex", alignItems: "flex-start", gap: "0.25rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
-                        <KeatingGlyph name="book" size={10} className={css({ marginTop: "0.125rem", flexShrink: 0 })} />
+                      <p className="quiz-result-note">
+                        <KeatingGlyph name="book" size={13} />
                         {status.note}
                       </p>
                     )}
                     {q.explanation && (
-                      <p className={css({ display: "flex", alignItems: "flex-start", gap: "0.25rem", color: "color-mix(in srgb, var(--foreground) 80%, transparent)" })}>
-                        <KeatingGlyph name="bulb" size={10} className={css({ marginTop: "0.125rem", flexShrink: 0 })} />
+                      <p className="quiz-result-note" data-tone="hint">
+                        <KeatingGlyph name="bulb" size={13} />
                         {q.explanation}
                       </p>
                     )}

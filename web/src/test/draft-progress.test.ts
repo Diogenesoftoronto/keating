@@ -117,11 +117,53 @@ describe("turn progress", () => {
   });
   test("does not claim a best-effort release passed review", () => {
     const released = snapshot({ phase: "released", reason: "best-effort-draft", selectedAttempt: 1, attempts: [attempt(1, [check("a", "fail", "critical"), check("b", "pass")])] });
-    expect(turnSummary(released, [], 0)).toMatchObject({ checked: false, checks: 1 });
+    expect(turnSummary(released, [], 0)).toMatchObject({ checked: false, checks: 2, passed: 1, failed: 1 });
   });
   test("summary counts drafts, fixes and the shown draft's checks", () => {
     const released = snapshot({ phase: "released", selectedAttempt: 2, attempts: [attempt(1, [check("a", "fail", "critical")]), attempt(2, [check("a", "pass"), check("b", "pass")])] });
-    expect(turnSummary(released, [search("a", "success"), search("b", "error")], 2)).toEqual({ searches: 2, sources: 2, drafts: 2, fixes: 1, checks: 2, checked: true });
+    expect(turnSummary(released, [search("a", "success"), search("b", "error")], 2)).toEqual({
+      searches: 2, sources: 2, drafts: 2, fixes: 1, checks: 2, passed: 2, failed: 0, inconclusive: 0, checked: true,
+    });
+  });
+  test("independent drafts may finish out of order before a targeted revision", () => {
+    const parallel = snapshot({ phase: "drafting", attempt: 1, parallelAttempts: [1, 2] });
+    expect(turnGuidance(parallel, [], 1_000).headline).toBe("Writing two drafts");
+    expect(turnStages(parallel, []).find(stage => stage.id === "write")?.badge).toBe("×2");
+    expect(turnSteps(parallel, []).at(-1)?.title).toBe("Writing drafts 1 and 2 in parallel");
+
+    const second = attempt(2, [check("requested_part_missing", "fail", "minor")], { status: "pass" });
+    const pending = { ...parallel, attempts: [second] };
+    expect(turnGuidance(pending, [], 3_000).headline).toBe("Finishing draft 1");
+    expect(turnSteps(pending, []).at(-1)?.title).toBe("Finishing draft 1");
+    const checking = { ...parallel, phase: "checking" as const, attempts: [second] };
+    expect(turnGuidance(checking, [], 3_000).headline).toBe("Checking draft 1");
+    const steps = turnSteps(checking, []).map(step => step.title);
+    expect(steps).toContain("Wrote draft 2");
+    expect(steps.at(-1)).toBe("Checking draft 1");
+    expect(steps.join(" ")).not.toMatch(/rewrit|rewrot/i);
+
+    const first = attempt(1, [check("requested_part_missing", "pass", "minor")]);
+    const repair = { ...parallel, phase: "revising" as const, attempt: 3, attempts: [first, second], repairSourceAttempt: 2 };
+    expect(turnGuidance(repair, [], 5_000).headline).toBe("Revising draft 2");
+    expect(turnSteps(repair, []).at(-1)?.title).toBe("Revising draft 2 (draft 3)");
+    expect(turnSummary({ ...repair, phase: "released", selectedAttempt: 1 }, [], 0).fixes).toBe(0);
+    const third = { ...first, attempt: 3, repairSourceAttempt: 2 };
+    const released = { ...repair, phase: "released" as const, attempts: [first, second, third], selectedAttempt: 3 };
+    expect(turnSteps(released, []).map(step => step.title)).toContain("Revised draft 2 (draft 3)");
+    expect(turnSummary(released, [], 0)).toMatchObject({ drafts: 3, fixes: 1 });
+  });
+  test("a released reply keeps nonblocking failed and unknown checks visible", () => {
+    const fails = check("known_context_reasked", "fail");
+    const inconclusive = { ...check("requested_part_missing", "unknown", "minor"), probability: .5 };
+    const draft = attempt(1, [check("nonempty_reply", "pass"), fails, inconclusive], { status: "pass" });
+    const released = snapshot({ phase: "released", selectedAttempt: 1, attempts: [draft] });
+    const review = turnSteps(released, []).find(step => step.id === "check-1");
+    expect(review).toMatchObject({ state: "warn" });
+    expect(review?.detail).toContain("1 passed, 1 failed, 1 inconclusive");
+    expect(review?.detail).toContain("Known context reasked");
+    expect(turnSummary(released, [], 0)).toMatchObject({ checks: 3, passed: 1, checked: true });
+    expect(diagnoseDraft(released)[0]?.tone).toBe("caution");
+    expect(turnSummary({ ...released, selectedAttempt: null }, [], 0)).toMatchObject({ checked: false, passed: 0 });
   });
 });
 

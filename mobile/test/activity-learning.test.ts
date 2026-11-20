@@ -50,21 +50,23 @@ test("ordinary native replies repair an uncertain checkpoint before best-effort 
     request: async () => { generated++; return { text: "Division splits a quantity into equal groups.", calls: [], assistantTurn: null, usage: null }; },
   });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
-  expect(generated).toBe(2);
+  expect(generated).toBe(3);
   expect(result.text).toBe("Division splits a quantity into equal groups.");
 });
 
-test("the Jev-guided native round privately generates four replies and delivers one", async () => {
+test("an ordinary Jev-guided native round compares two private replies and delivers one", async () => {
   const baseJudge = judge();
-  const pairs: string[][] = [], visible: string[] = [];
+  const choices: string[][] = [], legacyPairs: string[][] = [], visible: string[] = [];
   let generated = 0, published = 0;
   const request = createMobileTeachingDraftRound({
     current: () => true, evidence: async () => empty(), onReleased: () => { published++; },
     judge: async (request, signal) => {
       const outcome = await baseJudge(request, signal);
       if (!outcome.ok) return outcome;
-      const choice = request.questions.draft_pair_choice;
-      if (choice?.type === "choice") pairs.push(Object.keys(choice.criteria));
+      const choice = request.questions.draft_choice;
+      if (choice?.type === "choice") choices.push(Object.keys(choice.criteria));
+      const pair = request.questions.draft_pair_choice;
+      if (pair?.type === "choice") legacyPairs.push(Object.keys(pair.criteria));
       return { ok: true, response: { ...outcome.response, backend: { backend: "system-one", model: "jev-1.14.0", calibrationSha256: null } } };
     },
     request: async (_settings, _key, _messages, options) => {
@@ -74,8 +76,9 @@ test("the Jev-guided native round privately generates four replies and delivers 
   });
   const reply = await request({provider:"openai", model:"fixture", customBaseUrl:""}, "key",
     [{id:"learner",role:"user",content:"Explain division",createdAt:time}], { onTextDelta: text => visible.push(text) });
-  expect(generated).toBe(4);
-  expect(pairs).toEqual([["draft_1", "draft_2"], ["draft_3","draft_4"]]);
+  expect(generated).toBe(2);
+  expect(choices).toEqual([["draft_1", "draft_2"]]);
+  expect(legacyPairs).toEqual([]);
   expect(reply.text).toBe("Candidate 1");
   expect(visible).toEqual([]);
   expect(published).toBe(1);
@@ -134,8 +137,8 @@ test("native feedback uses the released Question, its original text and an untou
     else await outcome;
     const full=[MOBILE_TOOL_DEFINITIONS[0]!.name];
     expect(planned).toBe(focus);
-    expect(tools).toEqual(focus?[[],full,[],full]:[full,full,full,full]);
-    expect(histories).toEqual(Array(4).fill(focus?source:"Make one prediction."));
+    expect(tools).toEqual(focus ? [[], full, [], full] : [full, full]);
+    expect(histories).toEqual(Array(focus ? 4 : 2).fill(focus ? source : "Make one prediction."));
     expect(publishedCount).toBe(state==="journal-changed-during-review"?0:1);
     expect(messages).toEqual(before);
   }
@@ -174,7 +177,7 @@ test("ordinary native semantic failures release best effort after one repair", a
     request: async () => { generated++; return { text: "PRIVATE_REJECTED: you will retain this forever.", calls: [], assistantTurn: null, usage: null }; },
   });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
-  expect(generated).toBe(2);
+  expect(generated).toBe(3);
   expect(result.text).toContain("PRIVATE_REJECTED");
   expect(result.calls).toEqual([]);
 });
@@ -224,7 +227,7 @@ test("native synthesis sends source text privately and releases only the newly r
 });
 
 test("native rejected drafts stay private and only approved tools reach the existing effect loop", async () => {
-  let generated = 0, effects = 0; const visible: string[] = [];
+  let generated = 0, effects = 0; const committed: string[] = [], visible: string[] = [];
   const privateRound = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(), activityLearning: noPrediction, onReleased: () => {},
     request: async (_settings, _key, _messages, options) => {
       expect(options?.stream).toBe(false); expect(options?.onTextDelta).toBeUndefined(); expect(options?.onToolCall).toBeUndefined();
@@ -238,11 +241,13 @@ test("native rejected drafts stay private and only approved tools reach the exis
     sessionId: "session", triggeringMessageId: "user", createdAt: time, requestRound: privateRound,
     onTextDelta: text => visible.push(text), executeTool: async (name, _args, context) => {
       effects++; return { ok: true, toolName: name, idempotencyKey: context.idempotencyKey, output: {}, effects: [] };
-    }, commitToolCall: async () => {},
+    }, commitToolCall: async ({ call }) => { committed.push(call.id); },
   });
-  expect(generated).toBe(3); expect(effects).toBe(1);
+  expect(generated).toBe(4);
+  expect(effects).toBe(1);
+  expect(committed).toEqual(["call-2"]);
   expect(result.text).not.toContain("PRIVATE_REJECTED"); expect(visible.join("")).not.toContain("PRIVATE_REJECTED");
-  expect(result.usage?.totalTokens).toBe(6);
+  expect(result.usage?.totalTokens).toBe(8);
 });
 
 test("native no_match retains the reviewed baseline without invoking the outcome predictor", async () => {
@@ -286,8 +291,10 @@ test("native revision receives code-owned repair instructions without the reject
       return { text: repaired ? "This example shows equal groups; try one yourself." : "PRIVATE_REJECTED: you will remember this forever.", calls: [], assistantTurn: null, usage: null };
     } });
   const response = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
-  expect(prompts).toHaveLength(2); expect(prompts[1]).toContain('"revisionChecks"');
-  expect(prompts[1]).toContain('"id":"retention_overclaimed"');
+  expect(prompts).toHaveLength(3);
+  for (const opening of prompts.slice(0, 2)) expect(opening).not.toContain('"revisionChecks"');
+  expect(prompts[2]).toContain('"id":"retention_overclaimed"');
+  expect(prompts[2]).toContain(instruction);
   expect(prompts.join("\n")).not.toContain("PRIVATE_REJECTED");
   expect(response.text).toBe("This example shows equal groups; try one yourself.");
 });

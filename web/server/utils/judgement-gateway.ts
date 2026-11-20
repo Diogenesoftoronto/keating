@@ -13,7 +13,7 @@
  *   echo it back. Failures leave as a stable `{error:{code}}` JSON body.
  */
 import { getHeader, readBody, type H3Event } from "h3";
-import { DEFAULT_SYSTEM_ONE_MODEL, SYSTEM_ONE_ENDPOINT } from "@keating/learner-contracts";
+import { DEFAULT_SYSTEM_ONE_MODEL, MAX_GATEWAY_QUESTION_CHARS, SYSTEM_ONE_ENDPOINT } from "@keating/learner-contracts";
 import {
 	createNotOrganicServerClient,
 	getNotOrganicServerConfig,
@@ -85,7 +85,7 @@ export function validateJudgementGatewayBody(input: unknown): JudgementGatewayVa
 		if (Array.isArray(state) || (isPlainObject(state) && Object.values(state).some((value) => typeof value !== "string"))) {
 			state = JSON.stringify(state);
 		}
-		if (JSON.stringify(input.questions).length > 96_000) return { ok: false, code: "request-invalid" };
+		if (JSON.stringify(input.questions).length > MAX_GATEWAY_QUESTION_CHARS) return { ok: false, code: "request-invalid" };
 	} catch { return { ok: false, code: "request-invalid" }; }
 	if (stateCharacterCount(input.state) > MAX_JUDGEMENT_GATEWAY_STATE_CHARS) {
 		return { ok: false, code: "request-invalid" };

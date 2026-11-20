@@ -8,6 +8,8 @@ export interface ParsedWebSearch {
 	query?: string;
 	sites: WebSearchSite[];
 	text: string;
+	/** A completed search returned readable prose instead of a structured source envelope. */
+	proseResult?: true;
 }
 
 const SEARCH_TOOL_NAMES = new Set([
@@ -92,25 +94,24 @@ const SITE_ARRAY_KEYS = new Set([
 	"searchresults",
 	"search_results",
 ]);
+const SEARCH_ENVELOPE_KEYS = new Set(["content", "data", "details", "output", "payload", "response", "result", "search", "web", "web_search"]);
 
 /** Walk the result object looking for a recognized array containing valid web citations. */
-function findSiteArray(value: unknown, depth = 0, mayAcceptArray = depth === 0): unknown[] | null {
-	if (depth > 4) return null;
-	if (Array.isArray(value)) {
-		if (mayAcceptArray && parseSiteArray(value).length > 0) return value;
-		for (const item of value) {
-			const found = findSiteArray(item, depth + 1, false);
-			if (found) return found;
-		}
-		return null;
+function findSiteArray(value: unknown, collectAll: boolean, depth = 0, mayAcceptArray = depth === 0): unknown[] | null {
+	if (depth > 4 || !value || typeof value !== "object") return null;
+	const array = Array.isArray(value);
+	if (array && mayAcceptArray && value.some(item => normalizeSite(item, 0))) return value;
+	const records: unknown[] = [];
+	for (const [key, child] of Object.entries(value)) {
+		const name = key.toLowerCase();
+		const sourceCollection = !array && SITE_ARRAY_KEYS.has(name);
+		if (collectAll && !array && !sourceCollection && !SEARCH_ENVELOPE_KEYS.has(name)) continue;
+		const found = findSiteArray(child, collectAll, depth + 1, sourceCollection);
+		if (!found) continue;
+		if (!collectAll) return found;
+		for (const record of found) records.push(record);
 	}
-	if (!value || typeof value !== "object") return null;
-	const record = value as Record<string, unknown>;
-	for (const key of Object.keys(record)) {
-		const found = findSiteArray(record[key], depth + 1, SITE_ARRAY_KEYS.has(key.toLowerCase()));
-		if (found) return found;
-	}
-	return null;
+	return records.length ? records : null;
 }
 
 function normalizeHttpUrl(value: string | undefined): string | undefined {
@@ -123,14 +124,16 @@ function normalizeHttpUrl(value: string | undefined): string | undefined {
 	}
 }
 
-function normalizeSite(raw: unknown): WebSearchSite | null {
+const DISPLAY_SNIPPET_CHARS = 240;
+
+function normalizeSite(raw: unknown, snippetChars: number): WebSearchSite | null {
 	if (!raw || typeof raw !== "object") return null;
 	const record = raw as Record<string, unknown>;
 	const url = normalizeHttpUrl(lookupString(record, ["url", "link", "uri", "href"]));
 	if (!url) return null;
 	const title = lookupString(record, ["title", "name"]);
 	const snippet = lookupString(record, ["snippet", "description", "text"]);
-	return { url, title, snippet: snippet?.slice(0, 240) };
+	return { url, title, snippet: snippet?.slice(0, snippetChars) };
 }
 
 // URLs may contain balanced parentheses (Wikipedia's Mercury_(planet)); a
@@ -140,19 +143,31 @@ const URL_PATTERN = new RegExp(String.raw`\[((?:[^\[\]]|\[[^\]]*\])+)\]\((?:<(ht
 const BARE_URL_PATTERN = new RegExp(`(${URL_BODY})`, "g");
 const SEARCH_PREAMBLE = /^UNTRUSTED WEB SEARCH RESULTS[^\n{]*/;
 
-function sitesFromText(text: string): WebSearchSite[] {
+/** Exact URL references can select observed search passages for review. */
+export function webUrlsInText(text: string): string[] {
+	const references = new RegExp(`${URL_PATTERN.source}|(${URL_BODY})`, "g");
+	return [...new Set(Array.from(text.matchAll(references), ([, , angle, link, bare]) => angle ?? link ?? bare.replace(/[.,;:!?]+$/, "")))];
+}
+
+function sitesFromText(text: string, limit = 8): WebSearchSite[] {
 	const sites: WebSearchSite[] = [];
 	let match: RegExpExecArray | null;
 	URL_PATTERN.lastIndex = 0;
-	while ((match = URL_PATTERN.exec(text)) !== null && sites.length < 8) {
-		const url = normalizeHttpUrl((match[2] ?? match[3]).replace(/[.,;:!?]+$/, ""));
+	while ((match = URL_PATTERN.exec(text)) !== null && sites.length < limit) {
+		const target = match[2] ?? match[3];
+		const url = normalizeHttpUrl(limit === Infinity ? target : target.replace(/[.,;:!?]+$/, ""));
 		if (url) {
 			sites.push({ url, title: match[1].trim() || undefined, snippet: undefined });
 		}
 	}
-	if (sites.length === 0) {
+	if (limit === Infinity) {
+		const linked = new Set(sites.map(site => site.url));
+		for (const url of webUrlsInText(text)) {
+			if (normalizeHttpUrl(url) && !linked.has(url)) sites.push({ url });
+		}
+	} else if (sites.length === 0) {
 		BARE_URL_PATTERN.lastIndex = 0;
-		while ((match = BARE_URL_PATTERN.exec(text)) !== null && sites.length < 8) {
+		while ((match = BARE_URL_PATTERN.exec(text)) !== null && sites.length < limit) {
 			const url = normalizeHttpUrl(match[1].replace(/[.,;:!?<>]+$/, ""));
 			if (url) sites.push({ url, title: undefined, snippet: undefined });
 		}
@@ -160,35 +175,35 @@ function sitesFromText(text: string): WebSearchSite[] {
 	return sites;
 }
 
-export function parseWebSearchResult(result: unknown, args: unknown): ParsedWebSearch {
+export function parseWebSearchResult(result: unknown, args: unknown, snippetChars: number | "complete" = DISPLAY_SNIPPET_CHARS): ParsedWebSearch {
+	const complete = snippetChars === "complete";
+	const length = complete ? Infinity : snippetChars;
 	const query = queryFromArgs(args) ?? queryFromArgs(result);
 	const text = textFromResult(result);
 	let sites: WebSearchSite[] = [];
-	const array = findSiteArray(result);
+	const array = findSiteArray(result, complete);
 	if (array) {
-		sites = parseSiteArray(array);
+		sites = parseSiteArray(array, length);
 	}
-	if (sites.length === 0 && typeof result === "string") {
-		try {
-			const parsed = JSON.parse(result) as unknown;
-			const jsonArray = findSiteArray(parsed);
-			if (jsonArray) sites = parseSiteArray(jsonArray);
-		} catch {
-			/* not JSON — fall through */
-		}
-	}
+	let structuredText = Boolean(array);
 	if (sites.length === 0 && text) {
+		const payload = text.replace(SEARCH_PREAMBLE, "").trim();
 		try {
 			// Hosted search prefixes its JSON with an untrusted-content warning line.
-			const parsedText = JSON.parse(text.replace(SEARCH_PREAMBLE, "").trim()) as unknown;
-			const jsonArray = findSiteArray(parsedText);
-			if (jsonArray) sites = parseSiteArray(jsonArray);
+			const parsedText = JSON.parse(payload) as unknown;
+			structuredText = parsedText !== null && typeof parsedText === "object";
+			const jsonArray = findSiteArray(parsedText, complete);
+			if (jsonArray) sites = parseSiteArray(jsonArray, length);
 		} catch {
-			/* not JSON — fall through */
+			// Omit a broken provider envelope from review as well. A Markdown label remains prose.
+			structuredText = SEARCH_PREAMBLE.test(text) || /^(?:\{|\[\s*[{\["])/u.test(payload);
 		}
 	}
-	if (sites.length === 0) sites = sitesFromText(text);
-	return { query, sites: [...new Map(sites.map(site => [site.url, withoutUrlTitle(site)])).values()].slice(0, 8), text };
+	if (sites.length === 0 && !(complete && structuredText)) sites = sitesFromText(text, complete ? Infinity : 8);
+	const normalized = sites.map(withoutUrlTitle);
+	// A review groups all observed passages by URL. Cards keep their existing display limits.
+	return { query, sites: complete ? normalized : [...new Map(normalized.map(site => [site.url, site])).values()].slice(0, 8), text,
+		...(complete && text && !structuredText ? { proseResult: true as const } : {}) };
 }
 
 /** Providers fall back to the URL as a title; the card already shows the domain. */
@@ -198,10 +213,10 @@ function withoutUrlTitle(site: WebSearchSite): WebSearchSite {
 	return site;
 }
 
-function parseSiteArray(value: unknown[]): WebSearchSite[] {
+function parseSiteArray(value: unknown[], snippetChars = DISPLAY_SNIPPET_CHARS): WebSearchSite[] {
 	const sites: WebSearchSite[] = [];
 	for (const raw of value) {
-		const site = normalizeSite(raw);
+		const site = normalizeSite(raw, snippetChars);
 		if (site) sites.push(site);
 	}
 	return sites;

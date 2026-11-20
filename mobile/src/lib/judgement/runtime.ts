@@ -1,4 +1,7 @@
-import { createSystemOneCaller, createLocalJudgementCaller, type LocalLabelScorer, type JudgementCaller, type JudgementOutcome, type RouterPolicy } from "@keating/learner-contracts";
+import { createSystemOneCaller, createLocalJudgementCaller, MAX_GATEWAY_QUESTION_CHARS, type JudgementBackendKey, type LocalLabelScorer, type JudgementCaller, type JudgementOutcome, type RouterPolicy, type TeachingDraftReviewer } from "@keating/learner-contracts";
+import { hostedJudgementTokenLimits } from "@keating/runtime-config";
+import { JULIA_MODEL } from "../../../../shared/julia/manifest";
+import { MOBILE_LITERT_CONTEXT_TOKENS } from "../offline-model-contract";
 import { notOrganicJudgementRequest } from "../notorganic-account/client";
 import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, mobileJuliaCalibrationStore, type InstalledMobileCalibration, type MobileJudgementCalibrationStore } from "./calibration";
 import { createMobileLocalLabelScorer, MOBILE_LOCAL_JUDGEMENT_MODEL } from "./local-scorer";
@@ -10,6 +13,28 @@ export interface MobileJudgementRuntime {
   readonly localEnabled?: boolean;
   readonly policy: RouterPolicy;
   readonly call: JudgementCaller;
+}
+
+function teachingJudgementModel(key: JudgementBackendKey): TeachingDraftReviewer["judgementModel"] {
+  if (key.backend === "system-one") return { id: key.model, ...hostedJudgementTokenLimits(key.model, "notorganic") };
+  const local = key.backend !== "local" ? null : key.model === MOBILE_JULIA_MODEL ? JULIA_MODEL.contextTokens
+    : key.model === MOBILE_LOCAL_JUDGEMENT_MODEL ? MOBILE_LITERT_CONTEXT_TOKENS : null;
+  return { id: key.model, requestTokens: local, stateQuestionTokens: local };
+}
+
+/** Try the user's preferred local scorer first. Each permitted reviewer gets its own view of the original turn. */
+export function mobileTeachingDraftReviewers(policy: RouterPolicy): readonly TeachingDraftReviewer[] {
+  return policy.tiers.map(tier => {
+    const judge: JudgementCaller = tier.key.backend === "local" && policy.tiers.length > 1 ? async (request, signal) => {
+      const result = await tier.call(request, signal);
+      if (result.ok && !Object.keys(request.questions).every(id => Object.hasOwn(result.response.answers, id))) {
+        return { ok: false, error: { code: "backend-unavailable", retryable: false } };
+      }
+      return result;
+    } : tier.call;
+    return { judgementModel: teachingJudgementModel(tier.key), judge,
+      ...(tier.key.backend === "system-one" ? { maxQuestionChars: MAX_GATEWAY_QUESTION_CHARS } : {}) };
+  });
 }
 
 /** A fresh operation pins either a verified fitted model or the resolved hosted alias. */

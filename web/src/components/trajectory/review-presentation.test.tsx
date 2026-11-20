@@ -55,7 +55,7 @@ describe("trajectory review presentation", () => {
 
 		expect(html).toContain("<h2");
 		expect(html).toContain("Diagnosis");
-		expect(html).toContain("Tool call");
+		expect(html).toContain("Used learner state");
 		expect(html).toContain("learner_state");
 		expect(html).toContain("Failed");
 		expect(html).toContain("data-review-highlight=\"true\"");

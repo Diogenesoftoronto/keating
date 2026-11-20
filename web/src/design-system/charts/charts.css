@@ -54,7 +54,13 @@
 .kc-line polyline {stroke-width:2}
 .kc-sample {position:absolute;width:.3846rem;height:.3846rem}
 .kc-sample[data-end=false]:not(:hover):not(:focus) {background:transparent!important;outline:none}
-.kc-ends>span {position:absolute;max-width:100%;transform:translateY(-50%)}
+.kc-ends>span {position:absolute;display:flex;align-items:baseline;gap:.24rem;max-width:100%;min-width:0;transform:translateY(-50%)}
+.kc-ends>span>b {flex:none;font-weight:600}
+.kc-now {position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--ink);pointer-events:none}
+.kc-now>i {position:absolute;left:-.24rem;width:.433rem;height:.433rem;margin-top:-.216rem;background:var(--amber);box-shadow:0 0 0 1.5px var(--ink)}
+.kc-now>em {position:absolute;left:.36rem;transform:translateY(-135%);padding:0 .14rem;background:var(--card);color:var(--ink);font-style:normal;white-space:nowrap}
+.kc-now>em[data-flip] {left:auto;right:.36rem}
+.kc-sample[data-mark=ring] {background:var(--card)!important;outline:none;box-shadow:inset 0 0 0 2px currentColor,0 0 0 2px var(--card)}
 .kc-cross {position:absolute;left:50%;height:var(--kc-line-height);border-left:1px dashed var(--ink);pointer-events:none}
 .kc-xlabels {width:72%}
 .kc-grid {display:grid;gap:.1442rem}
@@ -102,3 +108,4 @@ html[data-reduce-motion="true"] :is(.kc-plot button,.kc-legend button,[data-kc-e
   :root:not([data-reduce-motion="true"]) .kc-steps[data-live] [data-step=current] {animation:kc-step-tick 1s steps(2,jump-none) infinite}
 }
 @media (forced-colors:active) {.kc-meter .kc-live {display:none}}
+@media (forced-colors: active) { .kc-now { border-color: CanvasText; } .kc-now>i { forced-color-adjust: none; background: Highlight; box-shadow: 0 0 0 1.5px CanvasText; } }

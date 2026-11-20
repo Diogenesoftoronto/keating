@@ -8,6 +8,15 @@ import { composeSystemPrompt } from "@/lib/system-prompt";
 import { presentedErrorMessage } from "@/lib/error-messages";
 import type { ProviderDefinition } from "@/lib/provider-config";
 import type { UiDocument } from "@keating/learner-contracts";
+import type { ChatMessage } from "@/lib/types";
+
+/** The tutor reads recent native messages. The reviewer starts with the whole text transcript. */
+export function mobileTeachingHistory(messages: readonly ChatMessage[]) {
+  return {
+    recent: messages.slice(-40),
+    reviewHistory: messages.map(({ role, content }) => ({ role, content })),
+  };
+}
 
 export interface AccountPedagogy {
   systemPrompt?: string | null;

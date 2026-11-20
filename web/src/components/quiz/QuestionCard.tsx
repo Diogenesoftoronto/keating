@@ -5,7 +5,7 @@
  */
 import { KeatingGlyph } from "../../design-system/glyphs";
 import { useMemo } from "react";
-import { css, cx } from "../../../styled-system/css";
+import { IconButton } from "../../design-system/kit";
 import type { QuizQuestion } from "../../keating/core";
 import { formatQuizDuration, isQuickQuizAnswer } from "./game";
 import {
@@ -20,7 +20,6 @@ import { QuizResultBadge } from "./QuizResultBadge";
 import { ReframeToggle } from "./ReframeToggle";
 import { showsBinaryResult } from "./quiz-presentation";
 import { isCorrect, questionCredit } from "./quiz-scoring";
-import { quizStyles, shared, sm } from "./quiz-styles";
 
 export interface QuestionCardProps {
 	q: QuizQuestion;
@@ -71,34 +70,16 @@ function QuestionActions({ q, revealed, timeMs, timedOut, answer, bookmarked, on
 	onToggleBookmark: () => void;
 	onSpeak: () => void;
 }) {
+	const quick = revealed && isQuickQuizAnswer({ timeMs, timeLimitSeconds: q.timeLimit, answered: Boolean(answer.trim()), timedOut });
 	return (
-		<div className={css({ display: "flex", flexShrink: 0, alignItems: "center", justifyContent: "flex-end", gap: "0.25rem" })}>
-			<button
-				type="button"
-				onClick={onSpeak}
-				className={quizStyles.iconButton}
-				aria-label="Read question aloud"
-				title="Read aloud"
-			>
-				<KeatingGlyph name="speaker" size={14} />
-			</button>
-			<button
-				type="button"
-				onClick={onToggleBookmark}
-				className={cx(
-					quizStyles.iconButton,
-					bookmarked && css({ color: "#f59e0b", _hover: { color: "#f59e0b" } }),
-				)}
-				aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
-				title={bookmarked ? "Bookmarked" : "Bookmark for review"}
-			>
-				<KeatingGlyph name="bookmark" size={14} active={bookmarked} />
-			</button>
-			{revealed && timedOut ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Timed out</span> : null}
-			{revealed && isQuickQuizAnswer({ timeMs, timeLimitSeconds: q.timeLimit, answered: Boolean(answer.trim()), timedOut }) ? <span title="Answered within the first quarter of the time budget. Timing does not indicate correctness." className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Quick answer</span> : null}
+		<div className="quiz-card-actions">
+			<IconButton glyph="speaker" label="Read question aloud" size="sm" onClick={onSpeak} />
+			<IconButton glyph="bookmark" label={bookmarked ? "Remove bookmark" : "Bookmark question"} size="sm" pressed={bookmarked} onClick={onToggleBookmark} />
+			{revealed && timedOut ? <span className="quiz-meta">Timed out</span> : null}
+			{quick ? <span className="quiz-meta" title="Answered within the first quarter of the time budget. Timing does not indicate correctness.">Quick answer</span> : null}
 			{revealed && typeof timeMs === "number" && (
-				<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.625rem", color: "var(--muted-foreground)" }))}>
-					<KeatingGlyph name="clock" size={14} />
+				<span className="quiz-meta">
+					<KeatingGlyph name="clock" size={13} />
 					<span aria-label={`Time on question: ${timeMs} milliseconds`}>{formatQuizDuration(timeMs)}</span>
 				</span>
 			)}
@@ -144,17 +125,17 @@ export function QuestionCard({
 	}, [answer, q.type]);
 
 	return (
-		<div className={quizStyles.card}>
-			<div className={css({ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "0.5rem", [sm]: { flexDirection: "row", alignItems: "flex-start" } })}>
-				<div className={cx(shared.minFlex, shared.stack2)}>
+		<div className="quiz-card">
+			<div className="quiz-card-head">
+				<div className="quiz-card-prompt">
 					{revealed ? (
-						<span className={cx("font-terminal", css({ fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>
+						<span className="quiz-meta">
 							{index + 1} · {q.level}
 						</span>
 					) : null}
-					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" })}>
+					<div>
 						{isMultiBlankFillIn ? (
-							<div className={shared.minFlex}>
+							<div className="quiz-card-prompt">
 								<MultiBlankFillIn
 									question={displayQuestion}
 									blanks={q.blanks ?? []}

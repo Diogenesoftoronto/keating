@@ -1,0 +1,92 @@
+/* QuizRenderer (the scored quiz with reframes, slider and dropdown answers). Board L1: the lesson
+   frame is the only box; fields are wells, results are flat rows, the one primary is ink.
+   Shared parts come from lesson.css; only what the vocabulary lacks lives here. */
+
+/* Head tools: the per-question timer, elapsed time, score and the appearance picker. */
+.quiz-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .1rem .42rem; }
+.quiz-tools > span { display: inline-flex; align-items: center; gap: .18rem; }
+.quiz-tools > strong { font: 600 .5rem/1.5 var(--font-mono); color: var(--ink); }
+.quiz-effects { position: relative; }
+.quiz-effects > summary { list-style: none; display: grid; place-items: center; width: 1.058rem; height: 1.058rem; cursor: pointer; color: var(--ink-soft); border-radius: .1923rem; }
+.quiz-effects > summary::-webkit-details-marker { display: none; }
+.quiz-effects > summary:hover { color: var(--ink); background: var(--k-wash); }
+.quiz-effects[open] { display: inline-flex; align-items: center; gap: .24rem; }
+.quiz-effects label { display: inline-flex; align-items: center; gap: .24rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+/* The shader backdrop was the old CRT header; the frame head carries the halftone instead. */
+.quiz-shader { display: none; }
+
+/* A question: prompt and quiet actions on one line, then the answer. */
+.quiz-card { display: grid; gap: .42rem; min-width: 0; }
+.quiz-card-head { display: flex; align-items: flex-start; gap: .34rem; min-width: 0; }
+.quiz-card-prompt { display: grid; gap: .24rem; flex: 1; min-width: 0; }
+.quiz-card-prompt > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: .34rem; }
+.quiz-card-actions { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 .24rem; margin-top: -.15rem; }
+.quiz-meta { display: inline-flex; align-items: center; gap: .18rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.quiz-card .k-icon[aria-pressed=true] { color: var(--amber); }
+.quiz-tf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .24rem; }
+@container (max-width: 17rem) { .quiz-card-head { flex-direction: column; } .quiz-card-actions { margin: 0; justify-content: flex-start; } }
+
+/* Fields are wells (lesson.css base layer). After grading, a 3px leading bar says right or wrong, as on choices. */
+.quiz-field { width: 100%; }
+textarea.quiz-field { resize: vertical; }
+.quiz-field[data-result=correct] { box-shadow: inset 3px 0 0 var(--accent-green); }
+.quiz-field[data-result=wrong] { box-shadow: inset 3px 0 0 var(--destructive); }
+.quiz-blanks { font: .625rem/2 var(--font-ui); overflow-wrap: break-word; }
+.quiz-blanks > span:not(.quiz-blank) { white-space: pre-wrap; }
+.quiz-blank { display: inline-flex; max-width: 100%; align-items: baseline; gap: .18rem; margin-inline: .15rem; vertical-align: baseline; }
+.quiz-blank > input { display: inline-block; width: 6rem; min-height: 1.346rem; text-align: center; }
+.quiz-slider { display: grid; gap: .24rem; }
+.quiz-slider > div { display: flex; align-items: center; gap: .34rem; }
+.quiz-slider output { font: 700 .9rem/1.15 var(--mono-display, var(--font-mono)); font-variant-numeric: tabular-nums; }
+.quiz-reframe > span { flex: none; }
+.quiz-reframe .keating-select { width: auto; }
+.quiz-reframe { display: inline-flex; align-items: center; gap: .24rem; width: fit-content; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.quiz-reframe .keating-select { min-height: 1.058rem; padding-block: .1rem; font: .55rem/1.4 var(--font-ui); }
+
+/* The key and its explanation under a graded question: an amber hint line on a soft rule. */
+.quiz-reveal { display: flex; align-items: flex-start; gap: .3rem; border-top: 1px solid var(--line-soft); padding-top: .3rem; font: .6rem/1.45 var(--font-ui); color: var(--ink-soft); }
+.quiz-reveal > svg { flex: none; color: var(--amber); margin-top: .1rem; }
+.quiz-reveal > div { display: grid; gap: .1rem; }
+.quiz-reveal p { margin: 0; }
+.quiz-reveal b { color: var(--ink); font-weight: 600; }
+.quiz-reveal small { font: .5rem/1.5 var(--font-mono); }
+
+/* Results: a mono line of facts, then the review sections as flat rows. */
+.quiz-result-meta { display: flex; flex-wrap: wrap; gap: .1rem .6rem; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.quiz-review-list { display: grid; }
+.quiz-review-list > * { padding-block: .42rem; }
+.quiz-review-list > * + * { border-top: 1px solid var(--line-soft); }
+.quiz-review-panel { padding-block: .34rem; }
+.quiz-review-panel .lesson-rows > * { align-items: center; }
+.quiz-review-panel :is(.kc-meter-row, .lesson-rows > * > .kc-meter) { flex: 1; min-width: 3rem; }
+.quiz-review-panel .lesson-rows > * > span:first-child { min-width: 5.5rem; text-transform: capitalize; }
+
+/* The kit Select is a button trigger with a field border; inside the frame it is a well like any field. */
+body .lesson-frame :is(.quiz-card, .quiz-effects, .quiz-reframe) button.keating-select.keating-select { border: 0; border-radius: .1923rem; background: var(--paper-deep); box-shadow: none; min-height: 1.346rem; font: .6rem/1.45 var(--font-ui); color: var(--ink); }
+body .lesson-frame .quiz-reframe button.keating-select.keating-select { min-height: 1.058rem; font-size: .55rem; }
+
+/* QuizResultCard: each question is a flat row that opens its details under the same rule. */
+.quiz-result-rows { gap: 0; }
+.quiz-result-toggle { display: flex; width: 100%; flex-wrap: wrap; align-items: baseline; gap: .3rem; padding: .1rem 0; border: 0; background: transparent; text-align: start; font: .6rem/1.5 var(--font-ui); color: var(--ink); cursor: pointer; }
+.quiz-result-toggle:hover { background: var(--k-wash); }
+.quiz-result-toggle > svg { flex: none; transform: translateY(.12rem); }
+.quiz-result-question { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.quiz-result-detail { display: grid; gap: .16rem; margin-top: .16rem; padding-inline-start: .95rem; font: .6rem/1.5 var(--font-ui); }
+.quiz-result-detail p { margin: 0; }
+.quiz-result-note { display: flex; align-items: flex-start; gap: .24rem; color: var(--ink-soft); }
+.quiz-result-note > svg { flex: none; margin-top: .12rem; color: var(--accent-green); }
+.quiz-result-note[data-tone=hint] > svg { color: var(--amber); }
+@media (pointer: coarse) { .quiz-effects > summary { width: 44px; height: 44px; } .quiz-result-toggle { min-height: 44px; } }
+
+/* Glyphs keep their board size at every width (13px in actions, 15px in icon buttons). */
+.quiz-frame :is(.lesson-foot, .quiz-card-actions, .quiz-reveal, .quiz-tools) svg[data-glyph] { width: .625rem; height: .625rem; }
+.quiz-frame .lesson-foot .activity-back-action svg[data-glyph], .quiz-card-actions .k-icon svg[data-glyph] { width: .72rem; height: .72rem; }
+.quiz-card .k-icon[aria-pressed=true] { border-color: transparent; background: transparent; }
+/* Head never wraps (board decision 1): the title may take two lines, the tools stay on the right. */
+.quiz-frame .lesson-head { flex-wrap: nowrap; }
+.quiz-frame .lesson-tools { flex: none; }
+@container (max-width: 25rem) { .quiz-frame .lesson-head > small { display: none; } }
+/* Wells in dark mix 7% ink so they read (board decision 4). */
+.dark :is(.quiz-frame, .lesson-frame[data-quiz]) { --lesson-well: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }
+.dark .lesson-frame :is(input.quiz-field, .keating-select) { background: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }
+html.dark body .lesson-frame :is(.quiz-card, .quiz-effects, .quiz-reframe) button.keating-select.keating-select { background: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }

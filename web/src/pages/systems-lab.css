@@ -141,8 +141,9 @@ html.dark .systems-lab::before { mix-blend-mode: soft-light; opacity: .18; }
 .systems-lab { --lab-wash: var(--green-wash); --lab-wash-ink: var(--green-deep); }
 /* Dark: neutral light inks instead of green-tinted ones, so text never reads green on green.
    Green stays for marks (selected underline, icons, the Run action, links). */
-html.dark .systems-lab {
-  color-scheme: dark;
+html.dark .systems-lab { color-scheme: dark; }
+/* Named themes (Midnight, P3) bring their own inks; only the default dark gets these. */
+html.dark:not([data-theme]) .systems-lab {
   --ink: #f1f3f1;
   --ink-soft: #c9cfcb;
   --line: rgb(255 255 255 / 18%);

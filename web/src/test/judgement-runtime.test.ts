@@ -12,6 +12,41 @@ const question: RoutedQuestion<boolean> = {
     ? decided(true, null, provenance) : abstained("below-confidence-floor", provenance),
 };
 const settings = (backend: JudgementModelSettings["backend"]): JudgementModelSettings => ({ backend, localModelId: local.model, gatewayPath: "/api/judgement" });
+
+test("hosted review budgets recognize Not Organic and TypeSafe Jev identities without guessing custom model limits", () => {
+  const make = (model?: string, provider?: "typesafe") => createWebJudgementRuntime({
+    settings: { ...settings("hosted"), hostedProvider: provider, ...(provider ? { customModel: model } : {}) },
+    hosted: { model }, calibration: {},
+  }).judgementModel;
+  for (const id of [undefined, "judgement", "judgement-jev/jev-1.14.0", "jev-1.13", "jev-latest"]) {
+    expect(make(id)).toEqual({ id: id ?? "judgement", requestTokens: 64_000, stateQuestionTokens: 32_000 });
+  }
+  expect(make("jev-preview", "typesafe")).toEqual({ id: "jev-preview", requestTokens: 64_000, stateQuestionTokens: 32_000 });
+  for (const model of ["custom", "other/jev-1.14.0", "jev-1.14.0-custom"]) {
+    expect(make(model)).toEqual({ id: model, requestTokens: null, stateQuestionTokens: null });
+  }
+  expect(make("judgement", "typesafe")).toEqual({ id: "judgement", requestTokens: null, stateQuestionTokens: null });
+  const localOnly = createWebJudgementRuntime({ settings: { ...settings("local"), localModelId: "custom-local" }, calibration: {} });
+  expect(localOnly.judgementModel).toEqual({ id: "custom-local", requestTokens: null, stateQuestionTokens: null });
+});
+
+test("each permitted reviewer keeps its own override and budget in preference order", () => {
+  const options: WebJudgementRuntimeOptions = { settings: { ...settings("hosted"), requestTokens: 20_000, stateQuestionTokens: 9_000 },
+    hosted: { requestTokens: 12_000 }, calibration: {} };
+  expect(createWebJudgementRuntime(options).judgementModel).toMatchObject({ requestTokens: 12_000, stateQuestionTokens: 9_000 });
+  const scorer = { modelId: local.model, contextWindowTokens: 2_048, scoreLabels: async () => null };
+  const mixed = createWebJudgementRuntime({ ...options, localScorer: scorer });
+  expect(mixed.judgementModel).toEqual({ id: "judgement", requestTokens: 12_000, stateQuestionTokens: 9_000 });
+  expect(mixed.teachingTiers?.map(({ judgementModel, maxQuestionChars }) => [judgementModel, maxQuestionChars])).toEqual([
+    [mixed.judgementModel, 96_000], [{ id: local.model, requestTokens: 2_048, stateQuestionTokens: 2_048 }, undefined],
+  ]);
+  expect(createWebJudgementRuntime({ ...options, localScorer: { ...scorer, modelId: "unselected" } }).judgementModel)
+    .toMatchObject({ requestTokens: 12_000, stateQuestionTokens: 9_000 });
+  const pinned = createWebJudgementRuntime({ ...options, localScorer: scorer,
+    calibration: { hosted: calibration(hosted) }, pinnedBackend: hosted });
+  expect(pinned.judgementModel).toEqual({ id: hosted.model, requestTokens: 12_000, stateQuestionTokens: 9_000 });
+  expect(pinned.teachingTiers?.map(({ key }) => key)).toEqual([hosted]);
+});
 const calibration = (backend: JudgementBackendKey): WebJudgementCalibration => ({ backend, table: { entries: {
   [thresholdKey(backend, questionDigest(question.question))]: { deferBelow: 0.5, actAtOrAbove: 0.9 },
 } } });

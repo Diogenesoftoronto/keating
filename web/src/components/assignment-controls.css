@@ -56,3 +56,21 @@
   .submission-attachments .submission-attachments__button,
   .task-course .task-course__button { transition: none; }
 }
+
+/* Inside a lesson frame's footer: a quiet borderless clip button with the bloom, the limits in mono.
+   Sizes follow lesson.css RELATIVE SIZE (icon button 28px; touch keeps 44px through padding). */
+.lesson-foot .submission-attachments { padding-block: 0; gap: .2rem; font-size: .55rem; }
+.lesson-foot .submission-attachments .submission-attachments__toolbar { gap: .1rem .3rem; }
+.lesson-foot .submission-attachments .submission-attachments__button { min-width: 1.346rem; min-height: 1.346rem; padding: 0 .2rem; border: 0; background: transparent; color: var(--ink-soft); font-size: .505rem; }
+.lesson-foot .submission-attachments .submission-attachments__button:hover:not(:disabled) { border: 0; background: var(--k-wash); color: var(--ink); }
+.lesson-foot .submission-attachments .submission-attachments__button svg { flex-basis: 15px; width: 15px; height: 15px; }
+.lesson-foot .submission-attachments .submission-attachments__add { width: 1.346rem; padding: 0; }
+.lesson-foot .submission-attachments .submission-attachments__remove { flex: 0 0 1.058rem; width: 1.058rem; height: 1.058rem; min-width: 1.058rem; min-height: 1.058rem; }
+.lesson-foot .assignment-control__hint, .lesson-foot .assignment-control__status { font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.lesson-foot .submission-attachments__file { gap: .3rem; padding-block: .2rem; border-bottom-color: var(--line-soft); }
+.lesson-foot .submission-attachments__file-icon { flex-basis: 13px; width: 13px; height: 13px; }
+.lesson-foot .submission-attachments__filename { font-size: .55rem; font-weight: 500; }
+.lesson-foot .assignment-control__error { font-size: .55rem; }
+@media (pointer: coarse) {
+  .lesson-foot .submission-attachments .submission-attachments__button { min-width: 44px; min-height: 44px; }
+}

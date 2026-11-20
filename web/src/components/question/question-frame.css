@@ -1,0 +1,40 @@
+/* QuestionRenderer (the multi-question quick check). Board L1: the frame is the only box. The question
+   bodies and navigation under ./ pass Panda boxes (bordered fields, filled secondary buttons); these
+   unlayered rules beat Panda's layered utilities and turn them into wells, quiet actions and one ink
+   primary without rewriting every body. */
+.question-progress { display: flex; align-items: center; gap: .24rem; min-width: 0; }
+.question-progress > .lesson-round { flex: 1; min-width: 0; }
+.question-progress > .activity-back-action { flex: none; padding: .2rem; }
+.question-collapsed { margin: 0; font: .6rem/1.5 var(--font-ui); color: var(--ink-soft); overflow-wrap: anywhere; }
+.question-stage { display: grid; gap: .42rem; max-width: 100%; }
+.question-about > summary { color: var(--ink-soft); }
+
+/* Fields are wells. */
+.question-frame input:not([type=checkbox],[type=radio],[type=range],[type=file]) {
+	border: 0; border-radius: .1923rem; background: var(--paper-deep); color: var(--ink); box-shadow: none;
+	min-height: 1.346rem; padding: .3rem .43rem; font: .6rem/1.45 var(--font-ui);
+}
+body .question-frame button.keating-select.keating-select { border: 0; border-radius: .1923rem; background: var(--paper-deep); box-shadow: none; min-height: 1.346rem; font: .6rem/1.45 var(--font-ui); color: var(--ink); }
+
+/* The navigation is the frame footer, drawn from inside the body so it bleeds to the frame edges. */
+.lesson-body > .question-actions { margin: .06rem -.58rem -.48rem; max-width: none; }
+.question-actions > div { display: flex; flex: 1; align-items: center; gap: .24rem; min-width: 0; }
+.question-frame .question-actions .activity-back-action {
+	display: inline-flex; align-items: center; gap: .24rem; min-height: 1.154rem; margin-inline-start: -.34rem;
+	border: 0; border-radius: .1923rem; background: transparent; box-shadow: none; padding: 0 .34rem;
+	color: var(--ink-soft); font: .55rem/1.2 var(--font-mono);
+}
+.question-frame .question-actions .activity-back-action:hover:not(:disabled) { color: var(--ink); background: var(--k-wash); }
+.question-frame .question-actions .activity-main-action {
+	display: inline-flex; align-items: center; gap: .24rem; margin-inline-start: auto; min-height: 1.154rem;
+	border: 0; border-radius: .1923rem; background: var(--ink); color: var(--paper); box-shadow: none;
+	padding: 0 .385rem; font: 600 .505rem/1.2 var(--font-ui);
+}
+.question-frame .question-actions .activity-main-action:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 88%, var(--paper)); }
+.question-frame .question-actions button:disabled { opacity: .54; }
+.question-frame .question-actions button > svg { width: .625rem; height: .625rem; }
+@media (pointer: coarse) { .question-frame .question-actions button { min-height: 44px; } }
+.question-frame :is(.question-actions, .question-progress) svg[data-glyph] { width: .625rem; height: .625rem; }
+.dark .question-frame { --lesson-well: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }
+.dark .question-frame :is(input:not([type=checkbox],[type=radio],[type=range],[type=file]), .keating-select) { background: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }
+html.dark body .question-frame button.keating-select.keating-select { background: color-mix(in srgb, var(--paper-deep) 93%, var(--ink)); }

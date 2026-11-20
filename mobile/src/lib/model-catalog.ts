@@ -2,7 +2,7 @@ import { SERVICE_ENDPOINTS, DEFAULT_MODELS, MINIMAX_M31_FLASH_PROFILE, MODEL_CHO
 import { providerDefinition } from "./provider-config";
 import { NATIVE_PROVIDER_IDS, type ProviderId, type ProviderSettings } from "./types";
 import type { ReasoningLevel } from "./ui-settings";
-import { OFFLINE_MODELS } from "./offline-model-contract";
+import { MOBILE_LITERT_CONTEXT_TOKENS, OFFLINE_MODELS } from "./offline-model-contract";
 
 export const MODELS_DEV_CATALOG_URL = SERVICE_ENDPOINTS.modelsDev;
 export const LONG_CONTEXT_THRESHOLD = 256_000;
@@ -447,7 +447,7 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     id: model.id, name: model.name,
     description: model.id === "gemma-4-e4b" ? "Offline text, images and audio. Optional 3.66 GB download; needs more memory than MiniCPM5." : "Offline text tutor. Optional 1.55 GB download in Settings.",
     reasoning: false, reasoningLevels: ["off"], temperature: true, toolCall: false, vision: model.id === "gemma-4-e4b",
-    contextWindow: 4096, maxOutputTokens: 512, nativeProvider: "litert", transport: "native-litert",
+    contextWindow: MOBILE_LITERT_CONTEXT_TOKENS, maxOutputTokens: 512, nativeProvider: "litert", transport: "native-litert",
     callable: true, unavailabilityReason: null, recoveryHint: null, source: "built-in",
   })),
   {

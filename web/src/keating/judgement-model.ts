@@ -12,9 +12,7 @@ import { desktopOfflineBridge, DESKTOP_OFFLINE_MODEL } from "../lib/desktop-offl
 
 const JUDGEMENT_MODEL_KEY = "keating:judgement-model";
 export const JUDGEMENT_MODEL_CHANGED_EVENT = "keating:judgement-model-changed";
-/** TypeSafe's documented Jev request budgets. */
-export const JEV_REQUEST_TOKEN_LIMIT = 64_000;
-export const JEV_STATE_QUESTION_TOKEN_LIMIT = 32_000;
+export { JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT } from "@keating/runtime-config";
 
 /**
  * Which rung of the cascade may answer.
@@ -67,7 +65,7 @@ function cleanString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeContextWindow(value: unknown): number | null {
+export function normalizeContextWindow(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 512 && value <= 2_000_000
     ? value : null;
 }

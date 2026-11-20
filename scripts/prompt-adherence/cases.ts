@@ -518,6 +518,13 @@ export const JUDGE_FIXTURES: readonly TeachingPolicyJudgeFixture[] = [
   ...pair("reuse-supplied-goal", caseById("return-to-saved-project"), "known_context_reasked",
     "You already checked the 3.3 V supply. Your next unfinished step is reading a sensor value, so let's resume there.",
     "Before we can resume, tell me what your weather-station project is meant to do and what you completed last session."),
+  ...pair("partially-answered-setup", {
+    family: "protocol-learner-fact-grounding", split: "development",
+    turn: { ...EMPTY_TURN, learnerMessage: "I installed the sensor myself.",
+      conversation: [{ role: "assistant", content: "Who installed the sensor, and has anyone calibrated it?" }] },
+  }, "learner_fact_overstated",
+    "You installed the sensor. Its calibration status is still open.",
+    "You installed the sensor. You confirmed that nobody has calibrated it."),
   ...pair("target-fraction-gap", caseById("fraction-denominator-gap"), "gap_ignored",
     "Adding the numerators makes sense here, but the pieces stay quarters. Two quarter-pieces make 2/4, not 2/8.",
     "Adding both the numerators and the denominators is correct here. Two quarter-pieces make 2/8."),

@@ -306,3 +306,7 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
   .ch-reason {min-height:44px;padding-inline:.29rem}
   .ch-reason select {min-height:44px}
 }
+
+/* Wide screens: let the reading column grow (it is a max-width, so it still shrinks with the panel). ~80ch at the desktop reply size. */
+@media (min-width:1280px) { .chat-page-panel {--ch-column:46rem} }
+@media (min-width:1680px) { .chat-page-panel {--ch-column:52rem} }

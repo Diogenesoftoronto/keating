@@ -2,6 +2,7 @@ import { KeatingGlyph } from "../design-system/glyphs";
 import { projectTeachingDraftSelection, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { css } from "../../styled-system/css";
 import { describeTeachingCheck } from "../keating/judgement/check-descriptions";
+import { comparisonDrafts, draftOrigin } from "../keating/judgement/draft-progress";
 import { DiagnosticHelp } from "./DiagnosticHelp";
 
 const block = css({ display: "grid", gap: ".25rem", minWidth: 0, overflowWrap: "anywhere" });
@@ -22,7 +23,7 @@ export function MessageDraftDecision({ snapshot }: { snapshot: TeachingDraftSnap
   const selection = projectTeachingDraftSelection(snapshot);
   if (!selection) return null;
   const released = snapshot.attempts.find(attempt => attempt.attempt === selection.attempt)!;
-  const flagged = snapshot.attempts.filter(attempt => attempt.attempt < released.attempt).flatMap(attempt =>
+  const flagged = comparisonDrafts(snapshot, released).flatMap(attempt =>
     attempt.checks.filter(check => check.status !== "pass").map(check => ({
       attempt: attempt.attempt,
       check,
@@ -34,6 +35,8 @@ export function MessageDraftDecision({ snapshot }: { snapshot: TeachingDraftSnap
     ? "Keating picked the draft with the requested prediction activity."
     : selection.rule === "presentation-only-checkpoint-retained"
       ? "Keating kept the checkpoint because the remaining issue was in its presentation."
+      : snapshot.reason === "remaining-part-unresolved" ? "The proposed addition did not clear review, so Keating kept this answer."
+      : snapshot.reason === "requested-part-covered" ? "This draft covered a requested part flagged as missing from the alternative."
       : undefined;
   const earlierSentence = notable ? `Draft ${notable.attempt} was flagged on “${describeTeachingCheck(notable.check.id).title}”. ` : "";
   const releaseSentence = selection.review === "best-effort"
@@ -50,9 +53,11 @@ export function MessageDraftDecision({ snapshot }: { snapshot: TeachingDraftSnap
       <ol className={trace}>
         {[...snapshot.attempts].sort((a, b) => a.attempt - b.attempt).map(attempt => {
           const checks = attempt.checks.filter(check => check.status !== "pass");
+          const origin = draftOrigin(snapshot, attempt);
           return <li key={attempt.attempt}>
             <span className={traceMark} data-result={attempt.status} aria-hidden="true"><KeatingGlyph name={attemptMarks[attempt.status]} size={13} /></span>
             <strong>Draft {attempt.attempt}</strong> · {attemptResults[attempt.status]}
+            {origin && <span className={traceMeta}>{origin}</span>}
             {checks.length > 0 && <span className={traceMeta}>Flagged checks · {checks.map(check => describeTeachingCheck(check.id).title).join(", ")}</span>}
             {attempt.attempt === released.attempt && <span className={traceMeta}>Released in chat {selection.review === "best-effort" ? "as a best-effort reply" : "after passing review"}</span>}
           </li>;

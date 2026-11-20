@@ -4,6 +4,7 @@ import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
 import type { TeachingDraftSnapshot, TeachingPolicyCheck } from "@keating/learner-contracts";
 import { css } from "../../styled-system/css";
 import { describeTeachingCheck } from "../keating/judgement/check-descriptions";
+import { comparisonDrafts } from "../keating/judgement/draft-progress";
 import type { TurnMemoryDecision, TurnReplyReview } from "../keating/judgement/turn-records";
 import { DiagnosticHelp } from "./DiagnosticHelp";
 
@@ -83,6 +84,7 @@ function violationProbability(check: TeachingPolicyCheck) {
 
 interface DraftRiskChange {
   id: string;
+  basis: "earlier" | "parallel draft" | "source of revision";
   earlier: { draft: number; probability: number };
   released: { draft: number; probability: number };
 }
@@ -91,8 +93,10 @@ function compareDraftRisk(snapshot: TeachingDraftSnapshot, byDraft: readonly Rea
   const releasedIndex = snapshot.attempts.findIndex(attempt => attempt.attempt === snapshot.selectedAttempt);
   if (snapshot.phase !== "released" || releasedIndex < 0) return [];
   const released = snapshot.attempts[releasedIndex]!;
-  const earlier = snapshot.attempts.map((attempt, index) => ({ draft: attempt.attempt, checks: byDraft[index]! }))
-    .filter(attempt => attempt.draft < released.attempt).sort((a, b) => a.draft - b.draft);
+  const earlier = comparisonDrafts(snapshot, released).map(attempt => ({
+    draft: attempt.attempt, checks: byDraft[snapshot.attempts.indexOf(attempt)]!,
+  }));
+  const basis = released.repairSourceAttempt ? "source of revision" : snapshot.parallelAttempts?.includes(released.attempt) ? "parallel draft" : "earlier";
   const changes: DraftRiskChange[] = [];
   for (const check of released.checks) {
     const probability = violationProbability(check);
@@ -101,7 +105,7 @@ function compareDraftRisk(snapshot: TeachingDraftSnapshot, byDraft: readonly Rea
       const prior = attempt.checks.get(check.id);
       const before = prior ? violationProbability(prior) : null;
       if (before === null) continue;
-      changes.push({ id: check.id, earlier: { draft: attempt.draft, probability: before }, released: { draft: released.attempt, probability } });
+      changes.push({ id: check.id, basis, earlier: { draft: attempt.draft, probability: before }, released: { draft: released.attempt, probability } });
       break;
     }
   }
@@ -116,16 +120,18 @@ function DraftRiskComparison({ change }: { change: DraftRiskChange }) {
   const displayPoints = points > 0 && points < 0.1 ? "Less than 0.1" : Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(points);
   const directionGlyph = delta < 0 ? "left" : delta > 0 ? "right" : "minus";
   const direction = delta < 0 ? "lower" : "higher";
+  const comparisonSource = change.basis === "parallel draft" ? "the other draft started in parallel"
+    : change.basis === "source of revision" ? "the draft Keating revised" : "the earliest draft with a recorded estimate for this check";
   return <figure aria-labelledby={headingId} className={figure}>
     <figcaption className={heading}><span className={helpLabel}><span id={headingId}>What changed between drafts</span>
-      <DiagnosticHelp term="draft comparison" text="The bars compare the earliest recorded estimate for this check with the released draft. A shorter bar means a lower estimated chance of a violation. The heatmap lets you choose another check." />
+      <DiagnosticHelp term="draft comparison" text={`The bars compare ${comparisonSource} with the released draft. A shorter bar means a lower estimated chance of a violation. The heatmap lets you choose another check.`} />
     </span></figcaption>
     <p className={muted}>{describeTeachingCheck(change.id).title} · estimated chance of a violation</p>
-    {([["earlier", change.earlier], ["released", change.released]] as const).map(([kind, entry]) =>
+    {([{ kind: change.basis, entry: change.earlier, tone: "series1" }, { kind: "released", entry: change.released, tone: "series2" }] as const).map(({ kind, entry, tone }) =>
       <div key={kind}>
         <span>Draft {entry.draft} · {kind}</span>
         <Meter max={1} value={entry.probability} valueText={percent.format(entry.probability)}
-          label={`Draft ${entry.draft} · ${kind} estimated risk`} tone={kind === "earlier" ? "series1" : "series2"} />
+          label={`Draft ${entry.draft} · ${kind} estimated risk`} tone={tone} />
       </div>)}
     <div className={comparisonAxis}><span>0% · Lower is better</span><span>100% · Higher risk</span></div>
     <p className={comparisonOutcome}><KeatingGlyph name={directionGlyph} size={14} />
