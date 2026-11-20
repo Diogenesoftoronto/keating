@@ -185,7 +185,7 @@ for (const fixture of ["portable", "official", "chat", "native-page", "teaching-
             return second?.saved && second.frameFailed === true;
           });
           await page.evaluate(() => (window as any).nativePageFixture.codeReply());
-          await page.getByRole("button",{name:"Edit",exact:true}).click();
+          await page.getByRole("button",{name:"Edit code",exact:true}).click();
           const editor = page.getByRole("textbox",{name:"Editable code"});
           assert.match(await editor.inputValue(),/print\(i \+ 1\)/);
           await editor.fill("for i in range(3):\n    print(i)");
