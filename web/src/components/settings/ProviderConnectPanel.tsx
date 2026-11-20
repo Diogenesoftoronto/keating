@@ -34,7 +34,8 @@ import {
 } from "../../keating/model-prefs";
 import {
 	NOTORGANIC_PROVIDER_ID,
-	NOTORGANIC_CHAT_MODELS,
+	NOTORGANIC_ESTABLISHED_CHAT_MODELS,
+	getAvailableNotOrganicChatModels,
 	isNotOrganicFeatureEnabled,
 	notOrganicPublicClient,
 } from "../../notorganic-provider";
@@ -43,10 +44,10 @@ import { ProviderCredentialForm } from "./CloudProviderKeysSection";
 
 type ModelInfo = { id: string; name: string };
 
-export function modelsFor(provider: string): ModelInfo[] {
+export function modelsFor(provider: string, accountModels: ModelInfo[] = NOTORGANIC_ESTABLISHED_CHAT_MODELS): ModelInfo[] {
 	if (provider === NOTORGANIC_PROVIDER_ID) {
 		return isNotOrganicFeatureEnabled()
-			? NOTORGANIC_CHAT_MODELS.map(({ id, name }) => ({ id, name }))
+			? accountModels.map(({ id, name }) => ({ id, name }))
 			: [];
 	}
 	try {
@@ -185,6 +186,26 @@ export function ProviderConnectPanel({
 		};
 	}, []);
 	const [catalogRevision, setCatalogRevision] = useState(0);
+	const [accountModels, setAccountModels] = useState<ModelInfo[]>(NOTORGANIC_ESTABLISHED_CHAT_MODELS);
+	useEffect(() => {
+		if (!isNotOrganicFeatureEnabled()) return;
+		let revision = 0;
+		const refresh = () => {
+			const current = ++revision;
+			setAccountModels(NOTORGANIC_ESTABLISHED_CHAT_MODELS);
+			void getAvailableNotOrganicChatModels().then(models => {
+				if (current === revision) setAccountModels(models);
+			});
+		};
+		refresh();
+		window.addEventListener("focus", refresh);
+		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);
+		return () => {
+			revision++;
+			window.removeEventListener("focus", refresh);
+			window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);
+		};
+	}, []);
 	useEffect(() => {
 		let active = true;
 		const refresh = () => {
@@ -205,7 +226,7 @@ export function ProviderConnectPanel({
 				providers.map((p) => {
 					const custom = customProviders.find((item) => item.name === p);
 					const entries = [
-						...modelsFor(p),
+						...modelsFor(p, accountModels),
 						...(custom?.models ?? []).map((m) => ({
 							id: m.id,
 							name: m.name || m.id,
@@ -223,6 +244,7 @@ export function ProviderConnectPanel({
 		[
 			providers.join(","),
 			catalogRevision,
+			accountModels,
 			customProviders,
 			modelPrefs.customModels,
 		],

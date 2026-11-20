@@ -24,6 +24,8 @@ interface ProbeRequest {
 export function buildKeyProbe(target: KeyTestTarget, key: string): ProbeRequest | null {
 	const base = target.baseUrl.replace(/\/+$/, "");
 	if (!base || /[{}]/.test(base)) return null;
+	// Inception's model list is public and cannot verify a key.
+	if (target.provider === "inception") return null;
 	switch (target.api) {
 		case "openai-completions":
 		case "openai-responses":

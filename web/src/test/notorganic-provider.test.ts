@@ -4,6 +4,7 @@ import {
 	NOTORGANIC_DEFAULT_MODEL,
 	NOTORGANIC_SOL_MODEL,
 	NOTORGANIC_FLINT_MODEL,
+	NOTORGANIC_MERCURY_2_MODEL,
 	getAvailableNotOrganicChatModels,
 	NOTORGANIC_IMAGE_MODEL_ALIAS,
 	NOTORGANIC_MODEL_ALIAS,
@@ -35,6 +36,23 @@ describe("Not Organic provider definition", () => {
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, existing)).toBe(true);
 		expect(existing.scope).toBe("infer:balanced web:search web:fetch");
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope: "infer:flint web:search web:fetch" })).toBe(false);
+	});
+	it("offers account Mercury 2 only when the authorized gateway advertises the exact model", async () => {
+		const models = async (scope: string, ids: string[], ok = true) => (await getAvailableNotOrganicChatModels({
+			getSession: () => ({ scope }), request: async () => Response.json({ data: ids.map(id => ({ id })) }, { status: ok ? 200 : 503 }),
+		})).map(model => model.id);
+		expect(NOTORGANIC_MERCURY_2_MODEL).toMatchObject({
+			id: "mercury-2", provider: "notorganic", api: "openai-completions", baseUrl: NOTORGANIC_DEFAULT_MODEL.baseUrl,
+			cost: NOTORGANIC_DEFAULT_MODEL.cost, input: ["text"],
+		});
+		for (const scope of ["infer:text", "infer:mercury-2"]) {
+			expect(await models(scope, ["flint", "mercury-2"])).toContain("mercury-2");
+			expect(await models(scope, ["flint", "mercury-2"])).not.toContain("flint");
+			expect(notOrganicModelNeedsConsent(NOTORGANIC_MERCURY_2_MODEL, { scope })).toBe(false);
+		}
+		expect(await models("infer:text", ["mercury-3", "mercury-2.5"])).not.toContain("mercury-2");
+		expect(await models("infer:text", ["mercury-2"], false)).not.toContain("mercury-2");
+		expect(await models("infer:balanced", ["mercury-2"])).not.toContain("mercury-2");
 	});
 	it("makes Flint selectable only when the consented gateway advertises it", async () => {
 		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id, "balanced"];

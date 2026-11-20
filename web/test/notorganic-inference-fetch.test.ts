@@ -5,7 +5,7 @@ import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { normalizeProviderStreamOptions } from "../src/hooks/keating-stream";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
-import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL } from "../src/notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -75,6 +75,32 @@ test("Flint uses account-only Chat Completions parameters and consumes buffered 
 	expect(result.content).toEqual([{ type: "text", text: "Let us check." }, { type: "toolCall", id: "call_verify", name: "verify", arguments: { topic: "hinge" } }]);
 	expect(result.usage.input).toBe(20);
 	expect(result.usage.output).toBe(10);
+});
+test("account Mercury sends exact chat parameters with a device-bound proof and cost ceiling", async () => {
+	const selected = { ...NOTORGANIC_MERCURY_2_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	let outbound: Request | undefined;
+	const fetch = createNotOrganicInferenceFetch({ async headersFor(method, target, initial) {
+		expect(method).toBe("POST");
+		expect(target).toBe(url);
+		const headers = new Headers(initial);
+		headers.set("authorization", "DPoP test-capability");
+		headers.set("dpop", "test-proof");
+		return headers;
+	} }, url, { idempotencyKey: "mercury-turn", maxCostMicrousd: 9000, fetch: (async (input, init) => {
+		outbound = new Request(input, init);
+		return new Response('data: {"id":"chat","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n', { headers: { "content-type": "text/event-stream" } });
+	}) as typeof globalThis.fetch });
+	const result = await streamSimple(selected, {
+		systemPrompt: "Teach fractions.", messages: [{ role: "user", content: "Hello", timestamp: 1 }],
+	}, { fetch, headers: { authorization: "DPoP initial" }, reasoning: "low", maxTokens: 50, maxRetries: 0 }).result();
+	expect(result.stopReason).toBe("stop");
+	expect(result.content).toContainEqual({ type: "text", text: "Hello" });
+	expect(outbound?.headers.get("dpop")).toBe("test-proof");
+	expect(outbound?.headers.get("authorization")).toBe("DPoP test-capability");
+	expect(outbound?.headers.get("x-notorganic-max-cost-microusd")).toBe("9000");
+	expect(outbound?.headers.get("idempotency-key")).toBe("mercury-turn");
+	expect(await outbound?.json()).toMatchObject({ model: "mercury-2", stream: true, max_completion_tokens: 50, reasoning_effort: "low",
+		messages: [{ role: "system", content: "Teach fractions." }, { role: "user", content: "Hello" }] });
 });
 for (const sdkRetries of [0, 1]) {
 	test(`fresh proofs across retries (SDK retries ${sdkRetries})`, async () => {

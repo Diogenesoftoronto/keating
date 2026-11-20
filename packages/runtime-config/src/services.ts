@@ -7,6 +7,7 @@ export const API_VERSIONS = {
 } as const;
 
 export const SERVICE_ENDPOINTS = {
+  inception: "https://api.inceptionlabs.ai/v1",
   notorganic: {
     api: "https://api.notorganic.info",
     authorization: "https://id.notorganic.info/authorize",
