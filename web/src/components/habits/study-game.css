@@ -165,8 +165,8 @@
 	.study-game-dialog .recess-lesson select { width: 100%; }
 	.study-game-dialog .recess-chat { flex: 1 1 12rem; justify-content: center; }
 	.study-game-dialog .recess-game[data-phase=idle] { grid-template-columns: minmax(0, 1fr); }
-	.study-game-dialog .recess-game[data-phase=idle] > .recess-result { order: 1; }
-	.study-game-dialog .recess-game[data-phase=idle] > :is(.recess-settings, .recess-stage, .recess-note) { order: 2; }
+	.study-game-dialog .recess-game[data-phase=idle] > :is(.recess-help, .recess-result) { order: 1; }
+	.study-game-dialog .recess-game[data-phase=idle] > :is(.recess-settings, .recess-stage, .recess-condition) { order: 2; }
 	.study-game-dialog .recess-game[data-phase=idle] .recess-field { height: clamp(220px, 46svh, 460px); }
 
 	/* In flight: the whole sheet is the play field. */

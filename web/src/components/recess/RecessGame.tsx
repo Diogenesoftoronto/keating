@@ -393,7 +393,7 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
     </div>
     <p className="recess-note recess-help">
       <span className="recess-help-fine">Move or drag to fly. Arrow keys or WASD also move Keating. Hold Shift to focus, Space for Eureka, and Escape to stop.</span>
-      <span className="recess-help-touch">Drag anywhere on the page to fly. Keating fires on his own. Tap Eureka to clear the air.</span>
+      <span className="recess-help-touch">Drag one finger to fly. Hold a second finger to aim. Lift it to let Keating aim again.</span>
     </p>
     <p className="recess-note recess-condition">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
       {wornNames.length > 0 && ` · Wearing ${wornNames.join(", ")}`}

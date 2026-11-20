@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { RecessAudio } from "../components/recess/engine/audio.js";
 import { Recess } from "../components/recess/engine/core.js";
 import { packs } from "../components/recess/engine/packs.js";
+import { RecessPatterns } from "../components/recess/engine/patterns.js";
 
 test("the authored practice lessons have playable gates and correctable misconceptions", () => {
   expect(Object.keys(packs)).toContain("maths");
@@ -32,6 +33,7 @@ test("Recess starts muted and repeated disposal is safe", () => {
 class Playfield extends EventTarget {
   getBoundingClientRect() { return { left: 0, top: 0, width: 420, height: 330 }; }
   querySelectorAll() { return []; }
+  focus() {}
 }
 
 test("flight owns only arena keys and disposal removes its frame and handlers", () => {
@@ -79,4 +81,96 @@ test("flight owns only arena keys and disposal removes its frame and handlers", 
       else Reflect.deleteProperty(globalThis, name);
     }
   }
+});
+
+type RunState = {
+  state: string;
+  control: string;
+  P: { x: number; y: number; bombs: number };
+  inp: { pid: number | null; aid: number | null; ax: number; ay: number; tx: number; ty: number };
+};
+
+function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playfield, win: EventTarget) => void) {
+  const rect = new Playfield();
+  const canvas = () => ({ width: 300, height: 150, hidden: false, getContext: () => ({}) });
+  const mocks = {
+    window: new EventTarget(),
+    document: { createElement: canvas },
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame: () => {},
+  };
+  const descriptors = Object.getOwnPropertyDescriptors(globalThis);
+  for (const [name, value] of Object.entries(mocks)) Object.defineProperty(globalThis, name, { configurable: true, value });
+  const script = RecessPatterns.script;
+  let run: RunState | null = null;
+  RecessPatterns.script = (G: RunState, scene: string) => { run = G; return script(G, scene); };
+  try {
+    const field = rect as unknown as HTMLElement;
+    const game = Recess.create({
+      arena: field, thread: field, dock: field, bot: field,
+      view: canvas() as unknown as HTMLCanvasElement, shader: null, sound: RecessAudio.create(),
+      pack: packs.maths, theme: "paper", control, calm: true,
+      sheet: {} as HTMLImageElement, rows: {}, hasJetpack: true, flip: null, toy: null,
+      equipment: {}, keycapBoots: false,
+      hud() {}, ask() {}, phase() {}, revive() {}, end() {},
+    });
+    expect(game.start("start")).toBe(true);
+    expect(run).not.toBeNull();
+    body(run!, rect, mocks.window);
+    game.dispose();
+  } finally {
+    RecessPatterns.script = script;
+    for (const name of Object.keys(mocks)) {
+      const descriptor = descriptors[name];
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+      else Reflect.deleteProperty(globalThis, name);
+    }
+  }
+}
+
+const touch = (type: string, pointerId: number, clientX = 0, clientY = 0) =>
+  Object.assign(new Event(type, { cancelable: true }), { pointerId, pointerType: "touch", button: 0, clientX, clientY });
+
+test("on touch the first finger flies, a second aims, and either can lift alone", () => {
+  touchRun("follow", (run, field, win) => {
+    const bombs = run.P.bombs;
+    field.dispatchEvent(touch("pointerdown", 1, 200, 250));
+    field.dispatchEvent(touch("pointerdown", 2, 300, 60));
+    expect([run.inp.pid, run.inp.aid, run.inp.ax, run.inp.ay]).toEqual([1, 2, 300, 60]);
+    field.dispatchEvent(touch("pointerdown", 3, 10, 10));
+    expect([run.inp.pid, run.inp.aid, run.P.bombs]).toEqual([1, 2, bombs]);
+
+    run.state = "play";
+    const before = { x: run.inp.tx, y: run.inp.ty };
+    field.dispatchEvent(touch("pointermove", 2, 120, 90));
+    expect([run.inp.ax, run.inp.ay, run.inp.tx, run.inp.ty]).toEqual([120, 90, before.x, before.y]);
+    field.dispatchEvent(touch("pointermove", 1, 210, 240));
+    expect(run.inp.tx).toBeCloseTo(before.x + 13);
+    expect(run.inp.ty).toBeCloseTo(before.y - 13);
+    expect([run.inp.ax, run.inp.ay]).toEqual([120, 90]);
+
+    field.dispatchEvent(touch("pointerup", 1));
+    expect([run.inp.pid, run.inp.aid]).toEqual([null, 2]);
+    field.dispatchEvent(touch("pointerdown", 4, 50, 50));
+    expect([run.inp.pid, run.inp.aid]).toEqual([4, 2]);
+    field.dispatchEvent(touch("pointercancel", 2));
+    expect([run.inp.pid, run.inp.aid]).toEqual([4, null]);
+
+    field.dispatchEvent(touch("pointerdown", 5, 90, 90));
+    field.dispatchEvent(new Event("blur"));
+    expect([run.inp.pid, run.inp.aid]).toEqual([4, 5]);
+    win.dispatchEvent(new Event("blur"));
+    expect([run.inp.pid, run.inp.aid]).toEqual([null, null]);
+  });
+});
+
+test("in twin controls a touch flight starts from where Keating is", () => {
+  touchRun("twin", (run, field) => {
+    run.P.x = 140; run.P.y = 200;
+    field.dispatchEvent(touch("pointerdown", 7, 380, 40));
+    expect([run.inp.pid, run.inp.tx, run.inp.ty]).toEqual([7, 140, 200]);
+    run.state = "play";
+    field.dispatchEvent(touch("pointermove", 7, 390, 40));
+    expect(run.inp.tx).toBeCloseTo(153);
+  });
 });

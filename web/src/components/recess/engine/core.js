@@ -41,8 +41,8 @@ export const Recess = (function () {
       W: 1, H: 1, dpr: 1, floorY: 1, T: 0, RT: 0, state: "idle",
       theme: o.theme || "paper", pal: PAL[o.theme || "paper"], dark: o.theme === "term", pack: o.pack, control: o.control || "follow", toy: o.toy || null,
       calm: Boolean(o.calm),
-      P: { scale: 1, x: 0, y: 0, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: 2, power: 1, pw: 0, shotT: 0, vol: 0, anim: "hover", animT: 0, focus: false, ox: 0, oy: 0, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9 },
-      home: { x: 0, y: 0 }, inp: { tx: 0, ty: 0, ax: 0, ay: 0, held: false, keys: {}, lx: 0, ly: 0, pid: null, usingKeys: false },
+      P: { scale: 1, x: 0, y: 0, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: 2, power: 1, pw: 0, shotT: 0, vol: 0, anim: "hover", animT: 0, focus: false, ox: 0, oy: 0, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, manual: false, flick: 0, seed: 0 },
+      home: { x: 0, y: 0 }, inp: { tx: 0, ty: 0, ax: 0, ay: 0, held: false, keys: {}, lx: 0, ly: 0, pid: null, aid: null, touch: false, usingKeys: false },
       foes: [], shots: [], bul: [], picks: [], words: [], timers: [], gates: null, boss: null, ring: null, tldr: null,
       score: 0, mult: 1, chain: 0, comboT: 0, kills: 0, grazes: 0, meter: 0, rattled: 0, label: "", won: false, quit: false, res: { gates: [], myths: [] },
       // How well he has been looked after (lanes/CARE-design.md), each 0 to 1; 0.75 is the standard bot.
@@ -234,18 +234,30 @@ export const Recess = (function () {
 
     // ── player ──
     // He fires where he aims. With the pointer flying him, he aims by himself at the nearest
-    // enemy (and stays on it). With the keys flying him, the pointer is the aim.
+    // enemy (and stays on it). With the keys flying him, the pointer is the aim. On a touch
+    // screen a second finger aims while it is down; lifting it hands aim back to him.
+    // His own aim is a player's, not a turret's: it wanders a little on two slow waves and
+    // overshoots when he swings to a new enemy. Both are smooth and bounded; nothing is rolled per frame.
     const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
     G.aimPoint = function (e) { const def = G.kinds[e.k]; return def && def.aimAt ? def.aimAt(G, e, P.x, P.y) : e; };
     function aimUpdate(dt) {
       let want = -Math.PI / 2, turn = 11;
-      if (G.control === "twin") { want = Math.atan2(inp.ay - P.y, inp.ax - P.x); P.lock = null; turn = 40; }
+      const ct = clamp(G.care.tune / 0.75, 0, 1);
+      P.flick *= Math.exp(-dt * 4.5);
+      P.manual = inp.aid !== null || (G.control === "twin" && !inp.touch);
+      if (P.manual) { want = Math.atan2(inp.ay - P.y, inp.ax - P.x); P.lock = null; turn = 40; }
       else {
         let best = null, bd = 1e9;
         for (const e of G.foes) { if (e.born > 0 || e.dead) continue; const q = G.aimPoint(e), d = Math.hypot(q.x - P.x, q.y - P.y) * (e === P.lock ? 0.72 : 1); if (d < bd) { bd = d; best = e; } }
-        P.lock = best; if (best) { const q = G.aimPoint(best); want = Math.atan2(q.y - P.y, q.x - P.x); }
+        if (best) {
+          const q = G.aimPoint(best); want = Math.atan2(q.y - P.y, q.x - P.x);
+          if (best !== P.lock) P.flick = clamp(angDiff(want, P.aim) * 0.25, -0.13, 0.13);
+          const sway = lerp(0.085, 0.05, ct), t = G.T;
+          want += sway * (0.62 * Math.sin(t * 0.83 + P.seed) + 0.38 * Math.sin(t * 2.17 + P.seed * 1.7)) + P.flick;
+        }
+        P.lock = best;
       }
-      turn *= lerp(0.7, 1, clamp(G.care.tune / 0.75, 0, 1));
+      turn *= lerp(0.7, 1, ct);
       P.aim += clamp(angDiff(want, P.aim), -turn * dt, turn * dt);
     }
     function mkShot(x, y, a, d, hom) { const s = hom ? 520 : 980; return { x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, d, hom: !!hom, t: 0 }; }
@@ -284,7 +296,7 @@ export const Recess = (function () {
         const on = inp.held || inp.pid !== null || kx || ky;
         if (on) { let dx = kx, dy = ky; if (!kx && !ky) { dx = inp.tx - p.x; dy = inp.ty - p.y; } const l = Math.hypot(dx, dy) || 1, a = 1650 * (kx || ky ? 1 : Math.min(1, l / 36)); p.vx += (dx / l) * a * dt; p.vy += (dy / l) * a * dt; thrust = 1; }
         p.vy += 560 * dt; p.vx *= Math.exp(-dt * 1.7); p.vy *= Math.exp(-dt * 1.2);
-      } else if (G.control === "twin") {
+      } else if (G.control === "twin" && (kx || ky || inp.pid === null)) {
         const sp = (p.focus ? 270 : 400) * mv, l = Math.hypot(kx, ky) || 1, q = 1 - Math.exp(-dt * 24);
         p.vx = lerp(p.vx, (kx / l) * sp, q); p.vy = lerp(p.vy, (ky / l) * sp, q); thrust = kx || ky ? 0.8 : 0.3;
       } else if (kx || ky) {
@@ -497,7 +509,10 @@ export const Recess = (function () {
       const rect = arena.getBoundingClientRect();
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
-    let capturedPointer = null;
+    const captured = new Set();
+    const capture = (e) => { if (e.isTrusted) { arena.setPointerCapture(e.pointerId); captured.add(e.pointerId); } };
+    // Touch: the first finger flies him (relative, like a trackpad), the second aims where it
+    // rests. A third is ignored. Either finger can lift without disturbing the other.
     function down(e) {
       if (G.state !== "play" && G.state !== "intro") return;
       arena.focus({ preventScroll: true });
@@ -505,15 +520,22 @@ export const Recess = (function () {
       if (e.button === 2) { G.bomb(); e.preventDefault(); return; }
       const p = pt(e);
       if (e.pointerType === "touch") {
-        if (inp.pid !== null && e.pointerId !== inp.pid) { G.bomb(); return; }
-        inp.pid = e.pointerId; inp.lx = p.x; inp.ly = p.y;
-        if (G.control === "thrust") { inp.tx = p.x; inp.ty = p.y; }
+        inp.touch = true;
+        if (e.pointerId === inp.pid || e.pointerId === inp.aid) { e.preventDefault(); return; }
+        if (inp.pid === null) {
+          inp.pid = e.pointerId; inp.lx = p.x; inp.ly = p.y;
+          if (G.control === "thrust") { inp.tx = p.x; inp.ty = p.y; }
+          else if (G.control === "twin" || inp.usingKeys) { inp.tx = P.x; inp.ty = P.y; }
+        } else if (inp.aid === null) {
+          inp.aid = e.pointerId; inp.ax = p.x; inp.ay = p.y;
+        } else { e.preventDefault(); return; }
       } else {
+        inp.touch = false;
         inp.ax = p.x; inp.ay = p.y;
         if (G.control !== "twin") { inp.tx = p.x; inp.ty = p.y; }
         inp.held = true;
       }
-      if (e.isTrusted) { arena.setPointerCapture(e.pointerId); capturedPointer = e.pointerId; }
+      capture(e);
       inp.usingKeys = false;
       e.preventDefault();
     }
@@ -521,6 +543,7 @@ export const Recess = (function () {
       if (G.state !== "play") return;
       const p = pt(e);
       if (e.pointerType === "touch") {
+        if (e.pointerId === inp.aid) { inp.ax = p.x; inp.ay = p.y; return; }
         if (e.pointerId !== inp.pid) return;
         if (G.control === "thrust") { inp.tx = p.x; inp.ty = p.y; }
         else {
@@ -529,15 +552,22 @@ export const Recess = (function () {
         }
         inp.lx = p.x; inp.ly = p.y;
       } else {
+        inp.touch = false;
         inp.ax = p.x; inp.ay = p.y;
         if (G.control !== "twin") { inp.tx = p.x; inp.ty = p.y; }
       }
       inp.usingKeys = false;
     }
     function up(e) {
-      if (capturedPointer === e.pointerId) capturedPointer = null;
+      captured.delete(e.pointerId);
       if (e.pointerType !== "touch") inp.held = false;
       else if (e.pointerId === inp.pid) inp.pid = null;
+      else if (e.pointerId === inp.aid) inp.aid = null;
+    }
+    function release() {
+      for (const id of captured) if (arena.hasPointerCapture?.(id)) arena.releasePointerCapture(id);
+      captured.clear();
+      inp.pid = null; inp.aid = null;
     }
     function stop() {
       if (G.state !== "play" && G.state !== "intro" && G.state !== "down") return;
@@ -553,17 +583,18 @@ export const Recess = (function () {
       if (dn && (k === " " || k === "x") && !e.repeat) G.bomb();
     }
     const menu = (e) => e.preventDefault();
+    // Losing arena focus (a tap on the Eureka key) keeps fingers that are still down; losing the window drops them.
     const blur = () => { inp.keys = {}; inp.held = false; };
+    const leave = () => { blur(); release(); };
     const bindings = [
       [arena, "pointerdown", down], [arena, "pointermove", move], [arena, "pointerup", up],
       [arena, "pointercancel", up], [arena, "lostpointercapture", up], [arena, "keydown", key],
-      [arena, "keyup", key], [arena, "contextmenu", menu], [arena, "blur", blur], [window, "blur", blur],
+      [arena, "keyup", key], [arena, "contextmenu", menu], [arena, "blur", blur], [window, "blur", leave],
     ];
     const bind = () => { for (const [target, event, fn] of bindings) target.addEventListener(event, fn); };
     const unbind = () => {
       for (const [target, event, fn] of bindings) target.removeEventListener(event, fn);
-      if (capturedPointer !== null && arena.hasPointerCapture(capturedPointer)) arena.releasePointerCapture(capturedPointer);
-      capturedPointer = null;
+      release();
     };
 
     function start(scene) {
@@ -572,8 +603,8 @@ export const Recess = (function () {
       G.foes = []; G.shots = []; G.bul = []; G.picks = []; G.timers = []; fx.shocks = []; G.gates = null; G.boss = null; G.ring = null; G.tldr = null;
       G.score = 0; G.mult = 1; G.chain = 0; G.comboT = 0; G.kills = 0; G.grazes = 0; G.meter = 0; G.rattled = 0; G.won = false; G.quit = false; returned = false; G.res = { gates: [], myths: [] };
       hitT = 0; lastHit = -99; calmT = 0; usedWind = false; G.mercy = 0; G.sparks = 0; G.T = 0; fx.slow = 1; fx.slowT = 0; fx.stop = 0; fx.shake = 0; fx.kx = 0; fx.ky = 0; fx.flash = 0; fx.hit = 0; fx.on = 0; fx.speed = 0.3; G.label = "";
-      Object.assign(P, { scale: 0.62, x: G.home.x, y: G.home.y, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: G.care.shine >= 0.9 ? 3 : 2, power: scene === "boss" ? 3 : scene === "myth" ? 2 : 1, shotT: 0.5, vol: 0, anim: o.rows.launch === undefined ? "hover" : "launch", animT: 0, focus: false, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, mire: 0 });
-      P.pw = PW[P.power - 1]; inp.keys = {}; inp.held = false; inp.pid = null; inp.usingKeys = false; inp.tx = G.W / 2; inp.ty = G.H * 0.7; inp.ax = G.W / 2; inp.ay = 0;
+      Object.assign(P, { scale: 0.62, x: G.home.x, y: G.home.y, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: G.care.shine >= 0.9 ? 3 : 2, power: scene === "boss" ? 3 : scene === "myth" ? 2 : 1, shotT: 0.5, vol: 0, anim: o.rows.launch === undefined ? "hover" : "launch", animT: 0, focus: false, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, mire: 0, manual: false, flick: 0, seed: Math.random() * TAU });
+      P.pw = PW[P.power - 1]; inp.keys = {}; inp.held = false; inp.pid = null; inp.aid = null; inp.touch = false; inp.usingKeys = false; inp.tx = G.W / 2; inp.ty = G.H * 0.7; inp.ax = G.W / 2; inp.ay = 0;
       G.state = "intro";
       G.emit("start", { scene }); script = RecessPatterns.script(G, scene);
       bind(); lastTs = performance.now(); raf = requestAnimationFrame(frame); if (o.phase) o.phase("play");
