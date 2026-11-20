@@ -155,6 +155,47 @@ describe('the hosted caller returns failures instead of throwing', () => {
     expect(outcome).toEqual({ ok: false, error: { code: 'backend-unauthorized', retryable: false } });
     expect(calls).toHaveLength(1);
   });
+  test('only the typed provider or relay HTTP 400 signals a context rejection', async () => {
+    const typed = { detail: { error_type: 'max_tokens_exceeded', message: 'private request text' } };
+    const relayed = { error: { code: 'context-limit-exceeded' } };
+    for (const [status, body, expected] of [
+      [400, typed, 'context-limit-exceeded'], [400, relayed, 'context-limit-exceeded'],
+      [400, { detail: 'max_tokens_exceeded' }, 'backend-unavailable'],
+      [400, { error: { message: 'context-limit-exceeded' }, input: typed }, 'backend-unavailable'],
+      [502, typed, 'backend-unavailable'], [413, typed, 'backend-unavailable'],
+      [422, relayed, 'request-invalid'], [429, relayed, 'backend-rate-limited'],
+    ] as const) {
+      const call = createSystemOneCaller({ fetch: async () => Response.json(body, { status }),
+        retry: { maxAttempts: 1, initialDelayMs: 0, maxDelayMs: 0 } });
+      expect(await call(request)).toEqual({ ok: false, error: { code: expected, retryable: status === 502 || status === 429 } });
+    }
+  });
+  test('overflow classification bounds the actual streamed bytes even when Content-Length lies', async () => {
+    let cancelled = false;
+    const chunk = new Uint8Array(2_048).fill(32);
+    const started = new TextEncoder().encode('{"detail":{"error_type":"max_tokens_exceeded"}}');
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(started); },
+      pull(controller) { controller.enqueue(chunk); },
+      cancel() { cancelled = true; },
+    });
+    const call = createSystemOneCaller({ fetch: async () => new Response(body, { status: 400, headers: { 'content-length': '16' } }) });
+    expect(await call(request)).toEqual({ ok: false, error: { code: 'backend-unavailable', retryable: false } });
+    expect(cancelled).toBe(true);
+  });
+  test('cancellation while reading a stalled 400 settles and cancels its body', async () => {
+    const controller = new AbortController();
+    let cancelled = false;
+    let read!: () => void;
+    const reading = new Promise<void>(resolve => { read = resolve; });
+    const body = new ReadableStream<Uint8Array>({ pull() { read(); }, cancel() { cancelled = true; } }, { highWaterMark: 0 });
+    const call = createSystemOneCaller({ fetch: async () => new Response(body, { status: 400 }) });
+    const pending = call(request, controller.signal);
+    await reading;
+    controller.abort();
+    expect(await pending).toEqual({ ok: false, error: { code: 'cancelled', retryable: false } });
+    expect(cancelled).toBe(true);
+  });
   test('a retryable status is retried up to the cap then reported', async () => {
     const calls: any[] = [];
     const call = createSystemOneCaller({ fetch: jsonFetch(429, {}, calls), apiKey: 'k', sleep, retry: { maxAttempts: 3, initialDelayMs: 1, maxDelayMs: 2 } });

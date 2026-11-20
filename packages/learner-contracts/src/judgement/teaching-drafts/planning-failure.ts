@@ -15,6 +15,7 @@ const explanations = {
   "backend-rate-limited": "The decision service rate limited the planning request. Try again.",
   "backend-overloaded": "The decision service was overloaded. Try again.",
   "backend-timeout": "The decision request timed out. Try again or choose a different judgement model in Settings.",
+  "context-limit-exceeded": "The review request exceeded the decision model’s context window. Shorten your current request or choose a model with a larger context window.",
   "request-invalid": "Keating could not prepare a valid review request within the decision model’s limits.",
   "response-malformed": "The decision service returned an invalid or inconsistent planning response.",
   "cancelled": "The decision request was cancelled.",

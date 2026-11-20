@@ -140,7 +140,11 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...projectPlanReview(snapshot.planReview),
     ...projectResourceReview(snapshot.resourceReview),
     ...(snapshot.state ? { state: projectState(snapshot.state) } : {}),
-    ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({ phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs), turnsDropped: nonnegative(slide.turnsDropped), before: projectState(slide.before), after: slide.after ? projectState(slide.after) : null })) } : {}),
+    ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({
+      phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs),
+      ...(slide.reason === "provider-context-limit" ? { reason: slide.reason } : {}),
+      turnsDropped: nonnegative(slide.turnsDropped), before: projectState(slide.before), after: slide.after ? projectState(slide.after) : null,
+    })) } : {}),
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),
     attempts: snapshot.attempts.map<TeachingDraftSnapshot["attempts"][number]>(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,

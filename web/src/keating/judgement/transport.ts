@@ -16,8 +16,7 @@ import { DEFAULT_MODELS } from "@keating/runtime-config";
  * (desktop shell or CLI, where the code is not served to a visitor) may hold a
  * key directly.
  *
- * Errors are returned, never thrown, and upstream bodies are never read: a
- * judgement request carries learner text, so the reply can echo it back.
+ * Errors carry a code owned by Keating. A provider response can echo learner text.
  */
 import {
 	createLocalJudgementCaller,

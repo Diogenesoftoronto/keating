@@ -115,6 +115,7 @@ export interface JudgementRequest {
  */
 export type JudgementErrorCode =
   | "request-invalid"
+  | "context-limit-exceeded"
   | "backend-unavailable"
   | "backend-unauthorized"
   | "backend-payment-required"

@@ -15,16 +15,21 @@ const expand = (answers: Record<string, JudgementAnswer | number>) => Object.fro
 
 async function replay(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, plan: { hash: string; answers: Record<string, JudgementAnswer | number> },
   reviewHash: string, answers: Record<string, JudgementAnswer | number>, model: string, useHistoricalPlanAnswers = false) {
+  const planHashes: string[] = [];
   const reviewHashes: string[] = [];
   const judge: JudgementCaller = async request => {
     const planning = Boolean(request.questions.learning_task);
-    const actual = hash(request);
-    if (planning && !useHistoricalPlanAnswers) expect(actual).toBe(plan.hash);
-    if (!planning) reviewHashes.push(actual);
+    if (planning && !useHistoricalPlanAnswers) {
+      const identity = hash(request);
+      planHashes.push(identity);
+      if (identity !== plan.hash) return { ok: false, error: { code: "request-invalid", retryable: false } };
+    }
+    if (!planning) reviewHashes.push(hash(request));
     return { ok: true, response: { backend: { backend: "fixture", model, calibrationSha256: null }, answers: expand(planning ? plan.answers : answers) } };
   };
   const result = await runTeachingDrafts({ turn, maxAttempts: 1, ...(useHistoricalPlanAnswers ? { maxReasoning: "off" as const } : {}), judgementModel: full, judge, generate: async () => ({ reply, value: reply.text }),
     check: () => [{ id: "runtime_tool_schema", source: "deterministic", status: "pass", severity: "critical", probability: 0 }] });
+  if (!useHistoricalPlanAnswers) expect(planHashes).toEqual([plan.hash]);
   expect(reviewHashes).toEqual([reviewHash]);
   return result;
 }

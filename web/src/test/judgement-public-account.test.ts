@@ -47,6 +47,13 @@ test("a funded-account failure is distinct from missing configuration and is not
   expect(calls).toBe(1);
 });
 
+test("the browser account caller retains a context error explicitly exposed by its signed gateway", async () => {
+  const { client } = fixture();
+  client.request = async () => Response.json({ error: { code: "context-limit-exceeded" } }, { status: 400 });
+  const backend = createPublicAccountJudgementBackend({ client })!;
+  expect(await backend.call(request)).toEqual({ ok: false, error: { code: "context-limit-exceeded", retryable: false } });
+});
+
 test("session authority and expiry are checked again after runtime construction", async () => {
   const f = fixture();
   const backend = createPublicAccountJudgementBackend({ client: f.client })!;

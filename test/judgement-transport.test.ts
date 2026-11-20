@@ -140,6 +140,25 @@ test("account retries renew proof but retain settlement key; a new judgement get
   expect(calls[2]["idempotency-key"]).not.toBe(calls[1]["idempotency-key"]);
 });
 
+test("the default HTTP adapter preserves structured context rejections for direct and signed CLI requests", async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = Object.assign(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      calls++;
+      const signed = new Headers(init?.headers).has("dpop");
+      const body = signed ? { error: { code: "context-limit-exceeded" } } : { detail: { error_type: "max_tokens_exceeded" } };
+      return Response.json(body, { status: 400 });
+    }, { preconnect: original.preconnect });
+    const direct = createCliJudgementBackend({ env: { [JUDGEMENT_API_KEY_ENV]: "fixture-key", [JUDGEMENT_DIRECT_ENV]: "1" } })!;
+    const account = createCliJudgementBackend({ env: {}, credential: await accountCredential(), now: () => NOW })!;
+    for (const backend of [direct, account]) {
+      expect(await backend.call(REQUEST)).toEqual({ ok: false, error: { code: "context-limit-exceeded", retryable: false } });
+    }
+    expect(calls).toBe(2);
+  } finally { globalThis.fetch = original; }
+});
+
 test("missing, expired, malformed, or inference-only credentials cannot authorize judgement", async () => {
   for (const overrides of [
     { [NOTORGANIC_AUTH_ENV.scope]: "infer:balanced" },

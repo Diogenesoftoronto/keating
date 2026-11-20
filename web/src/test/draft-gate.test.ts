@@ -1234,8 +1234,8 @@ describe("private teaching draft stream", () => {
     let calls = 0;
     const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); })(MODEL, context("z".repeat(100_000))));
     expect(calls).toBe(0);
-    expect(text(result)).toContain("valid review request");
-    expect(text(result)).toContain("Failure: request-invalid");
+    expect(text(result)).toContain("Shorten your current request");
+    expect(text(result)).toContain("Failure: context-limit-exceeded");
     expect(text(result)).not.toContain("zzzz");
   });
 

@@ -95,6 +95,8 @@ export interface TeachingStateSample {
   readonly state: StateComposition;
 }
 export interface TeachingWindowSlide {
+  /** Set when the model rejected a request that passed local sizing. Older receipts omit this. */
+  readonly reason?: "provider-context-limit";
   readonly phase: TeachingDraftPhase;
   readonly attempt: number;
   readonly elapsedMs: number;

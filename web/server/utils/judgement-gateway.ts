@@ -13,7 +13,7 @@
  *   echo it back. Failures leave as a stable `{error:{code}}` JSON body.
  */
 import { getHeader, readBody, type H3Event } from "h3";
-import { DEFAULT_SYSTEM_ONE_MODEL, MAX_GATEWAY_QUESTION_CHARS, SYSTEM_ONE_ENDPOINT } from "@keating/learner-contracts";
+import { DEFAULT_SYSTEM_ONE_MODEL, MAX_GATEWAY_QUESTION_CHARS, SYSTEM_ONE_ENDPOINT, systemOneHttpError } from "@keating/learner-contracts";
 import {
 	createNotOrganicServerClient,
 	getNotOrganicServerConfig,
@@ -29,6 +29,7 @@ export const MAX_JUDGEMENT_GATEWAY_STATE_CHARS = 96_000;
 
 export type JudgementGatewayErrorCode =
 	| "request-invalid"
+	| "context-limit-exceeded"
 	| "backend-unavailable"
 	| "backend-unauthorized"
 	| "backend-rate-limited"
@@ -187,7 +188,10 @@ export async function handleJudgementGateway(
 					signal: controller.signal,
 				});
 			}
-			if (!upstream.ok) return judgementErrorResponse(upstream.status);
+			if (!upstream.ok) {
+				const error = await systemOneHttpError(upstream, controller.signal);
+				return judgementErrorResponse(error.code === "context-limit-exceeded" ? error.code : upstream.status);
+			}
 			const payload: unknown = await upstream.json();
 			if (!isPlainObject(payload) || typeof payload.model !== "string" || !isPlainObject(payload.answers)) {
 				return judgementErrorResponse("backend-unavailable");
@@ -210,7 +214,7 @@ export async function handleJudgementGateway(
 /**
  * Map an upstream HTTP status to a stable code. Mirrors `errorForStatus` in
  * `@keating/learner-contracts`; kept local so server routes never import
- * browser-facing transport code. The upstream body is deliberately never read.
+ * browser-facing transport code for status-only errors.
  */
 export function judgementUpstreamErrorCode(status: number): JudgementGatewayErrorCode {
 	if (status === 401 || status === 403) return "backend-unauthorized";
@@ -228,7 +232,7 @@ export function judgementUpstreamErrorCode(status: number): JudgementGatewayErro
  * so it leaves as a 502 rather than a 401.
  */
 export function judgementErrorHttpStatus(code: JudgementGatewayErrorCode): number {
-	if (code === "request-invalid") return 400;
+	if (code === "request-invalid" || code === "context-limit-exceeded") return 400;
 	if (code === "backend-rate-limited") return 429;
 	if (code === "backend-overloaded") return 503;
 	if (code === "backend-timeout") return 504;
