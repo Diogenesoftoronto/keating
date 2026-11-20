@@ -1130,7 +1130,7 @@ const definitions = {
   sun: {
     nodes: [
       {tag: "path", role: "stroke", attributes: {d: "M10 8h4l2 2v4l-2 2h-4l-2-2v-4z"}},
-      {tag: "g", role: "stroke", attributes: {}, part: "r", origin: "12px 12px", children: [
+      {tag: "g", role: "stroke", attributes: {}, part: "r", children: [
         {tag: "path", role: "stroke", attributes: {d: "M12 3v2"}},
         {tag: "path", role: "stroke", attributes: {d: "M12 19v2"}},
         {tag: "path", role: "stroke", attributes: {d: "M3 12h2"}},
@@ -1141,8 +1141,8 @@ const definitions = {
         {tag: "path", role: "accent", attributes: {d: "M7 17l-1.5 1.5"}},
       ]},
     ],
-    hold: [["r", {rotate: 45}]],
-    note: "The rays turn an eighth.",
+    hold: [["r", {rotate: 22.5}]],
+    note: "The rays turn around the center.",
   },
   moon: {
     nodes: [

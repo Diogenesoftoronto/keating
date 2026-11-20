@@ -6,8 +6,6 @@
 .chat-page-shell .chat-header .ch-share {gap:.1923rem}
 .chat-page-shell .chat-header .ch-share:disabled {opacity:.5}
 .chat-page-shell .chat-header .ch-share[data-share-state=ready] {color:var(--ink)}
-.chat-page-shell .chat-header .chat-actions .ch-theme {color:var(--ink-soft)}
-.chat-page-shell .chat-header .chat-actions .ch-theme:hover {color:var(--ink)}
 .chat-page-shell .chat-header .chat-actions > button[aria-expanded=true] {color:var(--ink);background:var(--k-wash)}
 
 /* ── The menu ────────────────────────────────────────────────────────── */
@@ -43,6 +41,7 @@
 }
 @media (max-width:780px) {
   html body .chat-page-shell .chat-header .chat-actions {gap:6px}
+  .chat-header .chat-actions .ch-theme > button {width:44px;height:44px}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button,.chat-actions > button.chat-action-button:not(:has(.ch-label)),.chat-actions > button.chat-action-button:has(.ch-label)) {width:44px;min-width:44px;height:44px;min-height:44px;padding:0}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button) > svg[data-glyph] {width:18px;height:18px}
   html body .chat-header .ch-menu .ch-menu-item {min-height:44px}
@@ -86,8 +85,8 @@
   html body .chat-page-shell .chat-header .chat-model-button {height:1.9231rem;max-width:15rem;padding:0 .5769rem;gap:.3846rem;font-size:.7212rem}
   html body .chat-page-shell .chat-header .chat-actions {gap:.2885rem}
   html body .chat-page-shell .chat-header .chat-actions::before {height:1.1538rem;margin-inline:.2885rem .1923rem}
-  html body .chat-page-shell .chat-header :is(.ch-review,[data-material-count],.ch-share,.chat-actions > button.chat-action-button:has(.ch-label)) {height:1.9231rem;padding:0 .4808rem;gap:.2885rem;font-size:.7212rem}
-  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))) {width:1.9231rem;height:1.9231rem}
+  html body .chat-page-shell .chat-header :is(.ch-review,[data-material-count],.ch-share,.chat-actions > button.chat-action-button:has(.ch-label)) {width:auto;height:1.9231rem;padding:0 .4808rem;gap:.2885rem;font-size:.7212rem;white-space:nowrap}
+  html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))) {width:1.9231rem;height:1.9231rem;padding:0}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > :is(button,a)) > svg[data-glyph] {width:18px;height:18px}
 
   html body .chat-header .ch-menu {width:min(17.3077rem, calc(100vw - .7692rem));max-height:min(80dvh, 40rem);padding:.1923rem}

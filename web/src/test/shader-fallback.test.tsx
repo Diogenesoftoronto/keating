@@ -62,6 +62,15 @@ test("power waits for its midpoint, honors rapid toggles and bypasses animation 
       toggle();
       expect(dark).toBe(false);
       expect(flips).toHaveLength(2);
+      osReduced = false;
+      const applyTheme = spyOn({ apply: (next: boolean) => { dark = next; } }, "apply");
+      transitionTheme(applyTheme, false);
+      expect(applyTheme).toHaveBeenCalledWith(false);
+      expect(flips).toHaveLength(2);
+      transitionTheme(applyTheme, true);
+      expect(dark).toBe(false);
+      flips[2]();
+      expect(dark).toBe(true);
     } finally { stop(); }
   });
 });

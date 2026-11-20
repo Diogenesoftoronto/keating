@@ -2,6 +2,7 @@ import "../pages/chat/chat-surface.css";
 import { createPortal } from "react-dom";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { animate } from "motion";
+import { setCursorBusy } from "../design-system/cursors";
 import { EASE, SPRING, motionAllowed } from "../design-system/motion";
 import { ShaderSurface } from "../design-system/shaders";
 import { KeatingBot } from "./KeatingBot";
@@ -62,6 +63,15 @@ import {
 } from "react";
 import type { Key, ReactNode } from "react";
 const DeveloperChatDetails = createContext(false);
+/** Tells the cursor layer while a reply is being written, so its pixel turns. */
+function CursorBusySignal() {
+  const running = useAuiState(({ thread }) => thread.isRunning);
+  useEffect(() => {
+    setCursorBusy(running);
+    return () => setCursorBusy(false);
+  }, [running]);
+  return null;
+}
 const ActiveDraftStatus = createContext<ReturnType<typeof getTeachingDraftStatus>>(null);
 import type {
   AgentMessage,
@@ -3495,6 +3505,7 @@ function AssistantThread({
           <ActiveDraftStatus.Provider value={draftStatus}>
           <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
+            <CursorBusySignal />
             <ThreadPrimitive.Root
               data-chat-thread=""
               className={css({
