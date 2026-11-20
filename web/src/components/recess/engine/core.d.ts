@@ -1,11 +1,14 @@
-import type { RecessBotArt, RecessCondition, RecessControl, RecessHud, RecessPack, RecessResult, RecessTheme, RecessWind } from "../types";
+import type { RecessExplainItem, RecessExplainLevel, RecessBotArt, RecessCondition, RecessControl, RecessHud, RecessPack, RecessResult, RecessTheme, RecessWind } from "../types";
+import type { RecessLoadout } from "../../../keating/habits/quest-catalog";
 import type { RecessAudio } from "./audio.js";
 
 type OneRun = {
   start(scene: "start"): boolean;
   stop(): void;
   bomb(): void;
-  readonly state: "idle" | "intro" | "play" | "outro" | "down";
+  /** Answer the open gate by displayed position; false when no gate is open. */
+  answerGate(index: number): boolean;
+  readonly state: "idle" | "intro" | "play" | "outro" | "down" | "pause";
   /** Remaining firing charge minus this run's starting charge, in [-1, 1]. */
   readonly chargeDelta: number;
   setCalm(value: boolean): void;
@@ -25,10 +28,18 @@ interface RecessOptions extends RecessBotArt {
   theme: RecessTheme;
   control: RecessControl;
   calm: boolean;
+  /** Frozen weapon, companion helper, and Tamagotchi kit perks for this run. */
+  loadout?: RecessLoadout;
+  /** Optional DOM layer for gate labels (Markdown and maths). The engine sets --gate-y and data-st/pick/ok on it each frame. */
+  gateLayer?: HTMLElement | null;
+  /** Optional DOM layer for oddone target labels (Markdown and maths). The engine sets --t{i}-x/--t{i}-y and data-st/pick/ok on it each frame. */
+  targetLayer?: HTMLElement | null;
   hud(value: RecessHud): void;
-  ask(value: { question: string; options: string[] } | null): void;
+  ask(value: { question: string; options: string[]; kind?: string } | null): void;
   phase(value: "play" | "outro"): void;
   revive(value: RecessWind | null, answer?: (index: number) => void): void;
+  /** "Explain it" pause: show the prompt, call done with the grade. Called with null when the run stops mid-pause. */
+  explain?(value: RecessExplainItem | null, done?: (level: RecessExplainLevel, answer: string) => void): void;
   end(result: RecessResult): void;
 }
 

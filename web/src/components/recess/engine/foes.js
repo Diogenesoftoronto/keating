@@ -137,7 +137,7 @@ export const RecessArt = (function () {
         return true;
       }
       case "worm": {
-        const segs = e.segs, segment = clip(toy, "wormseg"), smallBead = subjects.get(toy.box) === "spanish";
+        const segs = e.segs, segment = clip(toy, "wormseg"), smallBead = toy.cast === "spanish"; // was an undefined `subjects` lookup that threw on every worm frame
         for (let i = segs.length - 1; i >= 0; i--) {
           const s = segs[i]; if (!s.alive) continue;
           if (segment?.naturalWidth) {
@@ -365,11 +365,28 @@ export const RecessArt = (function () {
   const turn = (d) => { while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
   const SCREEN_X = [-2,-2,-4,-1,0,-2,-3,-2], SCREEN_Y = [-21,-21,-19,-21,-20,-21,-19,-21];
   const SCREEN_TILT = [.05,.2,.22,.26,.22,.1,0,-.07];
-  function drawEquipment(c, item, x, y, size) {
+  // A canvas filter costs a full offscreen pass on every draw. Keating's tint is fixed for a run, so each
+  // sprite cell is filtered once into a small canvas and reused.
+  const tints = new WeakMap();
+  function tinted(img, sx, sy, sw, sh, filter) {
+    let byImage = tints.get(img); if (!byImage) { byImage = new Map(); tints.set(img, byImage); }
+    const key = filter + "|" + sx + "," + sy + "," + sw + "," + sh; let cv = byImage.get(key);
+    if (!cv) {
+      cv = document.createElement("canvas"); cv.width = Math.max(1, Math.round(sw)); cv.height = Math.max(1, Math.round(sh));
+      const x = cv.getContext("2d"); x.filter = filter; x.drawImage(img, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+      if (byImage.size > 160) byImage.clear(); byImage.set(key, cv);
+    }
+    return cv;
+  }
+  function blit(c, img, sx, sy, sw, sh, dx, dy, dw, dh, filter) {
+    if (filter) c.drawImage(tinted(img, sx, sy, sw, sh, filter), dx, dy, dw, dh);
+    else c.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  }
+  function drawEquipment(c, item, x, y, size, filter) {
     if (!item) return;
     const unit = item.image.naturalWidth / 4;
-    c.drawImage(item.image, (item.cell % 4) * unit, Math.floor(item.cell / 4) * unit,
-      unit, unit, x - size / 2, y - size / 2, size, size);
+    blit(c, item.image, (item.cell % 4) * unit, Math.floor(item.cell / 4) * unit,
+      unit, unit, x - size / 2, y - size / 2, size, size, filter);
   }
   function drawPlayer(c, env) {
     const G = env.G, p = G.P, o = G.o, pal = env.pal, rows = o.rows, playing = G.state === "play"; if (G.state === "idle") return;
@@ -403,14 +420,14 @@ export const RecessArt = (function () {
       c.fillStyle = BOT.green; c.fillRect(s * 15 - 5.5, -1, 11, 3.5); c.fillStyle = BOT.ink; c.beginPath(); c.moveTo(s * 15 - 3.5, 13); c.lineTo(s * 15 + 3.5, 13); c.lineTo(s * 15 + 5, 17.5); c.lineTo(s * 15 - 5, 17.5); c.closePath(); c.fill();
     }
     c.save();
-    if (low || charge > .9 || down) c.filter = down ? "saturate(.3) brightness(.78)" : low ? "brightness(.78)" : "brightness(1.09)";
-    drawEquipment(c, o.equipment.pack, -19, -1, 37);
-    c.drawImage(sheet, f * cell, row * cell, cell, cell, -S / 2, -S / 2 - 5, S, S);
-    drawEquipment(c, o.equipment.topper, -10, -35, 25);
+    const tint = down ? "saturate(.3) brightness(.78)" : low ? "brightness(.78)" : charge > .9 ? "brightness(1.09)" : "";
+    drawEquipment(c, o.equipment.pack, -19, -1, 37, tint);
+    blit(c, sheet, f * cell, row * cell, cell, cell, -S / 2, -S / 2 - 5, S, S, tint);
+    drawEquipment(c, o.equipment.topper, -10, -35, 25, tint);
     if (o.equipment.blaster) {
       c.save();
       c.rotate(p.aim - p.tilt - lean - (low && !revived ? .12 : 0));
-      drawEquipment(c, o.equipment.blaster, 24, 0, 26);
+      drawEquipment(c, o.equipment.blaster, 24, 0, 26, tint);
       c.restore();
     }
     if (o.keycapBoots && playing) for (const x of [-11, 3]) {
@@ -479,6 +496,16 @@ export const RecessArt = (function () {
       box(c, -8, -11, 16, 22, 2.5); c.fillStyle = pal.card; c.fill(); c.strokeStyle = pal.ink; c.lineWidth = 1.8; c.stroke();
       c.fillStyle = pal.ink; c.fillRect(-3.5, -14, 7, 3);
       c.beginPath(); c.moveTo(1.5, -8); c.lineTo(-4, 1); c.lineTo(0, 1); c.lineTo(-1.5, 8); c.lineTo(4, -1); c.lineTo(0, -1); c.closePath(); c.fillStyle = pal.deep; c.fill();
+      c.restore(); return;
+    }
+    if (p.k === "w") {
+      // Weapon Pod pickup: ringed emerald diamond carrying a temporary weapon swap.
+      const pulse = env.G?.calm ? 0 : Math.sin(T * 6) * 1.8;
+      c.beginPath(); c.arc(0, 0, 17 + pulse, 0, TAU); c.strokeStyle = pal.deep; c.lineWidth = 1.3; c.setLineDash([4, 3]); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.moveTo(0, -12); c.lineTo(11, 0); c.lineTo(0, 12); c.lineTo(-11, 0); c.closePath();
+      c.fillStyle = pal.wash; c.fill(); c.strokeStyle = pal.ink; c.lineWidth = 1.8; c.stroke();
+      c.beginPath(); c.moveTo(-4, 2); c.lineTo(0, -5); c.lineTo(4, 2); c.moveTo(0, -4); c.lineTo(0, 5);
+      c.strokeStyle = pal.deep; c.lineWidth = 2; c.lineCap = "round"; c.lineJoin = "round"; c.stroke();
       c.restore(); return;
     }
     c.beginPath(); c.arc(0, 0, p.k === "s" ? 8 : 13, 0, TAU);

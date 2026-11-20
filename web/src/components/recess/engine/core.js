@@ -5,6 +5,8 @@ import { install as installPatterns } from "./patterns.js";
 import { RecessArt } from "./foes.js";
 import { RecessFx } from "./fx.js";
 import { RecessPatterns } from "./patterns.js";
+import { answerTargetGate, drawTargetGate, hitTargetGate, startTargetGate, updateTargetGate } from "./targets.js";
+import { drawHelpers, drawShots, fireWeapon, helperMagnetScale, pickDropWeapon, stepShot, updateHelpers, WEAPON_LABELS } from "./arsenal.js";
 // Recess core: the loop, the player, collisions, the chat's words, gates, scoring.
 // Owner: the coordinator. Other modules never edit this file; they read and write the game
 // object G, listen to its events, and attach hooks. The contract is written down in lanes/API.md.
@@ -31,6 +33,8 @@ export const Recess = (function () {
     }
     const v2 = view.getContext("2d");
     if (!c || !em || !v2) throw new Error("The browser could not open a game canvas.");
+    // Frame governor: if play stays slow, shed the glow pass first, then canvas resolution. Never mid-flicker: one way only.
+    let frameEma = 16, slowFor = 0, postOff = false, dprCap = 2;
     let AR = null, raf = 0, lastTs = 0, outT = 0, returned = false, pickN = 0, pickT = 0, bombT = 0, heap = new Float32Array(1), script = null;
     let hitT = 0, lastHit = -99, calmT = 0, usedWind = false;
     const listeners = Object.create(null), hooks = Object.create(null);
@@ -43,7 +47,20 @@ export const Recess = (function () {
       calm: Boolean(o.calm),
       P: { scale: 1, x: 0, y: 0, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: 2, power: 1, pw: 0, shotT: 0, vol: 0, anim: "hover", animT: 0, focus: false, ox: 0, oy: 0, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, manual: false, flick: 0, seed: 0 },
       home: { x: 0, y: 0 }, inp: { tx: 0, ty: 0, ax: 0, ay: 0, held: false, keys: {}, lx: 0, ly: 0, pid: null, aid: null, touch: false, usingKeys: false },
-      foes: [], shots: [], bul: [], picks: [], words: [], timers: [], gates: null, boss: null, ring: null, tldr: null,
+      foes: [], shots: [], bul: [], picks: [], helpers: [], words: [], timers: [], gates: null, boss: null, ring: null, tldr: null,
+      loadout: {
+        weapon: o.loadout?.weapon || "pulse",
+        helper: o.loadout?.helper || "drone",
+        perks: {
+          chargeGain: o.loadout?.perks?.chargeGain ?? 1,
+          grazeRadius: o.loadout?.perks?.grazeRadius ?? 26,
+          scoreBonus: o.loadout?.perks?.scoreBonus ?? 1,
+          focusSpeed: o.loadout?.perks?.focusSpeed ?? 1,
+          headStart: o.loadout?.perks?.headStart ?? 0,
+        },
+      },
+      tempWeapon: null, tempWeaponT: 0,
+      activeWeapon() { return (G.tempWeaponT > 0 && G.tempWeapon) || G.loadout.weapon; },
       score: 0, mult: 1, chain: 0, comboT: 0, kills: 0, grazes: 0, meter: 0, rattled: 0, label: "", won: false, quit: false, res: { gates: [], myths: [] },
       // How well he has been looked after (lanes/CARE-design.md), each 0 to 1; 0.75 is the standard bot.
       // charge: top speed and how hard his jets burn. tune: how fast he fires and turns to aim. shine: a third Eureka at 0.9.
@@ -79,7 +96,7 @@ export const Recess = (function () {
     const P = G.P, inp = G.inp, fx = G.fx;
 
     function size() {
-      AR = arena.getBoundingClientRect(); G.W = Math.max(240, AR.width); G.H = Math.max(240, AR.height); G.dpr = Math.min(2, window.devicePixelRatio || 1);
+      AR = arena.getBoundingClientRect(); G.W = Math.max(240, AR.width); G.H = Math.max(240, AR.height); G.dpr = Math.min(dprCap, window.devicePixelRatio || 1);
       const w = Math.round(G.W * G.dpr), h = Math.round(G.H * G.dpr);
       if (g.width !== w || g.height !== h) { g.width = ge.width = view.width = w; g.height = ge.height = view.height = h; if (post && !post.lost) { shader.width = w; shader.height = h; post.resize(w, h); } }
       const d = o.dock.getBoundingClientRect(); G.floorY = d.top - AR.top + 4;
@@ -89,10 +106,13 @@ export const Recess = (function () {
     // ── the chat's words: measured where they sit, lifted off the page only when knocked ──
     function collect() {
       G.words = [];
+      // Words in one run of text share a style: compute it once per parent, not once per word.
+      const styles = new Map();
       for (const el of thread.querySelectorAll(".w")) {
         const r = el.getBoundingClientRect(); if (r.width < 1 || r.bottom < AR.top || r.top > AR.bottom) continue;
-        const cs = getComputedStyle(el);
-        G.words.push({ el, text: el.textContent, hx: r.left - AR.left + r.width / 2, hy: r.top - AR.top + r.height / 2, w: r.width, h: r.height, font: cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily, col: cs.color, st: 0, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0, t: 0, rest: false, taken: false, delay: 0, sx: 0, sy: 0, sr: 0, rt: undefined });
+        let look = styles.get(el.parentElement);
+        if (!look) { const cs = getComputedStyle(el); look = { font: cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily, col: cs.color }; styles.set(el.parentElement, look); }
+        G.words.push({ el, text: el.textContent, hx: r.left - AR.left + r.width / 2, hy: r.top - AR.top + r.height / 2, w: r.width, h: r.height, font: look.font, col: look.col, st: 0, x: 0, y: 0, vx: 0, vy: 0, rot: 0, vr: 0, t: 0, rest: false, taken: false, delay: 0, sx: 0, sy: 0, sr: 0, rt: undefined });
       }
     }
     G.knock = function (x, y, r, f) {
@@ -163,9 +183,14 @@ export const Recess = (function () {
     };
     G.kill = function (e, ang) {
       if (e.dead) return; e.dead = 1; G.kills++; G.addChain();
-      const pts = e.pts * G.mult; G.score += pts; G.knock(e.x, e.y, 36 + e.r * 1.5, 240);
+      const pts = Math.round(e.pts * G.mult * (G.loadout.perks.scoreBonus || 1)); G.score += pts; G.knock(e.x, e.y, 36 + e.r * 1.5, 240);
       const def = G.kinds[e.k]; const n = (def && def.drops) || 2;
       for (let i = 0; i < n; i++) G.addPick("s", e.x + rnd(-e.r, e.r), e.y + rnd(-e.r, e.r) * 0.6, e.k === "wall");
+      // Occasional mid-run Weapon Pod drop so learners can sample other weapons mid-flight.
+      if (G.kills > 0 && G.kills % 9 === 0 && e.k !== "wall" && G.tempWeaponT <= 0 && !G.picks.some((p) => p.k === "w")) {
+        const pod = G.addPick("w", e.x, e.y, false);
+        pod.weapon = pickDropWeapon(G.activeWeapon(), rnd);
+      }
       G.emit("kill", { e, pts, big: e.r > 20, ang });
       if (def && def.death) def.death(G, e);
     };
@@ -192,16 +217,23 @@ export const Recess = (function () {
     // question from the lesson (three answers, one right). Right: he is back with two hearts and a
     // clear screen. Wrong, or out of time: the run ends as it would have. The question is built before
     // the run, from the pack: no model call happens while the game is waiting.
+    // Choices arrive correct-first. True/false keeps its natural left-to-right order; anything else is shuffled.
+    function choiceOrder(a) {
+      const idx = a.map((_, i) => i);
+      if (a.length === 2 && a.every((t) => /^(true|false)$/i.test(String(t).trim()))) return idx.sort((x, y) => (/^true$/i.test(a[y]) ? 1 : 0) - (/^true$/i.test(a[x]) ? 1 : 0));
+      for (let i = idx.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      return idx;
+    }
     function secondWind() {
       if (usedWind || !o.revive || G.quit) return false;
       const src = G.pack.revive?.length ? G.pack.revive : G.pack.myths.slice(1).map((m, i, all) => ({ q: "Which one is true?", a: [m.right, m.wrong, (all[(i + 1) % all.length] || G.pack.myths[0]).wrong] }));
       const pick = src[(Math.random() * src.length) | 0]; if (!pick) return false;
       usedWind = true; G.state = "down"; inp.keys = {}; inp.held = false;
-      const order = [0, 1, 2].sort(() => Math.random() - 0.5), answers = order.map((j) => ({ t: pick.a[j], ok: j === 0 }));
+      const order = choiceOrder(pick.a), answers = order.map((j) => ({ t: pick.a[j], ok: j === 0 }));
       G.emit("downed", { q: pick.q, x: P.x, y: P.y });
       o.revive({ q: pick.q, answers, seconds: G.calm ? 0 : 15 }, (i) => {
         if (G.state !== "down") return; const a = answers[i], ok = !!(a && a.ok);
-        G.res.wind = { q: pick.q, right: pick.a[0], picked: a ? a.t : null, ok }; G.state = "play"; lastTs = performance.now();
+        G.res.wind = { q: pick.q, right: pick.a[0], picked: a ? a.t : null, ok, kind: pick.kind, id: pick.id }; G.state = "play"; lastTs = performance.now();
         if (ok) { P.hearts = 2; P.inv = 3; P.anim = "cheer"; P.animT = 0; G.cancelBullets(true); G.emit("revive", { x: P.x, y: P.y }); }
         else G.finish(false);
       });
@@ -218,20 +250,43 @@ export const Recess = (function () {
     // ── gates: three answers to a question from the lesson ──
     G.startGates = function (i) {
       const q = G.pack.gates?.[i]; if (!q) return; // a short chat may have fewer questions: skip, never repeat one
-      const order = [0, 1, 2].sort(() => Math.random() - 0.5);
-      G.gates = { q: q.q, a: order.map((j) => ({ t: q.a[j], ok: j === 0 })), y: -30, st: 0, t: 0, pick: -1 };
-      G.cancelBullets(true); if (o.ask) o.ask({ question: q.q, options: G.gates.a.map(a => a.t) }); G.emit("gateStart", { q: q.q });
+      const order = choiceOrder(q.a); // two to four lanes, or floating targets for oddone
+      G.gates = q.kind === "oddone" ? startTargetGate(G, q, order) : { q: q.q, kind: q.kind, id: q.id, a: order.map((j) => ({ t: q.a[j], ok: j === 0 })), y: -30, st: 0, t: 0, pick: -1 };
+      G.cancelBullets(true); if (o.ask) o.ask({ question: q.q, options: G.gates.a.map(a => a.t), kind: q.kind }); G.emit("gateStart", { q: q.q });
+    };
+    // "Explain it": play pauses (world frozen, nothing can hit him), the page asks for a sentence, and the
+    // caller grades it, by Jev while paused or by words. The prompt was chosen before the run. A miss costs nothing.
+    G.startExplain = function () {
+      const ex = G.pack.explain; if (!ex || !o.explain || G.quit || G.state !== "play") return false;
+      G.state = "pause"; inp.keys = {}; inp.held = false; G.cancelBullets(true); G.emit("explainStart", {});
+      o.explain(ex, (level, answer) => {
+        if (G.state !== "pause") return;
+        G.res.explain = { prompt: ex.prompt, reference: ex.reference, answer: answer || "", level };
+        const pts = level === "sound" ? 1500 * G.mult : level === "partial" ? 600 * G.mult : 0; G.score += pts;
+        if (level === "sound" && P.bombs < 3) P.bombs++;
+        G.state = "play"; lastTs = performance.now(); G.emit("explainEnd", { level, pts, x: P.x, y: P.y });
+      });
+      return true;
+    };
+    // One way to settle a lane gate, whether he flew through it or the learner pressed its number.
+    function resolveLane(Gt, i) {
+      const n = Gt.a.length, a = Gt.a[i], right = Gt.a.find((q) => q.ok).t; Gt.st = 1; Gt.t = 0; Gt.pick = i;
+      G.res.gates.push({ q: Gt.q, right, picked: a.t, ok: a.ok, kind: Gt.kind, id: Gt.id });
+      if (a.ok) { const pts = 1000 * G.mult; G.score += pts; P.pw += 22; for (let k = 0; k < 14; k++) G.addPick("s", (i + 0.5) * (G.W / n) + rnd(-60, 60), Gt.y, true); G.emit("gateResolve", { ok: true, x: P.x, y: Gt.y, right, picked: a.t, pts }); }
+      else G.emit("gateResolve", { ok: false, x: P.x, y: Gt.y, right, picked: a.t, pts: 0 }); // a wrong answer costs nothing: the right one pays
+    }
+    /** Answer the open gate by its displayed position (number keys, buttons). Works at zero charge. */
+    G.answerGate = function (i) {
+      const Gt = G.gates; if (!Gt || Gt.st !== 0 || G.state !== "play" || i < 0 || i >= Gt.a.length) return false;
+      if (Gt.mode === "targets") return answerTargetGate(G, i);
+      resolveLane(Gt, i); return true;
     };
     function gatesUpdate(dt) {
       const Gt = G.gates; if (!Gt) return;
+      if (Gt.mode === "targets") { updateTargetGate(G, dt); return; }
       if (Gt.st === 0) {
         Gt.y += 84 * dt;
-        if (Gt.y >= P.y - 8 && G.state === "play") {
-          const i = clamp(Math.floor(P.x / (G.W / 3)), 0, 2), a = Gt.a[i], right = Gt.a.find((q) => q.ok).t; Gt.st = 1; Gt.t = 0; Gt.pick = i;
-          G.res.gates.push({ q: Gt.q, right, picked: a.t, ok: a.ok });
-          if (a.ok) { const pts = 1000 * G.mult; G.score += pts; P.pw += 22; for (let k = 0; k < 14; k++) G.addPick("s", (i + 0.5) * (G.W / 3) + rnd(-60, 60), Gt.y, true); G.emit("gateResolve", { ok: true, x: P.x, y: Gt.y, right, picked: a.t, pts }); }
-          else G.emit("gateResolve", { ok: false, x: P.x, y: Gt.y, right, picked: a.t, pts: 0 }); // a wrong answer costs nothing: the right one pays
-        }
+        if (Gt.y >= P.y - 8 && G.state === "play") resolveLane(Gt, clamp(Math.floor(P.x / (G.W / Gt.a.length)), 0, Gt.a.length - 1));
       } else { Gt.t += dt; Gt.y += 20 * dt; if (Gt.t > 1.25) { G.gates = null; if (o.ask) o.ask(null); } }
     }
 
@@ -284,21 +339,7 @@ export const Recess = (function () {
       G.cellT = CHARGE.cellEvery; G.emit("chargeCell", { x, y: 34 });
     }
     function volley() {
-      const tier = G.chargeTier();
-      if (tier === 0) return; // fireT keeps counting, so no muzzle flash or firing pose
-      if (tier === 1) {
-        const a = P.aim, x = P.x + Math.cos(a) * 30, y = P.y - 6 + Math.sin(a) * 30;
-        G.shots.push(mkShot(x, y, a, P.focus ? 1.15 : 1)); drain(CHARGE.cost * 0.5);
-        P.fireT = 0; G.emit("shot", { x, y, aim: a, power: 1, focus: P.focus }); return;
-      }
-      const full = tier === 3;
-      const f = P.focus, d = (P.power >= 4 ? 1.3 : 1) * (f ? 1.15 : 1), sp = f ? 2.5 : 5, a = P.aim, cs = Math.cos(a), sn = Math.sin(a);
-      const x = P.x + cs * 30, y = P.y - 6 + sn * 30, nx = -sn, ny = cs; // muzzle, and the normal to the aim
-      G.shots.push(mkShot(x - nx * sp, y - ny * sp, a, d), mkShot(x + nx * sp, y + ny * sp, a, d));
-      if (full && P.power >= 2) { const w = f ? 0.045 : 0.15; G.shots.push(mkShot(x - nx * (sp + 3), y - ny * (sp + 3), a - w, d * 0.8), mkShot(x + nx * (sp + 3), y + ny * (sp + 3), a + w, d * 0.8)); }
-      if (full && P.power >= 3 && ++P.vol % (P.power >= 4 ? 3 : 4) === 0) G.shots.push(mkShot(P.x - nx * 18, P.y - ny * 18, a - 0.7, 1.6, true), mkShot(P.x + nx * 18, P.y + ny * 18, a + 0.7, 1.6, true));
-      drain(CHARGE.cost * (full ? 1 : 0.6));
-      P.fireT = 0; G.emit("shot", { x, y, aim: a, power: full ? P.power : 1, focus: f });
+      return fireWeapon(G, G.activeWeapon(), G.chargeTier(), drain, CHARGE);
     }
     function player(dt) {
       const p = P, W = G.W, H = G.H, home = G.home; p.animT += dt; p.inv = Math.max(0, p.inv - dt); bombT = Math.max(0, bombT - dt);
@@ -323,21 +364,22 @@ export const Recess = (function () {
       const K = inp.keys, kx = (K.ArrowRight || K.d ? 1 : 0) - (K.ArrowLeft || K.a ? 1 : 0), ky = (K.ArrowDown || K.s ? 1 : 0) - (K.ArrowUp || K.w ? 1 : 0);
       p.focus = !!K.Shift || (G.control !== "thrust" && inp.held);
       let thrust = 0.35, direct = false;
+      const focusSpd = 270 * (G.loadout.perks.focusSpeed || 1);
       if (G.control === "thrust") {
         const on = inp.held || inp.pid !== null || kx || ky;
         if (on) { let dx = kx, dy = ky; if (!kx && !ky) { dx = inp.tx - p.x; dy = inp.ty - p.y; } const l = Math.hypot(dx, dy) || 1, a = 1650 * (kx || ky ? 1 : Math.min(1, l / 36)); p.vx += (dx / l) * a * dt; p.vy += (dy / l) * a * dt; thrust = 1; }
         p.vy += 560 * dt; p.vx *= Math.exp(-dt * 1.7); p.vy *= Math.exp(-dt * 1.2);
       } else if (G.control === "twin" && (kx || ky || inp.pid === null)) {
-        const sp = (p.focus ? 270 : 400) * mv, l = Math.hypot(kx, ky) || 1, q = 1 - Math.exp(-dt * 24);
+        const sp = (p.focus ? focusSpd : 400) * mv, l = Math.hypot(kx, ky) || 1, q = 1 - Math.exp(-dt * 24);
         p.vx = lerp(p.vx, (kx / l) * sp, q); p.vy = lerp(p.vy, (ky / l) * sp, q); thrust = kx || ky ? 0.8 : 0.3;
       } else if (kx || ky) {
-        inp.usingKeys = true; const sp = (p.focus ? 270 : 400) * mv, l = Math.hypot(kx, ky), q = 1 - Math.exp(-dt * 24);
+        inp.usingKeys = true; const sp = (p.focus ? focusSpd : 400) * mv, l = Math.hypot(kx, ky), q = 1 - Math.exp(-dt * 24);
         p.vx = lerp(p.vx, (kx / l) * sp, q); p.vy = lerp(p.vy, (ky / l) * sp, q); thrust = 0.8;
       } else if (inp.usingKeys) { const q = 1 - Math.exp(-dt * 24); p.vx = lerp(p.vx, 0, q); p.vy = lerp(p.vy, 0, q); }
       else {
         // The pointer flies him directly: no spring, so the hit dot is where the hand put it.
         // vx, vy are kept only so his lean and his jets still follow through.
-        const dx = inp.tx - p.x, dy = inp.ty - p.y, d = Math.hypot(dx, dy), cap = (p.focus ? 340 : mv < 0.99 ? lerp(380, 900, cc) : 1700) * mv * dt, k = d > cap ? cap / d : 1, q = 1 - Math.exp(-dt * 20);
+        const dx = inp.tx - p.x, dy = inp.ty - p.y, d = Math.hypot(dx, dy), cap = (p.focus ? 340 * (G.loadout.perks.focusSpeed || 1) : mv < 0.99 ? lerp(380, 900, cc) : 1700) * mv * dt, k = d > cap ? cap / d : 1, q = 1 - Math.exp(-dt * 20);
         p.x += dx * k; p.y += dy * k; direct = true;
         p.vx = lerp(p.vx, (dx * k) / Math.max(dt, 0.001), q); p.vy = lerp(p.vy, (dy * k) / Math.max(dt, 0.001), q);
         thrust = Math.min(1, Math.hypot(p.vx, p.vy) / 380) + 0.25;
@@ -349,7 +391,9 @@ export const Recess = (function () {
       p.tilt = lerp(p.tilt, clamp(p.vx / 620, -0.48, 0.48), 1 - Math.exp(-dt * 12));
       if ((p.anim === "hit" && p.animT > 0.8) || (p.anim === "eureka" && p.animT > 0.85) || (p.anim === "cheer" && p.animT > 0.9)) { p.anim = "hover"; p.animT = 0; }
       cellUpdate(dt);
-      p.shotT -= dt; if (p.shotT <= 0) { const tier = G.chargeTier(); p.shotT = 0.085 * lerp(1.2, 1, ct) * (tier === 3 ? 1 : tier === 2 ? 1.5 : tier === 1 ? 2.2 : 1); volley(); }
+      if (G.tempWeaponT > 0) { G.tempWeaponT = Math.max(0, G.tempWeaponT - dt); if (G.tempWeaponT === 0) G.tempWeapon = null; }
+      updateHelpers(G, dt);
+      p.shotT -= dt; if (p.shotT <= 0) { const tier = G.chargeTier(); const cadence = volley(); p.shotT = 0.085 * cadence * lerp(1.2, 1, ct) * (tier === 3 ? 1 : tier === 2 ? 1.5 : tier === 1 ? 2.2 : 1); }
     }
     G.finish = function (w) {
       if (G.state !== "play") return;
@@ -366,7 +410,7 @@ export const Recess = (function () {
       post?.clear();
       v2.clearRect(0, 0, view.width, view.height);
       unbind();
-      const r = { won: G.won, quit: G.quit, score: G.score, kills: G.kills, grazes: G.grazes, rattled: G.rattled, hearts: P.hearts, gates: G.res.gates, myths: G.res.myths, wind: G.res.wind || null, tldr: G.won ? G.pack.tldr : null,
+      const r = { won: G.won, quit: G.quit, score: G.score, kills: G.kills, grazes: G.grazes, rattled: G.rattled, hearts: P.hearts, gates: G.res.gates, myths: G.res.myths, wind: G.res.wind || null, explain: G.res.explain || null, tldr: G.won ? G.pack.tldr : null,
         care: { used: 0.1, chargeDelta: G.chargeDelta(), cogs: G.res.gates.filter((q) => q.ok).length, sparks: Math.floor(G.sparks / 20) } }; // what the run took from him and gave back
       G.emit("end", { result: r }); o.end(r);
     }
@@ -397,27 +441,32 @@ export const Recess = (function () {
       }
       if (G.foes.some((e) => e.dead)) G.foes = G.foes.filter((e) => !e.dead);
       gatesUpdate(dt);
-      // his shots
+      // his shots (and companion helper shots)
       for (const s of G.shots) {
-        s.t += dt;
-        if (s.hom) {
-          let best = null, bd = 1e9; for (const e of G.foes) { if (e.born > 0) continue; const d = (e.x - s.x) * (e.x - s.x) + (e.y - s.y) * (e.y - s.y); if (d < bd) { bd = d; best = e; } }
-          if (best) { const want = Math.atan2(best.y - s.y, best.x - s.x), cur = Math.atan2(s.vy, s.vx); let da = want - cur; while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU; const na = cur + clamp(da, -7.5 * dt, 7.5 * dt); s.vx = Math.cos(na) * 560; s.vy = Math.sin(na) * 560; }
+        stepShot(G, s, dt);
+        if (s.y < -24 || s.x < -24 || s.x > W + 24 || s.y > H + 24 || s.t > 2.2) { s.dead = true; continue; }
+        for (const e of G.foes) {
+          if (s.pierce && s.hit && s.hit.has(e)) continue;
+          const h = hitTest(e, s.x, s.y, s.r || 5);
+          if (h) {
+            G.damage(e, h, s.d, s.x, s.y, Math.atan2(s.vy, s.vx));
+            if (s.pierce && s.hit) { s.hit.add(e); }
+            else { s.dead = true; break; }
+          }
         }
-        s.x += s.vx * dt; s.y += s.vy * dt;
-        if (s.y < -20 || s.x < -20 || s.x > W + 20 || s.y > H + 20 || s.t > 2.2) { s.dead = true; continue; }
-        for (const e of G.foes) { const h = hitTest(e, s.x, s.y, 5); if (h) { G.damage(e, h, s.d, s.x, s.y, Math.atan2(s.vy, s.vx)); s.dead = true; break; } }
+        if (!s.dead && !s.hom && G.gates && G.gates.mode === "targets" && hitTargetGate(G, s, dt)) s.dead = true;
       }
       if (G.shots.length) G.shots = G.shots.filter((s) => !s.dead);
       // their bullets
       const px = P.x, py = P.y; let hit = false;
+      const grazeR = G.loadout.perks.grazeRadius || 26;
       for (const b of G.bul) {
         b.t += dt; const def = G.bullets[b.k]; if (def && def.move) def.move(G, b, dt); else { b.x += b.vx * dt; b.y += b.vy * dt; }
         if (b.x < -40 || b.x > W + 40 || b.y < -50 || b.y > H + 40) { if (!b.keep) b.dead = true; continue; }
         if (!playing || b.safe) continue;
         const dx = b.x - px, dy = b.y - py, d2 = dx * dx + dy * dy, hr = b.r * 0.62 + 3;
         if (def && def.hits ? def.hits(G, b, px, py) : d2 < hr * hr) { if (P.inv <= 0) { hit = true; if (!b.pierce) b.dead = true; } }
-        else if (!b.gz && d2 < 26 * 26 && P.inv <= 0) {
+        else if (!b.gz && d2 < grazeR * grazeR && P.inv <= 0) {
           b.gz = true; G.grazes++; G.meter++; G.score += 25 * G.mult; G.emit("graze", { x: (b.x + px) / 2, y: (b.y + py) / 2, b });
           if (G.meter >= 36) { G.meter = 0; if (P.bombs < 3) { P.bombs++; G.emit("charge", { x: px, y: py, bombs: P.bombs }); } }
         }
@@ -425,18 +474,22 @@ export const Recess = (function () {
       if (hit) G.hitPlayer();
       if (G.bul.some((b) => b.dead)) G.bul = G.bul.filter((b) => !b.dead);
       // pickups
+      const magScale = helperMagnetScale(G);
+      const chargeScale = G.loadout.perks.chargeGain || 1;
       for (const p of G.picks) {
         p.t += dt; const dx = px - p.x, dy = py - p.y, d = Math.hypot(dx, dy) || 1;
-        if (p.mag || d < (p.k === "e" ? 150 : 96) || !playing) { const s = 380 + p.t * 900; p.vx = lerp(p.vx, (dx / d) * s, 1 - Math.exp(-dt * 10)); p.vy = lerp(p.vy, (dy / d) * s, 1 - Math.exp(-dt * 10)); }
-        else if (p.k === "e") { p.vy = Math.min(30, p.vy + 40 * dt); p.vx = Math.sin(p.t * 1.6) * 18; }
+        const pullR = (p.k === "e" || p.k === "w" ? 150 : 96) * magScale;
+        if (p.mag || d < pullR || !playing) { const s = 380 + p.t * 900; p.vx = lerp(p.vx, (dx / d) * s, 1 - Math.exp(-dt * 10)); p.vy = lerp(p.vy, (dy / d) * s, 1 - Math.exp(-dt * 10)); }
+        else if (p.k === "e" || p.k === "w") { p.vy = Math.min(34, p.vy + 40 * dt); p.vx = Math.sin(p.t * 1.6) * 18; }
         else { p.vy = Math.min(72, p.vy + 190 * dt); p.vx *= Math.exp(-dt * 2); }
         p.x += p.vx * dt; p.y += p.vy * dt;
-        if (d < 17) {
+        if (d < 18) {
           p.dead = true;
-          if (p.k === "s") { G.score += 10 * G.mult; P.pw++; G.sparks++; G.refill(CHARGE.spark); pickN++; pickT = 0.5; G.emit("pickup", { p, streak: pickN }); while (P.power < 4 && P.pw >= PW[P.power]) { P.power++; G.emit("powerUp", { power: P.power, x: px, y: py }); } }
-          else if (p.k === "c") { if (P.bombs < 3) P.bombs++; G.refill(CHARGE.card); G.emit("pickup", { p, streak: 0 }); }
-          else if (p.k === "e") { G.refill(CHARGE.cell); G.cellT = CHARGE.cellEvery; G.emit("pickup", { p, streak: 0, amount: CHARGE.cell }); }
-          else { if (P.hearts < 4) P.hearts++; G.refill(CHARGE.card); G.emit("pickup", { p, streak: 0 }); }
+          if (p.k === "s") { G.score += 10 * G.mult; P.pw++; G.sparks++; G.refill(CHARGE.spark * chargeScale); pickN++; pickT = 0.5; G.emit("pickup", { p, streak: pickN }); while (P.power < 4 && P.pw >= PW[P.power]) { P.power++; G.emit("powerUp", { power: P.power, x: px, y: py }); } }
+          else if (p.k === "c") { if (P.bombs < 3) P.bombs++; G.refill(CHARGE.card * chargeScale); G.emit("pickup", { p, streak: 0 }); }
+          else if (p.k === "e") { G.refill(CHARGE.cell * chargeScale); G.cellT = CHARGE.cellEvery; G.emit("pickup", { p, streak: 0, amount: CHARGE.cell * chargeScale }); }
+          else if (p.k === "w") { G.tempWeapon = p.weapon || "scatter"; G.tempWeaponT = 14; G.emit("weaponPick", { weapon: G.tempWeapon, label: WEAPON_LABELS[G.tempWeapon] || G.tempWeapon, x: px, y: py }); G.emit("pickup", { p, streak: 0 }); }
+          else { if (P.hearts < 4) P.hearts++; G.refill(CHARGE.card * chargeScale); G.emit("pickup", { p, streak: 0 }); }
         } else if (p.y > H + 20) p.dead = true;
       }
       if (G.picks.some((p) => p.dead)) G.picks = G.picks.filter((p) => !p.dead);
@@ -478,9 +531,17 @@ export const Recess = (function () {
         c.save(); c.translate(w.x, w.y); c.rotate(w.rot); c.globalAlpha = w.st === 2 ? 0.9 : 0.42; c.font = w.font; c.fillStyle = w.col; c.fillText(w.text, 0, 0); c.restore(); // loose words sit at a midtone so they never compete with a bullet
       }
       // gates
-      if (G.gates) {
-        const Gt = G.gates, sw = W / 3;
-        for (let i = 0; i < 3; i++) {
+      if (G.gates && G.gates.mode === "targets") {
+        drawTargetGate(G, c, em, pal);
+      } else if (G.gates) {
+        const Gt = G.gates, n = Gt.a.length, sw = W / n, layer = o.gateLayer;
+        // With a DOM label layer (Markdown and maths), the canvas draws only the lane lines; the layer follows the gate.
+        if (layer) {
+          layer.style.setProperty("--gate-y", Gt.y + "px"); layer.dataset.st = String(Gt.st); layer.dataset.pick = String(Gt.pick);
+          layer.dataset.ok = String(Gt.a.findIndex((a) => a.ok));
+        }
+        for (let i = 0; i < n; i++) {
+          if (layer) { const a = Gt.a[i], x0 = i * sw; c.globalAlpha = Gt.st === 1 && !a.ok && i !== Gt.pick ? 0.3 : 1; c.strokeStyle = Gt.st === 1 ? (a.ok ? pal.deep : i === Gt.pick ? pal.red : pal.ink) : pal.ink; c.lineWidth = 2; c.setLineDash([6, 5]); c.beginPath(); c.moveTo(x0 + 10, Gt.y); c.lineTo(x0 + sw - 10, Gt.y); c.stroke(); c.setLineDash([]); c.globalAlpha = 1; continue; }
           const a = Gt.a[i], x0 = i * sw, cx = x0 + sw / 2; let col = pal.ink, fill = pal.card;
           if (Gt.st === 1) { if (a.ok) { col = pal.deep; fill = pal.wash; } else if (i === Gt.pick) { col = pal.red; fill = pal.blush; } else c.globalAlpha = 0.3; }
           c.strokeStyle = col; c.lineWidth = 2; c.setLineDash([6, 5]); c.beginPath(); c.moveTo(x0 + 10, Gt.y); c.lineTo(x0 + sw - 10, Gt.y); c.stroke(); c.setLineDash([]);
@@ -488,24 +549,14 @@ export const Recess = (function () {
           rr(cx - tw / 2, c, Gt.y - 14, tw, 28, 5); c.fillStyle = fill; c.fill(); c.stroke();
           c.fillStyle = col; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(a.t, cx, Gt.y + 0.5, tw - 12); c.globalAlpha = 1;
         }
-        c.fillStyle = pal.ink; for (let i = 0; i <= 3; i++) { const x = clamp(i * sw, 5, W - 5); c.beginPath(); c.moveTo(x, Gt.y - 6); c.lineTo(x + 6, Gt.y); c.lineTo(x, Gt.y + 6); c.lineTo(x - 6, Gt.y); c.closePath(); c.fill(); }
+        c.fillStyle = pal.ink; for (let i = 0; i <= n; i++) { const x = clamp(i * sw, 5, W - 5); c.beginPath(); c.moveTo(x, Gt.y - 6); c.lineTo(x + 6, Gt.y); c.lineTo(x, Gt.y + 6); c.lineTo(x - 6, Gt.y); c.closePath(); c.fill(); }
       }
       run("draw.back", env);
       for (const p of G.picks) A.drawPickup(c, p, env);
       for (const e of G.foes) A.drawFoe(c, e, env);
-      // his shots, on both layers
-      if (G.shots.length) for (const x of [c, em]) {
-        x.lineCap = "round";
-        for (const pass of [0, 1]) {
-          x.beginPath();
-          for (const s of G.shots) { if (s.hom) continue; x.moveTo(s.x, s.y); x.lineTo(s.x - s.vx * 0.017, s.y - s.vy * 0.017); }
-          x.strokeStyle = pass ? (G.dark ? "#eafff1" : pal.phos) : G.dark ? pal.phos : pal.deep; x.lineWidth = pass ? 1.3 : 3.6; x.stroke();
-        }
-        x.strokeStyle = G.dark ? pal.phos : pal.deep; x.lineWidth = 2.4; x.lineJoin = "miter"; x.beginPath();
-        for (const s of G.shots) { if (!s.hom) continue; const a = Math.atan2(s.vy, s.vx) + Math.PI / 2, cs = Math.cos(a), sn = Math.sin(a), q = (u, v) => [s.x + u * cs - v * sn, s.y + u * sn + v * cs]; const p1 = q(-5, 0), p2 = q(-1.5, 4), p3 = q(5.5, -5); x.moveTo(p1[0], p1[1]); x.lineTo(p2[0], p2[1]); x.lineTo(p3[0], p3[1]); }
-        x.stroke();
-      }
+      drawShots(c, em, G, pal);
       run("draw.flames", env);
+      drawHelpers(c, em, G, pal);
       A.drawPlayer(c, env);
       // their bullets, always above everything that moves
       const byKind = {}; for (const b of G.bul) (byKind[b.k] = byKind[b.k] || []).push(b);
@@ -514,15 +565,26 @@ export const Recess = (function () {
       c.globalAlpha = 1; em.globalAlpha = 1;
     }
     function present() {
-      const useShader = post && !post.lost && !G.calm;
+      const useShader = post && !post.lost && !G.calm && !postOff;
       if (shader) shader.hidden = !useShader;
       view.hidden = Boolean(useShader);
       if (useShader) post.draw(g, ge, G);
       else { v2.setTransform(1, 0, 0, 1, 0, 0); v2.clearRect(0, 0, view.width, view.height); v2.drawImage(g, 0, 0); }
     }
+    function govern(ms, rdt) {
+      if (ms <= 0 || ms > 250 || G.state !== "play") return; // a tab switch or a pause says nothing about speed
+      frameEma += (ms - frameEma) * 0.1;
+      slowFor = frameEma > 26 ? slowFor + rdt : Math.max(0, slowFor - rdt);
+      if (slowFor < 1.5) return;
+      slowFor = 0; frameEma = 16;
+      if (post && !post.lost && !G.calm && !postOff) { postOff = true; G.emit("degrade", { step: "glow" }); }
+      else if (dprCap > 1 && G.dpr > 1) { dprCap = 1; size(); G.emit("degrade", { step: "resolution" }); }
+    }
     function frame(ts) {
       raf = requestAnimationFrame(frame);
-      const rdt = Math.min(0.034, Math.max(0, (ts - lastTs) / 1000)); lastTs = ts; if (document.hidden) return;
+      const ms = ts - lastTs;
+      const rdt = Math.min(0.034, Math.max(0, ms / 1000)); lastTs = ts; if (document.hidden) return;
+      govern(ms, rdt);
       step(rdt);
     }
     function step(rdt) {
@@ -530,17 +592,22 @@ export const Recess = (function () {
       fx.on = clamp(fx.on + (G.state === "outro" && G.T - outT > 1.1 ? -rdt * 1.6 : rdt * 2.2), 0, 1);
       fx.focus += ((P.focus && G.state === "play" ? 1 : 0) - fx.focus) * (1 - Math.exp(-rdt * 12));
       for (const s of fx.shocks) s.t += rdt; while (fx.shocks.length && fx.shocks[0].t > 1.3) fx.shocks.shift();
-      let dt = G.state === "down" ? 0 : rdt; if (fx.stop > 0) { fx.stop -= rdt; if (!G.calm) dt = 0; } if (fx.slowT > 0) { fx.slowT -= rdt; if (fx.slowT <= 0) fx.slow = 1; } dt *= fx.slow;
+      let dt = G.state === "down" || G.state === "pause" ? 0 : rdt; if (fx.stop > 0) { fx.stop -= rdt; if (!G.calm) dt = 0; } if (fx.slowT > 0) { fx.slowT -= rdt; if (fx.slowT <= 0) fx.slow = 1; } dt *= fx.slow;
       run("frame", rdt);
       if (dt > 0) { G.T += dt; update(dt); }
       if (G.state === "idle") return;
       draw(); present();
-      o.hud({ hearts: P.hearts, bombs: P.bombs, score: G.score, mult: G.mult, combo: clamp(G.comboT / 2.8, 0, 1), power: P.power, charge: G.energy, meter: G.meter / 36, label: G.label, boss: G.boss ? Math.max(0, G.boss.hp) / G.boss.max : -1 });
+      o.hud({ hearts: P.hearts, bombs: P.bombs, score: G.score, mult: G.mult, combo: clamp(G.comboT / 2.8, 0, 1), power: P.power, charge: G.energy, meter: G.meter / 36, label: G.label, boss: G.boss ? Math.max(0, G.boss.hp) / G.boss.max : -1, weapon: G.activeWeapon(), weaponTemp: G.tempWeaponT > 0, helpers: G.helpers.length, helperKind: G.loadout.helper });
     }
 
     // ── input ──
+    // Pointer moves arrive faster than frames; read the arena's box once and again only after a scroll or resize.
+    let ptRect = null;
+    const dropRect = () => { ptRect = null; };
+    window.addEventListener("scroll", dropRect, { capture: true, passive: true });
+    window.addEventListener("resize", dropRect, { passive: true });
     const pt = (e) => {
-      const rect = arena.getBoundingClientRect();
+      const rect = ptRect || (ptRect = arena.getBoundingClientRect());
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
     const captured = new Set();
@@ -604,14 +671,16 @@ export const Recess = (function () {
       inp.pid = null; inp.aid = null;
     }
     function stop() {
-      if (G.state !== "play" && G.state !== "intro" && G.state !== "down") return;
-      G.state = "play"; G.quit = true; o.revive?.(null); G.finish(false);
+      if (G.state !== "play" && G.state !== "intro" && G.state !== "down" && G.state !== "pause") return;
+      G.state = "play"; G.quit = true; o.revive?.(null); o.explain?.(null); G.finish(false);
     }
     function key(e) {
       if (e.target !== arena || e.altKey || e.ctrlKey || e.metaKey || e.defaultPrevented) return;
       const dn = e.type === "keydown", k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       if (dn && k === "Escape" && G.state !== "idle") { e.preventDefault(); stop(); return; }
       if (G.state !== "play" && G.state !== "intro") return;
+      // Number keys answer an open gate directly: the choice never depends on aim, charge or flying skill.
+      if (dn && /^[1-4]$/.test(k) && G.gates && G.gates.st === 0) { e.preventDefault(); G.answerGate(Number(k) - 1); return; }
       if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "w", "a", "s", "d", "Shift", "x"].includes(k)) return;
       if (k !== "Shift") e.preventDefault(); inp.keys[k] = dn;
       if (dn && (k === " " || k === "x") && !e.repeat) G.bomb();
@@ -634,12 +703,13 @@ export const Recess = (function () {
     function start(scene) {
       if (disposed || G.state !== "idle") return false;
       size(); G.pal = PAL[G.theme]; G.dark = G.theme === "term"; collect(); heap = new Float32Array(Math.ceil(G.W / 22) + 1);
-      G.foes = []; G.shots = []; G.bul = []; G.picks = []; G.timers = []; fx.shocks = []; G.gates = null; G.boss = null; G.ring = null; G.tldr = null;
+      G.foes = []; G.shots = []; G.bul = []; G.picks = []; G.helpers = []; G.timers = []; fx.shocks = []; G.gates = null; G.boss = null; G.ring = null; G.tldr = null;
+      G.tempWeapon = null; G.tempWeaponT = 0;
       G.score = 0; G.mult = 1; G.chain = 0; G.comboT = 0; G.kills = 0; G.grazes = 0; G.meter = 0; G.rattled = 0; G.won = false; G.quit = false; returned = false; G.res = { gates: [], myths: [] };
       G.energy = G.energy0 = G.care.charge; G.cellT = 0;
       hitT = 0; lastHit = -99; calmT = 0; usedWind = false; G.mercy = 0; G.sparks = 0; G.T = 0; fx.slow = 1; fx.slowT = 0; fx.stop = 0; fx.shake = 0; fx.kx = 0; fx.ky = 0; fx.flash = 0; fx.hit = 0; fx.on = 0; fx.speed = 0.3; G.label = "";
       Object.assign(P, { scale: 0.62, x: G.home.x, y: G.home.y, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: G.care.shine >= 0.9 ? 3 : 2, power: scene === "boss" ? 3 : scene === "myth" ? 2 : 1, shotT: 0.5, vol: 0, anim: o.rows.launch === undefined ? "hover" : "launch", animT: 0, focus: false, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, mire: 0, manual: false, flick: 0, seed: Math.random() * TAU });
-      P.pw = PW[P.power - 1]; inp.keys = {}; inp.held = false; inp.pid = null; inp.aid = null; inp.touch = false; inp.usingKeys = false; inp.tx = G.W / 2; inp.ty = G.H * 0.7; inp.ax = G.W / 2; inp.ay = 0;
+      P.pw = PW[P.power - 1] + (G.loadout.perks.headStart || 0); inp.keys = {}; inp.held = false; inp.pid = null; inp.aid = null; inp.touch = false; inp.usingKeys = false; inp.tx = G.W / 2; inp.ty = G.H * 0.7; inp.ax = G.W / 2; inp.ay = 0;
       G.state = "intro";
       G.emit("start", { scene }); script = RecessPatterns.script(G, scene);
       bind(); lastTs = performance.now(); raf = requestAnimationFrame(frame); if (o.phase) o.phase("play");
@@ -656,7 +726,7 @@ export const Recess = (function () {
     // The installation order matches the authored game. Each module is scoped to this run.
     for (const install of [A.install, installAudio, installFeedback, installBullets, installPatterns]) install(G);
     return {
-      start, stop, bomb: G.bomb,
+      start, stop, bomb: G.bomb, answerGate: (i) => G.answerGate(i),
       get state() { return G.state; },
       /** Remaining firing charge minus the charge this run started with, in [-1, 1]. */
       get chargeDelta() { return G.chargeDelta(); },
@@ -675,6 +745,8 @@ export const Recess = (function () {
         cancelAnimationFrame(raf);
         G.timers.length = 0;
         unbind();
+        window.removeEventListener("scroll", dropRect, { capture: true });
+        window.removeEventListener("resize", dropRect);
         for (const w of G.words) w.el.style.visibility = "";
         for (const el of thread.querySelectorAll(".stir")) el.classList.remove("stir");
         post?.dispose();

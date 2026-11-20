@@ -543,6 +543,7 @@ export function install(G) {
         worm() { G.fromTerm("worm", (x, y, born) => G.spawn(mkWorm(...away(x, y), born))); },
         myth(i) { if (G.pack.myths.length) G.fromTerm("myth", (x, y, born) => G.spawn(mkMyth(i, ...away(x, y), born))); },
         gates(i) { G.startGates(i); wait = () => !G.gates; },
+        explain() { if (G.startExplain && G.startExplain()) wait = () => G.state !== "pause"; },
         boss() { spawnBoss(); wait = () => !G.boss; },
         end() { G.finish(true); },
       };
@@ -552,8 +553,13 @@ export function install(G) {
         ["dart", 2], ["wait", 1.4], ["spin"], ["wait", 3.6], ["drift", { n: 4, from: "far" }], ["drift", { n: 3, from: "T" }], ["clear", 11],
         ["mark", "gates"], ["wait", 0.5], ["gates", 0], ["wait", 0.4],
         ["say", "Wave 2"], ["split"], ["wait", 3], ["dart", 3], ["wait", 2.6], ["worm"], ["wait", 4.5], ["loop"], ["wait", 3], ["drift", { n: 4, from: "far" }], ["clear", 14],
+        // A pack may carry up to four gate questions; a slot with no question skips itself at once.
+        ["wait", 0.5], ["gates", 1], ["wait", 0.4],
         ["mark", "myth"], ["myth", 0], ["wait", 5], ["drift", { n: 4, from: "far" }], ["clear", 18],
-        ["wait", 0.5], ["gates", 1], ["wait", 0.5],
+        ["wait", 0.5], ["gates", 2], ["wait", 0.4],
+        // The one open question, when the pack has one: a breather before the last stretch.
+        ["mark", "explain"], ["explain"], ["wait", 0.4], ["drift", { n: 4, from: "T" }], ["clear", 8],
+        ["wait", 0.5], ["gates", 3], ["wait", 0.5],
         ["mark", "boss"], ["say", (G.pack.boss && G.pack.boss.name) || "The Wall of Text"], ["wait", 1.1], ["boss"], ["wait", 2.8], ["end"]];
       // scenes let the mockup page jump straight to one part of the run
       const at = all.findIndex((s) => s[0] === "mark" && s[1] === scene), steps = at < 0 ? all : all.slice(at);

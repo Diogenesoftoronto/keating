@@ -4,7 +4,6 @@ import { lazy, Suspense, useContext, useEffect, useId, useLayoutEffect, useRef, 
 import { useMotionAllowed } from "../design-system/motion";
 import { KeatingGlyph } from "../design-system/glyphs";
 import { useMediaQuery } from "../hooks/use-media-query";
-import { recessReviewDraft } from "../keating/habits/recess-review";
 import { addDraftQuote } from "../keating/passage-quote-draft";
 import { KeatingBot, type KeatingBotState } from "./KeatingBot";
 import { LearningReferenceScope } from "./LearningReferenceLink";
@@ -12,7 +11,7 @@ import { useCompanionMode } from "./companion/CompanionSetting";
 import { useCompanionDrag } from "./companion/useCompanionDrag";
 import { useLessonReactions } from "./companion/useLessonReactions";
 import type { StudyGameArea, StudyGameContext } from "./habits/StudyGameDialog";
-import type { RecessResult } from "./recess/types";
+import { RECESS_PENDING_KEY } from "./recess/recess-events";
 import {
 	activityTargetSelector,
 	captureTarget,
@@ -33,6 +32,7 @@ const STUDY_CHOICES = [
 	["Make flashcards", "Make flashcards to help me review the current topic."],
 ] as const;
 const StudyGameDialog = lazy(() => import("./habits/StudyGameDialog"));
+const ChatRecess = lazy(() => import("./recess/ChatRecess"));
 type Props = {
 	state: KeatingBotState;
 	busy: boolean;
@@ -64,7 +64,7 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 	const [gesture, setGesture] = useState<KeatingBotState | null>(null);
 	const [position, setPosition] = useState({ left: 8, bottom: 8 });
 	const [activity, setActivity] = useState<{ area: StudyGameArea; context: StudyGameContext } | null>(null);
-	const [recap, setRecap] = useState<RecessResult | null>(null);
+	const [recess, setRecess] = useState<StudyGameContext | null>(null);
 	const expanded = desktop && room && mode !== "off";
 	useEffect(() => { onSeatedChange?.(expanded); }, [expanded, onSeatedChange]);
 	const lively = expanded && mode === "lively";
@@ -81,6 +81,32 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 		opener?.focus({ preventScroll: true });
 		setActivity({ area, context });
 	};
+	// Recess is part of the chat, not a dialog: it takes the composer's place and flies over this thread.
+	const openRecess = () => {
+		if (!games) return;
+		close();
+		setRecess(games());
+	};
+	// Arriving from "Practise another chat" opens Recess here once this chat's lesson has loaded.
+	useEffect(() => {
+		if (!games || !session) return;
+		let pending: string | null = null;
+		try { pending = sessionStorage.getItem(RECESS_PENDING_KEY); } catch { return; }
+		if (pending !== session) return;
+		let frame = 0;
+		const deadline = performance.now() + 4000;
+		const wait = () => {
+			const context = games();
+			if (context.lesson.length || performance.now() > deadline) {
+				try { sessionStorage.removeItem(RECESS_PENDING_KEY); } catch { /* already gone */ }
+				setRecess(context);
+				return;
+			}
+			frame = requestAnimationFrame(wait);
+		};
+		wait();
+		return () => cancelAnimationFrame(frame);
+	}, [games, session]);
 	function selectTarget(t: DropTarget) {
 		if (isActivityDrop(t.kind)) {
 			close();
@@ -271,10 +297,9 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 		);
 		return () => walk.cancel();
 	}, [pose, reaction, motion]);
-	const review = recap && recessReviewDraft(recap);
 	const studyActions = games && <>
-		<button type="button" className="ch-study-activity" aria-haspopup="dialog" data-glyph-host
-			onClick={event => openActivity("recess", event.currentTarget)}>
+		<button type="button" className="ch-study-activity" data-glyph-host
+			aria-expanded={!!recess} onClick={() => recess ? setRecess(null) : openRecess()}>
 			<KeatingGlyph name="play" size={13} />Recess
 		</button>
 		{mode !== "off" && <button type="button" className="ch-study-activity" aria-haspopup="dialog" data-glyph-host
@@ -284,14 +309,19 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 	</>;
 	return (
 		<>
-		{games && recap && <div className="ch-recess-recap" role="group" aria-label="Recess recap">
-			<span role="status">{recap.won ? "Recess cleared" : recap.quit ? "Recess stopped" : "Recess finished"} · {recap.score.toLocaleString()} points</span>
-			{review && <button type="button" onClick={() => { addDraft(review); setRecap(null); }}>Review in chat</button>}
-			<button type="button" aria-label="Dismiss Recess recap" onClick={() => {
-				setRecap(null);
-				trigger.current?.focus({ preventScroll: true });
-			}}><KeatingGlyph name="x" size={13} /></button>
-		</div>}
+		{games && recess && <Suspense fallback={<p className="recess-strip" role="status">Opening Recess…</p>}>
+			<ChatRecess
+				// Read live while open: a reply that finishes after Recess opened reaches the plan. Runs freeze their own copy.
+				lesson={games().lesson} sessionId={recess.sessionId} model={recess.model} mode={mode}
+				host={anchor.current?.closest<HTMLElement>("[data-chat-thread]") ?? null}
+				onClose={() => { setRecess(null); trigger.current?.focus({ preventScroll: true }); }}
+				onDraft={draft => {
+					setRecess(null);
+					addDraft(draft);
+					requestAnimationFrame(() => chat()?.querySelector<HTMLTextAreaElement>(".composer-root textarea")?.focus());
+				}}
+			/>
+		</Suspense>}
 		<div ref={anchor} className="chat-mascot-perch" data-expanded={expanded}>
 			<button
 				ref={trigger}
@@ -353,10 +383,8 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 						context={activity.context}
 						mode={mode}
 						onClose={() => setActivity(null)}
-						onRecessEnd={result => { if (!result.quit || result.gates.length || result.myths.length || result.wind) setRecap(result); }}
 						onDraft={draft => {
 							setActivity(null);
-							setRecap(null);
 							addDraft(draft);
 							requestAnimationFrame(() => chat()?.querySelector<HTMLTextAreaElement>(".composer-root textarea")?.focus());
 						}}
@@ -421,7 +449,7 @@ function Companion({ state, busy, session, onSeatedChange, games, studyActionsHo
 								{games && (
 									<>
 										<div className="chat-mascot-menu__divider" role="separator" />
-										<button type="button" role="menuitem" onClick={() => openActivity("recess")}>Take a recess</button>
+										<button type="button" role="menuitem" onClick={openRecess}>Take a recess</button>
 										{mode !== "off" && <>
 											<button type="button" role="menuitem" onClick={() => openActivity("care")}>Look after Keating</button>
 											<button type="button" role="menuitem" onClick={() => openActivity("quests")}>Quests and kit</button>

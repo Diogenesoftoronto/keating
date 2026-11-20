@@ -378,7 +378,7 @@
 .session-panel .session-panel__icon:hover { background: transparent; color: var(--ink); }
 .session-panel .session-panel__new,
 .session-panel .session-panel__new:hover {
-  width: auto; height: 36px; min-height: 36px; gap: 6px; padding: 0 10px; border-radius: 4px;
+  width: auto; height: 36px; min-height: 36px; gap: 6px; padding-block: 0; padding-inline: 8px 12px; border-radius: 4px; white-space: nowrap;
   background: var(--ink); color: var(--paper); box-shadow: none;
   font: 500 14px/1.2 var(--mono-body);
 }
@@ -449,7 +449,10 @@
 .session-panel__empty p { font: 15px/1.5 var(--font-ui); color: var(--ink-soft); }
 @media (hover: none) {
   .session-panel .session-entry__side { position: static; transform: none; opacity: 1; background: transparent; }
-  .session-panel .session-entry .session-library__icon-button, .session-panel .session-panel__icon { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  .session-panel .session-entry .session-library__icon-button, .session-panel .session-panel__icon:not(.session-panel__new) { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  /* "New" keeps its label: grow the hit area, never squeeze the text. */
+  .session-panel:not(.session-panel--collapsed) .session-panel__new { width: auto; min-width: 44px; height: 44px; min-height: 44px; }
+  .session-panel--collapsed .session-panel__new { width: 44px; height: 44px; min-height: 44px; }
 }
 .session-panel .session-entry__time { margin: 0; padding: 0; }
 .session-panel .session-entry__category { max-width: none; overflow: visible; }

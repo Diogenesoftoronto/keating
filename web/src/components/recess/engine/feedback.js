@@ -1,4 +1,5 @@
 import { RecessArt } from "./foes.js";
+import { HELPER_LABELS } from "./arsenal.js";
 // Recess feedback (feedback lane): particles, pops, shockwaves, shake, hit-stop, slow motion, flames.
 // Core says what happened; this decides how it feels, scaled by how much it mattered. Debris draws
 // under every bullet; only brief marks draw over. G.calm drops shake, hit-stop, most particles.
@@ -198,6 +199,22 @@ export function install(G) {
     // a bullet touched him: the world nearly stops (the window is game time, so it lasts ~0.7 s for the
     // player) and a ring closes on him. Pressing Eureka in time is the best save in the game.
     G.on("hitPending", () => { pend = G.T; slow(0.15, 0.75); });
+    G.on("helperJoin", (d) => {
+      const name = HELPER_LABELS[d.kind] || "Helper";
+      pop(d.x, d.y - 26, `+1 ${name.toUpperCase()}`, GRN(), 12, 1.35);
+      ring(d.x, d.y, 0.36, 8, 42, GRN());
+      halo(d.x, d.y, 6, 18, 9, 0.35);
+    });
+    G.on("parry", (d) => {
+      pop(d.x, d.y - 16, "PARRY", GRN(), 10, 0.7);
+      ring(d.x, d.y, 0.25, 6, 26, GRN());
+      for (let i = 0; i < N(5); i++) { const a = rnd(TAU), s = rnd(90, 190); part("spark", d.x, d.y, Math.cos(a) * s, Math.sin(a) * s, 0.16, 7, G.pal.phos); }
+    });
+    G.on("weaponPick", (d) => {
+      pop(d.x, d.y - 34, `${String(d.label || d.weapon).toUpperCase()}!`, GRN(), 14, 1.45, true);
+      ring(d.x, d.y, 0.42, 10, 62, GRN());
+      halo(d.x, d.y, 8, 28, 10, 0.4);
+    });
     G.on("lastChance", (d) => {
       pend = -1; slow(0.4, 0.55); stop(0.07);
       pop(d.x, d.y - 84, "JUST IN TIME", GRN(), 17, 1.4); ring(d.x, d.y, 0.5, 14, 130, GRN()); ring(d.x, d.y, 0.7, 8, 70, GRN());
@@ -480,8 +497,14 @@ export function install(G) {
       if (tl) {
         const k = clamp(tl.t / 0.5, 0, 1), maxW = Math.min(G.W - 70, 420); c.globalAlpha = k; c.textAlign = "center"; c.textBaseline = "middle";
         c.font = "700 10px " + MONO; c.fillStyle = pal.deep; c.fillText("TL;DR", tl.x, tl.y - 26 - (1 - k) * 8);
-        c.font = "600 17px " + SERIF; const ls = []; let cur = "";
-        for (const w of G.pack.tldr.split(" ")) { const t = cur ? cur + " " + w : w; if (c.measureText(t).width > maxW && cur) { ls.push(cur); cur = w; } else cur = t; } ls.push(cur);
+        c.font = "600 17px " + SERIF;
+        // Wrap once per width, not on every frame of the outro.
+        if (!tl.lines || tl.linesW !== maxW) {
+          const ls = []; let cur = "";
+          for (const w of G.pack.tldr.split(" ")) { const t = cur ? cur + " " + w : w; if (c.measureText(t).width > maxW && cur) { ls.push(cur); cur = w; } else cur = t; } ls.push(cur);
+          tl.lines = ls; tl.linesW = maxW;
+        }
+        const ls = tl.lines;
         c.lineWidth = 5; c.strokeStyle = pal.paper; c.lineJoin = "round"; c.fillStyle = pal.ink;
         ls.forEach((l, i) => { const y = tl.y - 4 + i * 23; c.strokeText(l, tl.x, y); c.fillText(l, tl.x, y); }); c.globalAlpha = 1;
       }
