@@ -109,11 +109,18 @@ html[data-dyslexia-font="true"] textarea {
   letter-spacing: inherit;
 }
 
-html[data-dyslexia-font="true"] code,
 html[data-dyslexia-font="true"] pre,
 html[data-dyslexia-font="true"] kbd,
 html[data-dyslexia-font="true"] .katex {
   font-family: var(--font-mono);
+  letter-spacing: normal;
+  word-spacing: normal;
+}
+
+html[data-dyslexia-font="true"] code,
+html[data-dyslexia-font="true"] .retro-layout article pre,
+html[data-dyslexia-font="true"] .ch-code textarea {
+  font-family: var(--font-code);
   letter-spacing: normal;
   word-spacing: normal;
 }

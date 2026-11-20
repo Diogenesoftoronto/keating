@@ -1,0 +1,10 @@
+[{"wait":2000},
+ {"goto":"http://localhost:3420/rooms","settle":6000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='New room')"},{"wait":1500},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/room-fill.js"},{"wait":600},
+ {"shot":"/tmp/keating-design-shots/r-form.png"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Create room')"},{"wait":6000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"shot":"/tmp/keating-design-shots/r-ws.png"},
+ {"goto":"http://localhost:3420/rooms","settle":6000},
+ {"shot":"/tmp/keating-design-shots/r-list.png"}]

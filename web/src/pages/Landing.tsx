@@ -7,7 +7,6 @@ import { LandingLesson } from "../components/LandingLesson";
 import { LandingLearning } from "../components/LandingLearning";
 import { LandingWalkthroughs } from "../components/LandingWalkthroughs";
 import { LandingClosing } from "../components/LandingClosing";
-import { Eyebrow } from "../design-system/kit";
 import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
 import { useLandingAnalytics } from "../hooks/useLandingAnalytics";
 import { useSeo } from "../hooks/useSeo";
@@ -15,9 +14,9 @@ import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import "./landing-page.css";
 
 const options: [GlyphName, string, string][] = [
-  ["chip", "Choose your model", "Use the hosted teacher, bring a provider key, or download a model to run locally in a compatible browser."],
-  ["folder", "Your data", "Keep a copy of your work. Export sessions and learning records. Hosted models receive the context they need for a reply."],
-  ["code", "Open source", "Read the source, change the teacher, or host it yourself."],
+  ["chip", "Choose your model", "Use Keating’s hosted teacher, bring a key, or run a model locally."],
+  ["folder", "Your data", "Export your sessions and learning records."],
+  ["code", "Open source", "Change the teacher or host it yourself."],
 ];
 
 export function Landing() {
@@ -30,7 +29,7 @@ export function Landing() {
   return <div className="retro-layout retro-page landing-page"><Nav/>
     <main className="lp" ref={root}>
       <LandingOpening/><LandingStudy/><LandingIntro/><LandingLesson/><LandingLearning/>
-      <section className="lp-own"><Eyebrow>Yours to keep</Eyebrow><h2 data-landing-section="setup">Make it your own.</h2>
+      <section className="lp-own"><h2 data-landing-section="setup">Make it your own.</h2>
         <div className="lp-tiles">{options.map(([glyph, title, copy]) => <div key={title} data-glyph-host>
           <KeatingGlyph name={glyph} size={22}/><b>{title}</b><p>{copy}</p>
         </div>)}</div>

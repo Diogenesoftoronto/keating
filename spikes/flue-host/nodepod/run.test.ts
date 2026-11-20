@@ -10,12 +10,13 @@ import { createServer } from "vite";
 import { flueBrowserRuntime } from "../../../web/scripts/flue/vite-plugin.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-for (const fixture of ["portable", "official", "chat", "native-page"] as const) {
+for (const fixture of ["portable", "official", "chat", "native-page", "teaching-lab"] as const) {
   test(
     fixture === "portable"
       ? "portable Keating state survives renders inside real NodePod"
       : fixture === "chat"
         ? "browser chat uses native Flue SDK, real quiz tools and persisted history"
+        : fixture === "teaching-lab" ? "authored teaching lab delivers failed and passed observations into the same tutor conversation"
         : fixture === "native-page" ? "native page diagnostics follow a real tool, transcript save, inline frame and full-screen open"
         : "official Flue dispatch and tool state work with the NodePod SQL adapter",
     { timeout: 90_000 },
@@ -43,10 +44,12 @@ for (const fixture of ["portable", "official", "chat", "native-page"] as const) 
           configFile: false,
           root: resolve(root, "nodepod"),
           optimizeDeps: {
+            exclude: ["@keating/learner-contracts"],
             entries: [
               resolve(root, "nodepod/client.ts"),
               resolve(root, "../../web/src/test/fixtures/flue-chat.ts"),
               resolve(root, "../../web/src/test/fixtures/flue-native-page.ts"),
+              resolve(root, "../../web/src/test/fixtures/flue-teaching-lab.ts"),
             ],
           },
           server: {
@@ -124,6 +127,33 @@ for (const fixture of ["portable", "official", "chat", "native-page"] as const) 
             "A fourth is larger because the whole has fewer equal pieces.",
           );
           await page.evaluate(() => (window as any).flueChatContinue());
+        }
+        if (fixture === "teaching-lab") {
+          await page.waitForFunction(() => document.querySelector(".teaching-lab") || (window as any).flueNodepodTest?.stage === "failed");
+          assert.equal(await page.evaluate(() => (window as any).flueNodepodTest?.error), null, errors.join("\n"));
+          const lab = page.locator(".teaching-lab").first();
+          const c = lab.getByRole("button", { name: "Play C4, MIDI 60" });
+          const d = lab.getByRole("button", { name: "Play D4, MIDI 62" });
+          const e = lab.getByRole("button", { name: "Play E4, MIDI 64" });
+          await c.click(); await d.click();
+          await page.getByText("Keep C4 and try a different second note.", { exact: true }).first().waitFor();
+          await c.click(); await d.click(); // Same unmet checkpoint is not sent twice.
+          await c.click(); await e.click();
+          await page.getByText("Those notes make a major third.", { exact: true }).first().waitFor();
+          await page.evaluate(() => (window as any).withdrawLabKey());
+          await d.click();
+          await page.waitForFunction(() => (window as any).labMissingCredentialCount() >= 1);
+          assert.equal(await page.getByPlaceholder("openai API key").count(), 0);
+          await c.click(); // Next note still goes to the keyboard after an automatic turn had no credentials.
+          await page.waitForFunction(() => (window as any).labMissingCredentialCount() >= 2);
+          assert.equal(await page.getByPlaceholder("openai API key").count(), 0);
+          const composer = page.getByPlaceholder("Message Keating");
+          await composer.fill("Explain the interval.");
+          await page.getByRole("button", { name: "Send message" }).click();
+          await page.getByPlaceholder("openai API key").fill("local-fixture-only");
+          await page.getByRole("button", { name: "Save key" }).click();
+          await page.getByText("The interval spans four semitones.", { exact: true }).first().waitFor();
+          await page.evaluate(() => (window as any).finishTeachingLabFixture());
         }
         if (fixture === "native-page") {
           const host = page.locator('[data-native-page-status="ready"]');
@@ -204,6 +234,18 @@ for (const fixture of ["portable", "official", "chat", "native-page"] as const) 
             0,
             errors.join("\n"),
           );
+        } else if (fixture === "teaching-lab") {
+          const { sessionId, turns, actions, pending, saved } = evidence.result;
+          assert.equal(sessionId, "practice-a-scale");
+          assert.deepEqual(turns.map((turn: { passed: boolean }) => turn.passed), [false, true]);
+          assert.match(turns[0].evidence, /On-screen keyboard: C4 D4\. Target: C4 E4/);
+          assert.match(turns[1].evidence, /On-screen keyboard: C4 E4\. Target: C4 E4/);
+          assert.deepEqual(actions, Array(4).fill("observe-lab"));
+          assert.equal(pending, 0);
+          assert.match(saved, /On-screen keyboard: C4 D4/);
+          assert.match(saved, /On-screen keyboard: C4 E4/);
+          assert.match(saved, /Those notes make a major third/);
+          assert.deepEqual(errors, []);
         } else if (fixture === "native-page") {
           assert.equal(evidence.result?.rows.length,3);
           assert.deepEqual(evidence.result.rows[0].nativePage,

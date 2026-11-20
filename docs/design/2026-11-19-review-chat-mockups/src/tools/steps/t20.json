@@ -1,0 +1,11 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"goto":"http://localhost:3420/chat?session=11111111-2222-4333-8444-555555555555","settle":7000},
+ {"clickSel":"[aria-label=\"More menu\"]"},{"wait":900},
+ {"shot":"/tmp/keating-design-shots/s-menu.png"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('[role=menuitem],button')].find(b=>b.textContent.trim().startsWith('Settings'))"},{"wait":2200},
+ {"clickSel":"x","find":"[...document.querySelectorAll('[role=dialog] button,[role=dialog] [role=tab]')].find(b=>/^Learning/.test(b.textContent.trim()))"},{"wait":2000},
+ {"eval":"(()=>{const e=document.getElementById('settings-section-companion');if(!e)return 'no companion section';e.scrollIntoView({block:'center'});return 'ok '+e.textContent.slice(0,200)})()"},{"wait":900},
+ {"shot":"/tmp/keating-design-shots/s-learning.png"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('[role=dialog] button,[role=dialog] [role=tab]')].find(b=>/^Diagnostics/.test(b.textContent.trim()))"},{"wait":2000},
+ {"eval":"(()=>{const e=[...document.querySelectorAll('[role=dialog] h2,[role=dialog] h3')].find(h=>h.textContent.trim()==='Your data');if(!e)return 'no your-data heading';e.scrollIntoView({block:'start'});return 'ok'})()"},{"wait":900},
+ {"shot":"/tmp/keating-design-shots/s-data.png"}]

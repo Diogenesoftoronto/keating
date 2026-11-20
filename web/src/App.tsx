@@ -29,6 +29,10 @@ const RenderingSmoke = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/RenderingSmoke")),
   "RenderingSmoke",
 );
+const SystemsLab = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/SystemsLab")),
+  "SystemsLab",
+);
 const Paper = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Paper")),
   "Paper",
@@ -150,6 +154,8 @@ const PaperGlassOverlay = lazy(() => import("./design-system/shaders/PaperGlassO
 
 function AppShellOverlay() {
   const path = useRouterState({ select: (state) => state.location.pathname });
+  // The lab supplies its own tiled paper behind its editor and output.
+  if (path === "/labs/systems" || path === "/labs/systems/") return null;
   if (!APP_ONLY && desktopMarketingUrl(path)) return null;
   return <Suspense fallback={null}><PaperGlassOverlay /></Suspense>;
 }
@@ -208,6 +214,13 @@ const renderingSmokeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/rendering-smoke",
   component: RenderingSmoke,
+});
+
+const systemsLabRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/labs/systems",
+  validateSearch: z.object({ lesson: z.string().optional() }).parse,
+  component: SystemsLab,
 });
 
 const liveRoute = createRoute({
@@ -392,6 +405,7 @@ const roomWorkspaceRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   chatRoute,
+  systemsLabRoute,
   ...(import.meta.env.DEV ? [renderingSmokeRoute] : []),
   liveRoute,
   usageRoute,

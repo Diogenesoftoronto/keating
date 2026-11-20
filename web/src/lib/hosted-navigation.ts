@@ -3,7 +3,7 @@ export const APP_ORIGIN = "https://chat.keating.help";
 export const TEACHING_INTERFACES_REPORT_PATH = "/reports/teaching-interfaces/index.html";
 
 const PUBLIC_PATHS = new Set(["/", "/download", "/pricing", "/paper", "/terms", "/privacy", TEACHING_INTERFACES_REPORT_PATH]);
-const APP_PATHS = new Set(["/chat", "/usage", "/bench", "/courses", "/coming-up", "/live", "/training-data", "/review", "/s", "/u", "/l", "/learn", "/join"]);
+const APP_PATHS = new Set(["/chat", "/usage", "/bench", "/courses", "/coming-up", "/live", "/training-data", "/review", "/s", "/u", "/l", "/learn", "/join", "/labs/systems"]);
 
 export function isApplicationPath(path: string): boolean {
   const pathname = path.split(/[?#]/, 1)[0];

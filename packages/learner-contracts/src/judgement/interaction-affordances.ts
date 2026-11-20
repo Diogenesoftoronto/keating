@@ -34,6 +34,7 @@ interface AffordanceRow {
   readonly features: readonly string[];
   /** During practice some surfaces need evidence the learner wants to operate them. */
   readonly practice?: true | "hands_on_requested";
+  readonly needsInlineLab?: boolean;
   readonly note?: string;
 }
 
@@ -50,6 +51,9 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "retrieval", components: ["LanguagePractice"], features: ["language_learning"], practice: true },
   { family: "manipulable", components: ["Simulation"], features: ["variable_relationship"], practice: "hands_on_requested" },
   { family: "manipulable", components: ["CodingChallenge"], features: ["executable_code"], practice: true },
+  { family: "manipulable", components: ["Lab"], features: ["executable_code", "hands_on_requested"], practice: true, needsInlineLab: true },
+  { family: "perform", components: ["Lab"], features: ["performed_skill", "hands_on_requested"], practice: true, needsInlineLab: true },
+  { family: "manipulable", components: ["Lab"], features: ["outside_observation", "hands_on_requested"], practice: true, needsInlineLab: true },
   { family: "perform", components: ["AudioResponse", "VideoResponse", "MusicLab"], features: ["performed_skill"], practice: "hands_on_requested" },
   { family: "workspace", components: ["ConceptMap"], features: ["structure_relations"], practice: "hands_on_requested" },
   { family: "manipulable", components: ["Diagram"], features: ["structure_relations", "extended_production"], practice: true },
@@ -71,6 +75,7 @@ export interface InteractionContext {
   readonly domain?: TeachingPolicyTurn["domain"];
   readonly followsTutorTurn?: boolean;
   readonly codePracticeLanguage?: CodePracticeLanguage | null;
+  readonly inlineLabAvailable?: boolean;
   readonly assessment?: TeachingPolicyTurn["assessment"];
 }
 
@@ -103,6 +108,7 @@ export function recommendInteraction(features: Flags, decisions: Flags, context:
   const byFamily = new Map<InteractionFamily, { components: string[]; features: string[] }>();
   let assessmentSuppressed = false;
   for (const row of INTERACTION_AFFORDANCES) {
+    if (row.needsInlineLab && (!context.inlineLabAvailable || context.codePracticeLanguage)) continue;
     if (simulationOnly && !row.components.includes("Simulation")) continue;
     if (!row.features.every((id) => features[id] === true)) continue;
     if (decisions.assessment_declined === true && !row.components.some(component => explanationComponents.has(component))) {
@@ -181,7 +187,10 @@ export function interactionDirectives(recommendation: InteractionRecommendation,
     ? `Include exactly one OpenUI activity this turn: ${options.join("; or ")}.`
     : `At most one OpenUI activity may help this turn: ${options.join("; or ")}. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.`);
   if (recommendation.families.some(({ components }) => components.includes("CodingChallenge"))) {
-    directives.push("CodingChallenge runs JavaScript or TypeScript. Preserve the requested language. For another language, a short code sample and a Question can collect the learner's fix without claiming to run it.");
+    directives.push("CodingChallenge runs JavaScript or TypeScript. Preserve the requested language. Use a runnable fence when the conversation host supports that language; for other languages a short code sample and a Question can collect the learner's fix.");
+  }
+  if (recommendation.families.some(({ components }) => components.includes("Lab"))) {
+    directives.push("Use Lab when you can check a systems program's output, a sequence of MIDI notes, or a numeric sensor reading. Supply the adapter, observable checkpoints and a hint for each tricky step. For a physical skill outside these capabilities choose an appropriate recording or fieldwork action.");
   }
   if (recommendation.families.some(({ family }) => family === "manipulable" || family === "workspace" || family === "perform")) {
     directives.push("If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.");

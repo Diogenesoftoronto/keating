@@ -1,0 +1,10 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/fx-off.js"},
+ {"goto":"http://localhost:3420/chat?session=11111111-2222-4333-8444-555555555555","settle":7500},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-fx.js"},
+ {"shot":"/tmp/keating-design-shots/fxoff-chat.png"},
+ {"goto":"http://localhost:3420/review","settle":6000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-fx.js"},
+ {"goto":"http://localhost:3420/bench","settle":6000},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-fx.js"},
+ {"shot":"/tmp/keating-design-shots/fxoff-bench.png"}]

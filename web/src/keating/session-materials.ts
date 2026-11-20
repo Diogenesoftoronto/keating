@@ -26,7 +26,7 @@ type Readable = Pick<StorageLike, "getItem">;
 
 export type SessionMaterialKind =
 	| "plan" | "concept-map" | "quiz" | "flashcards" | "task" | "notes" | "goal"
-	| "simulation" | "coding-challenge" | "language-practice" | "music-lab" | "image" | "media" | "saved";
+	| "simulation" | "lab" | "coding-challenge" | "language-practice" | "music-lab" | "image" | "media" | "saved";
 
 /** Section order in the panel. */
 export const SESSION_MATERIAL_GROUPS = ["plan", "maps", "practice", "assignments", "notes", "media", "saved"] as const;
@@ -104,7 +104,7 @@ interface NodeKind { kind: SessionMaterialKind; group: SessionMaterialGroup; lab
 
 /** Node types listed as materials; anything else (questions, prose, handoffs) is conversation. */
 export const MATERIAL_COMPONENTS: ReadonlySet<string> = new Set([
-	"quiz", "deck", "task", "notes", "goal", "simulation", "coding-challenge", "language-practice", "music-lab", "image", "media",
+	"quiz", "deck", "task", "notes", "goal", "simulation", "lab", "coding-challenge", "language-practice", "music-lab", "image", "media",
 ]);
 
 const GENERIC_LABEL: Record<string, Omit<NodeKind, "title">> = {
@@ -116,6 +116,7 @@ const GENERIC_LABEL: Record<string, Omit<NodeKind, "title">> = {
 	simulation: { kind: "simulation", group: "practice", label: "Simulation" },
 	"coding-challenge": { kind: "coding-challenge", group: "practice", label: "Coding challenge" },
 	"language-practice": { kind: "language-practice", group: "practice", label: "Language practice" },
+	lab: { kind: "lab", group: "practice", label: "Lab" },
 	"music-lab": { kind: "music-lab", group: "practice", label: "Music lab" },
 	image: { kind: "image", group: "media", label: "Image" },
 	media: { kind: "media", group: "media", label: "Media" },
@@ -136,6 +137,7 @@ function nodeKind(node: UiDocumentNode): NodeKind | null {
 		case "simulation": return { ...GENERIC_LABEL.simulation!, title: node.title || "Simulation" };
 		case "coding-challenge": return { ...GENERIC_LABEL["coding-challenge"]!, title: node.title || "Coding challenge" };
 		case "language-practice": return { ...GENERIC_LABEL["language-practice"]!, title: node.title || "Language practice" };
+		case "lab": return { ...GENERIC_LABEL.lab!, title: node.title };
 		case "music-lab": return { ...GENERIC_LABEL["music-lab"]!, title: node.title || "Music lab" };
 		case "image": return { ...GENERIC_LABEL.image!, title: clip(node.resource?.title || node.alt || "Image") };
 		case "media": return { ...GENERIC_LABEL.media!, label: MEDIA_LABEL[node.kind] ?? "Media", title: node.resource?.title || MEDIA_LABEL[node.kind] || "Media" };
@@ -211,6 +213,12 @@ function nodeStatus(node: UiDocumentNode, presented: UiDocumentNode | undefined,
 			return node.steps.length ? `${node.steps.filter((step) => step.status === "done").length} of ${node.steps.length} steps` : null;
 		}
 		case "language-practice": return receiptsFor(receipts, node.id, "complete-language-practice").length ? "Completed" : null;
+		case "lab": {
+			const observations = receiptsFor(receipts, node.id, "observe-lab");
+			if (!observations.length) return null;
+			const matched = new Set(observations.flatMap(({ action }) => action.type === "observe-lab" && action.passed ? [action.checkpointId] : []));
+			return `${node.checkpoints.filter(point => matched.has(point.id)).length} of ${node.checkpoints.length} checkpoints`;
+		}
 		case "coding-challenge": return receiptsFor(receipts, node.id, "run-coding-challenge").length ? "Tried" : null;
 		default: return null;
 	}

@@ -1,4 +1,5 @@
 import "./materials.css";
+import type { UiActionReceipt, UiLabNode } from "@keating/learner-contracts";
 import { LessonFrame } from "../lesson/LessonFrame";
 import { Button, EmptyState, Loading, StatusDot, IconButton, Tabs, TabPanel } from "../../design-system/kit";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, type Ref } from "react";
@@ -65,6 +66,7 @@ function MaterialIcon({ material, size = 16 }: { material: SessionMaterial; size
 		case "simulation": return <KeatingGlyph name="filter" size={size} />;
 		case "coding-challenge": return <KeatingGlyph name="code" size={size} />;
 		case "language-practice": return <KeatingGlyph name="globe" size={size} />;
+		case "lab": return <KeatingGlyph name="tool" size={size} />;
 		case "music-lab": return <KeatingGlyph name="music" size={size} />;
 		case "image": return <KeatingGlyph name="image" size={size} />;
 		case "media": return <KeatingGlyph name={material.label === "Audio" ? "wave" : "video"} size={size} />;
@@ -101,7 +103,7 @@ function StatusChip({ status, pushed }: { status: string | null; pushed?: boolea
 }
 
 /** Kinds the learner works on in the chat card; the panel shows a copy. */
-const WORKED_IN_CHAT = new Set(["quiz", "flashcards", "task", "notes", "goal", "simulation", "coding-challenge", "language-practice", "music-lab"]);
+const WORKED_IN_CHAT = new Set(["quiz", "flashcards", "task", "notes", "goal", "simulation", "coding-challenge", "language-practice", "music-lab", "lab"]);
 
 function sendSuggestion(sessionId: string, text: string) {
 	if (typeof window === "undefined") return;
@@ -332,6 +334,26 @@ export function SessionMaterialsPanel(props: SessionMaterialsPanelProps) {
 	</div>;
 }
 
+function LabPreview({ node, receipts }: { node: UiLabNode; receipts: readonly UiActionReceipt[] }) {
+	return <div data-material-preview="lab">
+		<p>{node.brief}</p>
+		<ol aria-label="Recorded checkpoints">
+			{node.checkpoints.map(point => {
+				const observations = receipts.flatMap(({ state, action }) =>
+					state !== "rejected" && action.type === "observe-lab" && action.nodeId === node.id && action.checkpointId === point.id
+						? [{ state, action }] : []);
+				const outcome = observations.filter(item => item.action.passed).at(-1) ?? observations.at(-1);
+				return <li key={point.id} className="h1-material-preview-row">
+					<strong>{point.title}</strong>
+					<p className={muted}>{outcome ? outcome.action.passed ? "Checkpoint met" : "Attempt recorded" : "No observation yet"}
+						{outcome?.state === "pending" && " · Saving"}{outcome?.state === "retryable" && " · Awaiting retry"}</p>
+					{outcome && <p>{outcome.action.evidence}</p>}
+				</li>;
+			})}
+		</ol>
+	</div>;
+}
+
 function MaterialBody({ material, sessionId, state, deciding, decisionError, compareOpen, onToggleCompare, onDecide, onSelect, storage }: {
 	material: SessionMaterial; sessionId: string; state: SessionMaterialsState; deciding: string | null; decisionError: string | null; compareOpen: boolean;
 	onToggleCompare: () => void; onDecide: (proposal: PlanRevisionProposal, decision: "accept" | "decline") => void; onSelect: (key: string) => void;
@@ -360,10 +382,11 @@ function MaterialBody({ material, sessionId, state, deciding, decisionError, com
 				renderPlan={(plan, unsaved) => <WorkspacePlan key={`${plan.documentId}:${unsaved ? "unsaved" : "stored"}`} material={plan} sessionId={sessionId} unsaved={unsaved} />}
 			/>;
 		case "openui": {
-			// A quiz or deck gets a still preview: the live renderer runs a clock and looks answerable.
-			const node = material.document.nodes.find((candidate) => candidate.id === material.nodeId) ?? material.document.nodes[0];
-			const preview = node?.type === "quiz" ? <QuizPreview node={node} completed={quizCompleted(material.receipts, node.id)} />
-				: node?.type === "deck" ? <DeckPreview node={node} /> : null;
+			const node = material.document.nodes.find(candidate => candidate.id === material.nodeId);
+			if (!node) return <p className={notice}>This material is missing from the saved document.</p>;
+			const preview = node.type === "quiz" ? <QuizPreview node={node} completed={quizCompleted(material.receipts, node.id)} />
+				: node.type === "deck" ? <DeckPreview node={node} />
+				: node.type === "lab" ? <LabPreview node={node} receipts={material.receipts} /> : null;
 			return <>
 				{!preview && WORKED_IN_CHAT.has(material.kind) ? <p className={cx(muted, css({ fontSize: "0.8125rem", lineHeight: 1.45 }))}>A copy to look back at. To answer or change it, use it in the conversation.</p> : null}
 				<MaterialFrame material={{ key: material.key, documentId: material.documentId, revision: material.revision }}>

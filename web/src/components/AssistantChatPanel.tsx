@@ -163,6 +163,7 @@ import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { MarkdownBlock } from "./MarkdownBlock";
+import { SnippetDiscussionContext } from "./DiscussSnippetRun";
 import { normalizeLatexDelimiters } from "./MarkdownBlock";
 import {
   pickDiverseStarterPrompts,
@@ -507,6 +508,15 @@ function ComposerPrefill({ text }: { text?: string }) {
 }
 
 const OpenUISessionScopeContext = createContext<string | undefined>(undefined);
+
+function SnippetDiscussionProvider({ children }: { children: ReactNode }) {
+  const composer = useAui().composer;
+  const addToDraft = useCallback((request: string) => {
+    const draft = composer.getState().text;
+    if (!draft.endsWith(request)) composer.setText(draft.trim() ? draft + "\n\n" + request : request);
+  }, [composer]);
+  return <SnippetDiscussionContext.Provider value={addToDraft}>{children}</SnippetDiscussionContext.Provider>;
+}
 
 function StreamingTextPart({
   text,
@@ -3423,6 +3433,7 @@ function AssistantThread({
           <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
             <ThreadPrimitive.Root
+              data-chat-thread=""
               className={css({
                 display: "flex",
                 height: "100%",
@@ -3486,7 +3497,7 @@ function AssistantThread({
                       }}
                     />
                   </AuiIf>
-                  <ThreadPrimitive.Messages components={threadComponents} />
+                  <SnippetDiscussionProvider><ThreadPrimitive.Messages components={threadComponents} /></SnippetDiscussionProvider>
                   {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
                 {footer}

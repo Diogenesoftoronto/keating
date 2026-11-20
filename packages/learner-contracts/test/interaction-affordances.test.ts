@@ -44,6 +44,19 @@ describe("interaction affordance table", () => {
     });
   }
 
+  test("a host with inline lab controls can offer a checked experiment for systems, music or sensor practice", () => {
+    for (const signal of ["executable_code", "performed_skill", "outside_observation"]) {
+      const observed = features(signal, "hands_on_requested");
+      const web = recommendInteraction(observed, teaching, { inlineLabAvailable: true });
+      expect(web.families.flatMap(family => family.components)).toContain("Lab");
+      expect(interactionDirectives(web).join(" ")).toContain("numeric sensor reading");
+      const other = recommendInteraction(observed, teaching);
+      expect(other.families.flatMap(family => family.components)).not.toContain("Lab");
+    }
+    const python = recommendInteraction(features("executable_code", "hands_on_requested"), teaching, { inlineLabAvailable: true, codePracticeLanguage: "python" });
+    expect(python.families.flatMap(family => family.components)).not.toContain("Lab");
+  });
+
   test("every catalog feature is used by the table and every table feature exists", () => {
     const used = new Set(INTERACTION_AFFORDANCES.flatMap((row) => typeof row.practice === "string" ? [...row.features, row.practice] : row.features));
     expect([...used].sort()).toEqual(TEACHING_INTERACTION_FEATURES.map(({ id }) => id).sort());

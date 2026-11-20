@@ -1,0 +1,9 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"goto":"http://localhost:3420/bench","settle":6500},
+ {"clickSel":"x","find":"[...document.querySelectorAll('.k-seg button,[role=radio]')].find(b=>b.textContent.trim()==='Both')"},{"wait":2500},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"shot":"/tmp/keating-design-shots/b-both.png"},
+ {"clickSel":"x","find":"document.querySelector('.bench-board tbody button[aria-expanded], .bench-board [aria-expanded]')"},{"wait":1500},
+ {"shot":"/tmp/keating-design-shots/b-open.png"},
+ {"goto":"http://localhost:3420/usage","settle":6500},
+ {"shot":"/tmp/keating-design-shots/u-fixed.png"}]

@@ -1,0 +1,11 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"goto":"http://localhost:3420/review/sessions/11111111-2222-4333-8444-555555555555","settle":7000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Export')"},{"wait":1500},
+ {"shot":"/tmp/keating-design-shots/x-sheet.png"},
+ {"eval":"(()=>{const d=document.querySelector('[role=dialog]');return d?d.innerText.replace(/\\s+/g,' ').slice(0,500):'no dialog'})()"},
+ {"goto":"http://localhost:3420/training-data","settle":6500},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Prepare dataset')"},{"wait":9000},
+ {"shot":"/tmp/keating-design-shots/x-td.png","full":true},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-page.js"},
+ {"clickSel":"x","find":"[...document.querySelectorAll('.training-steps button')].pop()"},{"wait":1500},
+ {"shot":"/tmp/keating-design-shots/x-td4.png"}]

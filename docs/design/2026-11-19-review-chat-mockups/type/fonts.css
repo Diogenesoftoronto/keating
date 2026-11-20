@@ -1,0 +1,16 @@
+/* Import this stylesheet from the specimen directory or keep these relative paths. */
+@font-face {
+  font-family: "Keating Broadside";
+  src: url("./Broadside/KeatingBroadside-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Keating Margin";
+  src: url("./Margin/KeatingMargin-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}

@@ -1,0 +1,4 @@
+[{"wait":2000},
+ {"goto":"http://localhost:3420/review/learning-profile","settle":7000},
+ {"shot":"/tmp/keating-design-shots/lp-photo.png"},
+ {"eval":"JSON.stringify({imageField:!!document.getElementById('profile-image-label'),buttons:[...document.querySelectorAll('.profile-editor__image-actions button')].map(b=>b.textContent.trim()+':'+Math.round(b.getBoundingClientRect().height)+'px:'+getComputedStyle(b).fontSize),count:[...document.querySelectorAll('small')].map(s=>s.textContent).find(t=>/of 4/.test(t))||null,mono:(()=>{const m=document.querySelector('.profile-editor__image .public-profile__monogram');if(!m)return null;const r=m.getBoundingClientRect();return Math.round(r.width)+'x'+Math.round(r.height)})()})"}]

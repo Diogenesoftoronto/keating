@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { Chip, Eyebrow, Prose } from "../design-system/kit";
-import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
+import { Chip, Prose } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { KeatingBot } from "./KeatingBot";
 import { LANDING_EXAMPLES, type LandingExampleId } from "./landing-examples";
 import { LandingPractice } from "./LandingPractice";
@@ -23,12 +23,6 @@ const questions = {
     replies: ["Exactly. Now count the faces that meet each condition.", "Imagine marking just the even faces with a pen. Would that change how a fair die lands?", "Picture the six faces. Is there a reason to give one face more weight?"],
   },
 };
-const notes: [GlyphName, string, string][] = [
-  ["message", "A question back, first", "A wrong guess tells Keating where to start."],
-  ["code", "Predict, then run it", "Code, simulations and diagrams you can poke, in the reply."],
-  ["quiz", "A check before moving on", "One short question, marked, with the reason."],
-];
-
 export function LandingLesson() {
   const [id, setId] = useState<LandingExampleId>("recursion");
   const [guess, setGuess] = useState<number | null>(null);
@@ -36,16 +30,15 @@ export function LandingLesson() {
   const question = questions[id];
   const example = LANDING_EXAMPLES.find(item => item.id === id)!;
   return <section className="lp-lesson" id="keating-lesson">
-    <div><Eyebrow>The same question, asked here</Eyebrow><h2 data-landing-section="lesson">You do the thinking.<br/><em>Keating helps it click.</em></h2>
-      <p className="lead">It asks before it tells, and it builds on what you already know.</p>
-      <ul className="lp-notes">{notes.map(([glyph,title,detail]) => <li key={glyph} data-glyph-host><KeatingGlyph name={glyph}/><span><b>{title}</b>{detail}</span></li>)}</ul>
+    <div><h2 data-landing-section="lesson">You do the thinking.<br/><em>Keating helps it click.</em></h2>
+      <p className="lead">Pick a topic and try a lesson.</p>
     </div>
     <div className="lp-chat"><div className="lp-tabs" role="group" aria-label="Choose a lesson subject">
       {LANDING_EXAMPLES.map(item => <Chip as="button" key={item.id} selected={id === item.id} onClick={() => {
         setId(item.id); setGuess(null); posthog?.capture("landing_lesson_selected", { example_id: item.id });
-      }}>{item.label}</Chip>)}<small>Try it. Nothing is sent.</small>
+      }}>{item.label}</Chip>)}
     </div><div className="lp-th" data-glyph-host>
-      <p className="lp-me">{example.query}</p><Eyebrow>Keating</Eyebrow><Prose><p>{question.prompt}</p></Prose>
+      <p className="lp-me">{example.query}</p><Prose><p>{question.prompt}</p></Prose>
       <div className="lp-guess" role="group" aria-label="Make a guess">{question.choices.map((choice,i) =>
         <Chip as="button" key={choice} selected={guess === i} onClick={() => setGuess(i)}>{choice}</Chip>)}</div>
       <Prose aria-live="polite">{guess !== null && <p>{question.replies[guess]}</p>}</Prose>

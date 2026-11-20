@@ -2,6 +2,29 @@
 
 Keating treats understanding as the scarce resource. The interface should help a learner inspect, manipulate, resume, and discuss an explanation instead of turning every teaching move into an opaque tool call.
 
+## Authoring a lab inside a chat reply
+
+The browser tutor can author an exercise for the current conversation. Use a tagged Markdown fence for a free experiment, or an OpenUI `Lab` when the tutor needs to observe practice and mark checkpoints. For example, this lab asks for a three-note phrase.
+
+````text
+```openui lifecycle=resumable id=first-arpeggio
+root = LearningSurface([phrase])
+phrase = Lab({id:"phrase", title:"Land on the fifth", brief:"Play C, E and G in the same octave.", adapter:{kind:"midi"}, checkpoints:[{id:"ascend",title:"Play the ascending triad",check:{kind:"notes",notes:[60,64,67]},hint:"Try the white key four semitones above middle C for the second note."}]})
+```
+````
+
+| Adapter | What the learner does | What the checkpoint measures |
+| --- | --- | --- |
+| `code` | Edit shell, Nix, WAT, or Kubernetes source and run it in the message | Standard output and exit status. WAT can call a named export with arguments. Kubernetes inspects local manifests. |
+| `midi` | Select a MIDI input or play the on-screen keyboard | An ordered phrase of MIDI note numbers. The observation records which input produced the phrase. |
+| `serial` | Connect a board that writes one numeric reading per line at 9600 or 115200 baud, then check a reading | A number within an inclusive range, in the authored unit. A manual sample is labeled separately. |
+
+Set `requireDevice:true` on a MIDI or serial adapter for a checkpoint that requires physical input. The first miss and completion of each checkpoint generate an `observe-lab` action. The session records the observation, validates the mark, and gives the tutor the evidence for its next reply. Individual keystrokes and the continuous sensor stream stay in the component.
+
+Native mobile and terminal clients display the lab brief and checkpoint list. Open the conversation in the web app to run the lab.
+
+To add an instrument, extend `UiLabAdapter` and `UiLabObservation` in the learner contract, define its checkpoint comparison, and connect its input component to the same observation action. This keeps the learner's evidence and the conversation together across instruments.
+
 ## Runtime shape
 
 ```text

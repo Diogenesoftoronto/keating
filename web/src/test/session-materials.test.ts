@@ -205,6 +205,37 @@ describe("session materials reveal and snapshots", () => {
 });
 
 describe("session materials list view", () => {
+	test("a lab shows the selected checkpoint evidence without mounting its device controls", async () => {
+		const { renderToStaticMarkup } = await import("react-dom/server");
+		const { createElement } = await import("react");
+		const { SessionMaterialsPanel } = await import("../components/workspace/SessionMaterialsPanel");
+		const labs = doc("measurements", [
+			{ type: "lab", id: "first", title: "First", brief: "Other lab brief", adapter: { kind: "midi" },
+				checkpoints: [{ id: "key", title: "Play C", check: { kind: "notes", notes: [60] } }] },
+			{ type: "lab", id: "sensor", title: "Measure", brief: "Check the voltage.", adapter: { kind: "serial", unit: "mV", baudRate: 9600 },
+				checkpoints: [{ id: "low", title: "Set a low voltage", check: { kind: "range", min: 5, max: 10 } }] },
+		]);
+		const { materials } = gatherSessionMaterials({ sessionId: "s1", records: [record(labs, labs.id, "sensor", "lab", NOW)], storage: null });
+		const material = materials[0]!;
+		if (material.source !== "openui") throw new Error("Lab material could not be resolved");
+		material.receipts.push({ schemaVersion: UI_CONTRACT_VERSION, actionFingerprint: "saved", createdAt: AT, updatedAt: AT, state: "completed",
+			action: { schemaVersion: UI_CONTRACT_VERSION, type: "observe-lab", documentId: labs.id, documentRevision: 1, nodeId: "sensor",
+				attemptId: "read-1", checkpointId: "low", passed: true, observation: { kind: "range", value: 7, input: "device" },
+				evidence: "Device reading: 7 mV", idempotencyKey: "sensor-low" } });
+		const noop = () => {};
+		const render = () => renderToStaticMarkup(createElement(SessionMaterialsPanel, { sessionId: "s1", selectedKey: material.key, onSelect: noop,
+			source: { getOpenUiPresentations: async () => [] }, onShowLibrary: noop, onClose: noop,
+			state: { sessionId: "s1", load: { status: "ready", materials, currentPlanKey: null }, arrival: null, reload: noop,
+				workspace: { load: { status: "loading" }, proposals: [], history: {}, pendingSaves: [], updated: null, dismissUpdated: noop, reload: noop } },
+		}));
+		const html = render();
+		for (const text of ["Check the voltage.", "Set a low voltage", "Checkpoint met", "Device reading: 7 mV"]) expect(html).toContain(text);
+		expect(html).not.toMatch(/Connect device|Manual reading|Play C|Other lab brief/);
+		material.document = labs;
+		material.nodeId = "removed-node";
+		expect(render()).toContain("missing from the saved document");
+		expect(render()).not.toContain("Other lab brief");
+	});
 	test("groups rows under fixed section labels with kind, time and status, and offers suggestions", async () => {
 		const { renderToStaticMarkup } = await import("react-dom/server");
 		const { createElement } = await import("react");

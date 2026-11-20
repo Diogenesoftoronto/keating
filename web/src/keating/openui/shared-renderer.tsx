@@ -31,6 +31,7 @@ import { SimulationRenderer } from "../../components/SimulationRenderer";
 import { SystemDesignWorkbench } from "../../components/SystemDesignWorkbench";
 import { ExamRenderer } from "../../components/ExamRenderer";
 import { CodingChallenge } from "../../components/CodingChallenge";
+import { TeachingLab } from "../../components/TeachingLab";
 import { MusicLab } from "../../components/MusicLab";
 import { LanguagePractice } from "../../components/LanguagePractice";
 import { css, cx } from "../../../styled-system/css";
@@ -94,6 +95,7 @@ function SharedNode({ documentId, documentRevision, persistent = true, node, rec
 	if (node.type === "image") return <RemoteImage node={node} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "simulation") return <SimulationRenderer node={node} documentId={persistent ? documentId : undefined} receipt={completedNodeReceipt(receipts, node.id, ["share-simulation"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "coding-challenge") return <CodingChallenge node={node} disabled={disabled} onAction={onAction} />;
+	if (node.type === "lab") return <TeachingLab documentId={documentId} documentRevision={documentRevision} node={node} receipts={receipts} disabled={disabled} onAction={onAction} />;
 	if (node.type === "music-lab") return <MusicLab node={node} disabled={disabled} />;
 	if (node.type === "language-practice") return <LanguagePractice node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-language-practice"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "task" && node.diagram) return <SystemDesignWorkbench documentId={documentId} documentRevision={documentRevision} node={{ ...node, diagram: node.diagram }} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} disabled={disabled} onAction={onAction} />;

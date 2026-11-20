@@ -1,0 +1,8 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},
+ {"goto":"http://localhost:3420/review/sessions/11111111-2222-4333-8444-555555555555","settle":7000},
+ {"shot":"/tmp/keating-design-shots/rv-ws.png"},
+ {"eval":"JSON.stringify({pre:[...document.querySelectorAll('pre')].map(p=>{const r=p.getBoundingClientRect(),cs=getComputedStyle(p);return [Math.round(r.width),Math.round(r.height),cs.fontFamily.slice(0,30),cs.whiteSpace,cs.backgroundColor,p.className.toString().slice(0,60)]}),sw:document.body.scrollWidth})"},
+ {"eval":"document.documentElement.classList.add('dark');'ok'"},{"wait":1600},
+ {"shot":"/tmp/keating-design-shots/rv-ws-dark.png"},
+ {"goto":"http://localhost:3420/review","settle":5000},
+ {"shot":"/tmp/keating-design-shots/rv-ix.png"}]

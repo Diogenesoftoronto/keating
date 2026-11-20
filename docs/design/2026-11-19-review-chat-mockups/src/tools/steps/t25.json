@@ -1,0 +1,5 @@
+[{"wait":2000},
+ {"goto":"http://localhost:3420/rooms","settle":6000},
+ {"clickSel":"x","find":"[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='New room')"},{"wait":1500},
+ {"shot":"/tmp/keating-design-shots/r-new.png"},
+ {"eval":"JSON.stringify([...document.querySelectorAll('[role=dialog] input,[role=dialog] textarea,[role=dialog] select,[role=dialog] button, form input, form textarea, form button')].slice(0,30).map(e=>e.tagName+':'+(e.name||e.id||'')+':'+(e.placeholder||e.getAttribute('aria-label')||e.textContent||'').trim().slice(0,40)))"}]

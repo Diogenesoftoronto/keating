@@ -4,11 +4,58 @@
 .landing-practice__header h2 { margin: 0; font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -.025em; }
 .landing-practice__context { margin: 0 0 12px; font-size: 11px; color: var(--muted-foreground); }
 .landing-practice .landing-practice__code { margin: 0 0 8px; padding: 12px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 5%, transparent); font: 12px/1.6 var(--mono-body, monospace); white-space: pre-wrap; overflow-wrap: anywhere; }
-.landing-practice__code code { font: inherit; }
+.landing-practice__code code { font-size: inherit; line-height: inherit; }
 .landing-practice__stimulus { margin: 0 0 8px; padding: 12px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 5%, transparent); font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
 .landing-practice__hint { margin: 0 0 12px; font-size: 12px; }
 .landing-practice__hint summary { display: list-item; cursor: pointer; min-height: 44px; padding-block: 12px; box-sizing: border-box; }
 .landing-practice__hint p { margin: 0 0 10px; font-size: 12px; line-height: 1.5; color: var(--muted-foreground); }
+.landing-practice__hint[open] > p {
+  position: relative;
+  padding-inline-start: 1.75rem;
+  min-block-size: 1.7rem;
+}
+/* The punched strip feeds out of a fixed slot. Only the strip moves. */
+.landing-practice__hint[open] > p::before,
+.landing-practice__hint[open] > p::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset-block-start: .12rem;
+}
+.landing-practice__hint[open] > p::before {
+  inset-inline-start: .18rem;
+  inline-size: 1.02rem;
+  block-size: 1.5rem;
+  color: var(--ink-soft, currentColor);
+  background:
+    radial-gradient(circle, currentColor .06rem, transparent .075rem) left bottom / .27rem .29rem repeat-y,
+    radial-gradient(circle, currentColor .075rem, transparent .09rem) 65% bottom / .33rem .42rem repeat-y,
+    color-mix(in srgb, currentColor 19%, var(--paper));
+  clip-path: polygon(0 0, 100% 0, 100% 94%, 75% 100%, 50% 94%, 25% 100%, 0 94%);
+}
+.landing-practice__hint[open] > p::after {
+  inset-inline-start: .05rem;
+  inline-size: 1.28rem;
+  block-size: .13rem;
+  border-radius: 1px;
+  background: currentColor;
+}
+@keyframes landing-hint-paper-feed {
+  from { block-size: .12rem; }
+  46%, 60% { block-size: .84rem; }
+  90% { block-size: 1.56rem; }
+  to { block-size: 1.5rem; }
+}
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  html:not([data-reduce-motion="true"]):not([data-motion="reduce"]):not([data-fx="off"]) .landing-practice__hint[open] > p::before {
+    animation: landing-hint-paper-feed 440ms steps(3, end) both;
+  }
+}
+@media (forced-colors: active) {
+  .landing-practice__hint[open] > p { padding-inline-start: 0; min-block-size: 0; }
+  .landing-practice__hint[open] > p::before,
+  .landing-practice__hint[open] > p::after { display: none; }
+}
 .landing-practice__exercise { min-width: 0; }
 .landing-practice__exercise > .activity-game { padding: 0; margin-block: 8px; border: 0; border-radius: 0; }
 .landing-practice__exercise .activity-game .activity-prompt { margin: 0; font-size: 15px; line-height: 1.45; }
@@ -38,8 +85,7 @@ body .landing-practice button.keating-select.keating-select { min-height: 44px; 
 .landing-practice .activity-completion-symbol { width: 44px; height: 44px; }
 .landing-practice .activity-review > summary { min-height: 44px; font-size: 12px; padding-block: 12px; box-sizing: border-box; }
 .landing-practice__feedback p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; }
-.landing-practice__footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; padding-top: 10px; }
-.landing-practice__footer p { flex: 1 1 18ch; margin: 0; font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
+.landing-practice__footer { display: flex; justify-content: flex-end; padding-top: 10px; }
 .landing-practice__reset { flex: 0 0 auto; min-height: 44px; padding: 8px; border: 0; border-radius: 5px; background: transparent; color: inherit; font: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .landing-practice__reset:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .landing-practice__reset:focus-visible, .landing-practice__hint summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }

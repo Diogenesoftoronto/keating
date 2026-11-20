@@ -1,8 +1,3 @@
-.frustration-clip { width: min(100%, 420px); justify-self: center; min-width: 0; }
-.frustration-clip__screen { overflow: hidden; aspect-ratio: 480 / 292; border: 0; border-radius: .1923rem; background-color: var(--paper-deep); }
-.frustration-clip__screen video, .frustration-clip__screen img { display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; }
-.frustration-clip__controls { display: flex; align-items: center; gap: 2px; margin-top: 9px; color: var(--ink-soft); }
-.frustration-clip__controls > span { flex: 1; font-size: 11px; line-height: 1.6; }
+.frustration-clip { width: min(100%, 420px); justify-self: center; min-width: 0; overflow: hidden; aspect-ratio: 480 / 292; border-radius: .1923rem; background-color: var(--paper-deep); }
+.frustration-clip :is(video:not([hidden]), img) { display: block; width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; }
 @media (max-width: 520px) { .frustration-clip { max-width: 340px; margin-bottom: 16px; } }
-@media (prefers-reduced-motion: reduce) { .frustration-clip { transform: none; } }
-html[data-motion="reduce"] .frustration-clip { transform: none; }

@@ -1,0 +1,5 @@
+[{"wait":2000},{"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/seed.js"},{"goto":"http://localhost:3420/chat?session=11111111-2222-4333-8444-555555555555","settle":7500},
+ {"shot":"/tmp/keating-design-shots/p-chat.png"},
+ {"evalFile":"/home/diogenes/.cache/keating-deploy/design-pass-20261119/docs/design/2026-11-19-review-chat-mockups/src/tools/harness/probe-overflow.js"},
+ {"eval":"document.documentElement.classList.add('dark');'ok'"},{"wait":1800},
+ {"shot":"/tmp/keating-design-shots/p-chat-dark.png"}]

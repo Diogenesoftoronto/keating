@@ -123,7 +123,34 @@
 /* The marked-up transcript, also used by published sessions. */
 .rv-page-subbar { flex-wrap: wrap; }
 .rv-page-turn { max-width: 38rem; margin-inline: auto; padding: .76rem clamp(.72rem, 3vw, 2.25rem); }
-.rv-page-turn-heading { display: flex; align-items: center; gap: .42rem; min-height: 1.35rem; margin-bottom: .38rem; }
+.rv-page-turn-heading { position: relative; display: flex; align-items: center; gap: .42rem; min-height: 1.35rem; margin-bottom: .38rem; }
+/* The proofreader's bracket joins the selected speaker label to the first line. */
+.rv-turn-bracket {
+  position: absolute;
+  inset-inline-end: calc(100% + .04rem);
+  inset-block-start: 48%;
+  inline-size: .65rem;
+  block-size: calc(52% + .92rem);
+  pointer-events: none;
+  fill: none;
+  stroke: var(--green-deep);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rv-turn-bracket:dir(rtl) { transform: scaleX(-1); }
+@keyframes rv-bracket-pen { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-reduce-motion="true"]):not([data-motion="reduce"]):not([data-fx="off"]) .rv-turn-bracket path {
+    stroke-dasharray: 1;
+    animation: rv-bracket-pen 265ms cubic-bezier(.42,0,.37,1) backwards;
+  }
+  html:not([data-reduce-motion="true"]):not([data-motion="reduce"]):not([data-fx="off"]) .rv-turn-bracket path + path {
+    animation-duration: 90ms;
+    animation-delay: 245ms;
+  }
+}
+@media (forced-colors: active) { .rv-turn-bracket { stroke: CanvasText; } }
 .rv-page-turn-heading h2 { font: 700 .55rem/1.25 var(--font-mono, monospace); text-transform: uppercase; letter-spacing: .065em; }
 .rv-page-turn-heading small { min-width: 0; overflow: hidden; text-overflow: ellipsis; font: .48rem/1.4 var(--font-mono, monospace); color: var(--muted-foreground); }
 .rv-page-turn-actions { display: flex; align-items: center; gap: .15rem; margin-left: auto; flex-shrink: 0; }

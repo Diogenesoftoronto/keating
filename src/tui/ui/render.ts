@@ -169,6 +169,11 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
         aside("Edit and run on web."),
       ],
     };
+    case "lab": return {
+      heading: node.title,
+      body: [...node.brief.split("\n"), ...(node.adapter.kind === "code" ? node.adapter.source.split("\n") : []),
+        ...node.checkpoints.map((point, i) => `${i + 1}. ${point.title}`), aside("Try this lab in the web app.")],
+    };
     case "music-lab": return {
       heading: `Music lab: ${node.title}`,
       body: [...nonEmpty(node.brief), "```js", ...node.code.split("\n"), "```", aside("Plays on web.")],

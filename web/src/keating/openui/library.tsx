@@ -665,6 +665,42 @@ export const CodingChallenge = defineComponent({
 	component: OpenUICodingChallenge,
 });
 
+const labPropsSchema = z.object({
+	id: z.string(), title: z.string(), brief: z.string(),
+	adapter: z.union([
+		z.object({ kind: z.literal("code"), language: z.enum(["sh", "nix", "kubernetes"]), source: z.string().max(32768) }),
+		z.object({ kind: z.literal("code"), language: z.literal("wat"), source: z.string().max(32768), exportName: z.string().optional(), args: z.array(z.union([z.string(), z.number()])).max(16).optional() }),
+		z.object({ kind: z.literal("midi"), requireDevice: z.boolean().optional() }),
+		z.object({ kind: z.literal("serial"), baudRate: z.union([z.literal(9600), z.literal(115200)]), unit: z.string(), requireDevice: z.boolean().optional() }),
+	]),
+	checkpoints: z.array(z.object({
+		id: z.string(), title: z.string(), hint: z.string().optional(),
+		check: z.union([
+			z.object({ kind: z.literal("output"), stdout: z.string(), exitCode: z.number().int().min(0).max(255) }),
+			z.object({ kind: z.literal("notes"), notes: z.array(z.number().int().min(0).max(127)).min(1).max(64) }),
+			z.object({ kind: z.literal("range"), min: z.number(), max: z.number() }),
+		]),
+	})).min(1).max(24),
+	lifecycle: lifecycleSchema.default("workspace"),
+});
+
+function OpenUITeachingLab({ props }: { props: z.infer<typeof labPropsSchema> }) {
+	const streaming = useIsStreaming();
+	const triggerAction = useTriggerAction();
+	if (streaming) return <p role="status">Preparing lab…</p>;
+	const document = compileOpenUISourceToSharedDocument(`root = LearningSurface([lab])\nlab = Lab(${JSON.stringify(props)})`, { documentId: props.id });
+	return <SharedUiDocumentRenderer document={document} onAction={event => {
+		void triggerAction(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { ...event.intent, lab: props } });
+		return true;
+	}} />;
+}
+
+export const Lab = defineComponent({
+	name: "Lab",
+	description: "A tutor-authored lab in the conversation. Use one adapter per lab. Each checkpoint names an observable action, an optional hint, and a check in that adapter's units: output (stdout and exitCode) for runnable code, notes (ordered MIDI note numbers) for performance, range (inclusive min and max) for a numeric sensor reading. Optional requireDevice on MIDI or serial limits completion to device input. Inspect observed attempts and respond to the specific mismatch.",
+	props: labPropsSchema, component: OpenUITeachingLab,
+});
+
 const musicLabPropsSchema = z.object({
 	id: z.string(), title: z.string(), code: z.string(), lifecycle: lifecycleSchema.default("workspace"), brief: z.string().optional(),
 	controls: simulationPropsSchema.shape.parameters.element.array().max(8).optional(), visualization: z.enum(["pianoroll", "scope"]).optional(),
@@ -756,6 +792,7 @@ const learningBlock = z.union([
 	PersonBrief.ref,
 	Simulation.ref,
 	CodingChallenge.ref,
+	Lab.ref,
 	MusicLab.ref,
 ]);
 
@@ -809,6 +846,7 @@ export const keatingOpenUILibrary = createLibrary({
 		PersonBrief,
 		Simulation,
 		CodingChallenge,
+		Lab,
 		MusicLab,
 	],
 	componentGroups: [
@@ -817,7 +855,7 @@ export const keatingOpenUILibrary = createLibrary({
 		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
 		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
 		{ name: "People and community", components: ["PersonBrief", "Connect"] },
-		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab"] },
+		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "Lab"] },
 	],
 });
 
@@ -901,6 +939,11 @@ export const keatingOpenUIStudyPlanExampleProgram = [
 ].join("\n");
 
 export const keatingOpenUIPrompt = [
+	"## Inline experiments",
+	"For a quick experiment, write one complete, editable Markdown code fence in your reply. Match its language tag to the runtime. Use sh for a fresh Alpine Unkernel guest: teach processes, descriptors and kernel interfaces with self-contained shell commands. Learners can trace each shell command. Use nix for pure Tvix expressions and wat for a standalone WebAssembly text module with exported functions and no host imports. Use kubernetes for a v1 Service and sample Pods in YAML or JSON to inspect label selection locally. Describe a page-table model as a model and a fixture as a fixture. Each run starts fresh.",
+	"For guided practice, author Lab in an openui fence. Tie each checkpoint to something the adapter can observe. Describe one edit, performance or measurement at a time, with a hint that helps the learner diagnose a miss. A serial lab reads newline-delimited numbers. Choose its unit and baud rate to match the learner’s board. MIDI and serial may also offer on-screen notes or a manually entered sample. Set requireDevice to true when the skill requires physical input. Wait for an observe-lab turn before responding to a result; it carries the checkpoint ID and observed evidence.",
+	'Example: root = LearningSurface([interval], "Intervals", "Play the requested interval.", "workspace")',
+	'interval = Lab("third", "Build a major third", "Play middle C, then a note four semitones higher.", {kind:"midi"}, [{id:"third-up",title:"Play a major third above C",hint:"Count four semitones from 60.",check:{kind:"notes",notes:[60,64]}}], "workspace")',
 	"Use Diagram whenever constructing or revising a graph helps the learner reason about relationships: process flows, causal models, biological cycles, concept relationships, data pipelines, state transitions, or system design. System design interviews are one example, not the component's scope. Supply a task brief, an empty or partial starter graph, task-appropriate kinds, named structural checks, and semantic review criteria. Examples of kinds: [organism, process, resource] for biology; [input, step, decision, output] for a process; [client, service, database, cache, queue] for architecture. Directed edges mean only the relationship specified by their labels and the task; do not infer causation from topology alone. Let the learner construct the diagram and explain their choices. A submit-task response contains kind=diagram (legacy kind=system-design is also accepted), graph, Mermaid source, structural observations, and explanation. Review those fields against the original brief and criteria. Structural passes are not domain correctness, measured performance, or learning mastery. Wait for the submitted work before evaluating it. SystemDesign remains a compatibility preset; prefer Diagram for new exercises.",
 	openUILibraryPrompt,
 	keatingOpenUIQuestionTypeGuide,

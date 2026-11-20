@@ -15,6 +15,7 @@ import type { PendingLearnerResponse } from "../../keating/event-store";
 import type { KeatingOpenUIAction } from "../../keating/openui/types";
 import {
   createOpenUIActionLearnerResponse,
+  parseLearnerResponse,
   serializeLearnerResponse,
 } from "../../keating/learner-response";
 import type { ChatPanelSetupCallbacks } from "../../types/chat-panel";
@@ -69,7 +70,7 @@ export function useLearnerDelivery({
 }): LearnerDelivery {
   const posthog = usePostHog();
 
-  const sendUserMessage = useCallback(async (userMessage: AgentMessage, onAdmitted?: () => void) => {
+  const sendUserMessage = useCallback(async (userMessage: AgentMessage, onAdmitted?: () => void, credentialMode?: "existing-only") => {
     if (!agent || agent.context.isStreaming) return false;
     onSendStarted();
     try {
@@ -81,7 +82,7 @@ export function useLearnerDelivery({
         onAdmitted?.();
         const provider = agent.context.model.provider;
         if (callbacks.onApiKeyRequired) {
-          const admitted = await callbacks.onApiKeyRequired(provider, signal);
+          const admitted = await callbacks.onApiKeyRequired(provider, signal, credentialMode);
           signal.throwIfAborted();
           if (!admitted) throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
         }
@@ -103,7 +104,7 @@ export function useLearnerDelivery({
   }, [sendUserMessage]);
 
   const onNew = useCallback(
-    async (message: AppendMessage, onAdmitted?: () => void) => {
+    async (message: AppendMessage, onAdmitted?: () => void, credentialMode?: "existing-only") => {
       if (!agent) return false;
       const userMessage = makeUserMessageFromAppend(message);
       if (!userMessage) return false;
@@ -117,7 +118,7 @@ export function useLearnerDelivery({
         return true;
       }
 
-      return sendUserMessage(userMessage, onAdmitted);
+      return sendUserMessage(userMessage, onAdmitted, credentialMode);
     },
     [agent, callbacks, sendUserMessage],
   );
@@ -145,7 +146,14 @@ export function useLearnerDelivery({
     if (!next) return;
     void queue.deliver(
       next,
-      (serialized, onAdmitted) => onNew(userTextMessage(serialized), onAdmitted),
+      (serialized, onAdmitted) => {
+        // Automatic checkpoints can arrive mid-phrase. A missing key should leave the
+        // keyboard usable and surface the ordinary recoverable error in the transcript.
+        const response = parseLearnerResponse(serialized);
+        const observation = response?.kind === "openui-action" && response.payload?.kind === "canonical"
+          && response.payload.action?.type === "observe-lab";
+        return onNew(userTextMessage(serialized), onAdmitted, observation ? "existing-only" : undefined);
+      },
       () => callbacks.onLearnerResponseDelivered?.(next),
     ).then((outcome) => { if (outcome === "delivered") drain(); });
   }, []);
