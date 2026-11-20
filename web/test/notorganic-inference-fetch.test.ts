@@ -110,13 +110,13 @@ test("the hosted Inkling SDK preserves a Tinker billing block and attempts the r
 	let attempts = 0;
 	const fetcher = createNotOrganicInferenceFetch({ async headersFor(_method, _target, initial) {
 		return new Headers(initial);
-	} }, url, { idempotencyKey: "billing-fixture", maxCostMicrousd: 100000, fetch: (async () => {
+	} }, url, { idempotencyKey: "billing-fixture", maxCostMicrousd: 100000, fetch: Object.assign(async () => {
 		attempts++;
 		return Response.json({
 			detail: "Access is blocked due to billing status. Please add payment at https://tinker.thinkingmachines.ai/billing/balance",
 			provider: "openai",
 		}, { status: 402 });
-	}) as typeof fetch });
+	}, { preconnect() {} }) });
 	const result = await streamWithApiRetry(selected, context, { fetch: fetcher, apiKey: "test-key", maxRetries: 1 },
 		options => streamSimple(selected, context, options), { ...WEB_API_RETRY_POLICY, maxAttempts: 3, rateLimitIntervalMs: 0 }).result();
 	expect(attempts).toBe(1);
