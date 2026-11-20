@@ -235,7 +235,12 @@ export function install(G) {
       collect = Math.min(1.4, collect + 0.18); const k = d.p.k;
       if (k === "s") { if (d.streak % 5 === 0) flip("sparkle", P.x + rnd(-10, 10), P.y + rnd(-14, 4), 10 + Math.min(10, d.streak / 3), 0.32); }
       else if (k === "c" || k === "h") { pop(P.x, P.y - 38, k === "c" ? "Flashcard · Eureka +1" : "+1", GRN(), 12, 1.1); ring(P.x, P.y, 0.4, 10, 40, GRN()); }
+      else if (k === "e") { pop(P.x, P.y - 38, "Charge +" + Math.round((d.amount || 0) * 100) + "%", GRN(), 13, 1.1); ring(P.x, P.y, 0.45, 12, 70, GRN()); }
     });
+    // Charge: say it once when it falls a tier, and again when a cell is on its way.
+    G.on("chargeLow", (d) => pop(P.x, P.y - 44, d.tier === 1 ? "Charge almost gone" : "Low charge · fewer shots", G.pal.red, 12, 1.2));
+    G.on("chargeEmpty", () => pop(P.x, P.y - 44, "Out of charge · catch a cell", G.pal.red, 13, 1.5));
+    G.on("chargeCell", (d) => ring(d.x, d.y, 0.5, 8, 46, GRN()));
     G.on("powerUp", (d) => { pop(d.x, d.y - 38, "POWER UP", GRN(), 13, 1.1); ring(d.x, d.y, 0.4, 14, 90, GRN()); stop(0.04, true); sparkles(d.x, d.y, 5, 30, 26, 13, 0.45, 0.05); });
     G.on("multUp", (d) => { pop(P.x, P.y - 42, "×" + d.mult, GRN(), 14 + Math.min(6, d.mult), 0.9); ring(P.x, P.y, 0.35, 16, 34 + d.mult * 6, GRN()); });
     // a lost streak is told gently: the multiplier drops off and falls away, no red

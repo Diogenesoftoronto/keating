@@ -59,7 +59,7 @@ export function CarePanel({ state, pending, act, solve, onClose }: PanelProps & 
           {state.inventory[need.pocket] === 0 && <Button variant="ghost" onClick={() => solve(careGoal(need.id))}>Solve to skip</Button>}
         </div>)}
         <Button variant="outline" onClick={() => act({ type: "topUp" })} disabled={pending || !hasSupplies}>Use supplies to top up</Button>
-        <p className="habit-muted">Charge helps him fly. Tuning helps him turn and fire. {shine >= 0.9 ? "He starts Recess with three Eurekas." : "At 90% shine he starts with a third Eureka."}</p>
+        <p className="habit-muted">Charge powers his jetpack and blaster. Earn sparks by studying, finishing quests, or playing Recess, then spend them here to recharge. {shine >= 0.9 ? "He starts Recess with three Eurekas." : "At 90% shine he starts with a third Eureka."}</p>
         {state.overchargeUntil && <p>Overcharge ends {formatDeadline(state.overchargeUntil)} or after one Recess run.</p>}
       </div>
     </section>
@@ -111,7 +111,7 @@ export function QuestsPanel({ state, pending, act, solve }: PanelProps) {
           <h3>{quest.title}</h3><p>{quest.why}</p>
           {progress?.completedAt ? <p>Completed {formatDeadline(progress.completedAt)}</p> : !available ? <p className="habit-muted">Finish the previous expedition quest to begin.</p> : <>
             {progress && <p>{quest.prompt}</p>}
-            <p className="habit-muted">Earn {quest.blueprints} blueprint pieces and {quest.parts} parts.</p>
+            <p className="habit-muted">Earn a spark, {quest.blueprints} blueprint pieces, and {quest.parts} parts.</p>
             {progress ? <Button onClick={() => solve({ kind: "assignment", target: { kind: "quest", id: quest.id }, title: quest.title, objective: quest.subject, prompt: quest.prompt })}>Submit written work</Button>
               : <Button variant="outline" disabled={pending} onClick={() => act({ type: "acceptQuest", questId: quest.id })}>Accept quest</Button>}
           </>}

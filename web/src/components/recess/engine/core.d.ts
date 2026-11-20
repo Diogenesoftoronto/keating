@@ -6,6 +6,8 @@ type OneRun = {
   stop(): void;
   bomb(): void;
   readonly state: "idle" | "intro" | "play" | "outro" | "down";
+  /** Remaining firing charge minus this run's starting charge, in [-1, 1]. */
+  readonly chargeDelta: number;
   setCalm(value: boolean): void;
   setCondition(condition: RecessCondition): void;
   dispose(): void;

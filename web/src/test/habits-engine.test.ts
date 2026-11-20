@@ -112,14 +112,44 @@ test("quest rewards require accepted work, follow expedition order and can be eq
   expect(state.inventory.parts).toBe(0);
   expect(applyHabitsCommand(state, { type: "acceptQuest", questId: "x-rust" })).toBe(false);
   expect(applyHabitsCommand(state, { type: "acceptQuest", questId: "receipt" })).toBe(true);
+  const sparksBeforeCompletion = state.inventory.sparks;
   expect(applyHabitsCommand(state, { ...completion, id: "accepted-quest-grade" })).toBe(true);
   expect(state.inventory.parts).toBe(7);
+  expect(state.inventory.sparks).toBe(sparksBeforeCompletion + 1);
+  expect(applyHabitsCommand(state, { ...completion, id: "repeat-quest-grade" })).toBe(false);
+  expect(state.inventory.sparks).toBe(sparksBeforeCompletion + 1);
   expect(applyHabitsCommand(state, { type: "craft", kitId: "protractor" })).toBe(true);
   expect(applyHabitsCommand(state, { type: "equip", kitId: "protractor" })).toBe(true);
   expect(habitsSnapshot(state, scope)).toMatchObject({
     equippedKit: { topper: "protractor" }, ownedKit: expect.arrayContaining(["star", "protractor"]),
     quests: { receipt: { acceptedAt: firstDay, completedAt: firstDay } },
   });
+});
+
+test("flight charge settles once, and quitting or Companion Off cannot grant recharge rewards", async () => {
+  const { options, signIn } = testStore();
+  const store = new HabitsRepository(options);
+  const care = { used: 0.1, cogs: 2, sparks: 1 };
+  const stopped = {
+    type: "runEnd", runId: "stopped", scope,
+    result: { quit: true, score: 100, care: { ...care, chargeDelta: -0.45 } },
+  } as const;
+  const [landed, replayed] = await Promise.all([store.dispatch("calm", stopped), store.dispatch("calm", stopped)]);
+  expect([landed.outcome, replayed.outcome].sort()).toEqual(["accepted", "replayed"]);
+  expect(replayed.condition.charge).toBeCloseTo(0.3);
+  expect(replayed).toMatchObject({ recessBest: 0, inventory: { sparks: 0, cogs: 0 } });
+
+  const recovered = { quit: false, score: 200, care: { ...care, chargeDelta: 0.35 } };
+  const quitWhileAhead = await store.dispatch("calm", { ...stopped, runId: "quit-ahead", result: { ...recovered, quit: true } });
+  expect(quitWhileAhead.condition.charge).toBeCloseTo(0.3);
+  const finished = await store.dispatch("calm", { ...stopped, runId: "finished", result: recovered });
+  expect(finished.condition.charge).toBeCloseTo(0.65);
+  expect(finished).toMatchObject({ recessBest: 200, inventory: { sparks: 1, cogs: 2 } });
+
+  await store.dispatch("off", { ...stopped, runId: "off" });
+  expect((await store.read("calm")).condition.charge).toBeCloseTo(0.65);
+  signIn("another-account");
+  await expect(store.dispatch("calm", stopped)).rejects.toThrow("The learner account changed");
 });
 
 test("transactional concurrent retries grant a single receipt and rejected replays remain rejected", async () => {

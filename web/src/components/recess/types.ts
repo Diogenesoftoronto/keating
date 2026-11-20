@@ -52,7 +52,14 @@ export interface RecessResult {
   myths: { wrong: string; right: string }[];
   wind: RecessCheckResult | null;
   tldr: string | null;
-  care: { used: number; cogs: number; sparks: number };
+  care: {
+    /** Legacy flat cost; kept for older readers. `chargeDelta` is authoritative when present. */
+    used: number;
+    /** Firing charge left at the end minus the charge the run started with, in [-1, 1]. */
+    chargeDelta?: number;
+    cogs: number;
+    sparks: number;
+  };
 }
 
 export interface RecessBotArt {
@@ -72,6 +79,8 @@ export interface RecessHud {
   mult: number;
   combo: number;
   power: number;
+  /** Live firing charge, 0 to 1. */
+  charge: number;
   meter: number;
   boss: number;
 }

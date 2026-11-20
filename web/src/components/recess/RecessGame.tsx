@@ -20,10 +20,16 @@ interface Props {
   onEnd(result: RecessResult): void;
   onQuiz(draft: string): void;
   compilePack?: (signal: AbortSignal, base: RecessPack) => Promise<RecessPack | null>;
+  /** True while charge is being read or saved; Start waits for it. */
+  settlingCharge?: boolean;
+  /** Called once, before disposal, when an active run is torn down without a result and spent charge. */
+  onAbandon?: (chargeDelta: number) => void;
 }
 
 const options = Object.values(packs);
-const initialHud: RecessHud = { hearts: 4, bombs: 2, score: 0, mult: 1, combo: 0, power: 1, meter: 0, boss: -1 };
+const initialHud: RecessHud = { hearts: 4, bombs: 2, score: 0, mult: 1, combo: 0, power: 1, charge: 0.75, meter: 0, boss: -1 };
+const percent = (value: number) => `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
+const chargeTone = (value: number) => value <= 0 ? "empty" : value < 0.25 ? "low" : "ok";
 
 function words(text: string) {
   return text.split(/(\s+)/).map((word, index) => /\S/.test(word) ? <span className="w" key={index}>{word}</span> : word);
@@ -69,6 +75,9 @@ function Hud({ hud }: { hud: RecessHud }) {
     </span>
     <span className="recess-meter"><i style={{ width: `${Math.min(100, Math.round(hud.meter * 100))}%` }} /></span>
     <span className="recess-boss" data-visible={hud.boss >= 0}><i style={{ transform: `scaleX(${Math.max(0, hud.boss)})` }} /></span>
+    <span className="recess-charge" data-tone={chargeTone(hud.charge)}>
+      <b>Charge</b><span className="recess-charge-bar"><i style={{ width: percent(hud.charge) }} /></span><em>{percent(hud.charge)}</em>
+    </span>
     <span className="recess-power">
       {Array.from({ length: 4 }, (_, index) => <i key={index} data-empty={index >= hud.power}/>)}
     </span>
@@ -127,7 +136,7 @@ function WindQuestion({ wind, answer, stop }: { wind: RecessWind; answer(index: 
   </section>;
 }
 
-function RunResult({ result, onQuiz }: { result: RecessResult; onQuiz(draft: string): void }) {
+function RunResult({ result, onQuiz, startCharge }: { result: RecessResult; onQuiz(draft: string): void; startCharge: number }) {
   const headline = result.won ? "Wall cleared" : result.quit ? "Stopped early" : "Out of hearts";
   const draft = recessReviewDraft(result);
   return <section className="recess-result" aria-label="Recess result" data-outcome={result.won ? "won" : result.quit ? "quit" : "lost"}>
@@ -136,6 +145,9 @@ function RunResult({ result, onQuiz }: { result: RecessResult; onQuiz(draft: str
       <h3>{headline}</h3><strong>{result.score.toLocaleString()} <small>points</small></strong>
     </div>
     <p>{result.kills} cleared · {result.grazes} close calls · {result.rattled} words rattled</p>
+    {typeof result.care.chargeDelta === "number" && <p className="recess-result-charge">
+      Charge {percent(startCharge)} → {percent(startCharge + result.care.chargeDelta)}
+    </p>}
     <ul>
       {result.myths.map((myth, index) => <li key={`m-${index}`}><s>{myth.wrong}</s> <strong>{myth.right}</strong></li>)}
       {[...result.gates, ...(result.wind ? [result.wind] : [])].map((check, index) => <li key={`q-${index}`}>
@@ -149,7 +161,7 @@ function RunResult({ result, onQuiz }: { result: RecessResult; onQuiz(draft: str
   </section>;
 }
 
-export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compilePack }: Props) {
+export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compilePack, settlingCharge = false, onAbandon }: Props) {
   const [settings] = useKeatingUiSettings();
   const motionAllowed = useMotionAllowed();
   const [sound, setSound] = useState(false);
@@ -183,6 +195,9 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   const nextHud = useRef(0);
   const returnFocus = useRef(0);
   const startControl = useRef<HTMLButtonElement>(null);
+  // Bound when a run starts, so a late exit settles against the account that run began under.
+  const abandon = useRef<Props["onAbandon"] | null>(null);
+  const runCharge = useRef(condition.charge);
   const [art, setArt] = useState<{ key: string; assets: RecessBotArt | null } | null>(null);
   const [canvasGeneration, setCanvasGeneration] = useState(0);
   const casting = pack.cast ?? pack.id;
@@ -212,7 +227,14 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   useEffect(() => () => {
     compile.current?.abort();
     resize.current?.disconnect();
-    engine.current?.dispose();
+    // Closing or navigating mid-run never reaches onEnd: settle spent charge once, then dispose.
+    const live = engine.current;
+    engine.current = null;
+    if (live && live.state !== "idle") {
+      const delta = live.chargeDelta;
+      if (delta < 0) abandon.current?.(delta);
+    }
+    live?.dispose();
     cancelAnimationFrame(returnFocus.current);
   }, []);
 
@@ -263,7 +285,8 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
       flushSync(() => {
         setFailure("");
         setResult(null);
-        setHud({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2 });
+        runCharge.current = condition.charge;
+        setHud({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2, charge: condition.charge });
         setStatus("play");
       });
       const game = Recess.create({
@@ -290,6 +313,7 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
       });
       engine.current = game;
       soundEngine.current = audio;
+      abandon.current = onAbandon ?? null;
       game.setCondition(condition);
       game.start("start");
       playfield.focus({ preventScroll: true });
@@ -326,6 +350,10 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
             {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
           </select>
         </label>
+        <div className="recess-preflight" data-tone={chargeTone(condition.charge)}>
+          <span className="recess-charge"><b>Charge</b><span className="recess-charge-bar"><i style={{ width: percent(condition.charge) }} /></span><em>{percent(condition.charge)}</em></span>
+          <small>Firing spends charge. Sparks and charge cells refill it; at zero he flies but can’t fire.</small>
+        </div>
         {compilePack && lesson.some(row => row.role === "tutor") && <button type="button" className="recess-chat"
           aria-pressed={!!personal} disabled={inFlight || compiling || !!personal} onClick={() => void prepareLesson()}>
           <Icon name="chat"/>{compiling ? "Preparing lesson…" : personal ? "Playing from your lesson" : "Use this chat lesson"}
@@ -333,10 +361,10 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
       </div>
       <div className="recess-controls">
         <button type="button" className="recess-start recess-key" ref={startControl} data-flight={inFlight}
-          disabled={status === "outro" || (!inFlight && (!prepared?.assets || compiling))}
+          disabled={status === "outro" || (!inFlight && (!prepared?.assets || compiling || settlingCharge))}
           onClick={() => inFlight ? engine.current?.stop() : start()}>
           <Icon name={inFlight ? "stop" : "launch"}/>
-          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !prepared ? "Loading artwork…" : result ? "Play again" : "Start Recess"}
+          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !prepared ? "Loading artwork…" : settlingCharge ? "Checking charge…" : result ? "Play again" : "Start Recess"}
         </button>
         {inFlight && <button type="button" className="recess-eureka recess-key" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
           data-live-action="" aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
@@ -398,6 +426,6 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
     <p className="recess-note recess-condition">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
       {wornNames.length > 0 && ` · Wearing ${wornNames.join(", ")}`}
     </p>
-    {result && <RunResult result={result} onQuiz={onQuiz}/>}
+    {result && <RunResult result={result} onQuiz={onQuiz} startCharge={runCharge.current}/>}
   </div>;
 }

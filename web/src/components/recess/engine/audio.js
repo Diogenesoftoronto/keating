@@ -367,7 +367,7 @@ export function install(G) {
     G.on("bomb", (d) => play("bomb", 0, d.x));
     G.on("graze", (d) => play("graze", Math.min(1, G.meter / 36), d.x));
     G.on("charge", (d) => play("charge", 0, d.x));
-    G.on("pickup", (d) => { const k = d.p.k; play(k === "s" ? "pick" : k === "c" ? "charge" : "heart", Math.min(d.streak, 10), d.p.x); });
+    G.on("pickup", (d) => { const k = d.p.k; play(k === "s" ? "pick" : k === "c" || k === "e" ? "charge" : "heart", Math.min(d.streak, 10), d.p.x); });
     G.on("powerUp", (d) => play("power", 0, d.x));
     G.on("multUp", (d) => { play("mult", d.mult); relayer(); });
     G.on("chainLost", () => { play("drop"); relayer(); });

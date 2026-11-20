@@ -472,6 +472,15 @@ export const RecessArt = (function () {
   function drawPickup(c, p, env) {
     const pal = env.pal, T = env.G?.calm ? 0 : env.T;
     c.save(); c.translate(p.x, p.y + (env.G?.calm ? 0 : Math.sin(T * 4 + p.x * .09) * 1.1));
+    if (p.k === "e") {
+      // Emergency charge cell: a chunky battery with a bolt, ringed so it reads at a glance.
+      const pulse = env.G?.calm ? 0 : Math.sin(T * 5) * 1.5;
+      c.beginPath(); c.arc(0, 0, 18 + pulse, 0, TAU); c.strokeStyle = pal.deep; c.lineWidth = 1.2; c.setLineDash([3, 3]); c.stroke(); c.setLineDash([]);
+      box(c, -8, -11, 16, 22, 2.5); c.fillStyle = pal.card; c.fill(); c.strokeStyle = pal.ink; c.lineWidth = 1.8; c.stroke();
+      c.fillStyle = pal.ink; c.fillRect(-3.5, -14, 7, 3);
+      c.beginPath(); c.moveTo(1.5, -8); c.lineTo(-4, 1); c.lineTo(0, 1); c.lineTo(-1.5, 8); c.lineTo(4, -1); c.lineTo(0, -1); c.closePath(); c.fillStyle = pal.deep; c.fill();
+      c.restore(); return;
+    }
     c.beginPath(); c.arc(0, 0, p.k === "s" ? 8 : 13, 0, TAU);
     c.fillStyle = pal.card; c.fill(); c.strokeStyle = pal.deep; c.lineWidth = 1.4; c.stroke();
     if (p.k === "s") {
