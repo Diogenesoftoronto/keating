@@ -6,7 +6,8 @@ import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import { normalizeProviderStreamOptions } from "../src/hooks/keating-stream";
 import { classifyLlmError } from "../src/core/api-retry";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
-import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
+import { inklingFallbackModel, sameInferenceSession, withInklingFallback } from "../src/notorganic-provider/inkling-fallback";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_LUNA_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -15,9 +16,11 @@ const model: Model<Api> = {
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 8192, maxTokens: 1024,
 };
 
-test("Sol's actual SDK payload uses supported reasoning and omits unsupported sampling for chat and helpers", async () => {
-	const selected = { ...NOTORGANIC_SOL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
-	expect(getSupportedThinkingLevels(selected)).toEqual(["low", "medium", "high", "xhigh", "max"]);
+for (const profile of [NOTORGANIC_SOL_MODEL, NOTORGANIC_LUNA_MODEL]) {
+test(`${profile.name} uses supported Responses reasoning and omits unsupported sampling`, async () => {
+	const selected = { ...profile, baseUrl: "https://api.notorganic.test/v1" };
+	expect(getSupportedThinkingLevels(selected)).toEqual(profile === NOTORGANIC_SOL_MODEL
+		? ["low", "medium", "high", "xhigh", "max"] : ["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 	for (const [reasoning, expected] of [[undefined, "low"], ["minimal", "low"], ["medium", "medium"], ["xhigh", "xhigh"], ["max", "max"]] as const) {
 		let body: Record<string, any> | undefined;
 		const options = normalizeProviderStreamOptions(selected, {
@@ -27,7 +30,7 @@ test("Sol's actual SDK payload uses supported reasoning and omits unsupported sa
 				body = await new Request(input, init).json();
 				if (!["low", "medium", "high", "xhigh", "max"].includes(body!.reasoning?.effort)
 					|| ["temperature", "top_p", "top_logprobs"].some(key => key in body!)) {
-					return Response.json({ error: { message: "Unsupported Sol parameter" } }, { status: 400 });
+					return Response.json({ error: { message: "Unsupported Responses parameter" } }, { status: 400 });
 				}
 				return new Response('event: response.completed\ndata: {"type":"response.completed","response":{"id":"resp_sol","status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":0,"total_tokens":1}}}\n\n', { headers: { "content-type": "text/event-stream" } });
 			}) as typeof fetch,
@@ -36,9 +39,10 @@ test("Sol's actual SDK payload uses supported reasoning and omits unsupported sa
 		expect(result.stopReason).toBe("stop");
 		expect(body?.reasoning.effort).toBe(expected);
 		expect(body?.prompt_cache_key).toBe("learner-session");
-		expect(body?.model).toBe("gpt-6.1-sol");
+		expect(body?.model).toBe(profile.id);
 	}
 });
+}
 
 test("Flint uses account-only Chat Completions parameters and consumes buffered text plus tool-call SSE", async () => {
 	const selected = { ...NOTORGANIC_FLINT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
@@ -122,6 +126,63 @@ test("the hosted Inkling SDK preserves a Tinker billing block and attempts the r
 	expect(attempts).toBe(1);
 	expect(result.stopReason).toBe("error");
 	expect(classifyLlmError(result.errorMessage)).toMatchObject({ category: "provider-billing", statusCode: 402 });
+});
+
+test("an Inkling billing block switches transports before publishing events, with an independent signed request", async () => {
+	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const fallback = { ...NOTORGANIC_SOL_MODEL, baseUrl: selected.baseUrl };
+	const context: Context = { messages: [{ role: "user", content: "Explain recursion", timestamp: 1 }] };
+	const attempts: Request[] = [];
+	const fetcher = Object.assign(async (input: RequestInfo | URL, init?: RequestInit) => {
+		const request = new Request(input, init);
+		attempts.push(request);
+		if (request.url.endsWith("/chat/completions")) {
+			return Response.json({ detail: "Access is blocked due to billing status. Please add payment at https://tinker.thinkingmachines.ai/billing/balance" }, { status: 402 });
+		}
+		const text = "Recursion means a function calls itself.";
+		const item = { id: "reply", type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text, annotations: [] }] };
+		const events = [
+			{ type: "response.output_item.added", output_index: 0, item: { ...item, content: [] } },
+			{ type: "response.output_text.delta", output_index: 0, content_index: 0, delta: text },
+			{ type: "response.output_item.done", output_index: 0, item },
+			{ type: "response.completed", response: { id: "fallback", status: "completed", output: [item], usage: { input_tokens: 1, output_tokens: 8, total_tokens: 9 } } },
+		];
+		return new Response(events.map(event => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(""), { headers: { "content-type": "text/event-stream" } });
+	}, { preconnect() {} });
+	const signing = { async headersFor(_method: string, target: string, initial?: HeadersInit) {
+		const headers = new Headers(initial);
+		headers.set("authorization", "DPoP same-account");
+		headers.set("dpop", `proof-for-${new URL(target).pathname}`);
+		return headers;
+	} };
+	const start = (profile: typeof selected | typeof fallback, endpoint: string, key: string) => streamSimple(profile, context, {
+		apiKey: "test-key",
+		fetch: createNotOrganicInferenceFetch(signing, endpoint, { fetch: fetcher, idempotencyKey: key, maxCostMicrousd: 100000 }),
+	});
+	const stream = withInklingFallback(start(selected, url, "inkling-attempt"), async () => start(fallback, `${selected.baseUrl}/responses`, "fallback-attempt"));
+	const published: string[] = [];
+	for await (const event of stream) published.push(event.type);
+	expect(published).not.toContain("error");
+	expect(await stream.result()).toMatchObject({ model: "gpt-6.1-sol", stopReason: "stop",
+		content: [{ type: "text", text: "Recursion means a function calls itself." }] });
+	expect(attempts.map(request => request.headers.get("idempotency-key"))).toEqual(["inkling-attempt", "fallback-attempt"]);
+	expect(attempts.map(request => request.headers.get("dpop"))).toEqual(["proof-for-/v1/chat/completions", "proof-for-/v1/responses"]);
+
+	const unavailable = await withInklingFallback(start(selected, url, "legacy-attempt"), async () => null).result();
+	expect(unavailable.errorMessage).toBe("The selected hosted model is unavailable right now.");
+});
+
+test("an Inkling fallback respects existing grants, media, and account changes", () => {
+	const text: Context = { messages: [{ role: "user", content: "Explain recursion", timestamp: 1 }] };
+	const image: Context = { messages: [{ role: "user", content: [{ type: "image", mimeType: "image/png", data: "ZA==" }], timestamp: 1 }] };
+	expect(inklingFallbackModel("infer:text", image)?.id).toBe("gpt-6.1-sol");
+	expect(inklingFallbackModel("infer:gpt-6-luna", image)?.id).toBe("gpt-6-luna");
+	expect(inklingFallbackModel("infer:mercury-2", text)?.id).toBe("mercury-2");
+	expect(inklingFallbackModel("infer:mercury-2", image)).toBeNull();
+	expect(inklingFallbackModel("infer:inkling-2-small", text)).toBeNull();
+	const account = { id: "first-session", accessToken: "a", expiresAt: 5000, scope: "infer:text" };
+	expect(sameInferenceSession(account, { ...account, accessToken: "renewed" })).toBe(true);
+	expect(sameInferenceSession(account, { ...account, id: "different-session" })).toBe(false);
 });
 for (const sdkRetries of [0, 1]) {
 	test(`fresh proofs across retries (SDK retries ${sdkRetries})`, async () => {

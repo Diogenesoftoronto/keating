@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, MERCURY_2_PROFILE, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE, notOrganicInferenceScope, hasNotOrganicInferenceScope } from "@keating/runtime-config";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, GPT_6_LUNA_PROFILE, MERCURY_2_PROFILE, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE, notOrganicInferenceScope, hasNotOrganicInferenceScope } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
@@ -64,6 +64,16 @@ export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
 	maxTokens: 128_000,
 };
 
+export const NOTORGANIC_LUNA_MODEL: Model<"openai-responses"> = {
+	...NOTORGANIC_SOL_MODEL,
+	id: GPT_6_LUNA_PROFILE.id,
+	name: GPT_6_LUNA_PROFILE.name,
+	contextWindow: GPT_6_LUNA_PROFILE.contextWindow,
+	maxTokens: GPT_6_LUNA_PROFILE.maxTokens,
+	thinkingLevelMap: { off: "none", minimal: "low", xhigh: "xhigh", max: "max" },
+	compat: { supportsLongCacheRetention: false },
+};
+
 /** Provisional native profile; activation and actual pricing belong to the gateway. */
 export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
   ...FLINT_PREVIEW_PROFILE,
@@ -84,8 +94,8 @@ export const NOTORGANIC_MERCURY_2_MODEL: Model<"openai-completions"> = {
   baseUrl: notOrganicOpenAiBaseUrl(), cost: NOTORGANIC_DEFAULT_MODEL.cost,
 };
 
-export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_MERCURY_2_MODEL];
-export const NOTORGANIC_ESTABLISHED_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_BALANCED_MODEL];
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_MERCURY_2_MODEL, NOTORGANIC_LUNA_MODEL];
+export const NOTORGANIC_ESTABLISHED_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_LUNA_MODEL];
 
 /** Optional account models require a matching grant and a live gateway listing. */
 export async function getAvailableNotOrganicChatModels(
