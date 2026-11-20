@@ -5,6 +5,7 @@ import { LandingStudy } from "../components/LandingStudy";
 import { LandingIntro } from "../components/LandingIntro";
 import { LandingLesson } from "../components/LandingLesson";
 import { LandingLearning } from "../components/LandingLearning";
+import { LandingRecess } from "../components/LandingRecess";
 import { LandingWalkthroughs } from "../components/LandingWalkthroughs";
 import { LandingClosing } from "../components/LandingClosing";
 import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
@@ -28,7 +29,7 @@ export function Landing() {
   });
   return <div className="retro-layout retro-page landing-page"><Nav/>
     <main className="lp" ref={root}>
-      <LandingOpening/><LandingStudy/><LandingIntro/><LandingLesson/><LandingLearning/>
+      <LandingOpening/><LandingStudy/><LandingIntro/><LandingLesson/><LandingLearning/><LandingRecess/>
       <section className="lp-own"><h2 data-landing-section="setup">Make it your own.</h2>
         <div className="lp-tiles">{options.map(([glyph, title, copy]) => <div key={title} data-glyph-host>
           <KeatingGlyph name={glyph} size={22}/><b>{title}</b><p>{copy}</p>
