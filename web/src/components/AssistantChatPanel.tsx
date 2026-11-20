@@ -3443,6 +3443,7 @@ function AssistantThread({
 
   const [seated, setSeated] = useState(false);
   const [cardsHost, setCardsHost] = useState<HTMLDivElement | null>(null);
+  const [studyActionsHost, setStudyActionsHost] = useState<HTMLSpanElement | null>(null);
   const footer = (
     <ThreadPrimitive.ViewportFooter
       className={css({
@@ -3469,6 +3470,7 @@ function AssistantThread({
         onSeatedChange={setSeated}
         state={mascotState}
         busy={isRunning || micRecording}
+        studyActionsHost={studyActionsHost}
         games={studyGames ? () => ({
           sessionId: gameSession,
           lesson: habitLesson(agent?.context.messages ?? []),
@@ -3476,6 +3478,7 @@ function AssistantThread({
         }) : undefined}
       />
       <ThreadComposer
+        studyActionsRef={studyGames ? setStudyActionsHost : undefined}
         pendingPrompt={pendingPrompt}
         composerHasUrl={composerHasUrl}
         onComposerHasUrlChange={setComposerHasUrl}
@@ -3748,6 +3751,7 @@ function ThinkingLevelSelect({ model, level, disabled, onChange }: {
 }
 
 function ThreadComposer({
+  studyActionsRef,
   pendingPrompt,
   composerHasUrl,
   onComposerHasUrlChange,
@@ -3764,6 +3768,7 @@ function ThreadComposer({
   onMicRecordingChange,
   onConversationComplete,
 }: {
+  studyActionsRef?: (node: HTMLSpanElement | null) => void;
   pendingPrompt?: string;
   composerHasUrl: boolean;
   onComposerHasUrlChange: (hasUrl: boolean) => void;
@@ -3799,6 +3804,7 @@ function ThreadComposer({
               { duration: .24, ease: EASE });
           }
         }}>{label}</Chip>)}
+        {studyActionsRef && <span className="ch-study-activities" ref={studyActionsRef} />}
       </div></AuiIf>
       <ComposerPrimitive.Root
         className={cx(
