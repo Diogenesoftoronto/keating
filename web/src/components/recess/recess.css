@@ -1,0 +1,296 @@
+.recess-game {
+  --recess-paper: #f1ece0;
+  --recess-card: #f6f2e8;
+  --recess-ink: #1c211b;
+  --recess-soft: #4a5247;
+  --recess-line: #c6c3b6;
+  --recess-green: #14743c;
+  --recess-wash: #ddebdd;
+  --recess-red: #b9432e;
+  --recess-mono: "JetBrains Mono", ui-monospace, monospace;
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.recess-game[data-theme="term"] {
+  --recess-paper: #0c1510;
+  --recess-card: #11201a;
+  --recess-ink: #dcefe0;
+  --recess-soft: #9dbfa8;
+  --recess-line: #345644;
+  --recess-green: #4be388;
+  --recess-wash: #123a24;
+  --recess-red: #ff6b52;
+}
+
+.recess-toolbar, .recess-options {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recess-game :is(button, select) {
+  min-height: 40px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--foreground);
+  background: var(--background);
+  font: inherit;
+  font-size: 0.84rem;
+}
+
+.recess-toolbar > label, .recess-options > label:has(select) {
+  display: grid;
+  gap: 2px;
+}
+
+.recess-game label, .recess-settings {
+  font-size: 0.8rem;
+}
+
+.recess-game :is(button, summary) { cursor: pointer; }
+.recess-game button:not(:disabled):hover { border-color: var(--primary); }
+.recess-game :is(button, select):disabled { opacity: .58; cursor: default; }
+.recess-game :is(button, select, input, summary):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.recess-game .recess-start {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-weight: 650;
+}
+
+.recess-settings summary { min-height: 32px; width: fit-content; padding-block: 5px; }
+.recess-options { padding-block: 4px 10px; }
+.recess-options > label { display: flex; align-items: center; gap: 5px; min-height: 36px; }
+.recess-options input { max-width: 90px; accent-color: var(--primary); }
+
+.recess-stage {
+  overflow: hidden;
+  border: 1px solid var(--recess-line);
+  border-radius: 8px;
+  min-width: 0;
+  background: var(--recess-paper);
+  color: var(--recess-ink);
+}
+
+.recess-stage-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--recess-line);
+  line-height: 1.25;
+}
+
+.recess-stage-heading strong { overflow-wrap: anywhere; font-size: .9rem; }
+.recess-stage-heading span { color: var(--recess-green); font: .7rem var(--recess-mono); }
+
+.recess-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  isolation: isolate;
+  height: clamp(280px, 56svh, 508px);
+  overflow: hidden;
+}
+
+.recess-field:focus-visible {
+  outline: 2px solid var(--recess-green);
+  outline-offset: -2px;
+}
+
+.recess-game[data-phase="play"] .recess-field {
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.recess-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+  overflow: hidden;
+  padding: 12px clamp(12px, 4vw, 24px) 10px;
+}
+
+.recess-game[data-phase="play"] .recess-page { opacity: var(--lesson-opacity, .36); }
+.recess-page :is(p, pre) {
+  margin: 0;
+  flex: none;
+  overflow-wrap: anywhere;
+}
+
+.recess-you {
+  align-self: flex-end;
+  max-width: 86%;
+  padding: 6px 9px;
+  border-radius: 4px;
+  background: var(--recess-card);
+  font-size: .82rem;
+}
+.recess-prose { font: .92rem/1.5 "Literata", Georgia, serif; }
+.recess-code {
+  padding: 7px 10px;
+  border-radius: 4px;
+  color: #4be388;
+  background: #101a14;
+  font: .8rem/1.5 var(--recess-mono);
+  white-space: pre-wrap;
+}
+.recess-page .w { display: inline-block; max-width: 100%; }
+.recess-page .term { border-bottom: 1px dotted var(--recess-green); }
+.recess-page .term.stir { color: var(--recess-red); }
+.recess-game[data-calm="false"] .recess-page .term.stir {
+  display: inline-block;
+  animation: recess-stir 140ms steps(2) 3;
+}
+@keyframes recess-stir {
+  from { transform: translate(-1.5px, .5px) rotate(-.6deg); }
+  to { transform: translate(1.5px, -.5px) rotate(.6deg); }
+}
+
+.recess-dock {
+  position: relative;
+  flex: none;
+  min-height: 47px;
+  padding: 12px;
+  border-top: 1px solid var(--recess-line);
+  background: var(--recess-card);
+  color: var(--recess-soft);
+  font: .75rem var(--recess-mono);
+}
+
+.recess-dock img {
+  position: absolute;
+  width: 53px;
+  height: 53px;
+  object-fit: contain;
+  right: 22px;
+  bottom: 37px;
+}
+.recess-game:not([data-phase="idle"]) .recess-dock img { visibility: hidden; }
+
+.recess-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.recess-canvas[hidden] { display: none; }
+
+.recess-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: clamp(4px, 1vw, 10px);
+  padding: 4px 8px;
+  background: var(--recess-paper);
+  border-bottom: 1px solid var(--recess-line);
+  pointer-events: none;
+  font: .7rem var(--recess-mono);
+}
+
+.recess-hud :is(.recess-hearts, .recess-energy, .recess-power) { display: flex; gap: 2px; }
+.recess-hud :is(.recess-hearts, .recess-energy) svg { width: 13px; height: 13px; }
+.recess-hearts svg { fill: var(--recess-red); }
+.recess-energy svg { fill: var(--recess-green); stroke: var(--recess-green); stroke-width: 1.6; }
+.recess-hud svg[data-empty="true"] { fill: none; stroke: var(--recess-soft); stroke-width: 1; }
+.recess-hud :is(.recess-meter, .recess-boss) { overflow: hidden; background: var(--recess-line); height: 3px; }
+.recess-meter { flex: 0 1 34px; }
+.recess-boss { flex: 1 1 18px; }
+.recess-boss[data-visible="false"] { visibility: hidden; }
+.recess-hud :is(.recess-meter, .recess-boss) > i { display: block; width: 100%; height: 100%; }
+.recess-meter > i, .recess-power > i { background: var(--recess-green); }
+.recess-boss > i { background: var(--recess-red); transform-origin: left; }
+.recess-power > i { width: 4px; height: 9px; }
+.recess-power > i[data-empty="true"] { background: var(--recess-line); }
+.recess-hud output { min-width: 4ch; text-align: right; }
+.recess-mult {
+  color: var(--recess-green);
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--recess-green) calc(var(--combo) * 100%), transparent 0) 1;
+}
+
+.recess-gate {
+  position: absolute;
+  inset: 36px auto auto 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 3px;
+  max-width: calc(100% - 20px);
+  width: max-content;
+  padding: 6px 9px;
+  border: 1px solid var(--recess-line);
+  border-radius: 5px;
+  background: var(--recess-card);
+  font-size: .79rem;
+  text-align: center;
+  pointer-events: none;
+}
+.recess-gate span { color: var(--recess-soft); font-size: .72rem; }
+
+.recess-wind {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  gap: 7px;
+  width: min(390px, calc(100% - 24px));
+  max-height: calc(100% - 16px);
+  overflow: auto;
+  padding: 11px;
+  transform: translate(-50%, -50%);
+  background: var(--recess-card);
+  border: 1px solid var(--recess-green);
+  border-radius: 7px;
+  color: var(--recess-ink);
+  font-size: .87rem;
+  cursor: default;
+}
+.recess-wind small { color: var(--recess-green); font: 700 .7rem var(--recess-mono); }
+.recess-answers { display: grid; gap: 4px; }
+.recess-answers button { border-color: var(--recess-line); text-align: left; min-height: 36px; }
+.recess-answers button > span { margin-right: 7px; color: var(--recess-soft); font-family: var(--recess-mono); }
+.recess-answers button[data-answer="correct"] { outline: 2px solid var(--recess-green); opacity: 1; }
+.recess-answers button[data-answer="incorrect"] { outline: 2px solid var(--recess-red); opacity: 1; }
+.recess-clock { width: 100%; height: 4px; accent-color: var(--recess-green); }
+
+.recess-note { margin: 0; color: var(--muted-foreground); font-size: .78rem; }
+.recess-result {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--recess-line);
+  border-radius: 6px;
+  background: var(--recess-card);
+  color: var(--recess-ink);
+  font-size: .85rem;
+}
+.recess-result :is(p, h3, ul) { margin: 0; }
+.recess-result ul:empty { display: none; }
+.recess-result ul { padding-left: 1.2em; }
+.recess-result li span[data-correct="true"] { color: var(--recess-green); }
+.recess-result li span[data-correct="false"] { color: var(--recess-red); }
+.recess-result-heading { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.recess-result-heading small, .recess-result > p { color: var(--recess-soft); }
+.recess-result .recess-takeaway { color: var(--recess-green); }
+.recess-result button { width: fit-content; }

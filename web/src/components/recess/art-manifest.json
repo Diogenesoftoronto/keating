@@ -1,0 +1,1040 @@
+{
+  "rows": {
+    "hover": 0,
+    "hit": 1,
+    "cheer": 2,
+    "launch": 3,
+    "aim": 4,
+    "aimB": 5,
+    "aimFire": 6,
+    "eureka": 7,
+    "land": 8,
+    "bank": 9,
+    "focus": 10,
+    "blank": 11
+  },
+  "hasJetpack": true,
+  "sheet": "sheet.webp",
+  "sit": "sit.webp",
+  "fx": {
+    "src": "effects.webp",
+    "cell": 96,
+    "rows": {
+      "pop": 0,
+      "ink": 1,
+      "eureka": 2,
+      "sparkle": 3,
+      "muzzle": 4,
+      "smoke": 5
+    }
+  },
+  "toys": {
+    "biology": {
+      "src": "cast-biology.webp",
+      "cell": 160,
+      "box": [
+        [
+          22,
+          33,
+          125,
+          111
+        ],
+        [
+          20,
+          15,
+          119,
+          132
+        ],
+        [
+          2,
+          45,
+          153,
+          99
+        ],
+        [
+          14,
+          15,
+          117,
+          134
+        ],
+        [
+          8,
+          30,
+          148,
+          101
+        ],
+        [
+          23,
+          14,
+          110,
+          132
+        ],
+        [
+          9,
+          11,
+          139,
+          136
+        ],
+        [
+          8,
+          38,
+          142,
+          87
+        ]
+      ],
+      "axis": "x"
+    },
+    "business": {
+      "src": "cast-business.webp",
+      "cell": 160,
+      "box": [
+        [
+          26,
+          31,
+          110,
+          114
+        ],
+        [
+          14,
+          22,
+          124,
+          122
+        ],
+        [
+          18,
+          50,
+          123,
+          73
+        ],
+        [
+          23,
+          29,
+          121,
+          115
+        ],
+        [
+          16,
+          31,
+          130,
+          95
+        ],
+        [
+          28,
+          19,
+          99,
+          119
+        ],
+        [
+          17,
+          19,
+          124,
+          117
+        ],
+        [
+          16,
+          41,
+          128,
+          77
+        ]
+      ],
+      "axis": "x"
+    },
+    "chemistry": {
+      "src": "cast-chemistry.webp",
+      "cell": 160,
+      "box": [
+        [
+          33,
+          41,
+          101,
+          100
+        ],
+        [
+          19,
+          30,
+          119,
+          112
+        ],
+        [
+          12,
+          40,
+          133,
+          96
+        ],
+        [
+          15,
+          32,
+          115,
+          109
+        ],
+        [
+          10,
+          31,
+          142,
+          100
+        ],
+        [
+          23,
+          14,
+          111,
+          132
+        ],
+        [
+          9,
+          1,
+          137,
+          145
+        ],
+        [
+          8,
+          38,
+          143,
+          86
+        ]
+      ],
+      "axis": "x"
+    },
+    "coding": {
+      "src": "cast-coding.webp",
+      "cell": 160,
+      "box": [
+        [
+          13,
+          33,
+          131,
+          107
+        ],
+        [
+          18,
+          23,
+          124,
+          124
+        ],
+        [
+          16,
+          33,
+          127,
+          114
+        ],
+        [
+          19,
+          28,
+          129,
+          108
+        ],
+        [
+          5,
+          27,
+          150,
+          105
+        ],
+        [
+          24,
+          15,
+          109,
+          131
+        ],
+        [
+          10,
+          14,
+          136,
+          132
+        ],
+        [
+          8,
+          38,
+          142,
+          86
+        ]
+      ],
+      "axis": "x"
+    },
+    "finance": {
+      "src": "cast-finance.webp",
+      "cell": 160,
+      "box": [
+        [
+          20,
+          24,
+          126,
+          123
+        ],
+        [
+          12,
+          21,
+          134,
+          126
+        ],
+        [
+          11,
+          31,
+          135,
+          116
+        ],
+        [
+          13,
+          17,
+          128,
+          130
+        ],
+        [
+          10,
+          31,
+          139,
+          96
+        ],
+        [
+          23,
+          15,
+          111,
+          129
+        ],
+        [
+          13,
+          11,
+          123,
+          134
+        ],
+        [
+          7,
+          37,
+          144,
+          87
+        ]
+      ],
+      "axis": "x"
+    },
+    "french": {
+      "src": "cast-french.webp",
+      "cell": 160,
+      "box": [
+        [
+          26,
+          41,
+          115,
+          106
+        ],
+        [
+          19,
+          19,
+          118,
+          128
+        ],
+        [
+          7,
+          56,
+          146,
+          78
+        ],
+        [
+          17,
+          29,
+          128,
+          114
+        ],
+        [
+          7,
+          30,
+          145,
+          100
+        ],
+        [
+          23,
+          14,
+          111,
+          131
+        ],
+        [
+          11,
+          11,
+          139,
+          134
+        ],
+        [
+          8,
+          34,
+          145,
+          92
+        ]
+      ],
+      "axis": "x"
+    },
+    "history": {
+      "src": "cast-history.webp",
+      "cell": 160,
+      "box": [
+        [
+          24,
+          31,
+          118,
+          122
+        ],
+        [
+          13,
+          16,
+          129,
+          140
+        ],
+        [
+          8,
+          37,
+          136,
+          116
+        ],
+        [
+          8,
+          14,
+          144,
+          140
+        ],
+        [
+          10,
+          34,
+          138,
+          85
+        ],
+        [
+          22,
+          15,
+          111,
+          131
+        ],
+        [
+          6,
+          7,
+          139,
+          139
+        ],
+        [
+          8,
+          38,
+          143,
+          86
+        ]
+      ],
+      "axis": "x"
+    },
+    "japanese": {
+      "src": "cast-japanese.webp",
+      "cell": 160,
+      "box": [
+        [
+          33,
+          40,
+          101,
+          108
+        ],
+        [
+          18,
+          32,
+          128,
+          112
+        ],
+        [
+          30,
+          19,
+          99,
+          131
+        ],
+        [
+          24,
+          22,
+          103,
+          125
+        ],
+        [
+          6,
+          55,
+          148,
+          73
+        ],
+        [
+          24,
+          14,
+          108,
+          131
+        ],
+        [
+          9,
+          12,
+          140,
+          134
+        ],
+        [
+          7,
+          37,
+          145,
+          88
+        ]
+      ],
+      "axis": "y"
+    },
+    "languages": {
+      "src": "cast-languages.webp",
+      "cell": 160,
+      "box": [
+        [
+          36,
+          29,
+          85,
+          120
+        ],
+        [
+          18,
+          23,
+          122,
+          124
+        ],
+        [
+          8,
+          44,
+          144,
+          89
+        ],
+        [
+          23,
+          32,
+          112,
+          111
+        ],
+        [
+          7,
+          30,
+          140,
+          99
+        ],
+        [
+          24,
+          14,
+          110,
+          132
+        ],
+        [
+          6,
+          7,
+          143,
+          140
+        ],
+        [
+          6,
+          37,
+          145,
+          88
+        ]
+      ],
+      "axis": "x"
+    },
+    "law": {
+      "src": "cast-law.webp",
+      "cell": 160,
+      "box": [
+        [
+          26,
+          19,
+          110,
+          135
+        ],
+        [
+          15,
+          20,
+          126,
+          132
+        ],
+        [
+          5,
+          23,
+          149,
+          125
+        ],
+        [
+          15,
+          16,
+          127,
+          132
+        ],
+        [
+          9,
+          27,
+          145,
+          100
+        ],
+        [
+          23,
+          16,
+          109,
+          130
+        ],
+        [
+          8,
+          5,
+          134,
+          144
+        ],
+        [
+          6,
+          37,
+          145,
+          87
+        ]
+      ],
+      "axis": "x"
+    },
+    "literature": {
+      "src": "cast-literature.webp",
+      "cell": 160,
+      "box": [
+        [
+          29,
+          28,
+          108,
+          122
+        ],
+        [
+          17,
+          30,
+          125,
+          120
+        ],
+        [
+          6,
+          40,
+          147,
+          110
+        ],
+        [
+          30,
+          22,
+          104,
+          128
+        ],
+        [
+          5,
+          31,
+          152,
+          100
+        ],
+        [
+          23,
+          14,
+          111,
+          133
+        ],
+        [
+          9,
+          14,
+          143,
+          132
+        ],
+        [
+          8,
+          38,
+          143,
+          86
+        ]
+      ],
+      "axis": "x"
+    },
+    "maths": {
+      "src": "cast-maths.webp",
+      "cell": 160,
+      "box": [
+        [
+          24,
+          49,
+          113,
+          98
+        ],
+        [
+          19,
+          11,
+          121,
+          137
+        ],
+        [
+          25,
+          25,
+          108,
+          122
+        ],
+        [
+          12,
+          34,
+          127,
+          97
+        ],
+        [
+          9,
+          31,
+          143,
+          98
+        ],
+        [
+          24,
+          15,
+          109,
+          131
+        ],
+        [
+          10,
+          12,
+          140,
+          134
+        ],
+        [
+          8,
+          39,
+          142,
+          84
+        ]
+      ],
+      "axis": "y"
+    },
+    "music": {
+      "src": "cast-music.webp",
+      "cell": 160,
+      "box": [
+        [
+          29,
+          19,
+          115,
+          132
+        ],
+        [
+          20,
+          15,
+          125,
+          136
+        ],
+        [
+          28,
+          12,
+          111,
+          140
+        ],
+        [
+          12,
+          24,
+          131,
+          123
+        ],
+        [
+          8,
+          38,
+          143,
+          97
+        ],
+        [
+          23,
+          14,
+          111,
+          132
+        ],
+        [
+          9,
+          11,
+          141,
+          135
+        ],
+        [
+          8,
+          38,
+          143,
+          86
+        ]
+      ],
+      "axis": "y"
+    },
+    "politics": {
+      "src": "cast-politics.webp",
+      "cell": 160,
+      "box": [
+        [
+          37,
+          42,
+          94,
+          98
+        ],
+        [
+          29,
+          30,
+          90,
+          106
+        ],
+        [
+          11,
+          51,
+          119,
+          87
+        ],
+        [
+          22,
+          29,
+          107,
+          114
+        ],
+        [
+          28,
+          36,
+          115,
+          72
+        ],
+        [
+          33,
+          23,
+          86,
+          100
+        ],
+        [
+          16,
+          17,
+          112,
+          107
+        ],
+        [
+          12,
+          41,
+          117,
+          69
+        ]
+      ],
+      "axis": "x"
+    },
+    "spanish": {
+      "src": "cast-spanish.webp",
+      "cell": 160,
+      "box": [
+        [
+          23,
+          52,
+          116,
+          94
+        ],
+        [
+          16,
+          24,
+          128,
+          122
+        ],
+        [
+          17,
+          40,
+          132,
+          107
+        ],
+        [
+          33,
+          18,
+          104,
+          125
+        ],
+        [
+          6,
+          34,
+          145,
+          97
+        ],
+        [
+          25,
+          14,
+          110,
+          131
+        ],
+        [
+          10,
+          11,
+          140,
+          135
+        ],
+        [
+          9,
+          38,
+          142,
+          85
+        ]
+      ],
+      "axis": "x"
+    }
+  },
+  "poses": {
+    "biology": {
+      "dart": "biology-dart.webp",
+      "drift": "biology-drift.webp",
+      "kid": "biology-kid.webp",
+      "myth": "biology-myth.webp",
+      "spin": "biology-spin.webp",
+      "split": "biology-split.webp",
+      "wall-fall": "biology-wall-fall.webp",
+      "wall": "biology-wall.webp",
+      "worm": "biology-worm.webp",
+      "wormseg": "biology-wormseg.webp"
+    },
+    "business": {
+      "dart": "business-dart.webp",
+      "drift": "business-drift.webp",
+      "kid": "business-kid.webp",
+      "myth": "business-myth.webp",
+      "spin": "business-spin.webp",
+      "split": "business-split.webp",
+      "wall-fall": "business-wall-fall.webp",
+      "wall": "business-wall.webp",
+      "worm": "business-worm.webp",
+      "wormseg": "business-wormseg.webp"
+    },
+    "chemistry": {
+      "dart": "chemistry-dart.webp",
+      "drift": "chemistry-drift.webp",
+      "kid": "chemistry-kid.webp",
+      "myth": "chemistry-myth.webp",
+      "spin": "chemistry-spin.webp",
+      "split": "chemistry-split.webp",
+      "wall-fall": "chemistry-wall-fall.webp",
+      "wall": "chemistry-wall.webp",
+      "worm": "chemistry-worm.webp",
+      "wormseg": "chemistry-wormseg.webp"
+    },
+    "coding": {
+      "dart": "coding-dart.webp",
+      "drift": "coding-drift.webp",
+      "kid": "coding-kid.webp",
+      "myth": "coding-myth.webp",
+      "spin": "coding-spin.webp",
+      "split": "coding-split.webp",
+      "wall-fall": "coding-wall-fall.webp",
+      "wall": "coding-wall.webp",
+      "worm": "coding-worm.webp",
+      "wormseg": "coding-wormseg.webp"
+    },
+    "finance": {
+      "dart": "finance-dart.webp",
+      "drift": "finance-drift.webp",
+      "kid": "finance-kid.webp",
+      "myth": "finance-myth.webp",
+      "spin": "finance-spin.webp",
+      "split": "finance-split.webp",
+      "wall-fall": "finance-wall-fall.webp",
+      "wall": "finance-wall.webp",
+      "worm": "finance-worm.webp",
+      "wormseg": "finance-wormseg.webp"
+    },
+    "french": {
+      "dart": "french-dart.webp",
+      "drift": "french-drift.webp",
+      "kid": "french-kid.webp",
+      "myth": "french-myth.webp",
+      "spin": "french-spin.webp",
+      "split": "french-split.webp",
+      "wall-fall": "french-wall-fall.webp",
+      "wall": "french-wall.webp",
+      "worm": "french-worm.webp",
+      "wormseg": "french-wormseg.webp"
+    },
+    "history": {
+      "dart": "history-dart.webp",
+      "drift": "history-drift.webp",
+      "kid": "history-kid.webp",
+      "myth": "history-myth.webp",
+      "spin": "history-spin.webp",
+      "split": "history-split.webp",
+      "wall-fall": "history-wall-fall.webp",
+      "wall": "history-wall.webp",
+      "worm": "history-worm.webp",
+      "wormseg": "history-wormseg.webp"
+    },
+    "japanese": {
+      "dart": "japanese-dart.webp",
+      "drift": "japanese-drift.webp",
+      "kid": "japanese-kid.webp",
+      "myth": "japanese-myth.webp",
+      "spin": "japanese-spin.webp",
+      "split": "japanese-split.webp",
+      "wall-fall": "japanese-wall-fall.webp",
+      "wall": "japanese-wall.webp",
+      "worm": "japanese-worm.webp",
+      "wormseg": "japanese-wormseg.webp"
+    },
+    "languages": {
+      "dart": "languages-dart.webp",
+      "drift": "languages-drift.webp",
+      "kid": "languages-kid.webp",
+      "myth": "languages-myth.webp",
+      "spin": "languages-spin.webp",
+      "split": "languages-split.webp",
+      "wall-fall": "languages-wall-fall.webp",
+      "wall": "languages-wall.webp",
+      "worm": "languages-worm.webp",
+      "wormseg": "languages-wormseg.webp"
+    },
+    "law": {
+      "dart": "law-dart.webp",
+      "drift": "law-drift.webp",
+      "kid": "law-kid.webp",
+      "myth": "law-myth.webp",
+      "spin": "law-spin.webp",
+      "split": "law-split.webp",
+      "wall-fall": "law-wall-fall.webp",
+      "wall": "law-wall.webp",
+      "worm": "law-worm.webp",
+      "wormseg": "law-wormseg.webp"
+    },
+    "literature": {
+      "dart": "literature-dart.webp",
+      "drift": "literature-drift.webp",
+      "kid": "literature-kid.webp",
+      "myth": "literature-myth.webp",
+      "spin": "literature-spin.webp",
+      "split": "literature-split.webp",
+      "wall-fall": "literature-wall-fall.webp",
+      "wall": "literature-wall.webp",
+      "worm": "literature-worm.webp",
+      "wormseg": "literature-wormseg.webp"
+    },
+    "maths": {
+      "dart": "maths-dart.webp",
+      "drift": "maths-drift.webp",
+      "kid": "maths-kid.webp",
+      "myth": "maths-myth.webp",
+      "spin": "maths-spin.webp",
+      "split": "maths-split.webp",
+      "wall-fall": "maths-wall-fall.webp",
+      "wall": "maths-wall.webp",
+      "worm": "maths-worm.webp",
+      "wormseg": "maths-wormseg.webp"
+    },
+    "music": {
+      "dart": "music-dart.webp",
+      "drift": "music-drift.webp",
+      "kid": "music-kid.webp",
+      "myth": "music-myth.webp",
+      "spin": "music-spin.webp",
+      "split": "music-split.webp",
+      "wall-fall": "music-wall-fall.webp",
+      "wall": "music-wall.webp",
+      "worm": "music-worm.webp",
+      "wormseg": "music-wormseg.webp"
+    },
+    "politics": {
+      "dart": "politics-dart.webp",
+      "drift": "politics-drift.webp",
+      "kid": "politics-kid.webp",
+      "myth": "politics-myth.webp",
+      "spin": "politics-spin.webp",
+      "split": "politics-split.webp",
+      "wall-fall": "politics-wall-fall.webp",
+      "wall": "politics-wall.webp",
+      "worm": "politics-worm.webp",
+      "wormseg": "politics-wormseg.webp"
+    },
+    "spanish": {
+      "dart": "spanish-dart.webp",
+      "drift": "spanish-drift.webp",
+      "kid": "spanish-kid.webp",
+      "myth": "spanish-myth.webp",
+      "spin": "spanish-spin.webp",
+      "split": "spanish-split.webp",
+      "wall-fall": "spanish-wall-fall.webp",
+      "wall": "spanish-wall.webp",
+      "worm": "spanish-worm.webp",
+      "wormseg": "spanish-wormseg.webp"
+    }
+  }
+}

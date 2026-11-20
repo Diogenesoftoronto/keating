@@ -40,6 +40,7 @@ import "./keating-interaction-motion.css";
 import { chatMascotState } from "./chat-mascot-state";
 import { useQuestionViewport } from "./chat/question-viewport";
 import { ChatMascotMenu } from "./ChatMascotMenu";
+import { habitLesson } from "../keating/habits/lesson";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
 import { TurnProcessSummary, TurnProgressCard, useSearchStepCovered } from "./TurnProgress";
@@ -484,6 +485,7 @@ interface AssistantChatPanelProps {
   teachingAdjustment?: TeachingAdjustmentController | null;
   className?: string;
   speechEnabled?: boolean;
+  studyGames?: boolean;
   responseComparison?: ReactNode;
   initialPrompts?: readonly StarterPrompt[];
   emptyStateTitle?: string;
@@ -3185,6 +3187,7 @@ function AssistantThread({
   emptyStateTitle,
   emptyStateDescription,
   pendingPrompt,
+  studyGames,
 }: {
   agent: FlueConversation | null;
   callbacks: ChatPanelSetupCallbacks;
@@ -3196,6 +3199,7 @@ function AssistantThread({
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   pendingPrompt?: string;
+  studyGames?: boolean;
 }) {
   const posthog = usePostHog();
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
@@ -3206,6 +3210,16 @@ function AssistantThread({
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const hasGoogleKey = useGoogleKeyForUrls(composerHasUrl);
   const isRunning = agent?.getSnapshot().running ?? false;
+  const gameSession = callbacks.sessionId ?? agent?.sessionId;
+  useEffect(() => {
+    if (!studyGames) return;
+    let stopped = false;
+    let stop: (() => void) | undefined;
+    void import("../keating/habits/store").then(({ startHabitsEvidence }) => {
+      if (!stopped) stop = startHabitsEvidence(gameSession);
+    }).catch(() => { /* The activity sheet surfaces unavailable local storage. */ });
+    return () => { stopped = true; stop?.(); };
+  }, [studyGames, gameSession]);
   const { viewport, followNextQuestion } = useQuestionViewport(agent?.sessionId, isRunning);
   const loadingStep = useLoadingStep(isRunning);
   const draftStatus = useSyncExternalStore(subscribeTeachingDraftStatus,
@@ -3441,7 +3455,16 @@ function AssistantThread({
         activeQuestion={activeQuestion}
         onDismissQuiz={setDismissedQuizId}
       />
-      <ChatMascotMenu onSeatedChange={setSeated} state={mascotState} busy={isRunning || micRecording} />
+      <ChatMascotMenu
+        onSeatedChange={setSeated}
+        state={mascotState}
+        busy={isRunning || micRecording}
+        games={studyGames ? () => ({
+          sessionId: gameSession,
+          lesson: habitLesson(agent?.context.messages ?? []),
+          model: agent?.context.model,
+        }) : undefined}
+      />
       <ThreadComposer
         pendingPrompt={pendingPrompt}
         composerHasUrl={composerHasUrl}
@@ -4528,6 +4551,7 @@ export const AssistantChatPanel = forwardRef<
       emptyStateTitle,
       emptyStateDescription,
       pendingPrompt,
+      studyGames,
     },
     ref,
   ) => {
@@ -4563,6 +4587,7 @@ export const AssistantChatPanel = forwardRef<
           emptyStateTitle={emptyStateTitle}
           emptyStateDescription={emptyStateDescription}
           pendingPrompt={pendingPrompt}
+          studyGames={studyGames}
         />
       </div>
     );

@@ -1,0 +1,162 @@
+.habit-rankings {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  color: var(--ink);
+}
+
+.habit-rankings h3,
+.habit-rankings h4,
+.habit-rankings p {
+  margin: 0;
+}
+
+.habit-rankings__heading,
+.habit-rankings__switch,
+.habit-rankings__filters,
+.habit-rankings__status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.habit-rankings__heading { gap: 0.7rem; }
+.habit-rankings__heading h3 {
+  font: 650 1.05rem/1.25 var(--font-ui);
+  margin-bottom: 0.15rem;
+}
+
+.habit-rankings__badge {
+  width: 3.05rem;
+  height: 3.05rem;
+  flex: none;
+  background: url("./art/habit-leagues.webp") 0 0 / 400% 200% no-repeat;
+}
+
+.habit-rankings__time,
+.habit-rankings__zones {
+  color: var(--ink-soft);
+  font: 0.72rem/1.4 var(--font-code, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-rankings button,
+.habit-rankings select,
+.habit-rankings input[type="number"] {
+  min-height: 2.35rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.3rem 0.52rem;
+}
+
+.habit-rankings button { cursor: pointer; }
+.habit-rankings button:disabled { opacity: 0.55; cursor: default; }
+.habit-rankings button:not(:disabled):hover { background: var(--paper-deep); }
+.habit-rankings button[aria-pressed="true"],
+.habit-rankings button.habit-rankings__primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.habit-rankings button[aria-pressed="true"]:hover,
+.habit-rankings button.habit-rankings__primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--primary) 83%, var(--ink));
+}
+.habit-rankings :is(button, select, input):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.habit-rankings input[type="number"] { width: 5.75rem; }
+
+.habit-rankings__standings {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  border-block: 1px solid var(--line);
+}
+
+.habit-rankings__standings :is(th, td) {
+  padding: 0.52rem 0.42rem;
+  text-align: start;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.habit-rankings__standings thead {
+  color: var(--ink-soft);
+  font: 600 0.72rem/1.4 var(--font-code, monospace);
+}
+.habit-rankings__standings th:first-child { width: 3.2rem; }
+.habit-rankings__standings th:nth-child(3) { width: 6.5rem; }
+.habit-rankings__standings th:last-child { width: 3rem; }
+.habit-rankings__standings :is(th, td):last-child { text-align: end; }
+.habit-rankings__standings tbody td {
+  font: 0.79rem/1.4 var(--font-code, monospace);
+  font-variant-numeric: tabular-nums;
+}
+.habit-rankings__standings tr[data-zone="promotion"] { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.habit-rankings__standings tr[data-zone="demotion"] { background: color-mix(in srgb, var(--destructive) 7%, transparent); }
+.habit-rankings__standings tr[data-self] { background: color-mix(in srgb, var(--primary) 16%, var(--paper)); }
+.habit-rankings__you { color: var(--ink-soft); }
+
+.habit-rankings__enrollment,
+.habit-rankings__challenge,
+.habit-rankings__challenge form {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+}
+.habit-rankings__enrollment,
+.habit-rankings__challenge {
+  border-top: 1px solid var(--line);
+  padding-top: 0.7rem;
+}
+.habit-rankings__challenge fieldset {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.habit-rankings__challenge legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 650;
+}
+.habit-rankings__consent,
+.habit-rankings__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.habit-rankings__choice {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 0.35rem;
+  padding: 0.48rem;
+  background: var(--card);
+}
+.habit-rankings__choice:has(:checked) {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+.habit-rankings :is(input[type="radio"], input[type="checkbox"]) {
+  accent-color: var(--primary);
+  margin: 0.21em 0 0;
+}
+.habit-rankings__feedback {
+  padding: 0.58rem;
+  background: var(--paper-deep);
+}
+.habit-rankings__error { color: var(--destructive); }
+
+@media (max-width: 480px) {
+  .habit-rankings__standings th:first-child { width: 2.7rem; }
+  .habit-rankings__standings th:nth-child(3) { width: 4.65rem; }
+  .habit-rankings__standings th:last-child { width: 2.45rem; }
+  .habit-rankings__standings :is(th, td) { padding-inline: 0.23rem; }
+}

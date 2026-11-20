@@ -1,6 +1,6 @@
 import { useAui } from "@assistant-ui/react";
 import { createPortal } from "react-dom";
-import { useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useMotionAllowed } from "../design-system/motion";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { addDraftQuote } from "../keating/passage-quote-draft";
@@ -9,6 +9,7 @@ import { LearningReferenceScope } from "./LearningReferenceLink";
 import { useCompanionMode } from "./companion/CompanionSetting";
 import { useCompanionDrag } from "./companion/useCompanionDrag";
 import { useLessonReactions } from "./companion/useLessonReactions";
+import type { StudyGameArea, StudyGameContext } from "./habits/StudyGameDialog";
 import {
 	activityTargetSelector,
 	captureTarget,
@@ -28,12 +29,13 @@ const STUDY_CHOICES = [
 	["Quiz me", "Quiz me on the current topic, one question at a time."],
 	["Make flashcards", "Make flashcards to help me review the current topic."],
 ] as const;
-type Props = { state: KeatingBotState; busy: boolean; onSeatedChange?: (seated: boolean) => void };
+const StudyGameDialog = lazy(() => import("./habits/StudyGameDialog"));
+type Props = { state: KeatingBotState; busy: boolean; onSeatedChange?: (seated: boolean) => void; games?: () => StudyGameContext };
 export function ChatMascotMenu(props: Props) {
 	const session = useContext(LearningReferenceScope);
 	return <Companion key={session} {...props} session={session} />;
 }
-function Companion({ state, busy, session, onSeatedChange }: Props & { session?: string }) {
+function Companion({ state, busy, session, onSeatedChange, games }: Props & { session?: string }) {
 	const composer = useAui().composer;
 	const anchor = useRef<HTMLDivElement>(null),
 		trigger = useRef<HTMLButtonElement>(null),
@@ -52,6 +54,7 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 	const [choices, setChoices] = useState<DropTarget[]>([]);
 	const [gesture, setGesture] = useState<KeatingBotState | null>(null);
 	const [position, setPosition] = useState({ left: 8, bottom: 8 });
+	const [activity, setActivity] = useState<{ area: StudyGameArea; context: StudyGameContext } | null>(null);
 	const expanded = desktop && room && mode !== "off";
 	useEffect(() => { onSeatedChange?.(expanded); }, [expanded, onSeatedChange]);
 	const lively = expanded && mode === "lively";
@@ -60,6 +63,12 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 		setTarget(null);
 		setError("");
 		trigger.current?.focus({ preventScroll: true });
+	};
+	const openActivity = (area: StudyGameArea) => {
+		if (!games) return;
+		const context = games();
+		close();
+		setActivity({ area, context });
 	};
 	function selectTarget(t: DropTarget) {
 		if (isActivityDrop(t.kind)) {
@@ -304,6 +313,21 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 					+
 				</span>
 			</button>
+			{activity && createPortal(
+				<Suspense fallback={<span className="chat-mascot-menu" role="status">Opening activity…</span>}>
+					<StudyGameDialog
+						initialArea={activity.area}
+						context={activity.context}
+						mode={mode}
+						onClose={() => setActivity(null)}
+						onDraft={draft => {
+							setActivity(null);
+							addDraft(draft);
+							requestAnimationFrame(() => chat()?.querySelector<HTMLTextAreaElement>(".composer-root textarea")?.focus());
+						}}
+					/>
+				</Suspense>, document.body,
+			)}
 			{panel &&
 				createPortal(
 					<div
@@ -359,6 +383,17 @@ function Companion({ state, busy, session, onSeatedChange }: Props & { session?:
 								<button type="button" role="menuitem" onClick={chooseTargets}>
 									{lively ? "Choose a passage or activity" : "Ask about a passage or question"}
 								</button>
+								{games && (
+									<>
+										<div className="chat-mascot-menu__divider" role="separator" />
+										<button type="button" role="menuitem" onClick={() => openActivity("recess")}>Take a recess</button>
+										{mode !== "off" && <>
+											<button type="button" role="menuitem" onClick={() => openActivity("care")}>Look after Keating</button>
+											<button type="button" role="menuitem" onClick={() => openActivity("quests")}>Quests and kit</button>
+											<button type="button" role="menuitem" onClick={() => openActivity("habits")}>Study habits</button>
+										</>}
+									</>
+								)}
 								<div className="chat-mascot-menu__divider" role="separator" />
 								<button
 									type="button"

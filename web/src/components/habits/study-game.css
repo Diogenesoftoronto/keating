@@ -1,0 +1,143 @@
+.study-game-dialog.k-sheet {
+	width: min(56rem, calc(100vw - 2rem));
+	max-width: none;
+	max-height: min(54rem, 94dvh);
+	color: var(--foreground);
+}
+
+.study-game-dialog .k-sheet-body {
+	padding: 0;
+	overflow: auto;
+}
+
+.study-game-dialog h3,
+.study-game-dialog h4 {
+	color: var(--foreground);
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 660;
+}
+
+.study-game-dialog p {
+	margin: .35rem 0 .7rem;
+	line-height: 1.52;
+}
+
+.habit-nav, .habit-subnav, .habit-actions, .habit-pocket {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .35rem;
+}
+
+.habit-nav {
+	padding: .45rem .75rem;
+	border-bottom: 1px solid var(--border);
+	background: var(--muted);
+}
+
+.habit-nav button[aria-pressed=true], .habit-subnav button[aria-pressed=true] {
+	background: var(--accent);
+	color: var(--accent-foreground);
+	box-shadow: inset 0 -2px var(--primary);
+}
+
+.habit-content { padding: .9rem 1.15rem 1.15rem; }
+.habit-content:focus { outline: none; }
+.habit-content button, .habit-nav button { min-height: 2.5rem; }
+.habit-muted { color: var(--muted-foreground); font-size: .82rem; }
+.habit-error, .habit-result { padding: .35rem 1.15rem; border-bottom: 1px solid var(--border); }
+.habit-error { color: var(--destructive); }
+.habit-result { color: var(--foreground); background: var(--muted); }
+
+.habit-grid, .habit-dashboard {
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+	gap: 1.15rem;
+}
+.habit-dashboard .habit-preferences { grid-column: 1 / -1; }
+.habit-studio, .habit-shelf, .habit-summary, .habit-rewards, .habit-preferences {
+	border: 1px solid var(--border);
+	border-radius: .55rem;
+	min-width: 0;
+	background: var(--card);
+	padding: 1rem;
+}
+.habit-perch {
+	display: grid;
+	justify-items: center;
+	gap: .25rem;
+	padding: .6rem .4rem .45rem;
+	margin: -1rem -1rem 1rem;
+	border-bottom: 1px solid var(--border);
+	background: var(--muted);
+	border-radius: .5rem .5rem 0 0;
+	font: 600 .8rem var(--font-mono, monospace);
+}
+.habit-sprite {
+	display: inline-block;
+	flex: 0 0 auto;
+	width: 2.75rem;
+	max-width: 100%;
+	aspect-ratio: 1;
+	background-repeat: no-repeat;
+	background-size: 400% 200%;
+}
+.habit-perch .habit-sprite { width: 7.5rem; }
+.habit-need { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; padding: .45rem 0; border-bottom: 1px solid var(--border); }
+.habit-need label { min-width: 8rem; flex: 1; display: grid; gap: .3rem; }
+.habit-need meter { width: 100%; accent-color: var(--primary); }
+.habit-condition > button { margin-block: .8rem .25rem; }
+
+.habit-list { padding: 0; margin: .4rem 0; list-style: none; }
+.habit-list > li {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	min-width: 0;
+	gap: .45rem;
+	padding: .55rem 0;
+	border-bottom: 1px solid var(--border);
+}
+.habit-list > li > div:first-of-type { flex: 1 1 9rem; min-width: 0; overflow-wrap: anywhere; }
+.habit-list p { margin: .15rem 0; }
+.habit-list a { color: var(--foreground); text-decoration: underline; text-underline-offset: .2em; }
+.habit-subnav { border-bottom: 1px solid var(--border); padding-bottom: .45rem; }
+.habit-pocket { gap: .8rem; padding: .75rem 0; font-size: .82rem; font-family: var(--font-mono, monospace); }
+.habit-quests { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .8rem; }
+.habit-quest { border-top: 1px solid var(--border); padding: .6rem 0; }
+.habit-quest h3 { margin-top: .22rem; }
+
+.habit-summary dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; margin: 0 0 .75rem; }
+.habit-summary dt { color: var(--muted-foreground); font-size: .8rem; }
+.habit-summary dd { margin: .25rem 0; font: 650 1.55rem var(--font-mono, monospace); }
+.habit-away, .habit-bounty, .habit-recap { background: var(--muted); padding: .65rem .8rem; border-radius: .4rem; margin: .55rem 0; }
+.habit-rewards details { margin: .5rem 0; }
+.habit-rewards summary { cursor: pointer; }
+.habit-preferences { display: grid; gap: .65rem; }
+.habit-preferences form { display: flex; align-items: end; flex-wrap: wrap; gap: .45rem; }
+.habit-preferences label { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+.study-game-dialog :is(input, select, textarea) {
+	color: var(--foreground);
+	background: var(--background);
+	font: inherit;
+	border: 1px solid var(--border);
+	border-radius: .35rem;
+	padding: .4rem .55rem;
+}
+.habit-preferences [type=number] { width: 4rem; }
+.habit-challenge { max-width: 65ch; margin-inline: auto; }
+.habit-challenge form { padding: .45rem 0; }
+.habit-challenge label { display: grid; gap: .35rem; }
+.habit-challenge textarea { display: block; width: 100%; resize: vertical; }
+
+@media (max-width: 640px) {
+	.study-game-dialog.k-sheet { width: calc(100vw - .75rem); max-height: calc(100dvh - .75rem); }
+	.study-game-dialog .habit-nav { flex-direction: row; justify-content: flex-start; padding: .2rem; gap: .1rem; }
+	.study-game-dialog :is(.habit-nav, .habit-subnav) > button { width: auto; flex: 0 0 auto; min-height: 2.125rem; padding-inline: .35rem; }
+	.habit-content { padding: .75rem; }
+	.habit-grid, .habit-dashboard { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+	.study-game-dialog .recess-toolbar button { width: auto; }
+	.study-game-dialog .recess-game:is([data-phase=intro], [data-phase=play], [data-phase=down], [data-phase=outro])
+		:is(.recess-toolbar > label, .recess-toolbar > button:not(.recess-start, [data-live-action]), .recess-settings, .recess-note) { display: none; }
+}
