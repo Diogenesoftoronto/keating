@@ -347,6 +347,20 @@ describe("chat model fallback selection", () => {
 
 
 describe("public cloud model browsing", () => {
+	it("offers exact Mercury 2 with Inception credentials and preserves explicit model selections", async () => {
+		const { getSelectableModels, resolveAvailableChatModel } = await import("../lib/provider-models");
+		const { compareModelProviders, requiresProviderCredential } = await import("../lib/model-catalog");
+		const { NOTORGANIC_DEFAULT_MODEL } = await import("../notorganic-provider");
+		const models = await getSelectableModels(provider => provider === "inception");
+		expect(models).toHaveLength(1);
+		expect(models[0]).toMatchObject({ id: "mercury-2", provider: "inception", name: "Mercury 2", input: ["text"] });
+		expect(requiresProviderCredential("inception")).toBe(true);
+		expect(compareModelProviders("inception", "openrouter")).toBeLessThan(0);
+		providerKeys = { inception: "test-inception-key" };
+		expect(await resolveAvailableChatModel(NOTORGANIC_DEFAULT_MODEL)).toEqual(models[0]);
+		expect(await resolveAvailableChatModel(NOTORGANIC_DEFAULT_MODEL, { allowFallback: false })).toBe(NOTORGANIC_DEFAULT_MODEL);
+	});
+
 	it.each([false, true])("shows unconnected Anthropic and OpenAI models unless explicitly hidden (%s)", async hidden => {
 		const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 		Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {

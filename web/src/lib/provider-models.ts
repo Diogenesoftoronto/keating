@@ -1,8 +1,8 @@
 import { MODEL_CHOICES, SERVICE_ENDPOINTS, MODEL_PREFERENCES } from "@keating/runtime-config";
-import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
+import { type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "../keating/app-storage";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
-import { getCloudProviderModels, refreshCloudModelCatalog } from "./models-dev-catalog";
+import { getCloudProviderIds, getCloudProviderModels, refreshCloudModelCatalog } from "./models-dev-catalog";
 import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
@@ -443,7 +443,7 @@ export async function resolveAvailableChatModel(
 	}
 
 	const models = await getSelectableModels();
-	for (const provider of [NOTORGANIC_PROVIDER_ID, "openai-codex", "anthropic", "openai", "google"]) {
+	for (const provider of [NOTORGANIC_PROVIDER_ID, "openai-codex", "anthropic", "openai", "google", "inception"]) {
 		if (!(await getProviderApiKey(provider))) continue;
 		const model = preferredModelForProvider(models, provider);
 		if (model) return model;
@@ -519,7 +519,7 @@ export async function getSelectableModels(
 		models.push(...await getAvailableNotOrganicChatModels());
 	}
 
-	for (const provider of getProviders()) {
+	for (const provider of getCloudProviderIds()) {
 		if (!filter || filter(provider)) {
 			models.push(...getCloudProviderModels(provider));
 		}

@@ -27,7 +27,7 @@ import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
 import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
 import { useProviderConnectionState } from "./ProviderConnectPanel";
-import { getProviders } from "@earendil-works/pi-ai/compat";
+import { getCloudProviderIds } from "../../lib/models-dev-catalog";
 
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
 const headingClass = "sd-inspector-title";
@@ -251,7 +251,7 @@ const BANNER: Record<CheckStatus, string> = {
 	problem: "Something needs your attention",
 };
 const openTab = (tab: string) => window.dispatchEvent(new CustomEvent("keating:settings-tab", { detail: tab }));
-const PROVIDER_LIST = [...getProviders(), "notorganic"];
+const PROVIDER_LIST = [...getCloudProviderIds(), "notorganic"];
 
 export function HealthSummary() {
 	const entries = useSyncExternalStore(subscribeDiagnostics, getDiagnosticsSnapshot, getDiagnosticsSnapshot);

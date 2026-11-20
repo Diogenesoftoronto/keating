@@ -38,9 +38,21 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, google: MODEL_IDS.gemini_decision_1, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced] as const;
+export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2] as const;
 /** The main tutor stays tool-capable; Ampersand Tutor is consulted separately. */
 export const TUTOR_CONSULTATION_MODEL_ID = MODEL_IDS.ampersand_tutor;
+/** Direct Inception Chat Completions. Costs are USD per million tokens. */
+export const MERCURY_2_PROFILE = {
+  id: MODEL_IDS.mercury_2,
+  name: "Mercury 2",
+  reasoning: true,
+  input: ["text"] as ["text"],
+  contextWindow: 128_000,
+  maxTokens: 50_000,
+  cost: { input: 0.25, output: 0.75, cacheRead: 0.025, cacheWrite: 0 },
+  thinkingLevelMap: { off: "instant", minimal: "low", xhigh: "high", max: "high" },
+  compat: { supportsDeveloperRole: false, supportsStore: false, maxTokensField: "max_completion_tokens" as const },
+};
 export const INKLING_2_SMALL_PROFILE = {
   id: MODEL_IDS.inkling_2_small, name: "Inkling 2 Small", contextWindow: 262_144, maxTokens: 16_384,
 } as const;
@@ -174,6 +186,7 @@ const TTS_MODEL_LABELS: Record<string, string> = {
   [MODEL_IDS.tts_quality]: "tts-1 HD (higher quality)",
 };
 const NOTORGANIC_MODEL_LABELS: Record<string, string> = {
+  [MERCURY_2_PROFILE.id]: MERCURY_2_PROFILE.name,
   [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.inkling_2_small]: "Inkling 2 Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
   [MODEL_IDS.flint]: FLINT_PREVIEW_PROFILE.name,
 };

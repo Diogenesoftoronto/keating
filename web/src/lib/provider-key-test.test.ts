@@ -12,6 +12,9 @@ describe("provider key probe", () => {
 		expect(buildKeyProbe({ provider: "x", api: "bedrock-converse-stream", baseUrl: "https://a" }, "k")).toBeNull();
 		expect(buildKeyProbe({ provider: "fireworks", api: "anthropic-messages", baseUrl: "https://a" }, "k")).toBeNull();
 	});
+	it("skips the public Inception catalog when checking a key", () => {
+		expect(buildKeyProbe({ provider: "inception", api: "openai-completions", baseUrl: "https://api.inceptionlabs.ai/v1" }, "k")).toBeNull();
+	});
 	it("maps statuses", () => {
 		expect(interpretProbeStatus(200).status).toBe("ok");
 		expect(interpretProbeStatus(401).status).toBe("invalid");

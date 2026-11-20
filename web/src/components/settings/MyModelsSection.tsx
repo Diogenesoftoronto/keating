@@ -7,7 +7,7 @@ import {
 } from "../../design-system/kit";
 import { Select } from "../Select";
 import { useReducer, useState } from "react";
-import { getProviders } from "@earendil-works/pi-ai/compat";
+import { getCloudProviderIds } from "../../lib/models-dev-catalog";
 import { removeCustomModel } from "../../keating/ui-settings";
 import type { ModelPrefs } from "../../keating/model-prefs";
 import type { KeatingCustomProvider } from "../../lib/provider-models";
@@ -117,7 +117,7 @@ export function MyModelsSection({
 		dispatch({ type: "change", form: { ...modelForm, ...patch } });
 	const providerOptions = Array.from(
 		new Set([
-			...getProviders(),
+			...getCloudProviderIds(),
 			...customProviders.map((provider) => provider.name),
 		]),
 	);
