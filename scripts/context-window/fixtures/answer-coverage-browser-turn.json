@@ -1,0 +1,75 @@
+{
+  "learnerMessage": "Using our earlier workshop code, give the perimeter of a rectangle with sides 7 and 5. Include the code and numeric result in one sentence. Use only our conversation.",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "[Keating time note: sent Friday, November 20, 2026 at 7:28 AM UTC; first message in this conversation.]\nMy workshop code is SAGE-4E924372. Use it when I ask about our workshop."
+    },
+    {
+      "role": "assistant",
+      "content": "The archived vocabulary exercise follows."
+    },
+    {
+      "role": "user",
+      "content": "The reference sheet is finished. Let us return to the geometry exercise."
+    },
+    {
+      "role": "assistant",
+      "content": "We can use a rectangle for the next question."
+    }
+  ],
+  "learnerEvidence": [
+    {
+      "kind": "recorded learner state; beliefs are tentative, not performance proof",
+      "content": "{\"schemaVersion\":3,\"topicsExplored\":[],\"feedbackHistory\":[],\"strengths\":[],\"weaknesses\":[],\"topicProfiles\":[],\"sessionsCount\":0,\"sessions\":[],\"profileBeliefs\":[],\"studyPriorities\":[]}"
+    },
+    {
+      "kind": "learner goals",
+      "content": "[]"
+    },
+    {
+      "kind": "submitted quiz records",
+      "content": "[]"
+    },
+    {
+      "kind": "submitted comprehension records",
+      "content": "[]"
+    },
+    {
+      "kind": "delayed card review records",
+      "content": "[]"
+    },
+    {
+      "kind": "known evidence gaps",
+      "content": "{\"missingProfileBeliefCategories\":[\"motivation\",\"communication-preference\",\"learning-preference\",\"interest\"],\"topicsWithoutPerformanceEvidence\":[],\"topicsWithoutRetentionEvidence\":[],\"ungradedQuizQuestionIds\":[],\"ungradedQuestionCheckIds\":[],\"goalsWithoutCurriculumSteps\":[],\"cardsWithoutReviewEvidence\":[]}"
+    }
+  ],
+  "availableTools": [
+    "animate",
+    "interactive_page",
+    "generate_image",
+    "feedback",
+    "grade_quiz",
+    "grade_question_checks",
+    "remember_learner_profile",
+    "set_learner_goal",
+    "update_goal_step",
+    "revise_study_plan",
+    "evaluate_teaching",
+    "request_teaching_improvement",
+    "keating_activate_skill",
+    "keating_task"
+  ],
+  "toolResults": [],
+  "sources": [],
+  "assessment": "unknown",
+  "improvementRuns": null,
+  "domain": "unknown",
+  "pendingSubmissions": [],
+  "activeWork": {
+    "plan": null,
+    "focus": null,
+    "openInteractions": [],
+    "truncated": false
+  }
+}
