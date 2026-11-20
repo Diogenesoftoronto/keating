@@ -139,22 +139,53 @@
 	.habit-grid, .habit-dashboard { grid-template-columns: minmax(0, 1fr); gap: .75rem; }
 }
 
-@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
-	.study-game-dialog.k-sheet[open]:has(.recess-game) {
-		inset: 0;
-		margin: 0;
-		width: 100%;
-		height: 100dvh;
-		max-height: none;
-		padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-		gap: 0;
-		border: 0;
-		border-radius: 0;
-	}
+.study-game-dialog.k-sheet[open]:has(.recess-game) {
+	inset: 0;
+	margin: 0;
+	width: 100%;
+	height: 100dvh;
+	max-height: none;
+	padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+	gap: 0;
+	border: 0;
+	border-radius: 0;
+}
 
+.study-game-dialog.k-sheet[open]:has(.recess-game:not([data-phase=idle])) {
+	overflow: hidden;
+	background: #f1ece0;
+}
+.study-game-dialog.k-sheet[open]:has(.recess-game[data-theme=term]:not([data-phase=idle])) { background: #0c1510; }
+.study-game-dialog:has(.recess-game:not([data-phase=idle])) > header,
+.study-game-dialog:has(.recess-game:not([data-phase=idle])) :is(.habit-nav, .habit-error, .habit-result),
+.study-game-dialog .recess-game:not([data-phase=idle]) :is(.recess-plan, .recess-settings, .recess-note, .recess-stage-heading) {
+	display: none;
+}
+.study-game-dialog:has(.recess-game:not([data-phase=idle])) :is(.k-sheet-body, .habit-content, .recess-game, .recess-stage) {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+.study-game-dialog .habit-content:has(.recess-game:not([data-phase=idle])) { padding: 0; }
+.study-game-dialog .recess-game:not([data-phase=idle]) { gap: 0; }
+.study-game-dialog .recess-game:not([data-phase=idle]) .recess-stage { border: 0; border-radius: 0; }
+.study-game-dialog .recess-game:not([data-phase=idle]) .recess-field { flex: 1; min-height: 0; height: auto; }
+.study-game-dialog .recess-game:not([data-phase=idle]) .recess-dock { min-height: 30px; padding-block: 7px; }
+.study-game-dialog .recess-game:not([data-phase=idle]) .recess-toolbar {
+	order: 1;
+	flex-wrap: nowrap;
+	padding: 8px 10px 10px;
+	border-top: 2px solid var(--recess-ink);
+	background: var(--recess-card);
+}
+.study-game-dialog .recess-game:not([data-phase=idle]) .recess-controls { flex: 1; flex-wrap: nowrap; gap: 10px; }
+
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
 	.study-game-dialog:has(.recess-game) > header { padding: .4rem .65rem; }
 	.study-game-dialog:has(.recess-game) .habit-nav { flex-wrap: nowrap; overflow-x: auto; }
-	.study-game-dialog .habit-content:has(.recess-game) { padding: .6rem .65rem .9rem; }
+	.study-game-dialog .habit-content:has(.recess-game[data-phase=idle]) { padding: .6rem .65rem .9rem; }
 
 	/* Launch screen: flight plan, one wide launch key, then the result log ahead of the preview. */
 	.study-game-dialog .recess-game[data-phase=idle] .recess-controls,
@@ -163,46 +194,38 @@
 	.study-game-dialog .recess-plan { flex-basis: 100%; }
 	.study-game-dialog .recess-lesson { flex: 1 1 9rem; }
 	.study-game-dialog .recess-lesson select { width: 100%; }
-	.study-game-dialog .recess-chat { flex: 1 1 12rem; justify-content: center; }
 	.study-game-dialog .recess-game[data-phase=idle] { grid-template-columns: minmax(0, 1fr); }
-	.study-game-dialog .recess-game[data-phase=idle] > :is(.recess-help, .recess-result) { order: 1; }
-	.study-game-dialog .recess-game[data-phase=idle] > :is(.recess-settings, .recess-stage, .recess-condition) { order: 2; }
+	.study-game-dialog .recess-game[data-phase=idle] :is(.recess-help, .recess-result) { order: 1; }
+	.study-game-dialog .recess-game[data-phase=idle] :is(.recess-settings, .recess-stage) { order: 2; }
+	.study-game-dialog .recess-game[data-phase=idle] .recess-condition { order: 3; }
 	.study-game-dialog .recess-game[data-phase=idle] .recess-field { height: clamp(220px, 46svh, 460px); }
 
-	/* In flight: the whole sheet is the play field. */
-	.study-game-dialog.k-sheet[open]:has(.recess-game:not([data-phase=idle])) {
-		/* Keep the arena stable as the mobile browser's toolbars move. */
-		height: 100svh;
-		overflow: hidden;
-		background: #f1ece0;
-	}
-	.study-game-dialog.k-sheet[open]:has(.recess-game[data-theme=term]:not([data-phase=idle])) { background: #0c1510; }
-	.study-game-dialog:has(.recess-game:not([data-phase=idle])) > header,
-	.study-game-dialog:has(.recess-game:not([data-phase=idle])) :is(.habit-nav, .habit-error, .habit-result),
-	.study-game-dialog .recess-game:not([data-phase=idle]) :is(.recess-plan, .recess-settings, .recess-note, .recess-stage-heading) {
-		display: none;
-	}
-	.study-game-dialog:has(.recess-game:not([data-phase=idle])) :is(.k-sheet-body, .habit-content, .recess-game, .recess-stage) {
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		min-height: 0;
-		overflow: hidden;
-	}
-	.study-game-dialog .habit-content:has(.recess-game:not([data-phase=idle])) { padding: 0; }
-	.study-game-dialog .recess-game:not([data-phase=idle]) { gap: 0; }
-	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-stage { border: 0; border-radius: 0; }
-	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-field { flex: 1; min-height: 0; height: auto; }
-	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-dock { min-height: 30px; padding-block: 7px; }
-	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-toolbar {
-		order: 1;
-		flex-wrap: nowrap;
-		padding: 8px 10px 10px;
-		border-top: 2px solid var(--recess-ink);
-		background: var(--recess-card);
-	}
-	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-controls { flex: 1; flex-wrap: nowrap; gap: 10px; }
+	/* Keep the arena stable as the mobile browser's toolbars move. */
+	.study-game-dialog.k-sheet[open]:has(.recess-game:not([data-phase=idle])) { height: 100svh; }
 	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-key { flex: 1 1 0; min-height: 48px; padding-inline: 8px; }
+}
+
+@media (width > 640px) and (height > 500px), (width > 640px) and (pointer: fine) {
+	.study-game-dialog:has(.recess-game[data-phase=idle]) > header {
+		flex: none;
+		padding: .5rem clamp(1rem, 2.5vw, 2.5rem);
+	}
+	.study-game-dialog:has(.recess-game[data-phase=idle]) .k-sheet-body { display: flex; flex: 1; flex-direction: column; }
+	.study-game-dialog:has(.recess-game[data-phase=idle]) .habit-nav {
+		flex: none;
+		padding-inline: clamp(1rem, 2.5vw, 2.5rem);
+	}
+	.study-game-dialog .habit-content:has(.recess-game[data-phase=idle]) {
+		display: grid;
+		flex: 1 0 auto;
+		padding: clamp(.75rem, 2vw, 1.75rem) clamp(1rem, 2.5vw, 2.5rem);
+	}
+	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-toolbar {
+		padding: 6px clamp(12px, 2vw, 28px) 9px;
+		border-top: 1px solid var(--recess-line);
+	}
+	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-controls { justify-content: space-between; }
+	.study-game-dialog .recess-game:not([data-phase=idle]) .recess-key { min-height: 44px; }
 }
 
 /* Short landscape phones: controls move to a side rail so the field keeps its height. */

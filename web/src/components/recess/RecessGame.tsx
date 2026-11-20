@@ -369,64 +369,77 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   }
 
   return <div className="recess-game" data-theme={dark ? "term" : "paper"} data-phase={status} data-calm={calm}>
-    <div className="recess-toolbar">
-      <div className="recess-plan">
-        <small className="recess-kicker">Flight plan</small>
-        <div className="recess-source" role="group" aria-label="Lesson source">
-          {(["chat", "practice"] as const).map(option => <button type="button" key={option} aria-pressed={source === option}
-            disabled={inFlight} onClick={() => { if (option !== source) { setSource(option); setResult(null); setFailure(""); } }}>
-            <Icon name={option === "chat" ? "chat" : "launch"}/>{option === "chat" ? "This chat" : "Practice"}
-          </button>)}
+    <div className="recess-flight-panel">
+      <div className="recess-toolbar">
+        <div className="recess-plan">
+          <small className="recess-kicker">Flight plan</small>
+          <div className="recess-source" role="group" aria-label="Lesson source">
+            {(["chat", "practice"] as const).map(option => <button type="button" key={option} aria-pressed={source === option}
+              disabled={inFlight} onClick={() => { if (option !== source) { setSource(option); setResult(null); setFailure(""); } }}>
+              <Icon name={option === "chat" ? "chat" : "launch"}/>{option === "chat" ? "This chat" : "Practice"}
+            </button>)}
+          </div>
+          {source === "practice" ? <label className="recess-lesson"><span>Practice category</span>
+            <select value={subject} disabled={inFlight} onChange={event => { setSubject(event.target.value); setResult(null); setFailure(""); }}>
+              {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+          </label> : <p className="recess-source-note" role="status">{chatNote()}</p>}
+          <div className="recess-preflight" data-tone={chargeTone(condition.charge)}>
+            <span className="recess-charge"><b>Charge</b><span className="recess-charge-bar"><i style={{ width: percent(condition.charge) }} /></span><em>{percent(condition.charge)}</em></span>
+            <small>Firing spends charge. Sparks and charge cells refill it. At zero he flies but can’t fire.</small>
+          </div>
         </div>
-        {source === "practice" ? <label className="recess-lesson"><span>Practice category</span>
-          <select value={subject} disabled={inFlight} onChange={event => { setSubject(event.target.value); setResult(null); setFailure(""); }}>
-            {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
-          </select>
-        </label> : <p className="recess-source-note" role="status">{chatNote()}</p>}
-        <div className="recess-preflight" data-tone={chargeTone(condition.charge)}>
-          <span className="recess-charge"><b>Charge</b><span className="recess-charge-bar"><i style={{ width: percent(condition.charge) }} /></span><em>{percent(condition.charge)}</em></span>
-          <small>Firing spends charge. Sparks and charge cells refill it. At zero he flies but can’t fire.</small>
+        <div className="recess-controls">
+          <button type="button" className="recess-start recess-key" ref={startControl} data-flight={inFlight}
+            disabled={status === "outro" || (!inFlight && (!selection || !prepared?.assets || settlingCharge))}
+            aria-keyshortcuts={inFlight ? "Escape" : undefined}
+            onClick={() => inFlight ? engine.current?.stop() : start()}>
+            <Icon name={inFlight ? "stop" : "launch"}/>
+            {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !selection ? "No lesson yet" : !prepared ? "Loading artwork…" : settlingCharge ? "Checking charge…" : result ? "Play again" : "Start Recess"}
+            {status === "play" && <kbd className="recess-keycap" aria-hidden="true">Esc</kbd>}
+          </button>
+          {inFlight && <button type="button" className="recess-eureka recess-key" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
+            data-live-action="" aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
+            <Icon name="eureka"/>Eureka<span className="recess-count"> · {hud.bombs}</span>
+            <span className="recess-pips" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <i key={index} data-empty={index >= hud.bombs}/>)}</span>
+            {status === "play" && <kbd className="recess-keycap" aria-hidden="true">Space</kbd>}
+          </button>}
         </div>
       </div>
-      <div className="recess-controls">
-        <button type="button" className="recess-start recess-key" ref={startControl} data-flight={inFlight}
-          disabled={status === "outro" || (!inFlight && (!selection || !prepared?.assets || settlingCharge))}
-          onClick={() => inFlight ? engine.current?.stop() : start()}>
-          <Icon name={inFlight ? "stop" : "launch"}/>
-          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !selection ? "No lesson yet" : !prepared ? "Loading artwork…" : settlingCharge ? "Checking charge…" : result ? "Play again" : "Start Recess"}
-        </button>
-        {inFlight && <button type="button" className="recess-eureka recess-key" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
-          data-live-action="" aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
-          <Icon name="eureka"/>Eureka<span className="recess-count"> · {hud.bombs}</span>
-          <span className="recess-pips" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <i key={index} data-empty={index >= hud.bombs}/>)}</span>
-        </button>}
-      </div>
+      <details className="recess-settings">
+        <summary><Icon name="gear"/>Flight settings</summary>
+        <div className="recess-options">
+          <label>Controls
+            <select value={control} disabled={inFlight} onChange={event => setControl(event.target.value as RecessControl)}>
+              <option value="follow">Pointer or movement keys</option>
+              <option value="twin">Keys fly, pointer aims</option>
+              <option value="thrust">Thrust and gravity</option>
+            </select>
+          </label>
+          <label>Artwork
+            <select value={skin} disabled={inFlight} onChange={event => setSkin(event.target.value as "toy" | "ink")}>
+              <option value="toy">Toys</option><option value="ink">Ink</option>
+            </select>
+          </label>
+          <label className="recess-range">Lesson behind <input type="range" min={8} max={70} step={2} value={opacity} onChange={event => setOpacity(Number(event.target.value))}/></label>
+          <label className="recess-check"><input type="checkbox" checked={calm} disabled={inFlight || !settings.visualEffects || !motionAllowed} onChange={event => setCalmChoice(event.target.checked)} /> Calm effects</label>
+          <label className="recess-check"><input type="checkbox" checked={sound} onChange={event => {
+            setSound(event.target.checked);
+            soundEngine.current?.set(event.target.checked);
+          }} /> Sound</label>
+        </div>
+      </details>
+      {failure && <p className="recess-note" role="status">{failure}</p>}
+      {prepared && !prepared.assets && <p className="recess-note" role="status">Recess artwork didn’t load. Change the artwork in Flight settings to retry.</p>}
+      <p className="recess-note recess-help">
+        <span className="recess-help-fine">Move or drag to fly. Arrow keys or WASD also move Keating. Hold Shift to focus, Space for Eureka, and Escape to stop.</span>
+        <span className="recess-help-touch">Drag one finger to fly. Hold a second finger to aim. Lift it to let Keating aim again.</span>
+      </p>
+      <p className="recess-note recess-condition">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
+        {wornNames.length > 0 && ` · Wearing ${wornNames.join(", ")}`}
+      </p>
+      {result && <RunResult result={result} onQuiz={onQuiz} startCharge={runCharge.current}/>}
     </div>
-    <details className="recess-settings">
-      <summary><Icon name="gear"/>Flight settings</summary>
-      <div className="recess-options">
-        <label>Controls
-          <select value={control} disabled={inFlight} onChange={event => setControl(event.target.value as RecessControl)}>
-            <option value="follow">Pointer or movement keys</option>
-            <option value="twin">Keys fly, pointer aims</option>
-            <option value="thrust">Thrust and gravity</option>
-          </select>
-        </label>
-        <label>Artwork
-          <select value={skin} disabled={inFlight} onChange={event => setSkin(event.target.value as "toy" | "ink")}>
-            <option value="toy">Toys</option><option value="ink">Ink</option>
-          </select>
-        </label>
-        <label className="recess-range">Lesson behind <input type="range" min={8} max={70} step={2} value={opacity} onChange={event => setOpacity(Number(event.target.value))}/></label>
-        <label className="recess-check"><input type="checkbox" checked={calm} disabled={inFlight || !settings.visualEffects || !motionAllowed} onChange={event => setCalmChoice(event.target.checked)} /> Calm effects</label>
-        <label className="recess-check"><input type="checkbox" checked={sound} onChange={event => {
-          setSound(event.target.checked);
-          soundEngine.current?.set(event.target.checked);
-        }} /> Sound</label>
-      </div>
-    </details>
-    {failure && <p className="recess-note" role="status">{failure}</p>}
-    {prepared && !prepared.assets && <p className="recess-note" role="status">Recess artwork didn’t load. Change the artwork in Flight settings to retry.</p>}
     <div className="recess-stage" style={{ "--lesson-opacity": opacity / 100 } as CSSProperties}>
       <header className="recess-stage-heading">
         <strong>{pack?.title ?? "This chat"}</strong>
@@ -448,13 +461,5 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
         {wind && <WindQuestion wind={wind.question} answer={wind.answer} stop={() => engine.current?.stop()}/>}
       </div>
     </div>
-    <p className="recess-note recess-help">
-      <span className="recess-help-fine">Move or drag to fly. Arrow keys or WASD also move Keating. Hold Shift to focus, Space for Eureka, and Escape to stop.</span>
-      <span className="recess-help-touch">Drag one finger to fly. Hold a second finger to aim. Lift it to let Keating aim again.</span>
-    </p>
-    <p className="recess-note recess-condition">Charge {Math.round(condition.charge * 100)}% · Tuning {Math.round(condition.tune * 100)}% · Shine {Math.round(condition.shine * 100)}%
-      {wornNames.length > 0 && ` · Wearing ${wornNames.join(", ")}`}
-    </p>
-    {result && <RunResult result={result} onQuiz={onQuiz} startCharge={runCharge.current}/>}
   </div>;
 }
