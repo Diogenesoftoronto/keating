@@ -27,10 +27,9 @@ export function notOrganicOpenAiImageEndpoint(origin = currentOrigin()): string 
 	return `${notOrganicOpenAiBaseUrl(origin)}/images/generations`;
 }
 
-export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
-	id: NOTORGANIC_MODEL_ALIAS,
+export const NOTORGANIC_INKLING_2_SMALL_MODEL: Model<"openai-completions"> = {
+	...INKLING_2_SMALL_PROFILE,
 	// The public capability keeps its stable alias; Portkey owns the upstream route.
-	name: MODEL_CHOICES.notorganicChat[0].label,
 	api: "openai-completions",
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),
@@ -44,8 +43,6 @@ export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 		cacheRead: 0,
 		cacheWrite: 0,
 	},
-	contextWindow: INKLING_2_SMALL_PROFILE.contextWindow,
-	maxTokens: 16_384,
 };
 
 export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
@@ -73,6 +70,7 @@ export const NOTORGANIC_LUNA_MODEL: Model<"openai-responses"> = {
 	thinkingLevelMap: { off: "none", minimal: "low", xhigh: "xhigh", max: "max" },
 	compat: { supportsLongCacheRetention: false },
 };
+export const NOTORGANIC_DEFAULT_MODEL = NOTORGANIC_LUNA_MODEL;
 
 /** Provisional native profile; activation and actual pricing belong to the gateway. */
 export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
@@ -86,16 +84,16 @@ export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
 
 /** Retain the previous explicit choice and persisted balanced sessions. */
 export const NOTORGANIC_BALANCED_MODEL: Model<"openai-completions"> = {
-  ...NOTORGANIC_DEFAULT_MODEL, id: "balanced", name: "Inkling Small", input: ["text"], contextWindow: 256_000,
+  ...NOTORGANIC_INKLING_2_SMALL_MODEL, id: "balanced", name: "Inkling Small", input: ["text"], contextWindow: 256_000,
 };
 export const NOTORGANIC_MERCURY_2_MODEL: Model<"openai-completions"> = {
   ...MERCURY_2_PROFILE,
   api: "openai-completions", provider: NOTORGANIC_PROVIDER_ID,
-  baseUrl: notOrganicOpenAiBaseUrl(), cost: NOTORGANIC_DEFAULT_MODEL.cost,
+  baseUrl: notOrganicOpenAiBaseUrl(), cost: NOTORGANIC_INKLING_2_SMALL_MODEL.cost,
 };
 
-export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_MERCURY_2_MODEL, NOTORGANIC_LUNA_MODEL];
-export const NOTORGANIC_ESTABLISHED_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_LUNA_MODEL];
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_INKLING_2_SMALL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_MERCURY_2_MODEL];
+export const NOTORGANIC_ESTABLISHED_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_INKLING_2_SMALL_MODEL, NOTORGANIC_BALANCED_MODEL];
 
 /** Optional account models require a matching grant and a live gateway listing. */
 export async function getAvailableNotOrganicChatModels(

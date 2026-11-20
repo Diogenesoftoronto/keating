@@ -2,12 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { DEFAULT_MODELS, GPT_6_LUNA_PROFILE, MODEL_PREFERENCES } from "../src/index.js";
 
 describe("auxiliary web search configuration", () => {
-  test("prefers GPT-6 Luna without changing primary model defaults", () => {
+  test("prefers GPT-6 Luna for auxiliary search and preserves direct OpenAI defaults", () => {
     expect(MODEL_PREFERENCES.auxiliarySearch.openai[0]).toBe("gpt-6-luna");
     expect(MODEL_PREFERENCES.auxiliarySearch.openai).not.toContain("gpt-5-mini");
     expect(DEFAULT_MODELS.cli.openai).toBe("gpt-5.5");
     expect(DEFAULT_MODELS.mobile.openai).toBe("gpt-5.4");
-    expect(DEFAULT_MODELS.web.notorganic).toBe("inkling-2-small");
   });
   test("provides documented Luna limits and standard token rates", () => {
     expect(GPT_6_LUNA_PROFILE).toMatchObject({
