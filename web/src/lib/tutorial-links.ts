@@ -7,7 +7,8 @@ const PROVIDER_ANCHORS: Record<string, string> = {
 	openrouter: "openrouter-api-key",
 };
 
-export function tutorialApiKeyHref(_provider?: string): string {
+export function tutorialApiKeyHref(provider?: string): string {
+	if (provider === "inception") return "https://platform.inceptionlabs.ai/dashboard/api-keys";
 	// The learner guide currently explains all provider keys in this section.
 	return `${DOCUMENTATION_URL}choose-a-model/#section-use-your-own-provider-key`;
 }

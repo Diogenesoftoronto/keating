@@ -1,5 +1,5 @@
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
-import { MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
+import { MERCURY_2_PROFILE, MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
 
 const CACHE_KEY = "keating.models-dev.v1";
 export const MODEL_CATALOG_TTL = 60 * 60 * 1000;
@@ -184,7 +184,15 @@ const catalog = createModelsDevCatalog({
 	fetch: (input, init) => globalThis.fetch(input, init),
 	storage: () => typeof localStorage === "undefined" ? undefined : localStorage,
 });
+/** Keating also supports the direct Inception route with a learner-provided API key. */
+export function getCloudProviderIds(): string[] {
+	return [...new Set([...getProviders(), "inception"])].sort();
+}
+
 export function getCloudProviderModels(provider: string): Model<Api>[] {
+	if (provider === "inception") return [{
+		...MERCURY_2_PROFILE, provider, api: "openai-completions", baseUrl: SERVICE_ENDPOINTS.inception,
+	}];
 	const models = catalog.models().filter(model => model.provider === provider);
 	if (provider !== "minimax" && provider !== "minimax-cn") return models;
 	// Both regions speak the same protocol. Keep the verified model selectable on

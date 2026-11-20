@@ -75,6 +75,7 @@ async function providerLabel(provider: string): Promise<string> {
 	if (provider === "openai-codex") return "OpenAI Codex";
 	if (provider === "anthropic") return "Anthropic";
 	if (provider === "openrouter") return "OpenRouter";
+	if (provider === "inception") return "Inception";
 	try {
 		const providers = (await getAppStorage().customProviders.getAll()) as Array<{ name?: string }>;
 		const match = providers.find((entry) => entry?.name === provider);

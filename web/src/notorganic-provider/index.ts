@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE, notOrganicInferenceScope, hasNotOrganicInferenceScope } from "@keating/runtime-config";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, MERCURY_2_PROFILE, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE, notOrganicInferenceScope, hasNotOrganicInferenceScope } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
@@ -78,20 +78,33 @@ export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
 export const NOTORGANIC_BALANCED_MODEL: Model<"openai-completions"> = {
   ...NOTORGANIC_DEFAULT_MODEL, id: "balanced", name: "Inkling Small", input: ["text"], contextWindow: 256_000,
 };
-export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL];
+export const NOTORGANIC_MERCURY_2_MODEL: Model<"openai-completions"> = {
+  ...MERCURY_2_PROFILE,
+  api: "openai-completions", provider: NOTORGANIC_PROVIDER_ID,
+  baseUrl: notOrganicOpenAiBaseUrl(), cost: NOTORGANIC_DEFAULT_MODEL.cost,
+};
 
-/** Keep existing choices; a preview becomes selectable only after consent and gateway discovery. */
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL, NOTORGANIC_MERCURY_2_MODEL];
+export const NOTORGANIC_ESTABLISHED_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_BALANCED_MODEL];
+
+/** Optional account models require a matching grant and a live gateway listing. */
 export async function getAvailableNotOrganicChatModels(
   client: { getSession(): { scope: string } | null; request(path: string): Promise<Response> } | null = notOrganicPublicClient(),
 ): Promise<Array<Model<Api>>> {
-  const established = NOTORGANIC_CHAT_MODELS.filter(model => model.id !== FLINT_PREVIEW_PROFILE.id);
-  if (!client?.getSession()?.scope.split(/\s+/).includes(`infer:${FLINT_PREVIEW_PROFILE.id}`)) return established;
+  const established = NOTORGANIC_ESTABLISHED_CHAT_MODELS;
+  const session = client?.getSession();
+  if (!client || !session) return established;
+  const scopes = new Set(session.scope.split(/\s+/));
+  const eligible = [NOTORGANIC_FLINT_MODEL, NOTORGANIC_MERCURY_2_MODEL].filter(model =>
+    hasNotOrganicInferenceScope(scopes, model.id));
+  if (!eligible.length) return established;
   try {
     const response = await client.request("/v1/models");
     if (!response.ok) return established;
     const body = await response.json();
-    return Array.isArray(body?.data) && body.data.some((model: { id?: unknown } | null) => model?.id === FLINT_PREVIEW_PROFILE.id)
-      ? [...established, NOTORGANIC_FLINT_MODEL] : established;
+    if (!Array.isArray(body?.data)) return established;
+    const advertised = new Set(body.data.map((model: { id?: unknown } | null) => model?.id));
+    return [...established, ...eligible.filter(model => advertised.has(model.id))];
   } catch {
     return established;
   }
