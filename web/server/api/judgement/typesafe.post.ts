@@ -1,5 +1,5 @@
 import { assertMethod, createError, defineEventHandler, setResponseHeader } from "h3";
-import { SYSTEM_ONE_ENDPOINT, errorForStatus } from "@keating/learner-contracts";
+import { SYSTEM_ONE_ENDPOINT, systemOneHttpError } from "@keating/learner-contracts";
 import { readBoundedBody, readBoundedJsonBody } from "../../utils/bounded-body";
 import { validateJudgementGatewayBody } from "../../utils/judgement-gateway";
 import { acquirePublicConcurrency, consumePublicRateLimit } from "../../utils/public-abuse";
@@ -36,8 +36,8 @@ export default defineEventHandler(async event => {
       body: JSON.stringify({ state, model, questions: checked.body.questions }),
     });
     if (!upstream.ok) {
-      await upstream.body?.cancel();
-      return Response.json({ error: { code: errorForStatus(upstream.status).code } }, {
+      const error = await systemOneHttpError(upstream, signal);
+      return Response.json({ error: { code: error.code } }, {
         status: upstream.status >= 400 && upstream.status <= 599 ? upstream.status : 502,
         headers: { "cache-control": "no-store" },
       });

@@ -72,6 +72,12 @@ test("missing result stays unavailable and never becomes zero readiness", async 
   expect(result.status).toBe("unavailable"); expect(result.estimates).toHaveLength(0); expect(result.selectedId).toBeNull();
 });
 
+test("the bounded readiness receipt preserves a typed provider context rejection", async () => {
+  const rejection = { ok: false as const, error: { code: "context-limit-exceeded" as const, retryable: false } };
+  const result = await reviewStudyCandidates([candidate("a")], async () => rejection);
+  expect(result.attempts).toEqual([rejection]);
+});
+
 test("in-flight source and threshold mutation cannot change the captured review", async () => {
   const inputs = [candidate("a"), candidate("b")]; const base = caller(); const table = await calibrated(inputs, base.call);
   const requests: JudgementRequest[] = [];

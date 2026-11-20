@@ -106,12 +106,11 @@ export function createPublicAccountJudgementBackend(options: PublicAccountJudgem
               && Object.keys(question.criteria as object).length > 64)) {
             return { ok: false, status: 422, json: async () => ({}) };
           }
-          const response = await client.request("/v1/judgement", {
+          return client.request("/v1/judgement", {
             method: "POST", body: JSON.stringify(body), signal: init.signal, redirect: "error",
             headers: { "content-type": "application/json", "idempotency-key": idempotencyKey,
               "x-notorganic-max-cost-microusd": String(maxCost) },
           });
-          return { ok: response.ok, status: response.status, json: () => response.json() };
         },
       })(request, signal);
     },

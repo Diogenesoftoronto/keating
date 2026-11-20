@@ -26,6 +26,12 @@ test("missing review scores remain blockers rather than being misreported as poo
   expect(text).not.toContain("did not meet");
 });
 
+test("a context rejection explains the provider limit on the owning review", () => {
+  const text = describeDraftFailure({ ...snapshot([]), reason: "context-limit-exceeded" });
+  expect(text).toContain("exceeded the judgement model's context window");
+  expect(text).toContain("Failure: context-limit-exceeded.");
+});
+
 test("the withheld label's tooltip keeps only the plain-language reason", async () => {
   const { withheldSummary } = await import("../keating/judgement/review-notice");
   expect(withheldSummary("Keating couldn't prepare a valid review request within the judgement model's limits. Try a new conversation.\n\nFailure: request-invalid. Draft attempts: 0; completed drafts: 0."))

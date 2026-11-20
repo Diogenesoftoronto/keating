@@ -10,6 +10,7 @@ const failures: Record<string, string> = {
   "backend-timeout": "The review provider timed out. Try again or choose another judgement model in Settings.",
   "response-malformed": "The review provider returned an invalid or inconsistent response. Try again or choose another judgement model in Settings.",
   "request-invalid": "Keating couldn't prepare a valid review request within the judgement model's limits. Try a new conversation or choose a judgement model with a larger context in Settings.",
+  "context-limit-exceeded": "The review request exceeded the judgement model's context window. Try a shorter request or choose a judgement model with a larger context in Settings.",
   "time-budget": "Keating ran out of time while preparing or checking the reply. Try again or choose a faster model in Settings.",
   "generation-unavailable": "The reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.",
   "selection-abstained": "Drafts passed the individual checks, but the final review couldn't select one that answered your request. Retry or choose a different reply model in Settings.",

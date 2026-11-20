@@ -20,6 +20,14 @@ import {
   errorForStatus,
 } from "./wire.js";
 
+interface SystemOneHttpResponse {
+  readonly ok: boolean;
+  readonly status: number;
+  readonly body?: ReadableStream<Uint8Array> | null;
+  readonly headers?: { get(name: string): string | null };
+  json(): Promise<unknown>;
+}
+
 export type FetchLike = (
   input: string,
   init: {
@@ -28,7 +36,53 @@ export type FetchLike = (
     body: string;
     signal?: AbortSignal;
   },
-) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
+) => Promise<SystemOneHttpResponse>;
+
+/** TypeSafe's documented HTTP 400 and the same-origin relay's sanitized 400 can identify
+ * token overflow. Neither an echoed message nor an oversized HTTP body identifies it. */
+export async function systemOneHttpError(
+  response: Pick<SystemOneHttpResponse, "status" | "headers" | "body">,
+  signal?: AbortSignal,
+): Promise<JudgementError> {
+  const fallback = errorForStatus(response.status);
+  const stream = response.body;
+  if (!stream || typeof stream.getReader !== "function" || stream.locked) return fallback;
+  const maxBytes = 8_192;
+  const length = response.headers?.get("content-length");
+  if (response.status !== 400 || signal?.aborted || (length != null && (!/^\d+$/.test(length) || Number(length) > maxBytes))) {
+    void stream.cancel().catch(() => {});
+    return fallback;
+  }
+  const reader = stream.getReader();
+  const bytes = new Uint8Array(maxBytes);
+  let size = 0;
+  let interrupted = false;
+  const stop = () => { interrupted = true; void reader.cancel().catch(() => {}); };
+  const timer = setTimeout(stop, 1_500);
+  signal?.addEventListener("abort", stop, { once: true });
+  try {
+    // A fragmented or stalled response must be bounded even if it delivers empty chunks.
+    let reads = 0;
+    while (!interrupted) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      if (++reads > maxBytes || size + chunk.value.byteLength > maxBytes) { stop(); return fallback; }
+      bytes.set(chunk.value, size);
+      size += chunk.value.byteLength;
+    }
+    if (interrupted) return fallback;
+    const detail = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes.subarray(0, size)));
+    if (detail?.detail?.error_type === "max_tokens_exceeded" || detail?.error?.code === "context-limit-exceeded") {
+      return { code: "context-limit-exceeded", retryable: false };
+    }
+  } catch { /* An absent or malformed machine reason leaves the HTTP mapping intact. */ }
+  finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", stop);
+    reader.releaseLock();
+  }
+  return fallback;
+}
 
 export interface SystemOneRetryPolicy {
   readonly maxAttempts: number;
@@ -116,7 +170,7 @@ export function createSystemOneCaller(options: SystemOneCallerOptions): Judgemen
         if (signal?.aborted) return failure({ code: "cancelled", retryable: false });
       }
 
-      let response: { ok: boolean; status: number; json: () => Promise<unknown> };
+      let response: SystemOneHttpResponse;
       try {
         response = await options.fetch(endpoint, { method: "POST", headers, body, signal });
       } catch {
@@ -128,7 +182,8 @@ export function createSystemOneCaller(options: SystemOneCallerOptions): Judgemen
       }
 
       if (!response.ok) {
-        lastError = errorForStatus(response.status);
+        lastError = await systemOneHttpError(response, signal);
+        if (signal?.aborted) return failure({ code: "cancelled", retryable: false });
         if (!lastError.retryable) return failure(lastError);
         continue;
       }

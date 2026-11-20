@@ -90,13 +90,8 @@ function trimmed(value: string | undefined): string | undefined {
 function defaultFetch(): FetchLike | null {
   const global = globalThis.fetch;
   if (typeof global !== "function") return null;
-  // Adapted explicitly rather than passed through, so only the three fields the
-  // caller contract declares are ever read off the response.
-  return async (input, init) => {
-    // A provider redirect must not forward account proof or direct credentials.
-    const response = await global(input, { ...init, redirect: "error" });
-    return { ok: response.ok, status: response.status, json: () => response.json() };
-  };
+  // A provider redirect must not forward account proof or direct credentials.
+  return (input, init) => global(input, { ...init, redirect: "error" });
 }
 
 function isDirectOptIn(value: string | undefined): boolean {

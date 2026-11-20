@@ -159,8 +159,7 @@ export function decodeSystemOneResponse(
 /**
  * Map an HTTP status to a stable code.
  *
- * The upstream body is deliberately never read: it can echo the learner's own
- * text back, so it must not reach a log line, a screen, or a telemetry span.
+ * Used when the response has no recognized, bounded machine-readable reason.
  */
 export function errorForStatus(status: number): JudgementError {
   if (status === 402) return { code: "backend-payment-required", retryable: false };

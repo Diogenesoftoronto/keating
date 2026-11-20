@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { H3 } from "h3";
 import route from "../../server/api/judgement/typesafe.post";
+import { createCustomJudgementBackend } from "../keating/judgement/custom-backend";
 import { MemoryPublicAbuseStore, setPublicAbuseStoreForTests } from "../../server/utils/public-abuse";
 
 const originalFetch = globalThis.fetch;
@@ -119,4 +120,22 @@ test("payment and auth failures retain status without forwarding private upstrea
     expect(result).not.toContain("secret raw key");
     if (status === 402) expect(result).toContain("backend-payment-required");
   }
+});
+
+test("the TypeSafe error reason crosses the actual BYOK relay and browser caller without echoing text", async () => {
+  const server = app();
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    return Response.json({ detail: { error_type: "max_tokens_exceeded", input: "private upstream echo" } }, { status: 400 });
+  }) as unknown as typeof fetch;
+  const tier = createCustomJudgementBackend({ model: body.model, apiKey: "private-user-key", fetch: async (url, init) => {
+    const response = await server.fetch(new Request(new URL(url, "https://keating.test"), init));
+    expect(response.status).toBe(400);
+    expect(await response.clone().json()).toEqual({ error: { code: "context-limit-exceeded" } });
+    return response;
+  } })!;
+  expect(await tier.call({ state: body.state, questions: { correct: { type: "noul", instructions: "Is it correct?" } } }))
+    .toEqual({ ok: false, error: { code: "context-limit-exceeded", retryable: false } });
+  expect(calls).toBe(1);
 });

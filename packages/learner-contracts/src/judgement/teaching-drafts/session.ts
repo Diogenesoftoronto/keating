@@ -20,7 +20,7 @@ import { projectActivitySelectionReceipt } from "../activity-learning.js";
 import { validateBackgroundActivityPolicy } from "../background-activity-policy.js";
 import { applyBackgroundActivityGuidance, type BackgroundActivityGuidance } from "../background-activity-guidance.js";
 
-import { measureStateComposition, prepareTeachingWindow, type StateComposition } from "../state-metrics.js";
+import { estimatedTextTokens, measureStateComposition, prepareTeachingWindow, type StateComposition } from "../state-metrics.js";
 
 import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftVariant, TeachingDraftInteraction, TeachingDraftAttempt, TeachingDraftPhase, TeachingStateSample, TeachingWindowSlide } from "../teaching-drafts.js";
 import { effort, standardInstructions, variantPrompt, pairedCandidatePrompt, checkpointReplyMode, allowsQuestionFeedback, allowsNewQuestion, interactionSummary, qualityFloors, blocksDraft, blocksRelease, teachingDraftAttemptLimit, draftQuality, reasoningQuestions, selectedReasoning, standardQuestion, qualityQuestions, selected, splitJudgementRequest } from "./policy.js";
@@ -157,6 +157,22 @@ type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestio
 /** A private worker may slide its own review window without changing a sibling's evidence. */
 type DraftStep = Pick<DraftContext<unknown>, "attempt" | "phase" | "turn" | "reason">;
 
+type WindowBuilder = Parameters<typeof prepareTeachingWindow>[1];
+type PreparedWindow = ReturnType<typeof prepareTeachingWindow>;
+
+/** A successful single question distinguishes a crowded batch from an oversized shared state. */
+function divideRejectedBatch(batch: JudgementRequest, probeSingle: boolean): JudgementRequest[] {
+  const remaining = Object.entries(batch.questions);
+  const groups: (typeof remaining)[] = [];
+  if (probeSingle) {
+    const weights = remaining.map(([, question]) => estimatedTextTokens(JSON.stringify(question)));
+    groups.push(remaining.splice(weights.indexOf(Math.max(...weights)), 1));
+  }
+  const middle = Math.ceil(remaining.length / 2);
+  groups.push(remaining.slice(0, middle), remaining.slice(middle));
+  return groups.filter(group => group.length).map(entries => ({ state: batch.state, questions: Object.fromEntries(entries) }));
+}
+
 /** Preserve the typed probabilities as sent. Comparison diagnostics cannot affect release. */
 function finalComparisonEvidence(attempts: readonly number[], answer: ChoiceAnswer, model: string): TeachingDraftFinalComparison | undefined {
   if (attempts.length !== 2 || !/^[a-zA-Z0-9][a-zA-Z0-9._:/+-]{0,159}$/.test(model)) return;
@@ -239,9 +255,10 @@ export class TeachingDraftSession<T> {
     } finally { this.context.controller.signal.removeEventListener("abort", abort); }
   }
 
-  private prepareRequest(build: (currentTurn: TeachingPolicyTurn) => JudgementRequest | null, step: DraftStep,
-    replies: readonly TeachingPolicyReply[] = []): JudgementRequest | null {
-    const { stateQuestionTokens, requestTokens } = this.context;
+  private prepareWindow(step: DraftStep, build: WindowBuilder, replies: readonly TeachingPolicyReply[] = [],
+    recoveryTarget?: number): PreparedWindow {
+    const { requestTokens } = this.context;
+    const stateQuestionTokens = recoveryTarget ?? this.context.stateQuestionTokens;
     const turn = step.turn;
     let prepared = prepareTeachingWindow(turn, build, stateQuestionTokens, requestTokens);
     if (!prepared.fitsLimits && turn.sources.length && this.options.compactResearchSources) {
@@ -250,12 +267,41 @@ export class TeachingDraftSession<T> {
       if (compact.fitsLimits) prepared = { ...compact, before: prepared.before };
     }
     if (prepared.before && (prepared.turnsDropped || prepared.before.sections.sources.bytes !== prepared.after?.sections.sources.bytes)) {
-      this.context.slides.push({ phase: step.phase, attempt: step.attempt, elapsedMs: Math.max(0, this.context.now() - this.context.start),
-        turnsDropped: prepared.turnsDropped, before: prepared.before, after: prepared.after });
+      // The retry target guides pruning. Receipts still use the reviewer's configured limit.
+      const recorded = (state: StateComposition): StateComposition => {
+        if (recoveryTarget === undefined) return state;
+        const budget = this.context.stateQuestionTokens;
+        return { ...state, budgetTokens: budget, fillRatio: budget ? state.estimatedStateQuestionTokens / budget : null };
+      };
+      this.context.slides.push({ phase: step.phase, attempt: step.attempt,
+        ...(recoveryTarget === undefined ? {} : { reason: "provider-context-limit" as const }), elapsedMs: Math.max(0, this.context.now() - this.context.start),
+        turnsDropped: prepared.turnsDropped, before: recorded(prepared.before), after: prepared.after ? recorded(prepared.after) : null });
       if (this.context.slides.length > 64) this.context.slides.shift();
     }
-    step.turn = prepared.turn;
-    return prepared.fitsLimits ? prepared.request : null;
+    return prepared;
+  }
+
+  private async judgeWindow(step: DraftStep, build: WindowBuilder, replies: readonly TeachingPolicyReply[] = [],
+    initial?: PreparedWindow, onDispatch?: () => void) {
+    let window = initial ?? this.prepareWindow(step, build, replies);
+    if (!window.request || !window.after) {
+      return { ...window, outcome: { ok: false, error: { code: "request-invalid", retryable: false } } as const };
+    }
+    if (!window.fitsLimits) {
+      return { ...window, outcome: { ok: false, error: { code: "context-limit-exceeded", retryable: false } } as const };
+    }
+    let outcome = await this.judge(window.request, step, onDispatch);
+    const estimated = window.after.estimatedStateQuestionTokens;
+    // A positive provider limit error is the only reason to trim beyond local estimates.
+    for (const fraction of [0.75, 0.5, 0]) {
+      if (outcome.ok || outcome.error.code !== "context-limit-exceeded") break;
+      if (!window.turn.conversation.length && !window.turn.earlierLearnerExcerpts?.length && !window.turn.sources.length) break;
+      const next = this.prepareWindow(step, build, replies, Math.max(1, Math.floor(estimated * fraction)));
+      if (!next.request || JSON.stringify(next.request) === JSON.stringify(window.request)) continue;
+      window = next;
+      outcome = await this.judge(next.request, step, onDispatch);
+    }
+    return { ...window, outcome };
   }
 
   private reviewBatches(request: JudgementRequest): JudgementRequest[] | null {
@@ -272,7 +318,9 @@ export class TeachingDraftSession<T> {
     let inputTokens = 0;
     let outputTokens = 0;
     let hasUsage = true;
-    for (const batch of batches) {
+    let subdivisions = 0;
+    for (let index = 0; index < batches.length; index++) {
+      const batch = batches[index]!;
       const outcome = await this.bounded(() => {
         this.context.state = measureStateComposition(batch, this.context.stateQuestionTokens);
         this.context.stateHistory.push({ phase: step.phase, attempt: step.attempt, elapsedMs: Math.max(0, this.context.now() - this.context.start), requestIndex: ++this.context.requestIndex, state: this.context.state });
@@ -282,7 +330,13 @@ export class TeachingDraftSession<T> {
         return this.reviewer.judge(batch, this.context.controller.signal);
       });
       if (this.context.controller.signal.aborted) throw new Error("draft-interrupted");
-      if (!outcome.ok) return outcome;
+      if (!outcome.ok) {
+        if (outcome.error.code !== "context-limit-exceeded" || Object.keys(batch.questions).length < 2 || subdivisions >= 8) return outcome;
+        // Share the same history across smaller question batches before dropping whole turns.
+        batches.splice(index + 1, 0, ...divideRejectedBatch(batch, !backend));
+        subdivisions++;
+        continue;
+      }
       const identity = JSON.stringify(outcome.response.backend);
       if (!outcome.response.backend.model || outcome.response.backend.model === "judgement" || outcome.response.backend.model.endsWith("-latest")
         || this.context.judgeIdentity && identity !== this.context.judgeIdentity || backend && JSON.stringify(backend) !== identity) {
@@ -352,8 +406,7 @@ export class TeachingDraftSession<T> {
   }
 
   private async planWithReviewer(modelId: string | undefined): Promise<DraftPlan | null> {
-    const planning: DraftStep = { ...this.context };
-    const decisionRequest = this.prepareRequest((currentTurn) => {
+    const planning = await this.judgeWindow({ ...this.context }, (currentTurn) => {
       const input = teachingPolicyDecisionRequest(currentTurn);
       return { ...input, questions: { ...input.questions,
         ...Object.fromEntries(reasoningQuestions.map(({ id, question }) => [id, currentTurn.earlierLearnerExcerpts?.length
@@ -363,9 +416,8 @@ export class TeachingDraftSession<T> {
           && currentTurn.conversation.length === this.options.turn.conversation.length && followsSingleFeedbackQuestion(currentTurn)
           ? { checkpoint_reply_mode: checkpointReplyMode } : {}),
         draft_standard: standardQuestion } };
-    }, planning);
-    const decision = decisionRequest ? await this.judge(decisionRequest, planning)
-      : { ok: false as const, error: { code: "request-invalid" as const, retryable: false } };
+    });
+    const { outcome: decision, request: decisionRequest } = planning;
     if (!decision.ok) {
       const model = this.options.configuredDecisionModel === undefined ? this.options.judgementModel?.id : this.options.configuredDecisionModel;
       this.decisionFailure = makeDecisionPlanningFailure(decision.error, model);
@@ -461,10 +513,9 @@ export class TeachingDraftSession<T> {
     let review: TeachingDraftPairReview;
     try {
       review = await reviewTeachingDraftPair(pair, completed, this.context.standard, async build => {
-        const request = this.prepareRequest(build, step);
-        if (!request) return { ok: false, error: { code: "request-invalid", retryable: false } };
         try {
-          return await this.judge(request, step, () => { startedAtMs ??= this.context.now() - this.context.start; });
+          return (await this.judgeWindow(step, build, completed.map(entry => entry.reply), undefined,
+            () => { startedAtMs ??= this.context.now() - this.context.start; })).outcome;
         } finally {
           if (startedAtMs !== undefined) finishedAtMs = this.context.now() - this.context.start;
         }
@@ -718,7 +769,7 @@ export class TeachingDraftSession<T> {
     const candidateScope = { ...reviewScope, assessmentDeclined: Boolean(optOut), searchOnly };
     const ruleIds = this.options.ruleIds ? [...new Set([...this.options.ruleIds, ...required])] : undefined;
     const reviewStep: DraftStep = { ...step, turn: research ? { ...step.turn, sources: research.sources } : step.turn };
-    const request = this.prepareRequest((currentTurn) => {
+    const { request, turn: reviewedTurn, outcome: judged } = await this.judgeWindow(reviewStep, (currentTurn) => {
       const adherence = buildTeachingPolicyAdherenceRequest(currentTurn, reply, ruleIds, candidateScope);
       return { ...adherence, questions: { ...adherence.questions, ...extra,
         ...(checkCoverage ? { requested_part_missing: requestedPartQuestion } : {}),
@@ -730,14 +781,13 @@ export class TeachingDraftSession<T> {
           .filter(([id]) => id in adherence.questions)
           .map(([id, question]) => [id, { ...question, instructions: "The host recorded the answer and verdict in confirmedQuestionGrade. "
             + "Explaining that specific result is feedback on a completed item. Independently check every other or newly posed item. " + question.instructions }])) : {}) } };
-    }, reviewStep, [reply]);
-    const judged = request ? await this.judge(request, reviewStep) : null;
+    }, [reply]);
     // Keep infrastructure failures distinct from a completed review rejecting
     // the draft. A later completed review supersedes an earlier failure.
     step.reason = judged && !judged.ok ? judged.error.code : null;
-    const assessment = assessTeachingPolicyAdherence(reviewStep.turn, reply, judged, ruleIds, candidateScope);
+    const assessment = assessTeachingPolicyAdherence(reviewedTurn, reply, judged, ruleIds, candidateScope);
     const debugging = codePractice ? readDebuggingExerciseReview(judged) : null;
-    const staticProof = debugging ? proveDebuggingExample(reviewStep.turn, reply) : null;
+    const staticProof = debugging ? proveDebuggingExample(reviewedTurn, reply) : null;
     const hostChecks: readonly TeachingPolicyCheck[] = [
       ...(this.options.check?.(reply) ?? []),
       ...(provenance.feedbackOnly && !isVisibleQuestionFeedback(reply) ? [{ id: "question_feedback_format", source: "deterministic" as const,
@@ -773,11 +823,11 @@ export class TeachingDraftSession<T> {
       checks.push({ id, source: "jev", severity: "major", probability: probability === null ? null : 1 - probability,
         status: probability === null ? "unknown" : probability >= qualityFloors[this.context.standard] ? "pass" : probability <= 0.2 ? "fail" : "unknown" });
     }
-    const completeConversation = reviewStep.turn.conversation.length === this.options.turn.conversation.length;
+    const completeConversation = reviewedTurn.conversation.length === this.options.turn.conversation.length;
     const attemptedFeedback = completeConversation && request?.questions.checkpoint_attempt_state
       ? reviewAttemptedCheckpoint(checks, judged, reply, step.turn.learnerMessage) : null;
     if (!attemptedFeedback) scopeCheckpointFinding(checks, scope, judged, completeConversation);
-    if (debugging && completeConversation) scopeDebuggingExpectedOutput(checks,debugging.evidence,reviewStep.turn,reply);
+    if (debugging && completeConversation) scopeDebuggingExpectedOutput(checks,debugging.evidence,reviewedTurn,reply);
     const blocking = checks.filter(check => blocksRelease(check) || this.context.extended && uncertainCheckpointRepetition(check));
     const keepUnverified = (!(this.pairReviews || this.parallelAttempts) || judged?.ok === true)
       && (scope === "ordinary" || !checks.some(check => check.id === "checkpoint_answer_leaked" && check.status !== "pass"))
@@ -853,11 +903,10 @@ export class TeachingDraftSession<T> {
       })) } : {}),
       candidates: Object.fromEntries(selectionCandidates.map((candidate) => [`draft_${candidate.attempt}`, candidate.reply])) }, questions: { draft_choice: choice } });
     const selectionStep: DraftStep = { ...this.context };
-    let preparedSelection: JudgementRequest | null = null;
+    let preparedSelection: PreparedWindow | undefined;
     while (selectionCandidates.length > 1) {
-      selectionStep.turn = this.context.turn;
-      const prepared = this.prepareRequest(selectionRequest, selectionStep, selectionCandidates.map(candidate => candidate.reply));
-      if (prepared && this.reviewBatches(prepared)) {
+      const prepared = this.prepareWindow(selectionStep, selectionRequest, selectionCandidates.map(candidate => candidate.reply));
+      if (prepared.fitsLimits && prepared.request && this.reviewBatches(prepared.request)) {
         preparedSelection = prepared;
         break;
       }
@@ -866,7 +915,9 @@ export class TeachingDraftSession<T> {
       delete criteria[`draft_${omitted.attempt}`];
     }
     this.context.selectionCandidateAttempts = selectionCandidates.map(({ attempt }) => attempt);
-    const selection = preparedSelection ? await this.judge(preparedSelection) : { ok: false as const, error: { code: "request-invalid" as const, retryable: false } };
+    const selection = preparedSelection
+      ? (await this.judgeWindow(selectionStep, selectionRequest, selectionCandidates.map(candidate => candidate.reply), preparedSelection)).outcome
+      : { ok: false as const, error: { code: "request-invalid" as const, retryable: false } };
     const chosen = selectionCandidates.length === 1 ? `draft_${selectionCandidates[0]!.attempt}` : selected(selection, "draft_choice", choice);
     const answer = selection.ok ? decodeAnswer(choice, selection.response.answers.draft_choice) : null;
     if (answer?.type === "choice") this.context.selectorProbabilities = { ...answer.probabilities };

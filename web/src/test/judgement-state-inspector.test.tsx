@@ -36,6 +36,13 @@ test("a near-full request shows its actual usage without a lower trimming thresh
   expect(html).toContain("This review recorded no context trims.");
 });
 
+test("the saved chat receipt distinguishes an upstream context rejection from an estimated trim", () => {
+  const projected = projectTeachingDraftSnapshot({ ...snapshot,
+    slides: [{ ...snapshot.slides![0]!, reason: "provider-context-limit" }] });
+  expect(renderToStaticMarkup(<JudgementStateInspector snapshot={projected} />)).toContain("The provider reported a context limit.");
+  expect(renderToStaticMarkup(<JudgementStateInspector snapshot={snapshot} />)).not.toContain("The provider reported a context limit.");
+});
+
 test("a historical trim reports its recorded sizes independently of today's limits", () => {
   const before = { ...state, estimatedStateQuestionTokens: 1650, budgetTokens: 2000, fillRatio: .825 };
   const after = { ...before, estimatedStateQuestionTokens: 1300, fillRatio: .65 };

@@ -47,11 +47,12 @@ export function JudgementStateInspector({ snapshot }: { snapshot: TeachingDraftS
       <p className={copy}>Pinned context present: {([ ["Plan", state.pinned.plan], ["Focus", state.pinned.focus], ["Open activities", state.pinned.openInteractions], ["Pending submissions", state.pinned.pendingSubmissions] ] as const).filter(([, present]) => present).map(([label]) => label).join(", ") || "None"}.</p>
     </details>
     <details><summary className={detail}>Context trims{snapshot.slides && ` (${snapshot.slides.length})`}</summary>
-      <p className={copy}>Current reviews keep the full conversation and search passages while they fit. If a request exceeds a token or character limit, Keating can shorten passages and remove the fewest whole turns needed, starting with the oldest.</p>
+      <p className={copy}>Current reviews keep the full conversation and search passages while they fit. Keating can split a batch of questions or shorten search passages. When history must shrink, it removes the fewest whole turns needed for the new size estimate and keeps the current message intact.</p>
       {!snapshot.slides?.length ? <EmptyState heading={snapshot.slides ? "This review recorded no context trims." : "Context-trim data is unavailable for this receipt."} />
         : <ul className={copy}>{snapshot.slides.map((slide, index) => <li key={index}>
           {slide.phase}, draft {slide.attempt} · {slide.turnsDropped} {slide.turnsDropped === 1 ? "turn" : "turns"} removed · {format(slide.before.estimatedStateQuestionTokens)} estimated tokens before
           {slide.after ? `, ${format(slide.after.estimatedStateQuestionTokens)} after` : ", next estimate unavailable"}{sourceChanges(slide.before, slide.after)}{retainedExcerpts(slide.after)}
+          {slide.reason === "provider-context-limit" && " · The provider reported a context limit."}
         </li>)}</ul>}
     </details>
     <details><summary className={detail}>Request samples{snapshot.stateHistory && ` (${snapshot.stateHistory.length})`}</summary>

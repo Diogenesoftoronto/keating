@@ -228,6 +228,19 @@ for (const [name, handler] of [["/api/judgement", judgementGateway], ["/api/noto
 				}
 			} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
 		});
+
+		test("keeps a signed gateway's structured context rejection on HTTP 400", async () => {
+			const saved = saveEnv();
+			try {
+				configureAccountGateway();
+				globalThis.fetch = Object.assign(async () => Response.json({ error: { code: "context-limit-exceeded" },
+					message: "private learner echo" }, { status: 400 }), { preconnect: originalFetch.preconnect });
+				const event = requestEvent(); authorize(event);
+				const response = await handler(event) as Response;
+				expect(response.status).toBe(400);
+				expect(await response.json()).toEqual({ error: { code: "context-limit-exceeded" } });
+			} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
+		});
 	});
 }
 
