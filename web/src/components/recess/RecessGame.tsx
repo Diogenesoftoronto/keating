@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import { useMotionAllowed } from "../../design-system/motion";
 import { HABIT_KIT } from "../../keating/habits/quest-catalog";
 import { useKeatingUiSettings } from "../../hooks/use-ui-settings";
 import { recessReviewDraft } from "../../keating/habits/recess-review";
+import { buildChatRecessPack } from "../../keating/habits/recess-lesson";
 import { loadRecessArt, sittingBot } from "./assets";
 import { RecessAudio } from "./engine/audio.js";
 import { Recess } from "./engine/core.js";
@@ -19,7 +20,8 @@ interface Props {
   kit?: readonly string[];
   onEnd(result: RecessResult): void;
   onQuiz(draft: string): void;
-  compilePack?: (signal: AbortSignal, base: RecessPack) => Promise<RecessPack | null>;
+  /** Optional model enrichment of the current chat's pack. It classifies and validates on its own. */
+  compilePack?: (signal: AbortSignal) => Promise<RecessPack | null>;
   /** True while charge is being read or saved; Start waits for it. */
   settlingCharge?: boolean;
   /** Called once, before disposal, when an active run is torn down without a result and spent charge. */
@@ -43,11 +45,16 @@ function practiceWords(text: string) {
   });
 }
 
-function LessonPage({ pack, lesson }: { pack: RecessPack; lesson?: readonly RecessLessonTurn[] }) {
+type LessonSource = "chat" | "practice";
+/** What a run flies over: frozen at launch so a late enrichment can only change the next run. */
+interface RecessSelection { source: LessonSource; pack: RecessPack; lesson?: readonly RecessLessonTurn[] }
+
+function LessonPage({ pack, lesson }: { pack: RecessPack | null; lesson?: readonly RecessLessonTurn[] }) {
+  if (!pack && !lesson?.length) return <p className="recess-prose recess-empty">Nothing has been taught in this chat yet.</p>;
   if (lesson?.length) return lesson.map((row, index) => (
     <p className={row.role === "learner" ? "recess-you" : "recess-prose"} key={index}>{words(row.text)}</p>
   ));
-  return pack.thread?.map((row, index) => {
+  return pack?.thread?.map((row, index) => {
     if ("me" in row) return <p className="recess-you" key={index}>{practiceWords(row.me)}</p>;
     if ("code" in row) return <pre className="recess-code" key={index}>{practiceWords(row.code)}</pre>;
     return <p className="recess-prose" key={index}>{practiceWords(row.k)}</p>;
@@ -170,11 +177,25 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   const [calmChoice, setCalmChoice] = useState(false);
   const calm = calmChoice || !settings.visualEffects || !motionAllowed;
   const [opacity, setOpacity] = useState(36);
+  // Every opening starts on the current chat; authored demos live only under Practice.
+  const [source, setSource] = useState<LessonSource>("chat");
   const [subject, setSubject] = useState("maths");
-  const base = packs[subject];
-  const [personal, setPersonal] = useState<{ pack: RecessPack; lesson: RecessLessonTurn[] } | null>(null);
-  const pack = personal?.pack ?? base;
-  const [compileStatus, setCompileStatus] = useState<"idle" | "compiling" | "unavailable">("idle");
+  // Parents may rebuild the (already bounded) lesson array on every render; key the chat on its full content.
+  const lessonKey = useMemo(() => JSON.stringify(lesson), [lesson]);
+  const lessonRef = useRef(lesson);
+  lessonRef.current = lesson;
+  // The background shows exactly what the builder reads, so its questions point at visible text.
+  const chatLesson = useMemo(() => lessonRef.current, [lessonKey]);
+  const localPack = useMemo(() => buildChatRecessPack(lessonRef.current), [lessonKey]);
+  // An enrichment belongs to one compiler (the parent's account scope) and one lesson; anything else is stale.
+  const [enriched, setEnriched] = useState<{ key: string; compiler: Props["compilePack"]; pack: RecessPack | null } | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const current = enriched && enriched.key === lessonKey && enriched.compiler === compilePack ? enriched : null;
+  const enrichStatus = enriching ? "enriching" : current ? (current.pack ? "done" : "unavailable") : "idle";
+  const chatPack = current?.pack ?? localPack;
+  const selection: RecessSelection | null = source === "practice" ? { source, pack: packs[subject] }
+    : chatPack ? { source, pack: chatPack, lesson: chatLesson } : null;
+  const [frozen, setFrozen] = useState<RecessSelection | null>(null);
   const [status, setStatus] = useState<"idle" | "play" | "outro">("idle");
   const [result, setResult] = useState<RecessResult | null>(null);
   const [failure, setFailure] = useState("");
@@ -190,7 +211,6 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   const shader = useRef<HTMLCanvasElement>(null);
   const engine = useRef<ReturnType<typeof Recess.create> | null>(null);
   const soundEngine = useRef<ReturnType<typeof RecessAudio.create> | null>(null);
-  const compile = useRef<AbortController | null>(null);
   const resize = useRef<ResizeObserver | null>(null);
   const nextHud = useRef(0);
   const returnFocus = useRef(0);
@@ -200,13 +220,14 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   const runCharge = useRef(condition.charge);
   const [art, setArt] = useState<{ key: string; assets: RecessBotArt | null } | null>(null);
   const [canvasGeneration, setCanvasGeneration] = useState(0);
-  const casting = pack.cast ?? pack.id;
+  const inFlight = status !== "idle";
+  const shown = inFlight && frozen ? frozen : selection;
+  const pack = shown?.pack ?? null;
+  const casting = pack ? pack.cast ?? pack.id : "maths";
   const wornKey = kit.join(",");
   const assetsKey = `${skin}/${casting}/${wornKey}`;
   const wornNames = kit.flatMap(id => HABIT_KIT.find(item => item.id === id)?.name ?? []);
   const prepared = art?.key === assetsKey ? art : null;
-  const inFlight = status !== "idle";
-  const compiling = compileStatus === "compiling";
 
   useEffect(() => {
     const root = document.documentElement;
@@ -224,8 +245,22 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
     return () => { active = false; };
   }, [assetsKey, casting, skin, wornKey]);
 
+  // Enrich the current chat once per lesson, in the background. Switching to Practice or closing aborts it.
+  const settled = Boolean(current);
+  useEffect(() => {
+    if (source !== "chat" || !localPack || !compilePack || settled) return;
+    const abort = new AbortController();
+    const settle = (pack: RecessPack | null) => {
+      if (abort.signal.aborted) return;
+      setEnriched({ key: lessonKey, compiler: compilePack, pack });
+      setEnriching(false);
+    };
+    setEnriching(true);
+    compilePack(abort.signal).then(settle, () => settle(null));
+    return () => { abort.abort(); setEnriching(false); };
+  }, [source, lessonKey, localPack, compilePack, settled]);
+
   useEffect(() => () => {
-    compile.current?.abort();
     resize.current?.disconnect();
     // Closing or navigating mid-run never reaches onEnd: settle spent charge once, then dispose.
     const live = engine.current;
@@ -239,25 +274,6 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   }, []);
 
   useEffect(() => { engine.current?.setCalm(calm); }, [calm]);
-
-  async function prepareLesson() {
-    if (!compilePack || compile.current || !lesson.some(item => item.role === "tutor")) return;
-    const abort = new AbortController();
-    compile.current = abort;
-    setCompileStatus("compiling");
-    const excerpt = lesson.slice(-8).map(item => ({ role: item.role, text: item.text.slice(-760) }));
-    try {
-      const custom = await compilePack(abort.signal, base);
-      if (abort.signal.aborted) return;
-      if (!custom) { setCompileStatus("unavailable"); return; }
-      setPersonal({ pack: custom, lesson: excerpt });
-      setCompileStatus("idle");
-    } catch {
-      if (!abort.signal.aborted) setCompileStatus("unavailable");
-    } finally {
-      if (compile.current === abort) compile.current = null;
-    }
-  }
 
   function finish(last: RecessResult) {
     resize.current?.disconnect();
@@ -275,7 +291,7 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
   }
 
   function start() {
-    if (engine.current || !prepared?.assets || !arena.current || !thread.current || !dock.current || !bot.current || !view.current) return;
+    if (engine.current || !selection || !prepared?.assets || !arena.current || !thread.current || !dock.current || !bot.current || !view.current) return;
     const playfield = arena.current;
     const audio = RecessAudio.create();
     try {
@@ -285,6 +301,7 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
       flushSync(() => {
         setFailure("");
         setResult(null);
+        setFrozen(selection);
         runCharge.current = condition.charge;
         setHud({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2, charge: condition.charge });
         setStatus("play");
@@ -293,7 +310,7 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
         ...prepared.assets,
         arena: playfield, thread: thread.current, dock: dock.current, bot: bot.current,
         view: view.current, shader: shader.current, theme: dark ? "term" : "paper",
-        sound: audio, pack, calm, control,
+        sound: audio, pack: selection.pack, calm, control,
         hud: update => {
           const now = performance.now();
           if (now < nextHud.current) return;
@@ -339,32 +356,41 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
     }
   }
 
+  function chatNote() {
+    if (!chatPack) return "No lesson in this chat yet. Ask Keating to teach you something, then come back. Practice has demo lessons.";
+    const short = chatPack.gates.length ? "" : " Short lesson, so no question gates.";
+    if (enrichStatus === "enriching") return `From this chat · ${chatPack.label}. Adding questions. You can start now.${short}`;
+    if (enrichStatus === "done") return `From this chat · ${chatPack.label}, with added questions.${short}`;
+    if (enrichStatus === "unavailable") return `From this chat · ${chatPack.label}, as written.${short}`;
+    return `From this chat · ${chatPack.label}.${short}`;
+  }
+
   return <div className="recess-game" data-theme={dark ? "term" : "paper"} data-phase={status} data-calm={calm}>
     <div className="recess-toolbar">
       <div className="recess-plan">
         <small className="recess-kicker">Flight plan</small>
-        <label className="recess-lesson"><span>Practice lesson</span>
-          <select value={subject} disabled={inFlight || compiling} onChange={event => {
-            setSubject(event.target.value); setPersonal(null); setCompileStatus("idle"); setResult(null); setFailure("");
-          }}>
+        <div className="recess-source" role="group" aria-label="Lesson source">
+          {(["chat", "practice"] as const).map(option => <button type="button" key={option} aria-pressed={source === option}
+            disabled={inFlight} onClick={() => { if (option !== source) { setSource(option); setResult(null); setFailure(""); } }}>
+            <Icon name={option === "chat" ? "chat" : "launch"}/>{option === "chat" ? "This chat" : "Practice"}
+          </button>)}
+        </div>
+        {source === "practice" ? <label className="recess-lesson"><span>Practice category</span>
+          <select value={subject} disabled={inFlight} onChange={event => { setSubject(event.target.value); setResult(null); setFailure(""); }}>
             {options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
           </select>
-        </label>
+        </label> : <p className="recess-source-note" role="status">{chatNote()}</p>}
         <div className="recess-preflight" data-tone={chargeTone(condition.charge)}>
           <span className="recess-charge"><b>Charge</b><span className="recess-charge-bar"><i style={{ width: percent(condition.charge) }} /></span><em>{percent(condition.charge)}</em></span>
-          <small>Firing spends charge. Sparks and charge cells refill it; at zero he flies but can’t fire.</small>
+          <small>Firing spends charge. Sparks and charge cells refill it. At zero he flies but can’t fire.</small>
         </div>
-        {compilePack && lesson.some(row => row.role === "tutor") && <button type="button" className="recess-chat"
-          aria-pressed={!!personal} disabled={inFlight || compiling || !!personal} onClick={() => void prepareLesson()}>
-          <Icon name="chat"/>{compiling ? "Preparing lesson…" : personal ? "Playing from your lesson" : "Use this chat lesson"}
-        </button>}
       </div>
       <div className="recess-controls">
         <button type="button" className="recess-start recess-key" ref={startControl} data-flight={inFlight}
-          disabled={status === "outro" || (!inFlight && (!prepared?.assets || compiling || settlingCharge))}
+          disabled={status === "outro" || (!inFlight && (!selection || !prepared?.assets || settlingCharge))}
           onClick={() => inFlight ? engine.current?.stop() : start()}>
           <Icon name={inFlight ? "stop" : "launch"}/>
-          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !prepared ? "Loading artwork…" : settlingCharge ? "Checking charge…" : result ? "Play again" : "Start Recess"}
+          {inFlight ? (status === "outro" ? "Landing…" : "Stop run") : !selection ? "No lesson yet" : !prepared ? "Loading artwork…" : settlingCharge ? "Checking charge…" : result ? "Play again" : "Start Recess"}
         </button>
         {inFlight && <button type="button" className="recess-eureka recess-key" disabled={status !== "play" || Boolean(wind) || hud.bombs === 0}
           data-live-action="" aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
@@ -396,15 +422,15 @@ export function RecessGame({ lesson, condition, kit = [], onEnd, onQuiz, compile
         }} /> Sound</label>
       </div>
     </details>
-    {compileStatus === "unavailable" && <p className="recess-note" role="status">A lesson pack wasn’t available. You can still play the practice lesson.</p>}
     {failure && <p className="recess-note" role="status">{failure}</p>}
-    {prepared && !prepared.assets && <p className="recess-note" role="status">Recess artwork didn’t load. Choose another lesson to retry.</p>}
+    {prepared && !prepared.assets && <p className="recess-note" role="status">Recess artwork didn’t load. Change the artwork in Flight settings to retry.</p>}
     <div className="recess-stage" style={{ "--lesson-opacity": opacity / 100 } as CSSProperties}>
       <header className="recess-stage-heading">
-        <strong>{pack.title}</strong><span>{personal ? "From your chat" : pack.label}</span>
+        <strong>{pack?.title ?? "This chat"}</strong>
+        <span>{shown?.source === "practice" ? `Practice · ${pack?.label}` : pack ? `From this chat · ${pack.label}` : "From this chat"}</span>
       </header>
       <div ref={arena} className="recess-field" tabIndex={inFlight ? 0 : -1} aria-label="Recess flight area">
-        <div ref={thread} className="recess-page" aria-hidden="true"><LessonPage pack={pack} lesson={personal?.lesson} /></div>
+        <div ref={thread} className="recess-page" aria-hidden="true"><LessonPage pack={pack} lesson={shown ? shown.lesson : source === "chat" ? chatLesson : undefined} /></div>
         <div ref={dock} className="recess-dock" aria-hidden="true">
           <img src={sittingBot} alt="" ref={bot} draggable={false} />
           <span>{inFlight ? "In flight" : "Launch pad"}</span>
