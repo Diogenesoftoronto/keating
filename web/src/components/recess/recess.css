@@ -24,6 +24,9 @@
   --recess-red: #ff6b52;
 }
 
+.recess-flight-panel { display: contents; }
+.recess-keycap { display: none; }
+
 .recess-toolbar {
   display: flex;
   align-items: end;
@@ -493,3 +496,57 @@
 .recess-source button:not([aria-pressed="true"]) .recess-icon { color: var(--recess-green); }
 .recess-source-note { flex: 1 1 100%; margin: 0; color: var(--recess-soft); font-size: .78rem; line-height: 1.4; }
 .recess-page .recess-empty { color: var(--recess-soft); font-style: italic; }
+
+@media (width > 640px) and (height > 500px), (width > 640px) and (pointer: fine) {
+  .recess-game {
+    color: var(--recess-ink);
+    background: var(--recess-paper);
+  }
+  .recess-game[data-phase="idle"] {
+    grid-template-columns: minmax(15rem, 23%) minmax(0, 1fr);
+    gap: 0;
+    border: 1px solid var(--recess-line);
+    border-radius: 4px;
+  }
+  .recess-game[data-phase="idle"] .recess-flight-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: clamp(13px, 1.6vw, 24px);
+    border-inline-end: 1px solid var(--recess-line);
+    background: var(--recess-card);
+  }
+  .recess-game[data-phase="idle"] :is(.recess-toolbar, .recess-plan) { align-items: stretch; gap: 12px; }
+  .recess-game[data-phase="idle"] :is(.recess-plan, .recess-lesson, .recess-controls, .recess-start) { flex: 1 1 100%; }
+  .recess-game[data-phase="idle"] .recess-source button { padding-inline: 6px; white-space: nowrap; }
+  .recess-game[data-phase="idle"] .recess-start { min-height: 48px; }
+  .recess-game[data-phase="idle"] .recess-settings { border-block: 1px solid var(--recess-line); }
+  .recess-game[data-phase="idle"] .recess-note { margin: 0; color: var(--recess-soft); }
+  .recess-game[data-phase="idle"] .recess-stage {
+    display: flex;
+    flex-direction: column;
+    border: 0;
+    border-radius: 0;
+  }
+  .recess-game[data-phase="idle"] .recess-stage-heading { padding: 12px clamp(14px, 2vw, 28px); }
+  .recess-game[data-phase="idle"] .recess-field { contain: size; flex: 1; height: auto; min-height: 20rem; }
+  .recess-game[data-phase="idle"] .recess-page { justify-content: flex-start; padding-block-start: clamp(18px, 4vh, 40px); }
+  .recess-page { width: min(100%, 52rem); margin-inline: auto; }
+  .recess-dock { padding-inline: clamp(12px, 2vw, 28px); }
+  .recess-hud { padding-inline: clamp(12px, 2vw, 28px); font-size: .8rem; }
+}
+
+@media (width > 640px) and (pointer: fine) {
+  .recess-keycap {
+    display: inline-block;
+    margin-inline-start: 5px;
+    padding: 3px 5px;
+    border: 1px solid var(--recess-line);
+    border-radius: 2px;
+    color: var(--recess-soft);
+    background: var(--recess-paper);
+    font: 500 .65rem/1 var(--recess-mono);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+}
