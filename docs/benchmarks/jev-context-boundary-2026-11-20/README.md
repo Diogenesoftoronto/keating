@@ -69,7 +69,7 @@ The only failed review check in that session was `requested_part_missing`. Jev a
 
 ### Testing a wording change
 
-A paired test gave Jev the same full review state and asked both the current and proposed versions of the omission question. The 72,183-character workshop state matched the browser fixture. The cutoff for flagging an omission was 0.60. [Locked comparison, request IDs and seven paired scores](receipts.json)
+A paired test gave Jev the same full review state and asked both the current and proposed versions of the omission question. The 72,183-character workshop state matched the browser fixture. The cutoff for flagging an omission was 0.60. [Reproducible comparison](../../../scripts/context-window/jev-answer-coverage.ts) · [Locked comparison, request IDs and seven paired scores](receipts.json)
 
 | Answer | Current wording | Proposed wording |
 | --- | ---: | ---: |
