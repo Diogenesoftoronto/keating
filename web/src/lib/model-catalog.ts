@@ -1,4 +1,5 @@
-import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
+import type { Api, Model } from "@earendil-works/pi-ai/compat";
+import { getCloudProviderIds } from "./models-dev-catalog";
 import { BROWSER_MODELS, checkWebGpuAvailable } from "../stores/local-model";
 import { loadModelPrefs, shouldShowModelProvider } from "../keating/model-prefs";
 import { isNotOrganicFeatureEnabled, NOTORGANIC_PROVIDER_ID } from "../notorganic-provider";
@@ -38,6 +39,7 @@ const MODEL_PROVIDER_PRIORITY = [
 	"mistral",
 	"groq",
 	"xai",
+	"inception",
 	"openrouter",
 	"amazon-bedrock",
 	"vertex",
@@ -65,6 +67,7 @@ export function displayModelProvider(provider: string): string {
 		groq: "Groq",
 		xai: "xAI",
 		openrouter: "OpenRouter",
+		inception: "Inception",
 		vertex: "Google Vertex",
 	};
 	return labels[provider.toLowerCase()] ?? provider;
@@ -72,7 +75,7 @@ export function displayModelProvider(provider: string): string {
 
 function cloudProviderIds(): Set<string> {
 	return new Set([
-		...getProviders(),
+		...getCloudProviderIds(),
 		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
 	]);
 }

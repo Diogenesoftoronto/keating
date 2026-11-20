@@ -1,5 +1,6 @@
 /** Internal upstream identities. Consumers select roles through the public model configuration. */
 export const MODEL_IDS = {
+  mercury_2: "mercury-2",
   minimax_m2_7_highspeed_discovery: "minimax-m2.7-highspeed",
   minimax_m2_7_highspeed: "MiniMax-M2.7-highspeed",
   minimax_m3: "MiniMax-M3",

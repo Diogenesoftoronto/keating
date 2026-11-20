@@ -1,6 +1,6 @@
 import { ConfirmDialog } from "../design-system/kit";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { getProviders } from "@earendil-works/pi-ai/compat";
+import { getCloudProviderIds } from "../lib/models-dev-catalog";
 import { getAppStorage } from "../keating/app-storage";
 import {
 	addCustomModel,
@@ -140,7 +140,7 @@ export function ProvidersModelsTab() {
 
 	const providers = sortProvidersByPriority(Array.from(new Set([
 		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
-		...getProviders(),
+		...getCloudProviderIds(),
 		...customProviders.map((provider) => provider.name),
 	])));
 

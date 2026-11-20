@@ -22,10 +22,11 @@ export function assertChatProxyTarget(url: URL, development = false, extraOrigin
   if (development && isLocalOrPrivateHostname(url.hostname)) return;
   const configured = extraOrigins.split(",").map(value => value.trim()).filter(Boolean);
   if (configured.some(value => { try { const origin = new URL(value); return origin.protocol === "https:" && origin.href === `${origin.origin}/` && origin.origin === url.origin; } catch { return false; } })) return;
+  const inception = url.href === "https://api.inceptionlabs.ai/v1/chat/completions";
   const ordinary = url.protocol === "https:" && !url.port && HOSTS.has(url.hostname) && API_PATH.test(url.pathname);
   const codex = url.origin === "https://chatgpt.com" && url.pathname === "/backend-api/codex/responses";
   const google = url.origin === "https://generativelanguage.googleapis.com" && /^\/v1(?:beta)?\/models\/[a-zA-Z0-9._-]+:(?:streamGenerateContent|generateContent)$/.test(url.pathname);
-  if (!ordinary && !codex && !google) throw createError({ statusCode: 403, statusMessage: "This provider endpoint is not enabled on this host" });
+  if (!ordinary && !codex && !google && !inception) throw createError({ statusCode: 403, statusMessage: "This provider endpoint is not enabled on this host" });
 }
 
 export const CHAT_PROXY_MAX_BYTES = 8 * 1024 * 1024;
