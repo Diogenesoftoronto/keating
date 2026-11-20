@@ -1102,6 +1102,7 @@ function ChatContent() {
           teachingAdjustment={teachingAdjustment}
           className={cx("chat-page-panel", css({ minWidth: 0, flex: 1 }), canvasEnabled && isWideViewport && artifactBrowserOpen ? css({ minWidth: "22rem" }) : "")}
           speechEnabled={speechEnabled}
+          studyGames={!courseContext}
           initialPrompts={coursePrompts}
           {...(pendingPrompt ? { pendingPrompt } : {})}
           emptyStateTitle={
