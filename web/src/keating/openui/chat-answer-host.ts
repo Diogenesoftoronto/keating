@@ -5,7 +5,7 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { createJudgementOperationCaller } from "../judgement/operation";
 import { createWebJudgementRuntime } from "../judgement/runtime";
 import { loadActiveWork, type ActiveWorkSource } from "../judgement/active-work-host";
-import { previousQuestionPresentation } from "../judgement/previous-question-presentation";
+import { openCardPresentation } from "../judgement/previous-question-presentation";
 import { getDraftQuotes } from "../passage-quote-draft";
 import {
 	attemptChoice,
@@ -51,7 +51,7 @@ export async function answerOpenCardFromComposer(input: {
 		const work = await loadActiveWork(input.storage, sessionId);
 		return await routeTypedAnswer({
 			sessionId, text, messages, work,
-			presentation: (withMessage, current) => previousQuestionPresentation(sessionId, withMessage, current),
+			presentation: (withMessage, current) => openCardPresentation(sessionId, withMessage, current),
 			classify: input.classify ?? browserTypedAnswerClassifier,
 		});
 	} catch {
