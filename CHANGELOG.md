@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.11
+
+- Hosted Jev is recognized again when it reports its router-qualified model name, so feedback, prediction and saved-grade turns get their focused explanation candidate. Graded answers in the web classroom are explained instead of withheld.
+
 ## 4.2.10
 
 - Fixed a 4.2.8 regression: after Keating graded a submitted answer, the follow-up explanation could be withheld because the turn reused its pre-grade plan. Keating now plans again once an answer is graded.
