@@ -38,6 +38,7 @@ import {
   type TeachingPolicyReply,
   type TeachingPolicyTurn,
   type TeachingTriage,
+  type TeachingDraftPlanMemo,
   decideTeachingTriage,
   teachingTriageRequest,
   triageRequiresDraft,
@@ -309,6 +310,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
   let planTurn: { readonly learnerTurns: number; readonly trigger: PlanReviewHostTrigger | null } | null = null;
   // One triage per learner turn, so the tool-loop rounds of a direct turn stay direct.
   let triageTurn: { readonly learnerTurns: number; readonly triage: TeachingTriage } | null = null;
+  // The plan a learner turn made, reused by that turn's tool rounds instead of planning again.
+  let planMemo: { readonly learnerTurns: number; readonly plan: TeachingDraftPlanMemo } | null = null;
   const planReviewTrigger = (context: Context, work: ActiveWork | undefined) => {
     const learnerTurns = context.messages.filter((message) => message.role === "user").length;
     if (planTurn?.learnerTurns === learnerTurns) return planTurn.trigger;
@@ -636,12 +639,29 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       // owns the remaining deadline so it can return an already-reviewed
       // candidate when a later generation runs out of time.
       clearTimeout(timer);
-      if (options.triage !== false) {
-        const fresh = lastMessage?.role === "user" && !priorGrade && !evidence?.submittedComprehension && !confirmedQuestionGrade;
-        const triage = await triageRoute(snapshot, turn, reviewers?.[0] ?? { judge }, ceiling(options, streamOptions), fresh);
-        if (!current()) { publish(safeMessage("", true)); return; }
-        if (triage.route === "direct") { await answerDirectly(triage.reasoning, draftContext, activeWork); return; }
+      // A tool round of a turn already answered directly stays direct, without planning.
+      const learnerCount = snapshot.messages.filter((message) => message.role === "user").length;
+      if (options.triage !== false && triageTurn?.learnerTurns === learnerCount && triageTurn.triage.route === "direct") {
+        await answerDirectly(triageTurn.triage.reasoning, draftContext, activeWork);
+        return;
       }
+      // Triage and planning run together; drafting waits for triage, and a direct answer stops the plan.
+      const drafting = new AbortController();
+      const stopDrafting = () => drafting.abort();
+      controller.signal.addEventListener("abort", stopDrafting, { once: true });
+      if (controller.signal.aborted) stopDrafting();
+      let direct: TeachingTriage | null = null;
+      const fresh = lastMessage?.role === "user" && !priorGrade && !evidence?.submittedComprehension && !confirmedQuestionGrade;
+      const proceed = options.triage === false ? undefined
+        : triageRoute(snapshot, turn, reviewers?.[0] ?? { judge }, ceiling(options, streamOptions), fresh).then(triage => {
+          if (triage.route !== "direct" || !current()) return true;
+          direct = triage;
+          drafting.abort();
+          return false;
+        }, () => true);
+      const learnerTurns = learnerCount;
+      const priorPlan = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused"
+        && planMemo?.learnerTurns === learnerTurns ? planMemo.plan : undefined;
       const hosted = model.provider !== "browser" && model.provider !== DESKTOP_OFFLINE_PROVIDER;
       // A tool round is an intermediate step: one draft, not a comparison, unless research breadth was asked for.
       const toolRound = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused";
@@ -674,8 +694,11 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         onAnswerStage: hosted ? publishAnswerStage : undefined,
         maxReasoning: ceiling(options, streamOptions),
         timeoutMs: Math.max(1, budget - (Date.now() - startedAt)),
-        signal: controller.signal,
-        onProgress: progress,
+        signal: drafting.signal,
+        ...(proceed ? { proceed } : {}),
+        ...(priorPlan ? { priorPlan } : {}),
+        // A turn triaged as direct reports its own progress, not the abandoned plan's.
+        onProgress: snapshot => { if (!direct) progress(snapshot); },
         ...(captureDraftContent ? { onDraftContent: (candidate: import("@keating/learner-contracts").TeachingDraftCandidateText) => {
           if (!current() || options.captureDraftContent?.() !== true) { clearDraftContent(); return; }
           try { options.onDraftContent?.(candidate); } catch { /* Inspection cannot affect publication. */ }
@@ -753,7 +776,11 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           return { reply: policyReply(message), value: message };
         },
       });
+      controller.signal.removeEventListener("abort", stopDrafting);
       if (stopped()) { publish(safeMessage("", true)); return; }
+      const directRoute = direct as TeachingTriage | null;
+      if (directRoute?.route === "direct") { await answerDirectly(directRoute.reasoning, draftContext, activeWork); return; }
+      if (result.plan) planMemo = { learnerTurns, plan: result.plan };
       if (result.status === "released" && result.value && result.reply && current()) {
         const unverified = result.receipt.reason === "best-effort-draft";
         const released = approvedMessage(result.value, result.reply, usage, unverified);

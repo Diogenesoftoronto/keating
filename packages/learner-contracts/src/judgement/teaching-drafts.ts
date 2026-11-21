@@ -7,7 +7,7 @@
  * candidates in two parallel pairs. Other judges keep the ordinary repair loop.
  */
 import { TeachingDraftSession } from "./teaching-drafts/session.js";
-import type { JudgementCaller, JudgementRequest, JudgementUsage } from "./contracts.js";
+import type { JudgementCaller, JudgementOutcome, JudgementRequest, JudgementUsage } from "./contracts.js";
 import type { TeachingPolicyCheck, TeachingPolicyReply, TeachingPolicyTurn } from "./teaching-policy-types.js";
 import type { InteractionFamily, InteractionRecommendation } from "./interaction-affordances.js";
 import type { PlanChangeMode, PlanReview, PlanReviewHostTrigger } from "./plan-review.js";
@@ -237,6 +237,14 @@ export interface TeachingDraftOptions<T> {
   readonly judgementModel?: TeachingDraftReviewer["judgementModel"];
   /** Permitted reviewers in preference order. The reviewer that completes planning also reviews the drafts. */
   readonly reviewers?: readonly TeachingDraftReviewer[];
+  /**
+   * The plan this learner turn already made, for a later tool round of the same turn. Skips the planning
+   * request; the decision is projected again onto the current turn, so new tool results and sources are
+   * still reviewed. Only valid for the same learner message and the same reviewer list.
+   */
+  readonly priorPlan?: TeachingDraftPlanMemo;
+  /** Awaited after planning and before any draft; false ends the session without drafting (cancelled). */
+  readonly proceed?: Promise<boolean>;
   /** Optional transport limit on JSON.stringify(questions).length for each review request. */
   readonly maxQuestionChars?: number;
   readonly fitsWire?: TeachingDraftReviewer["fitsWire"];
@@ -274,7 +282,16 @@ export interface TeachingDraftOptions<T> {
   readonly resources?: SessionResources | null;
 }
 
+/** A completed planning decision, reusable by later rounds of the same learner turn. */
+export interface TeachingDraftPlanMemo {
+  readonly outcome: Extract<JudgementOutcome, { ok: true }>;
+  readonly reviewerIndex: number;
+  readonly checkpointReplyAsked: boolean;
+  readonly planningHadFullHistory: boolean;
+}
 export interface TeachingDraftResult<T> {
+  /** Present when planning succeeded; pass back as priorPlan on this turn's tool rounds. */
+  readonly plan?: TeachingDraftPlanMemo;
   /** Host binds this private selection to the message actually published, never to a draft. */
   readonly activitySelection?: ReleasedActivitySelection;
   readonly status: "released" | "withheld" | "cancelled";

@@ -144,6 +144,24 @@ export const INTERACTION_FEATURE_CASES: readonly TeachingPolicyCase[] = [
   interactionCase("rain-clouds", "development", { learnerMessage: "Do the clouds in the morning tell me whether it will rain later where I live? I want to check for myself." },
     labels(["outside_observation"], ["executable_code", "language_learning", "extended_production"])),
 
+  // Early learning: every labelled case trips the code-owned cue, so the gated question is asked.
+  interactionCase("first-grade-sum", "development", { learnerMessage: "My daughter is in first grade and keeps getting 8 + 5 wrong. How can I help her see it?" },
+    labels(["concrete_quantity"], ["executable_code", "language_learning", "extended_production"])),
+  interactionCase("tens-and-ones", "development", { learnerMessage: "I'm 7. How many tens and ones are in 34?" },
+    labels(["concrete_quantity"], ["executable_code", "language_learning", "outside_observation"])),
+  interactionCase("half-past", "development", { learnerMessage: "We're learning to tell the time at school. What does half past three look like on a clock?" },
+    labels(["concrete_quantity"], ["executable_code", "language_learning", "extended_production"])),
+  interactionCase("half-or-third", "development", { learnerMessage: "Is 1/2 bigger than 1/3? They're both just one piece." },
+    labels(["concrete_quantity", "prediction_opportunity"], ["executable_code", "performed_skill", "language_learning"])),
+  interactionCase("algebraic-fractions", "development", { learnerMessage: "How do I add algebraic fractions like 3/x and 2/(x + 1)?" },
+    labels([], ["concrete_quantity", "performed_skill", "language_learning", "outside_observation"])),
+  interactionCase("matrix-multiplication", "development", { learnerMessage: "Why doesn't matrix multiplication commute?" },
+    labels([], ["concrete_quantity", "performed_skill", "language_learning", "outside_observation"])),
+  interactionCase("sample-variance", "development", { learnerMessage: "For my stats course, why does the denominator of the sample variance use n minus one?" },
+    labels([], ["concrete_quantity", "performed_skill", "language_learning", "outside_observation"])),
+  interactionCase("grade-two-spelling", "development", { learnerMessage: "My son is in grade 2 and needs help spelling 'because'." },
+    labels([], ["concrete_quantity", "executable_code", "variable_relationship"])),
+
   // Holdout
   interactionCase("coffee-frost", "holdout", { learnerMessage: "What happens to the price of coffee if a frost destroys half the harvest?" },
     labels(["variable_relationship", "prediction_opportunity"], ["category_distinction", "untested_coverage", "executable_code", "language_learning", "performed_skill", "outside_observation", "discrete_recall"])),
@@ -215,6 +233,23 @@ export const INTERACTION_FEATURE_CASES: readonly TeachingPolicyCase[] = [
     labels(["extended_production", "executable_code"], ["performed_skill", "language_learning", "outside_observation"])),
   interactionCase("moonrise", "holdout", { learnerMessage: "Does the moon rise at the same time every night where I live? I'd like to see for myself." },
     labels(["outside_observation", "prediction_opportunity"], ["executable_code", "language_learning", "extended_production"])),
+  // Early learning holdout: different quantities, ages and false-positive cues.
+  interactionCase("one-more", "holdout", { learnerMessage: "My son is five. He can count to ten but doesn't get what 'one more' means." },
+    labels(["concrete_quantity"], ["executable_code", "language_learning", "extended_production"])),
+  interactionCase("groups-of-apples", "holdout", { learnerMessage: "How many apples are in 4 groups of 3? I want to count them myself." },
+    labels(["concrete_quantity"], ["executable_code", "language_learning", "outside_observation"])),
+  interactionCase("take-away", "holdout", { learnerMessage: "I'm in second grade. What is 13 take away 6?" },
+    labels(["concrete_quantity"], ["executable_code", "performed_skill", "language_learning"])),
+  interactionCase("pizza-fractions", "holdout", { learnerMessage: "Which is more pizza, three quarters or two thirds?" },
+    labels(["concrete_quantity"], ["executable_code", "performed_skill", "language_learning"])),
+  interactionCase("double-six", "holdout", { learnerMessage: "Why is the chance of rolling two sixes 1/36? Why do we multiply?" },
+    labels([], ["concrete_quantity", "performed_skill", "language_learning", "extended_production"])),
+  interactionCase("fourth-quarter", "holdout", { learnerMessage: "For my accounting exam, how is revenue recognised in the fourth quarter when the contract spans the year end?" },
+    labels([], ["concrete_quantity", "executable_code", "performed_skill", "language_learning"])),
+  interactionCase("carbon-halves", "holdout", { learnerMessage: "My carbon-14 sample halves every 5,730 years. How much is left after three half-lives?" },
+    labels([], ["concrete_quantity", "performed_skill", "language_learning", "outside_observation"])),
+  interactionCase("graduate-daughter", "holdout", { learnerMessage: "My daughter is finishing her economics degree. How do I explain inflation to her in one paragraph?" },
+    labels([], ["concrete_quantity", "executable_code", "performed_skill"])),
 ];
 
 /** Situations where the recommendation should be `none`: a bounded answer is the whole job. */

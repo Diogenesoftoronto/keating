@@ -1,4 +1,4 @@
-import { decideTeachingTriage, teachingTriageRequest, triageRequiresDraft, type TeachingDraftReasoning, type JudgementOutcome } from "@keating/learner-contracts";
+import { decideTeachingTriage, teachingTriageRequest, triageRequiresDraft, type TeachingDraftReasoning, type TeachingDraftPlanMemo, type JudgementOutcome } from "@keating/learner-contracts";
 import { runTeachingDrafts, validateToolCall, projectActiveWork, TUTOR_RATE_LIMIT_REASON, TUTOR_RATE_LIMIT_MESSAGE, describeDecisionPlanningFailure, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
   type JudgementCaller, type PortableLearnerData, type ReleasedActivitySelection, type UiActionJournal, type TeachingDraftOptions,
   type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn, type TeachingDraftRefinement } from "@keating/learner-contracts";
@@ -63,6 +63,7 @@ export function createMobileTeachingDraftRound(options: {
   const openAiToolBatches: { responseId: string; results: ProviderToolResult[] }[] = [];
   // One triage per learner message; tool rounds of a direct turn stay direct.
   let triaged: { readonly messageId: string; readonly direct: TeachingDraftReasoning | null } | undefined;
+  let plannedTurn: { readonly messageId: string; readonly plan: TeachingDraftPlanMemo } | undefined;
   return async (settings, apiKey, messages, providerOptions = {}) => {
     const priorGrade = lastGrade;
     lastGrade = undefined;
@@ -157,41 +158,56 @@ export function createMobileTeachingDraftRound(options: {
     };
     const ceiling: TeachingDraftReasoning = providerOptions.reasoningLevel === "xhigh" ? "high" : providerOptions.reasoningLevel === "minimal" ? "low" : providerOptions.reasoningLevel ?? "off";
     const messageId = messages[latestProvider]?.id;
+    const answerDirectly = async (reasoningLevel: TeachingDraftReasoning) => {
+      // A simple turn streams straight from the tutor; tool calls still need valid arguments.
+      const round = await request(settings, apiKey, messages, { ...providerOptions, tools, reasoningLevel });
+      assertCurrent();
+      options.onReleased(undefined, false);
+      const reply = { text: round.text, toolCalls: round.calls.map(call => ({ name: call.name, arguments: structuredClone(call.arguments) })) };
+      return check(reply).every(entry => entry.status === "pass") ? round : { ...round, calls: [], assistantTurn: null };
+    };
+    let proceed: Promise<boolean> | undefined;
+    let directLevel: TeachingDraftReasoning | null = null;
+    const drafting = new AbortController();
+    const stopDrafting = () => drafting.abort();
+    providerOptions.signal?.addEventListener("abort", stopDrafting, { once: true });
+    if (providerOptions.signal?.aborted) stopDrafting();
     if (options.triage !== false && messageId) {
-      if (triaged?.messageId !== messageId) {
-        let direct: TeachingDraftReasoning | null = null;
-        if (!continuation && !submitted && !feedbackQuestion && !confirmedQuestionGrade && !triageRequiresDraft(turn)) {
-          // Only the preferred reviewer triages; a slow or failed answer drafts.
-          const reviewer = options.reviewers?.[0] ?? { judge: options.judge, maxQuestionChars: options.maxQuestionChars };
-          const triageRequest = teachingTriageRequest(turn);
-          if (reviewer.maxQuestionChars === undefined || JSON.stringify(triageRequest.questions).length <= reviewer.maxQuestionChars) {
+      if (triaged?.messageId === messageId) {
+        if (triaged.direct !== null) return answerDirectly(triaged.direct);
+      } else if (!continuation && !submitted && !feedbackQuestion && !confirmedQuestionGrade && !triageRequiresDraft(turn)) {
+        // Only the preferred reviewer triages, alongside planning; a slow or failed answer drafts.
+        const reviewer = options.reviewers?.[0] ?? { judge: options.judge, maxQuestionChars: options.maxQuestionChars };
+        const triageRequest = teachingTriageRequest(turn);
+        if (reviewer.maxQuestionChars === undefined || JSON.stringify(triageRequest.questions).length <= reviewer.maxQuestionChars) {
+          proceed = (async () => {
             const local = new AbortController();
             const stop = () => local.abort();
             providerOptions.signal?.addEventListener("abort", stop, { once: true });
             const deadline = setTimeout(stop, 6_000);
+            let direct: TeachingDraftReasoning | null = null;
             try {
               const outcome = await Promise.race([currentJudge(reviewer.judge)(triageRequest, local.signal),
                 new Promise<JudgementOutcome>(resolve => local.signal.addEventListener("abort",
                   () => resolve({ ok: false, error: { code: "cancelled", retryable: false } }), { once: true }))]);
               const triage = decideTeachingTriage(outcome, ceiling);
               if (triage.route === "direct") direct = triage.reasoning;
-            } catch (error) { if (error instanceof DOMException && error.name === "AbortError") throw error; }
+            } catch { /* Any triage failure drafts. */ }
             finally { clearTimeout(deadline); providerOptions.signal?.removeEventListener("abort", stop); local.abort(); }
-          }
-        }
-        assertCurrent();
-        triaged = { messageId, direct };
-      }
-      if (triaged.direct !== null) {
-        // A simple turn streams straight from the tutor; tool calls still need valid arguments.
-        const round = await request(settings, apiKey, messages, { ...providerOptions, tools, reasoningLevel: triaged.direct });
-        assertCurrent();
-        options.onReleased(undefined, false);
-        const reply = { text: round.text, toolCalls: round.calls.map(call => ({ name: call.name, arguments: structuredClone(call.arguments) })) };
-        return check(reply).every(entry => entry.status === "pass") ? round : { ...round, calls: [], assistantTurn: null };
-      }
+            if (!options.current() || providerOptions.signal?.aborted) return true;
+            triaged = { messageId, direct };
+            if (direct === null) return true;
+            directLevel = direct;
+            drafting.abort();
+            return false;
+          })();
+        } else triaged = { messageId, direct: null };
+      } else triaged = { messageId, direct: null };
     }
-    const result = await runTeachingDrafts<ProviderRound>({ turn, signal: providerOptions.signal, judgementModel: options.judgementModel,
+    // A tool round of this learner message reuses its plan.
+    const priorPlan = continuation && (options.breadth ?? "focused") === "focused" && plannedTurn?.messageId === messageId ? plannedTurn.plan : undefined;
+    const result = await runTeachingDrafts<ProviderRound>({ turn, signal: drafting.signal,
+      ...(proceed ? { proceed } : {}), ...(priorPlan ? { priorPlan } : {}), judgementModel: options.judgementModel,
       configuredDecisionModel: options.configuredDecisionModel, maxQuestionChars: options.maxQuestionChars,
       ...(submitted ? { submittedComprehension: submitted } : {}),
       judge: currentJudge(options.judge),
@@ -247,6 +263,10 @@ export function createMobileTeachingDraftRound(options: {
         return { value: round, reply: { text: round.text, toolCalls: round.calls.map(call => ({ name: call.name, arguments: structuredClone(call.arguments) })) } };
       },
     });
+    providerOptions.signal?.removeEventListener("abort", stopDrafting);
+    const triagedLevel = directLevel as TeachingDraftReasoning | null;
+    if (triagedLevel !== null) return answerDirectly(triagedLevel);
+    if (result.plan && messageId) plannedTurn = { messageId, plan: result.plan };
     await stageDelivery;
     await stillCurrent();
     if (feedbackQuestion && feedbackCandidateIssued && options.questionJournal) {

@@ -14,7 +14,7 @@ export function describeTeachingPolicy(): string {
     ...TEACHING_POLICY_DECISIONS.map((entry) => `| ${entry.id} | ${cell(question(entry.question.instructions))} | ${cell(entry.directive)} | ${entry.source} |`), "",
     "## Interaction features", "", "Properties of the material, asked in the same input request. Code maps true features to OpenUI components (`interaction-affordances.ts`); the judge never sees component names.", "",
     "| ID | Question | Purpose | Source |", "| --- | --- | --- | --- |",
-    ...TEACHING_INTERACTION_FEATURES.map((entry) => `| ${entry.id} | ${cell(question(entry.question.instructions))} | ${cell(entry.purpose)} | ${entry.source} |`), "",
+    ...TEACHING_INTERACTION_FEATURES.map((entry) => `| ${entry.id}${entry.askWhen ? ` (asked only with ${entry.askWhen})` : ""} | ${cell(question(entry.question.instructions))} | ${cell(entry.purpose)} | ${entry.source} |`), "",
     "## Plan review questions", "", "Asked in the same input request only when the learner has a plan with a current focus. Code reads the answers only when a plan review is triggered (a graded attempt, a stalled item, a pacing request or a new goal) and turns them into one proposal; the learner decides, and nothing changes the plan automatically (`plan-review.ts`).", "",
     "| ID | Question |", "| --- | --- |",
     ...TEACHING_PLAN_REVIEW_QUESTIONS.map((entry) => `| ${entry.id} | ${cell(question(entry.question.instructions))} |`), "",

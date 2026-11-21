@@ -50,12 +50,18 @@ export interface TeachingInteractionFeatureDefinition {
   readonly question: NoulQuestion;
   /** Code-owned reason a matching activity helps; shown to the tutor, never to the judge. */
   readonly purpose: string;
+  /**
+   * Ask only when this code-owned cue holds for the turn. A turn without the
+   * cue sends the same planning request as before the feature existed, so
+   * recorded evidence for such turns stays replayable. Unasked means unknown.
+   */
+  readonly askWhen?: "early_learning_cue";
 }
 
 const featureContext = "Considering `turn.learnerMessage`, only the relevant part of `turn.conversation`, and `turn.activeWork.focus` when present: ";
 
-function feature(id: string, proposition: string, purpose: string): TeachingInteractionFeatureDefinition {
-  return { id, source: "web/src/keating/openui/library.tsx#componentGroups", question: { type: "noul", instructions: `${featureContext}${proposition}${boundary}` }, purpose };
+function feature(id: string, proposition: string, purpose: string, askWhen?: TeachingInteractionFeatureDefinition["askWhen"]): TeachingInteractionFeatureDefinition {
+  return { id, source: "web/src/keating/openui/library.tsx#componentGroups", question: { type: "noul", instructions: `${featureContext}${proposition}${boundary}` }, purpose, ...(askWhen ? { askWhen } : {}) };
 }
 
 /**
@@ -77,6 +83,7 @@ export const TEACHING_INTERACTION_FEATURES: readonly TeachingInteractionFeatureD
   feature("visual_reference", "Would the material be hard to convey precisely without an image, such as anatomy, geography, a diagram, or an artwork?", "show the visual the explanation depends on"),
   feature("extended_production", "Does the learner's goal require producing an extended piece of work, such as an essay, proof, project, or report?", "set up the extended piece of work"),
   feature("outside_observation", "Does the question require observing or collecting information outside the chat?", "send the learner to observe or collect evidence"),
+  feature("concrete_quantity", "Is the learner a young child or just starting with number, working on counting, adding or taking away, place value, equal groups, simple fractions, or telling time, where a picture of the actual quantities would help more than symbols? Arithmetic used as a step in more advanced work is insufficient.", "let the learner see and work the quantities in a concrete model", "early_learning_cue"),
   feature("untested_coverage", "Does the relevant conversation, active work, or the learner's account identify material already studied whose recall or application they now want to check, or that they have not yet been asked to practise? A topic mentioned for the first time without evidence of study is insufficient.", "check recall of material already studied"),
 ];
 

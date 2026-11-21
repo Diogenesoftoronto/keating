@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { ActiveWork } from "../src/judgement/active-work.js";
-import { INTERACTION_AFFORDANCES, interactionDirectives, recommendInteraction } from "../src/judgement/interaction-affordances.js";
+import { EARLY_LEARNING_COMPONENTS, INTERACTION_AFFORDANCES, interactionDirectives, recommendInteraction } from "../src/judgement/interaction-affordances.js";
+import { earlyLearningCue } from "../src/judgement/early-learning-cues.js";
 import { projectTeachingPolicyDecision, teachingPolicyDecisionRequest } from "../src/judgement/teaching-policy.js";
 import { interactionSummary } from "../src/judgement/teaching-drafts/policy.js";
 import { TEACHING_INTERACTION_FEATURES, TEACHING_POLICY_DECISIONS } from "../src/judgement/teaching-policy-catalog.js";
@@ -26,6 +27,7 @@ describe("interaction affordance table", () => {
     [["category_distinction"], "question", ["Question"]],
     [["ordered_procedure"], "question", ["Question"]],
     [["learner_response_due"], "question", ["Question"]],
+    [["concrete_quantity"], "early", ["NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock"]],
     [["discrete_recall", "untested_coverage"], "retrieval", ["Quiz", "Flashcards"]],
     [["language_learning"], "retrieval", ["LanguagePractice"]],
     [["variable_relationship"], "manipulable", ["Simulation"]],
@@ -371,5 +373,64 @@ describe("interaction feature fixtures", () => {
       const labeled = Object.fromEntries(Object.entries(entry.expectedDecisions).map(([key, value]) => [key, value ? true : false]));
       expect(recommendInteraction({ ...allFalse, ...labeled }, teaching).action).toBe("none");
     }
+  });
+});
+
+describe("gated early-learning feature", () => {
+  const base: TeachingPolicyTurn = { learnerMessage: "", conversation: [], learnerEvidence: [], availableTools: [], toolResults: [], sources: [], assessment: "none", improvementRuns: 0, domain: "general" };
+  const answered = (request: JudgementRequest, scores: Record<string, number>): JudgementOutcome => ({ ok: true, response: {
+    backend: { backend: "fixture", model: "fixture-v1", calibrationSha256: null },
+    answers: Object.fromEntries(Object.keys(request.questions).map((id) => [id, { type: "noul" as const, noul: scores[id] ?? 0.01 }])),
+  } });
+
+  test("the question is asked only when a code-owned cue holds", () => {
+    for (const learnerMessage of [
+      "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+      "I know the steps for making a bar chart but I mix up the sequence.",
+      "In addition, how do I count the bike traffic on my street?",
+      "Explain division.",
+      "What happened on 11/20/2026?",
+    ]) expect({ learnerMessage, asked: "concrete_quantity" in teachingPolicyDecisionRequest({ ...base, learnerMessage }).questions }).toEqual({ learnerMessage, asked: false });
+    for (const turn of [
+      { ...base, learnerMessage: "What is 7 + 6?" },
+      { ...base, learnerMessage: "Is 3/4 more than 2/3?" },
+      { ...base, learnerMessage: "How do I read quarter past on a clock?" },
+      { ...base, learnerMessage: "Can we do another one?", conversation: [{ role: "assistant" as const, content: "Let's make ten with 8 and 5." }] },
+      { ...base, learnerMessage: "Can you help with homework?", learnerEvidence: [{ kind: "profile", content: "Learner is a 6-year-old in first grade." }] },
+      { ...base, learnerMessage: "Next?", activeWork: work({ focus: { itemId: "pv", title: "Place value to 100", outcomes: [], dependsOn: [], evidence } }) },
+    ]) expect(earlyLearningCue(turn) && "concrete_quantity" in teachingPolicyDecisionRequest(turn).questions).toBe(true);
+  });
+
+  test("every labelled fixture case asks the gated question it labels", () => {
+    for (const entry of INTERACTION_FEATURE_CASES) {
+      if (!("concrete_quantity" in entry.expectedDecisions)) continue;
+      expect({ id: entry.id, asked: "concrete_quantity" in teachingPolicyDecisionRequest(entry.turn).questions }).toEqual({ id: entry.id, asked: true });
+    }
+  });
+
+  test("a true answer offers the early family first and the directive names its components", () => {
+    const turn = { ...base, learnerMessage: "My daughter is in first grade. What is 8 + 5?" };
+    const plan = projectTeachingPolicyDecision(turn, answered(teachingPolicyDecisionRequest(turn), { learning_task: .95, concrete_quantity: .95, prediction_opportunity: .95 }));
+    expect(plan.interaction.action).toBe("create");
+    expect(plan.interaction.families.map(({ family }) => family)).toEqual(["early", "question"]);
+    expect(plan.interaction.families[0]!.components).toEqual([...EARLY_LEARNING_COMPONENTS]);
+    const text = plan.directives.join(" ");
+    for (const component of EARLY_LEARNING_COMPONENTS) expect(text).toContain(component);
+    expect(text).toContain("see and work the quantities in a concrete model");
+    expect(text).toContain("do not give the answer");
+  });
+
+  test("an unasked gated feature stays unknown even when a backend volunteers an answer", () => {
+    const turn = { ...base, learnerMessage: "Explain photosynthesis." };
+    const request = teachingPolicyDecisionRequest(turn);
+    expect(request.questions.concrete_quantity).toBeUndefined();
+    const volunteered = answered({ ...request, questions: { ...request.questions, concrete_quantity: { type: "noul", instructions: "x" } } }, { learning_task: .95, concrete_quantity: .99 });
+    const plan = projectTeachingPolicyDecision(turn, volunteered);
+    expect(plan.interaction.families.some(({ family }) => family === "early")).toBe(false);
+  });
+
+  test("an assessment opt-out keeps the model as a picture but drops the question", () => {
+    const rec = recommendInteraction(features("concrete_quantity", "prediction_opportunity"), { learning_task: true, assessment_declined: true });
+    expect(rec.families.map(({ family }) => family)).toEqual(["early"]);
   });
 });
