@@ -173,31 +173,57 @@ function openDpopDatabase(): Promise<IDBDatabase> {
 	});
 }
 
+async function readDpopKey(database: IDBDatabase): Promise<CryptoKeyPair | undefined> {
+	return await new Promise<CryptoKeyPair | undefined>((resolve, reject) => {
+		const request = database.transaction(DPOP_STORE, "readonly").objectStore(DPOP_STORE).get(DPOP_KEY);
+		request.onsuccess = () => resolve(request.result as CryptoKeyPair | undefined);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+let dpopKeyPair: Promise<CryptoKeyPair> | null = null;
+
+/**
+ * One device key per browser profile. Concurrent first uses (sign-in sends several signed requests at once,
+ * possibly from several tabs) must not each create a key: a token bound to a key that a later write replaced
+ * fails its first refresh with 401 and signs the learner out.
+ */
 async function loadOrCreateDpopKey(): Promise<CryptoKeyPair> {
 	if (typeof indexedDB === "undefined") {
 		throw new NotOrganicPublicClientError("Not Organic browser sign-in requires IndexedDB for its device-bound key.");
 	}
-	const database = await openDpopDatabase();
-	try {
-		const existing = await new Promise<CryptoKeyPair | undefined>((resolve, reject) => {
-			const request = database.transaction(DPOP_STORE, "readonly").objectStore(DPOP_STORE).get(DPOP_KEY);
-			request.onsuccess = () => resolve(request.result as CryptoKeyPair | undefined);
-			request.onerror = () => reject(request.error);
-		});
-		if (existing) return existing;
-		const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, false, ["sign", "verify"]);
-		await new Promise<void>((resolve, reject) => {
-			const request = database.transaction(DPOP_STORE, "readwrite").objectStore(DPOP_STORE).put(pair, DPOP_KEY);
-			request.onsuccess = () => resolve();
-			request.onerror = () => reject(request.error);
-		});
-		return pair;
-	} finally {
-		database.close();
-	}
+	dpopKeyPair ??= (async () => {
+		const database = await openDpopDatabase();
+		try {
+			const existing = await readDpopKey(database);
+			if (existing) return existing;
+			const create = async () => {
+				// Another tab may have created the key while this one waited for the lock.
+				const created = await readDpopKey(database);
+				if (created) return created;
+				const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, false, ["sign", "verify"]);
+				await new Promise<void>((resolve, reject) => {
+					const request = database.transaction(DPOP_STORE, "readwrite").objectStore(DPOP_STORE).add(pair, DPOP_KEY);
+					request.onsuccess = () => resolve();
+					request.onerror = () => reject(request.error);
+				}).catch(async error => {
+					// add() refuses to overwrite: if a key appeared in between, use that one.
+					if (await readDpopKey(database)) return;
+					throw error;
+				});
+				return (await readDpopKey(database)) ?? pair;
+			};
+			const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+			return locks ? await locks.request("keating-notorganic-dpop-key", create) : await create();
+		} finally {
+			database.close();
+		}
+	})().catch(error => { dpopKeyPair = null; throw error; });
+	return await dpopKeyPair;
 }
 
 async function deleteDpopKey(): Promise<void> {
+	dpopKeyPair = null;
 	if (typeof indexedDB === "undefined") return;
 	const database = await openDpopDatabase();
 	try {
