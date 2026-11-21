@@ -3,7 +3,10 @@ import type { CodePracticeLanguage } from "./code-practice-language.js";
 import { TEACHING_INTERACTION_FEATURES } from "./teaching-policy-catalog.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
-export type InteractionFamily = "question" | "retrieval" | "manipulable" | "workspace" | "away" | "perform";
+export type InteractionFamily = "question" | "early" | "retrieval" | "manipulable" | "workspace" | "away" | "perform";
+
+/** The "Early learning" group in `web/src/keating/openui/library.tsx`: one contract node, six models. */
+export const EARLY_LEARNING_COMPONENTS = ["NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock"] as const;
 
 export const INTERACTION_REASONS = ["requested-variable-exploration", "not-learning", "learning-uncertain", "plain-reply", "assessment-declined", "no-supported-family"] as const;
 export type InteractionReason = typeof INTERACTION_REASONS[number];
@@ -47,6 +50,7 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "question", components: ["Question"], features: ["category_distinction"], practice: true },
   { family: "question", components: ["Question"], features: ["ordered_procedure"], note: "an ordering question", practice: true },
   { family: "question", components: ["Question"], features: ["learner_response_due"], practice: true },
+  { family: "early", components: EARLY_LEARNING_COMPONENTS, features: ["concrete_quantity"], practice: true },
   { family: "retrieval", components: ["Quiz", "Flashcards"], features: ["discrete_recall", "untested_coverage"], practice: true },
   { family: "retrieval", components: ["LanguagePractice"], features: ["language_learning"], practice: true },
   { family: "manipulable", components: ["Simulation"], features: ["variable_relationship"], practice: "hands_on_requested" },
@@ -62,10 +66,15 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "away", components: ["Fieldwork"], features: ["outside_observation"], practice: "hands_on_requested" },
 ];
 
-/** UI node types that can be continued, by the family that would create them. */
+/**
+ * UI node types that can be continued, by the family that would create them.
+ * Only assessable nodes (`ASSESSABLE_COMPONENTS` in active-work.ts) are ever
+ * open. A shared manipulative, like a shared simulation, records no question
+ * check, so it never awaits and is not continuable.
+ */
 const CONTINUABLE: Readonly<Record<string, InteractionFamily>> = { question: "question", "question-group": "question", quiz: "retrieval" };
 
-const FAMILY_ORDER: readonly InteractionFamily[] = ["question", "retrieval", "manipulable", "perform", "workspace", "away"];
+const FAMILY_ORDER: readonly InteractionFamily[] = ["early", "question", "retrieval", "manipulable", "perform", "workspace", "away"];
 
 type Flags = Readonly<Record<string, boolean | null>>;
 
@@ -79,7 +88,8 @@ export interface InteractionContext {
   readonly assessment?: TeachingPolicyTurn["assessment"];
 }
 
-const explanationComponents = new Set(["Simulation", "ConceptMap", "LearningImage", "Diagram"]);
+// An Early learning model without a prompt is a picture the tutor talks over, so it survives an assessment opt-out.
+const explanationComponents = new Set<string>(["Simulation", "ConceptMap", "LearningImage", "Diagram", ...EARLY_LEARNING_COMPONENTS]);
 
 function requestedVariableExploration(features: Flags, decisions: Flags, context: InteractionContext): boolean {
   if (features.hands_on_requested !== true || features.variable_relationship !== true) return false;
@@ -192,7 +202,10 @@ export function interactionDirectives(recommendation: InteractionRecommendation,
   if (recommendation.families.some(({ components }) => components.includes("Lab"))) {
     directives.push("Use Lab when you can check a systems program's output, a sequence of MIDI notes, or a numeric sensor reading. Supply the adapter, observable checkpoints and a hint for each tricky step. For a physical skill outside these capabilities choose an appropriate recording or fieldwork action.");
   }
-  if (recommendation.families.some(({ family }) => family === "manipulable" || family === "workspace" || family === "perform")) {
+  if (recommendation.families.some(({ family }) => family === "early")) {
+    directives.push("For an Early learning model, pick the one that matches the idea: NumberLine for counting on or back and adding or subtracting as hops; TenFrame for numbers to 20 and making ten; PlaceValue for hundreds, tens and ones; FractionBars for equal parts and comparing fractions; CountingArray for counting a set, equal groups and multiplication; Clock for telling time. Give it a prompt only when the learner should work the model and share where they ended; then end the reply after it and do not give the answer. Without a prompt it is a picture to talk over.");
+  }
+  if (recommendation.families.some(({ family }) => family === "early" || family === "manipulable" || family === "workspace" || family === "perform")) {
     directives.push("If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.");
   }
   if (recommendation.families.some(({ family }) => WAITS.has(family))) {

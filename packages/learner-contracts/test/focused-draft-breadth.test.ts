@@ -53,3 +53,27 @@ test("focused breadth caps ordinary repairs at three attempts", async () => {
   expect(attempts.length).toBeLessThanOrEqual(3);
   expect(result.receipt.maxAttempts).toBeLessThanOrEqual(3);
 });
+
+test("a prior plan skips the planning request and still reviews the new draft", async () => {
+  const requests: string[][] = [];
+  const record = async (request: JudgementRequest) => { requests.push(Object.keys(request.questions)); return judge(request); };
+  const first = await runTeachingDrafts({ turn, ruleIds: [], breadth: "focused", judge: record, generate: async ({ attempt }) => generated(attempt) });
+  expect(first.plan).toBeDefined();
+  const planned = requests.filter(keys => keys.includes("draft_standard")).length;
+  expect(planned).toBe(1);
+  requests.length = 0;
+  const later = await runTeachingDrafts({ turn: { ...turn, toolResults: [{ name: "lookup", status: "success", content: "observed" }] },
+    ruleIds: [], breadth: "focused", priorPlan: first.plan, judge: record, generate: async ({ attempt }) => generated(attempt) });
+  expect(later.status).toBe("released");
+  expect(requests.some(keys => keys.includes("draft_standard"))).toBe(false);
+  expect(requests.length).toBeGreaterThan(0);
+  expect(later.receipt.judgeModel).toBe(jev.model);
+});
+
+test("proceed=false ends the session after planning without drafting", async () => {
+  const attempts: number[] = [];
+  const result = await runTeachingDrafts({ turn, ruleIds: [], breadth: "focused", judge, proceed: Promise.resolve(false),
+    generate: async ({ attempt }) => { attempts.push(attempt); return generated(attempt); } });
+  expect(result.status).toBe("cancelled");
+  expect(attempts).toEqual([]);
+});

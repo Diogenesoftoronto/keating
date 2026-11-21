@@ -54,7 +54,9 @@ describe("draft triage route", () => {
     const events: AssistantMessageEvent[] = [];
     for await (const event of stream) events.push(event);
     const result = await stream.result();
-    expect(calls).toHaveLength(1);
+    // Planning may start alongside triage, but nothing is drafted or reviewed.
+    expect(calls.filter(request => "draft_needed" in request.questions)).toHaveLength(1);
+    expect(calls.some(request => "reply" in (request.state as object))).toBe(false);
     expect(actorOptions).toHaveLength(1);
     expect((actorOptions[0] as { reasoning?: string }).reasoning).toBeUndefined();
     expect(result.stopReason).toBe("stop");
@@ -79,5 +81,27 @@ describe("draft triage route", () => {
     });
     await (await gate(MODEL, context("hi"))).result();
     expect(calls.every(request => !("draft_needed" in request.questions))).toBe(true);
+  });
+
+  test("a tool round reuses the turn's plan instead of planning again", async () => {
+    const calls: JudgementRequest[] = [];
+    let round = 0;
+    const toolCall = { type: "toolCall" as const, id: "call-1", name: "lookup", arguments: { q: "x" } };
+    const first: AssistantMessage = { ...reply("Let me check."), content: [{ type: "text", text: "Let me check." }, toolCall], stopReason: "toolUse" };
+    const gate = withTeachingDraftGate((() => streamed(round++ === 0 ? first : reply("Here it is."))) as StreamFn, {
+      sessionId: "triage-tool-round", basePrompt: () => BASE, makeCaller: () => triageJudge(0.9, 2, calls),
+    });
+    const tools = [{ name: "lookup", description: "Look something up", parameters: { type: "object", properties: { q: { type: "string" } }, required: ["q"] } }];
+    const start: Context = { ...context("Look up the boiling point of ethanol and explain it."), tools: tools as Context["tools"] };
+    const firstResult = await (await gate(MODEL, start)).result();
+    expect(firstResult.stopReason).toBe("toolUse");
+    const planned = calls.filter(request => "draft_standard" in request.questions).length;
+    expect(planned).toBe(1);
+    const next: Context = { ...start, messages: [...start.messages, firstResult,
+      { role: "toolResult", toolCallId: "call-1", toolName: "lookup", content: [{ type: "text", text: "78.37 °C" }], isError: false, timestamp: 3 }] };
+    const second = await (await gate(MODEL, next)).result();
+    expect(second.stopReason).toBe("stop");
+    expect(calls.filter(request => "draft_standard" in request.questions)).toHaveLength(planned);
+    expect(calls.filter(request => "draft_needed" in request.questions)).toHaveLength(1);
   });
 });

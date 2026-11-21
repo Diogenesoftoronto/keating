@@ -18,7 +18,12 @@ describe("teaching policy composition", () => {
   test("independent input questions share a valid bounded request", () => {
     const request = teachingPolicyDecisionRequest(turn);
     expect(judgementRequestProblem(request)).toBeNull();
-    expect(Object.keys(request.questions)).toHaveLength(TEACHING_POLICY_DECISIONS.length + TEACHING_INTERACTION_FEATURES.length);
+    const ungated = TEACHING_INTERACTION_FEATURES.filter(({ askWhen }) => !askWhen);
+    expect(Object.keys(request.questions)).toHaveLength(TEACHING_POLICY_DECISIONS.length + ungated.length);
+    // A cue opens the gated questions; the request stays within bounds with all of them.
+    const cued = teachingPolicyDecisionRequest({ ...turn, learnerMessage: "My son is six. How do I explain 12 divided by 3?" });
+    expect(judgementRequestProblem(cued)).toBeNull();
+    expect(Object.keys(cued.questions)).toHaveLength(TEACHING_POLICY_DECISIONS.length + TEACHING_INTERACTION_FEATURES.length);
     expect(new Set(TEACHING_POLICY_RULES.map(({ id }) => id)).size).toBe(TEACHING_POLICY_RULES.length);
     expect(TEACHING_POLICY_RULES.every(({ question }) => question.type === "noul")).toBe(true);
   });

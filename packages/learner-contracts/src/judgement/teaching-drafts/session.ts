@@ -3,7 +3,7 @@ import { DEFAULT_MODELS, hostedJudgementTokenLimits } from "../../../../runtime-
 import type { JudgementUsage } from "../contracts.js";
 import type { ChoiceAnswer, ChoiceQuestion, JudgementAnswer, JudgementBackendKey, JudgementOutcome, JudgementRequest } from "../contracts.js";
 import type { TeachingPolicyCheck, TeachingPolicyPlan, TeachingPolicyReply, TeachingPolicyTurn } from "../teaching-policy-types.js";
-import type { TeachingDraftFeedback, TeachingDraftFinalComparison, TeachingDraftOptions, TeachingDraftResult, TeachingDraftSnapshot, TeachingDraftGenerationInput, TeachingDraftReviewer } from "../teaching-drafts.js";
+import type { TeachingDraftFeedback, TeachingDraftFinalComparison, TeachingDraftOptions, TeachingDraftPlanMemo, TeachingDraftResult, TeachingDraftSnapshot, TeachingDraftGenerationInput, TeachingDraftReviewer } from "../teaching-drafts.js";
 import type { BackgroundActivityPolicy } from "../background-activity-policy.js";
 import type { DraftCandidate } from "./policy.js";
 import type { TeachingDraftSelectionRule } from "../teaching-selection.js";
@@ -195,6 +195,7 @@ export class TeachingDraftSession<T> {
   private removedProseForPrediction = false;
   private pairReviews?: TeachingDraftPairReview[];
   private decisionFailure?: DecisionPlanningFailure;
+  private planMemo?: TeachingDraftPlanMemo;
   private finalComparison?: TeachingDraftFinalComparison;
   private parallelAttempts?: readonly [number, number];
   private repairSourceAttempt?: number;
@@ -238,7 +239,7 @@ export class TeachingDraftSession<T> {
 
   private result(status: TeachingDraftResult<T>["status"], value?: T, reply?: TeachingPolicyReply): TeachingDraftResult<T> {
     this.publish(status);
-    return { status, ...(status === "released" ? { value, reply: structuredClone(reply),
+    return { status, ...(this.planMemo ? { plan: structuredClone(this.planMemo) } : {}), ...(status === "released" ? { value, reply: structuredClone(reply),
       ...(this.context.activitySelection ? { activitySelection: structuredClone(this.context.activitySelection) } : {}) } : {}), receipt: { ...this.snapshot(), version: TEACHING_POLICY_VERSION,
       calibration: "uncalibrated", qualityThreshold: qualityFloors[this.context.standard], judgeUsage: this.context.usage, selectorProbabilities: this.context.selectorProbabilities, selectionCandidateAttempts: this.context.selectionCandidateAttempts, selectionOmittedForBudget: this.context.selectionOmittedForBudget } };
   }
@@ -382,6 +383,8 @@ export class TeachingDraftSession<T> {
     try {
       planned = await this.plan();
       if (!planned) return this.result("withheld");
+      // A host may still be deciding whether this turn needs drafting at all.
+      if (this.options.proceed && !(await this.options.proceed)) return this.result("cancelled");
       if (this.pairReviews) await this.pairedAttempts(planned);
       else await this.draftAttempts(planned);
       return await this.selectAndRelease(planned);
@@ -400,14 +403,18 @@ export class TeachingDraftSession<T> {
     const planningStarted = this.context.now();
     const tokenLimit = (value: number | null | undefined) => value && Number.isSafeInteger(value) && value > 0 ? value : null;
     try {
-      for (const reviewer of this.options.reviewers?.length ? this.options.reviewers : [this.options]) {
+      const reviewers = this.options.reviewers?.length ? this.options.reviewers : [this.options];
+      const prior = this.options.priorPlan;
+      for (const [index, reviewer] of reviewers.entries()) {
+        // A reused plan stays with the reviewer that made it, so its identity still pins every review.
+        if (prior && index !== prior.reviewerIndex) continue;
         this.context.controller.signal.throwIfAborted();
         this.reviewer = reviewer;
         this.context.requestTokens = tokenLimit(reviewer.judgementModel?.requestTokens);
         this.context.stateQuestionTokens = tokenLimit(reviewer.judgementModel?.stateQuestionTokens);
         this.context.judgeIdentity = null;
         this.context.judgeModel = null;
-        const planned = await this.planWithReviewer(reviewer.judgementModel?.id);
+        const planned = await this.planWithReviewer(reviewer.judgementModel?.id, index);
         if (planned) {
           this.decisionFailure = undefined;
           this.context.reason = null;
@@ -419,8 +426,15 @@ export class TeachingDraftSession<T> {
     } finally { this.context.planningMs = this.context.now() - planningStarted; }
   }
 
-  private async planWithReviewer(modelId: string | undefined): Promise<DraftPlan | null> {
-    const planning = await this.judgeWindow({ ...this.context }, (currentTurn) => {
+  private async planWithReviewer(modelId: string | undefined, reviewerIndex: number): Promise<DraftPlan | null> {
+    const prior = this.options.priorPlan;
+    if (prior) {
+      this.context.judgeIdentity = JSON.stringify(prior.outcome.response.backend);
+      this.context.judgeModel = prior.outcome.response.backend.model;
+    }
+    const planning = prior ? { outcome: prior.outcome as JudgementOutcome, turn: this.context.turn,
+      request: prior.checkpointReplyAsked ? { state: {}, questions: { checkpoint_reply_mode: checkpointReplyMode } } : undefined }
+      : await this.judgeWindow({ ...this.context }, (currentTurn) => {
       const input = teachingPolicyDecisionRequest(currentTurn);
       return { ...input, questions: { ...input.questions,
         ...Object.fromEntries(reasoningQuestions.map(({ id, question }) => [id, currentTurn.earlierLearnerExcerpts?.length
@@ -442,6 +456,9 @@ export class TeachingDraftSession<T> {
     const chosenStandard = selected(decision, "draft_standard", standardQuestion);
     if (chosenEffort) this.context.reasoning = effort[Math.min(this.context.ceiling, effort.indexOf(chosenEffort as TeachingDraftReasoning))]!;
     if (chosenStandard && Object.hasOwn(standardInstructions, chosenStandard)) this.context.standard = chosenStandard as TeachingDraftStandard;
+    this.planMemo = { outcome: structuredClone(decision), reviewerIndex,
+      checkpointReplyAsked: Boolean(decisionRequest?.questions.checkpoint_reply_mode),
+      planningHadFullHistory: prior ? prior.planningHadFullHistory : planning.turn.conversation.length === this.context.turn.conversation.length };
     const observations = projectActivityObservations(planning.turn, decision);
     const guided = applyBackgroundActivityGuidance(
       projectTeachingPolicyDecision(planning.turn, decision, { planReview: this.options.planReview ?? null, ...(this.options.planChanges ? { planChanges: this.options.planChanges } : {}), resources: this.options.resources ?? null }),
@@ -487,7 +504,7 @@ export class TeachingDraftSession<T> {
     const reviewScope = {
       domain: this.context.turn.domain === "unknown" && plan.features.executable_code === true ? "code" as const : this.context.turn.domain,
       researchRequired: plan.decisions.fresh_sources_needed !== false,
-      planningHadFullHistory: planning.turn.conversation.length === this.context.turn.conversation.length,
+      planningHadFullHistory: prior ? prior.planningHadFullHistory : planning.turn.conversation.length === this.context.turn.conversation.length,
       ...(plan.resourceReview?.gap === "retrieval" ? { practiceInvited: true } : {}),
     };
     this.context.interaction = interactionSummary(plan, paired);
