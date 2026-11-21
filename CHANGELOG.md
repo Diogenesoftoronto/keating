@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.7
+
+- Recess has new bosses and minibosses, each with its own scene, attack patterns and tells, plus rival encounters, bombs, trick shots and gentler aim assist. Two-finger touch gestures work during flight.
+- On phones the thinking level lives in the top bar's model picker instead of the composer, and the composer and bottom tab bar are tidier. Voice mode works again on phones.
+- The chat header names a thinking level only when you chose to set it yourself; otherwise Jev picks it per turn.
+
 ## 4.2.6
 
 - Simple messages get a direct reply. Before drafting, Jev makes one small check: does this turn need a planned and reviewed reply, and how much thinking does it need? A greeting, a thanks or a short familiar fact now streams straight from the tutor at the chosen thinking level. Grading, open activities, practice and anything Jev is unsure about still go through the full review. Settings' review panel labels these turns "answered directly".
