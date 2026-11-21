@@ -16,6 +16,7 @@ import type { TeachingPolicyTurn } from "../teaching-policy-types.js";
 import type { TeachingDraftReasoning } from "../teaching-drafts.js";
 import { decodeAnswer } from "../wire.js";
 import { modalLevel } from "../projections.js";
+import { followsSingleFeedbackQuestion } from "../teaching-policy.js";
 
 /** P(needs drafting) at or below this answers directly. Uncertainty drafts. */
 export const DIRECT_REPLY_MAX_PROBABILITY = 0.3;
@@ -46,6 +47,8 @@ export function triageRequiresDraft(turn: TeachingPolicyTurn): boolean {
   if (turn.previousQuestionPresentation) return true;
   if (turn.assessment === "practice" || turn.assessment === "assessed") return true;
   if (!turn.learnerMessage.trim()) return true;
+  // A reply to the tutor's question is an attempt to give feedback on, however short ("A", "oxygen?").
+  if (followsSingleFeedbackQuestion(turn)) return true;
   return false;
 }
 
