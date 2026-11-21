@@ -38,7 +38,7 @@ const noPrediction = (input: Parameters<typeof selectActivityCandidate>[0]) => s
 test("ordinary native replies repair an uncertain checkpoint before best-effort release", async () => {
   let generated = 0;
   const baseJudge = judge();
-  const request = createMobileTeachingDraftRound({ current: () => true, evidence: async () => empty(), onReleased: () => {},
+  const request = createMobileTeachingDraftRound({ breadth: "broad", current: () => true, evidence: async () => empty(), onReleased: () => {},
     judge: async (request, signal) => {
       const outcome = await baseJudge(request, signal);
       if (outcome.ok && request.questions.checkpoint_continued) {
@@ -58,7 +58,7 @@ test("an ordinary Jev-guided native round compares two private replies and deliv
   const baseJudge = judge();
   const choices: string[][] = [], legacyPairs: string[][] = [], visible: string[] = [];
   let generated = 0, published = 0;
-  const request = createMobileTeachingDraftRound({
+  const request = createMobileTeachingDraftRound({ breadth: "broad",
     current: () => true, evidence: async () => empty(), onReleased: () => { published++; },
     judge: async (request, signal) => {
       const outcome = await baseJudge(request, signal);
@@ -107,7 +107,7 @@ test("native feedback uses the released Question, its original text and an untou
     const tools: string[][]=[], histories: string[]=[];
     const before = structuredClone(messages);
     let planned = false, reads=0, publishedCount=0;
-    const native = createMobileTeachingDraftRound({current:()=>true,evidence:async()=>data,
+    const native = createMobileTeachingDraftRound({ breadth: "broad", current:()=>true,evidence:async()=>data,
       sessionId:state==="other-session"?"other":"session",onReleased:()=>{publishedCount++},
       ...(state==="no-journal" ? {} : {questionJournal: async (id:string)=>{
         const changed = state==="journal-changed-during-review" && reads++>0;
@@ -147,7 +147,7 @@ test("native feedback uses the released Question, its original text and an untou
 test("native predictor candidates can author a Question with no tool schemas on the OpenAI wire", async () => {
   const marker = "Collect the learner's own answer in one OpenUI Question.";
   const wires: {instructions:string;tools?:{name:string}[]}[]=[];
-  const native = createMobileTeachingDraftRound({current:()=>true,evidence:async()=>empty(),onReleased:()=>{},
+  const native = createMobileTeachingDraftRound({ breadth: "broad", current:()=>true,evidence:async()=>empty(),onReleased:()=>{},
     judge:async (request,signal)=>{
       const result = await judge()(request,signal);
       if (!result.ok) return result;
@@ -173,7 +173,7 @@ test("native predictor candidates can author a Question with no tool schemas on 
 
 test("ordinary native semantic failures release best effort after one repair", async () => {
   let generated = 0;
-  const request = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(), onReleased: () => {},
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => true, evidence: async () => empty(), onReleased: () => {},
     request: async () => { generated++; return { text: "PRIVATE_REJECTED: you will retain this forever.", calls: [], assistantTurn: null, usage: null }; },
   });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
@@ -203,7 +203,7 @@ test("native synthesis sends source text privately and releases only the newly r
     }
     return { ...result, response: { ...result.response, answers } };
   };
-  const request = createMobileTeachingDraftRound({ judge: synthesisJudge, refinement: "extended", current: () => true, evidence: async () => empty(), onReleased: () => {},
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: synthesisJudge, refinement: "extended", current: () => true, evidence: async () => empty(), onReleased: () => {},
     request: async (_settings, _key, messages, options) => {
       seen.push(structuredClone(messages)); prompts.push(options?.systemPrompt ?? "");
       expect(options?.onTextDelta).toBeUndefined(); expect(options?.onReasoningDelta).toBeUndefined();
@@ -228,7 +228,7 @@ test("native synthesis sends source text privately and releases only the newly r
 
 test("native rejected drafts stay private and only approved tools reach the existing effect loop", async () => {
   let generated = 0, effects = 0; const committed: string[] = [], visible: string[] = [];
-  const privateRound = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(), activityLearning: noPrediction, onReleased: () => {},
+  const privateRound = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => true, evidence: async () => empty(), activityLearning: noPrediction, onReleased: () => {},
     request: async (_settings, _key, _messages, options) => {
       expect(options?.stream).toBe(false); expect(options?.onTextDelta).toBeUndefined(); expect(options?.onToolCall).toBeUndefined();
       generated++;
@@ -252,7 +252,7 @@ test("native rejected drafts stay private and only approved tools reach the exis
 
 test("native no_match retains the reviewed baseline without invoking the outcome predictor", async () => {
   let selected = 0;
-  const request = createMobileTeachingDraftRound({ judge: judge(true), current: () => true, evidence: async () => empty(),
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(true), current: () => true, evidence: async () => empty(),
     activityLearning: async input => { selected++; return noPrediction(input); }, onReleased: selection => expect(selection?.candidate.attempt).toBe(1),
     request: async () => ({ text: "Private unchosen answer", calls: [], assistantTurn: null, usage: null }) });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
@@ -261,7 +261,7 @@ test("native no_match retains the reviewed baseline without invoking the outcome
 
 test("the usual native reply records observations without waiting for an unresolved tabular selector", async () => {
   let selected = 0, recorded = false;
-  const request = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(),
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => true, evidence: async () => empty(),
     activityLearning: async () => { selected++; return new Promise(() => {}); },
     onReleased: selection => { recorded = !!selection; },
     request: async () => ({ text: "A checked explanation.", calls: [], assistantTurn: null, usage: null }) });
@@ -272,7 +272,7 @@ test("the usual native reply records observations without waiting for an unresol
 
 test("the separate experimental live mode still invokes the approved-reply selector", async () => {
   let selected = 0;
-  const request = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(),
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => true, evidence: async () => empty(),
     activityLearningMode: "live", activityLearning: async input => { selected++; return noPrediction(input); }, onReleased: () => {},
     request: async () => ({ text: "A checked explanation.", calls: [], assistantTurn: null, usage: null }) });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key",
@@ -283,7 +283,7 @@ test("the separate experimental live mode still invokes the approved-reply selec
 test("native revision receives code-owned repair instructions without the rejected draft", async () => {
   const prompts: string[] = [];
   const instruction = TEACHING_POLICY_RULES.find(rule => rule.id === "retention_overclaimed")!.question.instructions;
-  const request = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(),
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => true, evidence: async () => empty(),
     activityLearning: noPrediction, onReleased: () => {}, request: async (_settings, _key, messages, options) => {
       prompts.push(options?.systemPrompt ?? "");
       expect(JSON.stringify(messages)).not.toContain("PRIVATE_REJECTED");
@@ -314,7 +314,7 @@ test("every advertised native tool schema remains usable and pending submissions
   const calls = MOBILE_TOOL_DEFINITIONS.map((tool, index) => ({ id: `native-${index}`, name: tool.name, arguments: toolArguments[tool.name]! }));
   let planningObserved = false;
   for (const batch of [calls.slice(0, 8), calls.slice(8)]) {
-  const request = createMobileTeachingDraftRound({ judge: async (request, signal) => {
+  const request = createMobileTeachingDraftRound({ breadth: "broad", judge: async (request, signal) => {
     const state = request.state as { turn: TeachingPolicyTurn };
     expect(state.turn.pendingSubmissions?.map(row => row.id)).toEqual(["this-session"]);
     planningObserved = true; return judge()(request, signal);
@@ -329,7 +329,7 @@ test("every advertised native tool schema remains usable and pending submissions
 test("native account/evidence changes reject even noncooperative finished drafts", async () => {
   for (const changed of ["account", "evidence"]) {
     let current = true; const data = empty();
-    const request = createMobileTeachingDraftRound({ judge: judge(), current: () => current, evidence: async () => structuredClone(data), activityLearning: noPrediction, onReleased: () => { throw Error("must not release"); },
+    const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => current, evidence: async () => structuredClone(data), activityLearning: noPrediction, onReleased: () => { throw Error("must not release"); },
       request: async () => { if (changed === "account") current = false; else data.questionChecks.push({ id: "new", topic: "Division", question: "New?", answer: "yes", createdAt: new Date(time + 1).toISOString(), grading: "auto", score: 1 });
         return { text: "Stale private answer", calls: [], assistantTurn: null, usage: null }; } });
     await expect(request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }])).rejects.toThrow();
@@ -340,7 +340,7 @@ test("account invalidation during the final evidence read cannot release a stale
   let reads = 0;
   const run = async (invalidateAt?: number) => {
     let current = true, released = false; reads = 0;
-    const request = createMobileTeachingDraftRound({ judge: judge(), current: () => current,
+    const request = createMobileTeachingDraftRound({ breadth: "broad", judge: judge(), current: () => current,
       evidence: async () => { reads++; await Promise.resolve(); if (reads === invalidateAt) current = false; return empty(); },
       activityLearning: noPrediction, onReleased: () => { released = true; },
       request: async () => ({ text: "A checked explanation.", calls: [], assistantTurn: null, usage: null }) });

@@ -247,6 +247,13 @@ export interface TeachingDraftOptions<T> {
   /** Explicit research capture: collect the full bounded attempt budget before selection.
    * Generation failures remain attempts, never fabricated completed candidates. */
   readonly collectAllAttempts?: boolean;
+  /**
+   * "focused" (what the apps use) releases the first passing ordinary draft, compares two openings only
+   * when an activity is worth comparing with prose, caps ordinary repairs at three attempts, and gives
+   * feedback, prediction and grading turns one targeted plus one general candidate. "broad" (default)
+   * keeps the earlier wider comparison for research and evaluation.
+   */
+  readonly breadth?: "focused" | "broad";
   /** Longer comparison/synthesis is opt-in; response depth alone does not expand retries. */
   readonly refinement?: TeachingDraftRefinement;
   readonly maxReasoning?: TeachingDraftReasoning;
@@ -279,6 +286,7 @@ export interface TeachingDraftResult<T> {
 }
 
 export { blocksRelease, teachingDraftAttemptLimit } from "./teaching-drafts/policy.js";
+export { decideTeachingTriage, teachingTriageRequest, triageRequiresDraft, DIRECT_REPLY_MAX_PROBABILITY, type TeachingTriage } from "./teaching-drafts/triage.js";
 
 /** Run the shared private generation, review, selection, and release flow. */
 export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Promise<TeachingDraftResult<T>> {

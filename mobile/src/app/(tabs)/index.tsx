@@ -376,7 +376,7 @@ export default function TutorScreen() {
           placeholder={isProviderConfigured ? "Message Keating" : "Configure a provider to begin"}
           modelLabel={`${provider.label} · ${state.providerSettings.model}`}
           onSelectModel={() => setModelSelectorOpen(true)}
-          supportsReasoning={supportsReasoning}
+          supportsReasoning={supportsReasoning && uiSettings.manualReasoning}
           reasoningLevels={reasoningLevels}
           reasoningLevel={uiSettings.reasoningLevel}
           onReasoningLevelChange={(reasoningLevel) => updateSettings({ reasoningLevel })}

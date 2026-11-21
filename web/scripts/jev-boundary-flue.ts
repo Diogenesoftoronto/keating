@@ -76,7 +76,9 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
     entry.stopReason = message.stopReason;
     entry.textHash = sha(message.content.flatMap(part => part.type === "text" ? [part.text] : []).join("\n"));
     return completedStream(message);
-  }, { sessionId: name, basePrompt: () => studyPrompt, makeRuntime: () => runtime,
+  }, {
+    // The proof measures the recorded paired-review protocol, not the app's focused default.
+    triage: false, breadth: "broad", sessionId: name, basePrompt: () => studyPrompt, makeRuntime: () => runtime,
     maxAttempts: 3, timeoutMs: 180_000, maxReasoning: "off",
     onProgress: snapshot => { progress = snapshot; }, onReceipt: event => { receipt = event.snapshot; } });
   // Flue drives this bridge and consumes its reviewed stream. As in the web app, the browser-side gate owns

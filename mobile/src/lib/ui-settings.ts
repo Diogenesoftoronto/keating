@@ -34,6 +34,8 @@ export interface KeatingUiSettings {
   /** Show the provider's own error text rather than a short summary. */
   showRawErrors: boolean;
   reasoningLevel: ReasoningLevel;
+  /** Off: the judgement model picks each turn's thinking level up to high. On: reasoningLevel is the ceiling. */
+  manualReasoning: boolean;
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
@@ -48,6 +50,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
   showToolDetails: false,
   showRawErrors: false,
   reasoningLevel: "medium",
+  manualReasoning: false,
 };
 
 export const THEME_OPTIONS: ReadonlyArray<{ value: ThemePreference; label: string }> = [
@@ -102,6 +105,7 @@ export function normalizeUiSettings(value: unknown): KeatingUiSettings {
     reasoningLevel: REASONING_VALUES.has(record.reasoningLevel as ReasoningLevel)
       ? record.reasoningLevel as ReasoningLevel
       : DEFAULT_UI_SETTINGS.reasoningLevel,
+    manualReasoning: record.manualReasoning === true,
   };
 }
 

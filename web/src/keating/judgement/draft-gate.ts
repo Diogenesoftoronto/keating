@@ -30,12 +30,17 @@ import {
   type JudgementBackendKey,
   type JudgementCaller,
   type JudgementOutcome,
+  type JudgementRequest,
   type TeachingDraftReasoning,
   type TeachingDraftRefinement,
   type TeachingDraftSnapshot,
   type TeachingPolicyCheck,
   type TeachingPolicyReply,
   type TeachingPolicyTurn,
+  type TeachingTriage,
+  decideTeachingTriage,
+  teachingTriageRequest,
+  triageRequiresDraft,
 } from "@keating/learner-contracts";
 import type { KeatingStreamOptions } from "../../hooks/keating-stream";
 import { DEFAULT_TEACHER_PERSONA } from "../persona";
@@ -59,6 +64,8 @@ import { DESKTOP_OFFLINE_PROVIDER } from "../../lib/desktop-offline";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
+/** Triage is the cheapest check; a slow answer drafts rather than delaying a simple reply. */
+const TRIAGE_TIMEOUT_MS = 6_000;
 type Usage = AssistantMessage["usage"];
 
 const unavailable = (): JudgementOutcome => ({ ok: false, error: { code: "backend-unavailable", retryable: false } });
@@ -155,10 +162,15 @@ export interface TeachingDraftGateOptions {
     readonly resourcePresentations?: readonly ResourcePresentation[];
   }>;
   readonly domain?: TeachingPolicyTurn["domain"];
-  readonly maxReasoning?: TeachingDraftReasoning;
+  /** Thinking ceiling. A function is read per round; undefined falls back to the provider setting. */
+  readonly maxReasoning?: TeachingDraftReasoning | (() => TeachingDraftReasoning | undefined);
   readonly maxAttempts?: number;
   readonly refinement?: TeachingDraftRefinement;
   readonly timeoutMs?: number;
+  /** Fast Jev check that answers simple turns directly, without drafting or review. On unless false. */
+  readonly triage?: boolean;
+  /** Draft comparison breadth; the app default is "focused". */
+  readonly breadth?: "focused" | "broad";
 }
 
 function messageText(message: Context["messages"][number]): string {
@@ -217,7 +229,8 @@ function promptLayers(context: Context, base: string): string {
 }
 
 function ceiling(options: TeachingDraftGateOptions, streamOptions?: SimpleStreamOptions): TeachingDraftReasoning {
-  if (options.maxReasoning) return options.maxReasoning;
+  const fixed = typeof options.maxReasoning === "function" ? options.maxReasoning() : options.maxReasoning;
+  if (fixed) return fixed;
   // Flue represents the explicit off setting by omitting provider reasoning.
   switch (streamOptions?.reasoning) {
     case "minimal": case "low": return "low";
@@ -294,6 +307,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
   // Plan-review triggers count learner turns, so a retried turn reuses its trigger.
   let planMemory: PlanReviewMemory = EMPTY_PLAN_REVIEW_MEMORY;
   let planTurn: { readonly learnerTurns: number; readonly trigger: PlanReviewHostTrigger | null } | null = null;
+  // One triage per learner turn, so the tool-loop rounds of a direct turn stay direct.
+  let triageTurn: { readonly learnerTurns: number; readonly triage: TeachingTriage } | null = null;
   const planReviewTrigger = (context: Context, work: ActiveWork | undefined) => {
     const learnerTurns = context.messages.filter((message) => message.role === "user").length;
     if (planTurn?.learnerTurns === learnerTurns) return planTurn.trigger;
@@ -426,6 +441,102 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       target.end(message);
     };
     const stopped = () => !timedOut && (controller.signal.aborted || !ownsTurn());
+    const triageRoute = async (snapshot: Context, turn: TeachingPolicyTurn,
+      reviewer: { readonly judge: JudgementCaller; readonly maxQuestionChars?: number; readonly fitsWire?: (request: JudgementRequest) => boolean },
+      maxReasoning: TeachingDraftReasoning, fresh: boolean): Promise<TeachingTriage> => {
+      const learnerTurns = snapshot.messages.filter((message) => message.role === "user").length;
+      if (triageTurn?.learnerTurns === learnerTurns) return triageTurn.triage;
+      let triage: TeachingTriage = { route: "draft", reasoning: null, draftProbability: null };
+      // Only a new learner message is triaged; grading and tool rounds draft unless their turn was direct.
+      const request = teachingTriageRequest(turn);
+      // Only the preferred reviewer triages: a fallback tier must not see a turn it was not asked to review.
+      const fits = (reviewer.maxQuestionChars === undefined || JSON.stringify(request.questions).length <= reviewer.maxQuestionChars)
+        && (reviewer.fitsWire?.(request) ?? true);
+      if (fresh && fits && !triageRequiresDraft(turn)) {
+        const local = new AbortController();
+        const stop = () => local.abort();
+        controller.signal.addEventListener("abort", stop, { once: true });
+        const deadline = setTimeout(stop, TRIAGE_TIMEOUT_MS);
+        try {
+          const outcome = await Promise.race([
+            reviewer.judge(request, local.signal),
+            new Promise<JudgementOutcome>((resolve) => local.signal.addEventListener("abort", () => resolve(cancelled()), { once: true })),
+          ]);
+          triage = decideTeachingTriage(outcome, maxReasoning);
+        } catch { /* Any triage failure drafts. */ }
+        finally { clearTimeout(deadline); controller.signal.removeEventListener("abort", stop); local.abort(); }
+      }
+      if (!controller.signal.aborted) triageTurn = { learnerTurns, triage };
+      return triage;
+    };
+    /**
+     * A simple turn streams straight from the tutor at the triaged thinking
+     * level; nothing is drafted or reviewed. Tool calls are still held until
+     * their arguments match the offered schemas, as on the baseline path.
+     */
+    const answerDirectly = async (reasoning: TeachingDraftReasoning, draftContext: Context, activeWork: string) => {
+      const directContext: Context = { ...draftContext,
+        systemPrompt: [draftContext.systemPrompt ?? "", activeWork].filter(Boolean).join("\n\n") };
+      const logged = recordModelRequest({ sessionId: options.sessionId, kind: "draft", model: `${model.provider}/${model.id}`, context: directContext });
+      const directOptions: KeatingStreamOptions = { ...streamOptions, signal: controller.signal,
+        onPayload: async (payload, payloadModel) => {
+          const next = await streamOptions?.onPayload?.(payload, payloadModel);
+          attachModelRequestPayload(logged, next ?? payload);
+          return next;
+        } };
+      if (reasoning === "off") delete directOptions.reasoning;
+      else directOptions.reasoning = reasoning;
+      progress({ ...lastProgress, phase: "released", reasoning, standard: "concise", attempt: 0,
+        elapsedMs: Date.now() - startedAt, reason: "direct-reply" });
+      let final: AssistantMessage | undefined;
+      let forwarded = false;
+      try {
+        const inner = await stream(model, directContext, directOptions);
+        for await (const event of inner) {
+          if (!current()) break;
+          if (event.type === "done") { final = event.message; break; }
+          if (event.type === "error") { final = event.error; break; }
+          if (event.type === "toolcall_start" || event.type === "toolcall_delta" || event.type === "toolcall_end") continue;
+          forwarded = true;
+          target.push(event);
+        }
+        // Some transports only settle the result without a terminal event.
+        if (!final && current()) final = await inner.result();
+      } catch {
+        // Public events may already be visible, so end this stream here rather than in the draft fallback.
+        if (current()) final = { ...safeMessage(""), content: [], stopReason: "error", errorMessage: "The tutor provider could not complete the request." };
+      }
+      if (!final || !current() || final.stopReason === "aborted") { target.push({ type: "error", reason: "aborted", error: safeMessage("", true) }); target.end(safeMessage("", true)); return; }
+      accumulateUsage(usage, final.usage);
+      if (final.stopReason === "error") {
+        const failed: AssistantMessage = { ...final, errorMessage: isTutorRateLimit(final.errorMessage) ? "The tutor provider rate-limited the request." : "The tutor provider could not complete the request." };
+        target.push({ type: "error", reason: "error", error: failed });
+        target.end(failed);
+        return;
+      }
+      const valid = checkSchemas(draftContext, policyReply(final)).every(check => check.status === "pass");
+      const message: AssistantMessage = valid ? final : { ...final, stopReason: final.stopReason === "toolUse" ? "stop" : final.stopReason,
+        content: final.content.filter(part => part.type !== "toolCall") };
+      // Nothing streamed: replay the settled reply exactly as a reviewed one is published.
+      if (!forwarded) { publish({ ...message, content: message.content.filter(part => part.type !== "thinking") }); return; }
+      if (valid) {
+        message.content.forEach((part, contentIndex) => {
+          if (part.type !== "toolCall") return;
+          const partial = { ...message, content: message.content.slice(0, contentIndex + 1) };
+          target.push({ type: "toolcall_start", contentIndex, partial: { ...partial, content: [...partial.content.slice(0, -1), { ...part, arguments: {} }] } });
+          target.push({ type: "toolcall_delta", contentIndex, delta: JSON.stringify(part.arguments), partial });
+          target.push({ type: "toolcall_end", contentIndex, toolCall: part, partial });
+        });
+      }
+      if (ownsTurn()) {
+        try { options.onPublished?.({ messageTimestamp: message.timestamp, publishedAt: Date.now(),
+          publicationContext: activityState?.publicationContext, activeWork: reviewedActiveWork }); } catch { /* Optional learning cannot change publication. */ }
+        try { options.onReceipt?.({ messageTimestamp: message.timestamp, snapshot: lastProgress,
+          ...(reviewedActiveWork ? { activeWork: reviewedActiveWork } : {}) }); } catch { /* A receipt cannot change publication. */ }
+      }
+      target.push({ type: "done", reason: message.stopReason === "toolUse" ? "toolUse" : message.stopReason === "length" ? "length" : "stop", message });
+      target.end(message);
+    };
     let detachEvidenceAbort: (() => void) | undefined;
     let loadingEvidence = false;
     void (async () => {
@@ -525,8 +636,16 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       // owns the remaining deadline so it can return an already-reviewed
       // candidate when a later generation runs out of time.
       clearTimeout(timer);
+      if (options.triage !== false) {
+        const fresh = lastMessage?.role === "user" && !priorGrade && !evidence?.submittedComprehension && !confirmedQuestionGrade;
+        const triage = await triageRoute(snapshot, turn, reviewers?.[0] ?? { judge }, ceiling(options, streamOptions), fresh);
+        if (!current()) { publish(safeMessage("", true)); return; }
+        if (triage.route === "direct") { await answerDirectly(triage.reasoning, draftContext, activeWork); return; }
+      }
       const hosted = model.provider !== "browser" && model.provider !== DESKTOP_OFFLINE_PROVIDER;
-      const parallelDrafts = hosted && options.refinement !== "extended" && lastProgress.maxAttempts >= 2;
+      // A tool round is an intermediate step: one draft, not a comparison, unless research breadth was asked for.
+      const toolRound = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused";
+      const parallelDrafts = hosted && !toolRound && options.refinement !== "extended" && lastProgress.maxAttempts >= 2;
       const result = await runTeachingDrafts<AssistantMessage>({
         turn,
         ...(evidence?.submittedComprehension && lastMessage?.role === "user" ? { submittedComprehension: evidence.submittedComprehension } : {}),
@@ -550,6 +669,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         maxAttempts: options.maxAttempts,
         refinement: options.refinement,
         parallelDrafts,
+        // Release the first passing draft; compare alternatives only where the comparison can change the lesson.
+        breadth: options.breadth ?? "focused",
         onAnswerStage: hosted ? publishAnswerStage : undefined,
         maxReasoning: ceiling(options, streamOptions),
         timeoutMs: Math.max(1, budget - (Date.now() - startedAt)),

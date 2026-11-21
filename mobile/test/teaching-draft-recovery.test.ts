@@ -34,7 +34,7 @@ test.each([false, true])("native teaching retries incomplete local planning with
       return Response.json({ model: "judgement-jev/jev-1.14.0", answers: outcome.response.answers });
     },
   });
-  const round = createMobileTeachingDraftRound({ judge: runtime.call, reviewers: mobileTeachingDraftReviewers(runtime.policy),
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad", judge: runtime.call, reviewers: mobileTeachingDraftReviewers(runtime.policy),
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     request: async () => ({ text: "Four factorial is 24.", calls: [], assistantTurn: null, usage: null }),
   });
@@ -56,7 +56,7 @@ test("revoking native local consent during planning stops before hosted fallback
   const runtime = createMobileJudgementRuntime({ hostedEnabled: true, localEnabled: true, localModel: MOBILE_JULIA_MODEL,
     localConsent: async () => consent, localScorer: async () => { consent = false; return null; },
     request: async () => { hostedCalls++; return new Response(null, { status: 403 }); } });
-  const round = createMobileTeachingDraftRound({ judge: runtime.call, reviewers: mobileTeachingDraftReviewers(runtime.policy),
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad", judge: runtime.call, reviewers: mobileTeachingDraftReviewers(runtime.policy),
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     request: async () => { draftCalls++; return { text: "Private draft", calls: [], assistantTurn: null, usage: null }; } });
   const result = await round(settingsForProvider("openai"), null, [{ id: "latest", role: "user", content: "What is four factorial?", createdAt: 99 }]);
@@ -69,7 +69,7 @@ test("revoking native local consent during planning stops before hosted fallback
 test("the native draft host sends each judgement batch within its active scorer's token budgets", async () => {
   const runtime = createMobileJudgementRuntime({ hostedEnabled: false, localEnabled: true, localModel: MOBILE_JULIA_MODEL });
   const measured: { request: number; question: number }[] = [];
-  const round = createMobileTeachingDraftRound({ judgementModel: mobileTeachingDraftReviewers(runtime.policy)[0]!.judgementModel,
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad", judgementModel: mobileTeachingDraftReviewers(runtime.policy)[0]!.judgementModel,
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     judge: async request => {
       measured.push({ request: estimatedRequestTokens(request), question: estimatedStateQuestionTokens(request) });
@@ -92,7 +92,7 @@ test("a gateway question-size limit splits the native check without evicting any
   const history = [{ id: "first", createdAt: 1, role: "user" as const, content: "Use an example with apples." },
     { id: "reply", createdAt: 2, role: "assistant" as const, content: "How many apples?" }];
   const seen: number[] = [];
-  const round = createMobileTeachingDraftRound({ current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad", current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     judgementModel: mobileTeachingDraftReviewers(createMobileJudgementRuntime({ hostedEnabled: true }).policy)[0]!.judgementModel, maxQuestionChars: 2_500,
     judge: async request => {
       const state = request.state as { turn?: { conversation: unknown[] } };
@@ -109,7 +109,7 @@ test("a gateway question-size limit splits the native check without evicting any
 
 test("native final recovery disables tools while preserving selected model and answers the learner", async () => {
   let calls = 0;
-  const request = createMobileTeachingDraftRound({ judge: acceptingTeachingJudge, current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
+  const request = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad", judge: acceptingTeachingJudge, current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     request: async (settings, _key, messages, options) => {
       calls++; expect(settings.model).toBe("selected-teacher"); expect(messages[0]!.content).toBe("What is four factorial?");
       if (options?.tools?.length === 0) {
@@ -127,7 +127,7 @@ test("native final recovery disables tools while preserving selected model and a
 test.each([429, 503])("native classroom attributes a tutor HTTP %i using the response status and keeps the provider body private", async status => {
   let tutorRequests = 0;
   let judgeRequests = 0;
-  const request = createMobileTeachingDraftRound({
+  const request = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased() {},
     judge: async (input, signal) => {
       judgeRequests++;
@@ -160,7 +160,7 @@ test("native decision planning denial identifies the configured router alias wit
     },
   });
   const model = runtime.policy.tiers[0]!.key.model;
-  const round = createMobileTeachingDraftRound({judge:runtime.call, configuredDecisionModel:model,
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",judge:runtime.call, configuredDecisionModel:model,
     current:() => true, evidence:async () => EMPTY_LEARNER_DATA, onReleased() {},
     request:async () => { tutorRequests++; throw Error("unexpected tutor request"); }});
   const reply = await round(settingsForProvider("minimax"), "fixture",
@@ -175,7 +175,7 @@ test("native decision planning denial identifies the configured router alias wit
 
 test("LiteRT keeps its single generation lease and publishes one reviewed answer", async () => {
   let generations = 0;
-  const round = createMobileTeachingDraftRound({
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     judge: async request => {
       const outcome = await acceptingTeachingJudge(request);
@@ -201,7 +201,7 @@ test.each(["complete", "abort", "unexpected-tool"] as const)("native staged repl
   const shown = new Promise<void>(resolve => { openingSeen = resolve; });
   let attempts = 0;
   let recorded: string | undefined;
-  const requestRound = createMobileTeachingDraftRound({
+  const requestRound = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",
     current: () => !controller.signal.aborted, evidence: async () => EMPTY_LEARNER_DATA,
     onReleased: selection => { recorded = selection?.candidate.reply.text; },
     judge: async request => {

@@ -66,7 +66,8 @@ export function renderAgentDialogs({
       // close it instead of leaving it over the screen the learner came from.
       onSelect={(model) => { onSelectModel(model); modelSelectorDialog.onClose(); }}
       thinkingLevel={thinkingLevel}
-      onThinkingLevelChange={onThinkingLevelChange}
+      // Jev picks the thinking level unless the learner chose to set it.
+      onThinkingLevelChange={loadKeatingUiSettings().manualReasoning ? onThinkingLevelChange : undefined}
       thinkingDisabled={thinkingDisabled}
     />
   );

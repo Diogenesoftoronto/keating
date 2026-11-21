@@ -3490,6 +3490,7 @@ function AssistantThread({
         thinkingLevel={selectedThinkingLevel}
         thinkingModel={agent?.context.model}
         onThinkingLevelChange={handleThinkingLevelChange}
+        manualReasoning={uiSettings.manualReasoning}
         isRunning={isRunning}
         voiceComposerOpen={voiceComposerOpen}
         onVoiceComposerOpenChange={setVoiceComposerOpen}
@@ -3768,7 +3769,10 @@ function ThreadComposer({
   onVoiceComposerOpenChange,
   onMicRecordingChange,
   onConversationComplete,
+  manualReasoning = false,
 }: {
+  /** Jev chooses thinking per turn unless the learner opted into the Reasoning control. */
+  manualReasoning?: boolean;
   studyActionsRef?: (node: HTMLSpanElement | null) => void;
   pendingPrompt?: string;
   composerHasUrl: boolean;
@@ -3883,7 +3887,7 @@ function ThreadComposer({
             onRequestCredential={callbacks.onApiKeyRequired}
           />
           <span className="ch-spacer" />
-          <ThinkingLevelSelect model={thinkingModel} level={thinkingLevel} disabled={isRunning} onChange={onThinkingLevelChange} />
+          {manualReasoning ? <ThinkingLevelSelect model={thinkingModel} level={thinkingLevel} disabled={isRunning} onChange={onThinkingLevelChange} /> : null}
           {/* Only show Send OR Cancel — never both */}
           {isRunning ? (
             <ComposerPrimitive.Cancel

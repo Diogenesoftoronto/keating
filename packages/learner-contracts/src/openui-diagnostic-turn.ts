@@ -107,7 +107,7 @@ const COMPONENTS = [
   "question", "question-group", "quiz", "exam", "deck", "study-plan", "concept-map", "diagram",
   "notes", "simulation", "lab", "coding-challenge", "music-lab", "language-practice", "markdown", "callout",
   "goal", "image", "media", "artifact", "handoff", "task", "assignment", "practice", "draft",
-  "fieldwork", "connect", "person", "audio-response", "video-response",
+  "fieldwork", "connect", "person", "audio-response", "video-response", "manipulative",
 ];
 const componentMap = new Map(COMPONENTS.map(kind => [kind.replaceAll("-", ""), kind]));
 export function isOpenUiDiagnosticInterface(component: string): boolean {
@@ -116,6 +116,8 @@ export function isOpenUiDiagnosticInterface(component: string): boolean {
 for (const [alias, kind] of Object.entries({
   flashcard: "deck", flashcards: "deck", explanation: "markdown", learningimage: "image",
   learninganimation: "handoff", sharednotes: "notes", systemdesign: "diagram", personbrief: "person",
+  numberline: "manipulative", tenframe: "manipulative", placevalue: "manipulative", fractionbars: "manipulative",
+  countingarray: "manipulative", clock: "manipulative",
 })) componentMap.set(alias, kind);
 
 export function normalizeOpenUiComponent(name: string): string | null {
@@ -136,7 +138,8 @@ const NAMED: ReadonlyArray<[string, RegExp]> = [
   ["simulation", /\b(?:simulation|simulator|slider)s?\b/], ["concept-map", /\bconcept maps?\b/],
   ["diagram", /\bdiagram(?:s)?\b/], ["study-plan", /\bstudy plans?\b/],
   ["coding-challenge", /\b(?:coding\s?challenge|coding exercise)s?\b/], ["music-lab", /\bmusic lab\b/],
-  ["language-practice", /\blanguage practice\b/], ["notes", /\b(?:editable|shared) notes?\b/],
+  ["language-practice", /\blanguage practice\b/],
+  ["manipulative", /\b(?:number lines?|ten[- ]frames?|place[- ]value blocks?|base[- ]ten blocks?|fraction bars?|counting array)\b/], ["notes", /\b(?:editable|shared) notes?\b/],
   ["question", /\b(?:openui|interactive|multiple[- ]choice|open[- ]text|on[- ]screen|clickable) (?:text )?questions?\b/],
 ];
 const POSITIVE_REQUEST = /\b(?:give|make|create|build|draw|show|use|generate|set up|start|try|want|would like|could i (?:get|have)|can i (?:get|have)|would help|please)\b/;

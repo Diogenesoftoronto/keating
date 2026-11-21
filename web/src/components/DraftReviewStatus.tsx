@@ -54,7 +54,8 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     ? learnerDraftGuidance(snapshot, 0) : undefined;
   const bestEffort = snapshot.phase === "released" && snapshot.reason === "best-effort-draft";
   const description = snapshot.phase === "released"
-    ? bestEffort ? "The best available response is shown. Some review concerns remain; you can flag a problem below."
+    ? snapshot.reason === "direct-reply" ? "A quick check judged this a simple turn, so the tutor answered directly without drafting or review."
+      : bestEffort ? "The best available response is shown. Some review concerns remain; you can flag a problem below."
       : `${reviewedCount} ${reviewedCount === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
     : snapshot.phase === "withheld"
       ? snapshot.reason === "unsupported-evidence" ? "The reviewer needs the attachment's text or a transcript. Send it in a new conversation to continue."

@@ -194,10 +194,17 @@ export default function SettingsScreen() {
           value={uiSettings.showRawErrors}
           onValueChange={(showRawErrors) => updateSettings({ showRawErrors })}
         />
+        <ToggleRow
+          label="Choose the thinking level myself"
+          description="By default the judgement model decides how much the tutor thinks on each turn and answers simple messages straight away. Turn this on to set the thinking budget yourself."
+          value={uiSettings.manualReasoning}
+          onValueChange={(manualReasoning) => updateSettings({ manualReasoning })}
+        />
+        {uiSettings.manualReasoning ? <>
         <FieldLabel>Thinking budget</FieldLabel>
         <Text style={styles.hint}>
           {supportsReasoning
-            ? "Applied to every reply from the selected model."
+            ? "The most thinking the tutor may use on a reply from the selected model."
             : "The selected model has no thinking budget, so this is ignored until you pick a reasoning model."}
         </Text>
         <View style={styles.optionList}>
@@ -211,6 +218,7 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
+        </> : null}
       </Section>
 
       <Section

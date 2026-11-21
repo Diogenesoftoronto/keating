@@ -63,7 +63,7 @@ async function run(f: Awaited<ReturnType<typeof fixture>>, verdict: "correct" | 
   let committed: NativeQuestionGrade | undefined;
   let executions = 0;
   const trace = createTurnTrace("after-form");
-  const round = createMobileTeachingDraftRound({
+  const round = createMobileTeachingDraftRound({ breadth: "broad",
     sessionId, current: () => true, evidence: () => f.records.snapshot(), questionJournal: id => f.actions.getJournal(id),
     judge: judge(preference), onReleased() {}, onReviewedGrade(value) { grade = value; },
     request: async (_settings, _key, _messages, opts) => {

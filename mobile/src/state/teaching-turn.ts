@@ -276,7 +276,9 @@ async function runToolLoop(run: TurnRun, inputs: ToolLoopInputs) {
     reviewedGrade: () => run.round.reviewedGrade,
     signal: controller.signal,
     systemPrompt: inputs.systemPrompt,
-    reasoningLevel: resolveModelReasoningLevel(env.catalogRef.current, settings, env.uiSettingsRef.current.reasoningLevel),
+    // Without the learner's own control, Jev chooses per turn up to high.
+    reasoningLevel: resolveModelReasoningLevel(env.catalogRef.current, settings,
+      env.uiSettingsRef.current.manualReasoning ? env.uiSettingsRef.current.reasoningLevel : "high"),
     supportsTemperature: modelSupportsTemperature(env.catalogRef.current, settings),
     fetchImpl: streamingFetch as unknown as typeof fetch,
     ...(run.round.privateRound ? { requestRound: run.round.privateRound } : {}),

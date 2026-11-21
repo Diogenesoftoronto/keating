@@ -25,6 +25,7 @@ import {
 } from "./ui.js";
 import { WEB_OPENUI_COMPONENTS } from "./rendering.js";
 import { isValidSimulationExpression } from "./simulation-expression.js";
+import { MANIPULATIVE_TITLES, manipulativeModelFromProps } from "./manipulatives.js";
 import type { SystemDesignSpec } from "./system-design.js";
 import { SYSTEM_DESIGN_KINDS } from "./system-design.js";
 
@@ -46,6 +47,7 @@ export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
   "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice", "Lab",
+  "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -296,6 +298,12 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   CodingChallenge: ["id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "lifecycle", "hint"],
   Lab: ["id", "title", "brief", "adapter", "checkpoints", "lifecycle"],
   MusicLab: ["id", "title", "code", "lifecycle", "brief", "controls", "visualization"],
+  NumberLine: ["id", "title", "min", "max", "step", "marks", "jumps", "prompt", "lifecycle", "brief", "labelEvery"],
+  TenFrame: ["id", "title", "filled", "frames", "prompt", "lifecycle", "brief"],
+  PlaceValue: ["id", "title", "value", "prompt", "lifecycle", "brief"],
+  FractionBars: ["id", "title", "bars", "prompt", "lifecycle", "brief"],
+  CountingArray: ["id", "title", "rows", "columns", "symbol", "prompt", "lifecycle", "brief"],
+  Clock: ["id", "title", "hour", "minute", "prompt", "lifecycle", "brief"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -653,6 +661,21 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       ...(props.controls !== undefined ? { controls: props.controls as UiSimulationParameter[] } : {}),
       ...(props.visualization !== undefined ? { visualization: props.visualization as "pianoroll" | "scope" } : {}),
     }];
+    case "NumberLine":
+    case "TenFrame":
+    case "PlaceValue":
+    case "FractionBars":
+    case "CountingArray":
+    case "Clock": {
+      const model = manipulativeModelFromProps(element.typeName, props);
+      if (!model) throw new OpenUISourceError("invalid", `${element.typeName} needs at least one usable model entry.`);
+      const prompt = optionalText(props.prompt)?.trim();
+      const brief = optionalText(props.brief)?.trim();
+      return [{
+        type: "manipulative", id: contractId(text(props.id, id), id), title: text(props.title, MANIPULATIVE_TITLES[model.kind]),
+        ...(brief ? { brief } : {}), ...(prompt ? { prompt } : {}), model,
+      }];
+    }
     case "AudioResponse":
     case "VideoResponse": return [taskNode("practice", id, props, props.brief, props.criteria, undefined, {
       format: "text", label: "What would you improve on your next attempt?", placeholder: "Replay your attempt, notice one thing, and explain your next step.",

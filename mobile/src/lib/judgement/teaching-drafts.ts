@@ -1,3 +1,4 @@
+import { decideTeachingTriage, teachingTriageRequest, triageRequiresDraft, type TeachingDraftReasoning, type JudgementOutcome } from "@keating/learner-contracts";
 import { runTeachingDrafts, validateToolCall, projectActiveWork, TUTOR_RATE_LIMIT_REASON, TUTOR_RATE_LIMIT_MESSAGE, describeDecisionPlanningFailure, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
   type JudgementCaller, type PortableLearnerData, type ReleasedActivitySelection, type UiActionJournal, type TeachingDraftOptions,
   type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn, type TeachingDraftRefinement } from "@keating/learner-contracts";
@@ -44,6 +45,10 @@ export function createMobileTeachingDraftRound(options: {
   onReviewedGrade?: (grade: NativeQuestionGrade | undefined) => void;
   /** Explicit host opt-in for longer private comparison/synthesis. */
   refinement?: TeachingDraftRefinement;
+  /** Fast Jev check that answers simple turns directly, without drafting or review. On unless false. */
+  triage?: boolean;
+  /** Draft comparison breadth; the app default is "focused". */
+  breadth?: "focused" | "broad";
   activityLearning?: (input: ActivitySelectionInput) => Promise<ActivitySelection>;
   activityLearningMode?: "background" | "live";
   backgroundActivityPolicy?: BackgroundActivityPolicy | null;
@@ -56,6 +61,8 @@ export function createMobileTeachingDraftRound(options: {
   // The entire tool conversation keeps the policy that existed when it began.
   const backgroundActivityPolicy = options.backgroundActivityPolicy ? structuredClone(options.backgroundActivityPolicy) : null;
   const openAiToolBatches: { responseId: string; results: ProviderToolResult[] }[] = [];
+  // One triage per learner message; tool rounds of a direct turn stay direct.
+  let triaged: { readonly messageId: string; readonly direct: TeachingDraftReasoning | null } | undefined;
   return async (settings, apiKey, messages, providerOptions = {}) => {
     const priorGrade = lastGrade;
     lastGrade = undefined;
@@ -148,13 +155,51 @@ export function createMobileTeachingDraftRound(options: {
       await stillCurrent();
       return outcome;
     };
+    const ceiling: TeachingDraftReasoning = providerOptions.reasoningLevel === "xhigh" ? "high" : providerOptions.reasoningLevel === "minimal" ? "low" : providerOptions.reasoningLevel ?? "off";
+    const messageId = messages[latestProvider]?.id;
+    if (options.triage !== false && messageId) {
+      if (triaged?.messageId !== messageId) {
+        let direct: TeachingDraftReasoning | null = null;
+        if (!continuation && !submitted && !feedbackQuestion && !confirmedQuestionGrade && !triageRequiresDraft(turn)) {
+          // Only the preferred reviewer triages; a slow or failed answer drafts.
+          const reviewer = options.reviewers?.[0] ?? { judge: options.judge, maxQuestionChars: options.maxQuestionChars };
+          const triageRequest = teachingTriageRequest(turn);
+          if (reviewer.maxQuestionChars === undefined || JSON.stringify(triageRequest.questions).length <= reviewer.maxQuestionChars) {
+            const local = new AbortController();
+            const stop = () => local.abort();
+            providerOptions.signal?.addEventListener("abort", stop, { once: true });
+            const deadline = setTimeout(stop, 6_000);
+            try {
+              const outcome = await Promise.race([currentJudge(reviewer.judge)(triageRequest, local.signal),
+                new Promise<JudgementOutcome>(resolve => local.signal.addEventListener("abort",
+                  () => resolve({ ok: false, error: { code: "cancelled", retryable: false } }), { once: true }))]);
+              const triage = decideTeachingTriage(outcome, ceiling);
+              if (triage.route === "direct") direct = triage.reasoning;
+            } catch (error) { if (error instanceof DOMException && error.name === "AbortError") throw error; }
+            finally { clearTimeout(deadline); providerOptions.signal?.removeEventListener("abort", stop); local.abort(); }
+          }
+        }
+        assertCurrent();
+        triaged = { messageId, direct };
+      }
+      if (triaged.direct !== null) {
+        // A simple turn streams straight from the tutor; tool calls still need valid arguments.
+        const round = await request(settings, apiKey, messages, { ...providerOptions, tools, reasoningLevel: triaged.direct });
+        assertCurrent();
+        options.onReleased(undefined, false);
+        const reply = { text: round.text, toolCalls: round.calls.map(call => ({ name: call.name, arguments: structuredClone(call.arguments) })) };
+        return check(reply).every(entry => entry.status === "pass") ? round : { ...round, calls: [], assistantTurn: null };
+      }
+    }
     const result = await runTeachingDrafts<ProviderRound>({ turn, signal: providerOptions.signal, judgementModel: options.judgementModel,
       configuredDecisionModel: options.configuredDecisionModel, maxQuestionChars: options.maxQuestionChars,
       ...(submitted ? { submittedComprehension: submitted } : {}),
       judge: currentJudge(options.judge),
       reviewers: options.reviewers?.map(reviewer => ({ ...reviewer, judge: currentJudge(reviewer.judge) })),
       check, refinement: options.refinement, timeoutMs: 120_000,
-      parallelDrafts: hosted,
+      // A tool round is an intermediate step: one draft, not a comparison, unless research breadth was asked for.
+      parallelDrafts: hosted && !(continuation && (options.breadth ?? "focused") === "focused"),
+      breadth: options.breadth ?? "focused",
       onAnswerStage: hosted && !submitted && !feedbackQuestion && providerOptions.stream && providerOptions.onTextDelta ? ({ reply }) => {
         if (stageDelivery || reply.toolCalls.length || !reply.text.trim()) return;
         // Evidence can change while an independent draft is finishing. Check the
@@ -165,7 +210,7 @@ export function createMobileTeachingDraftRound(options: {
           providerOptions.onTextDelta!(publishedText, publishedText);
         }).catch(() => { /* The terminal evidence check also guards the final reply. */ });
       } : undefined,
-      maxReasoning: providerOptions.reasoningLevel === "xhigh" ? "high" : providerOptions.reasoningLevel === "minimal" ? "low" : providerOptions.reasoningLevel ?? "off",
+      maxReasoning: ceiling,
       recordActivity: true, activityLearningMode: options.activityLearningMode ?? "background", backgroundActivityPolicy,
       ...(options.activityLearning ? { activityLearning: async (input: ActivitySelectionInput) => {
         await stillCurrent(); const selected = await options.activityLearning!(input); await stillCurrent(); return selected;
