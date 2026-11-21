@@ -834,7 +834,12 @@ export class TeachingDraftSession<T> {
         ...(currentTurn.confirmedQuestionGrade ? Object.fromEntries(Object.entries(remainingCheckpointQuestions)
           .filter(([id]) => id in adherence.questions)
           .map(([id, question]) => [id, { ...question, instructions: "The host recorded the answer and verdict in confirmedQuestionGrade. "
-            + "Explaining that specific result is feedback on a completed item. Independently check every other or newly posed item. " + question.instructions }])) : {}) } };
+            + "Explaining that specific result is feedback on a completed item. Independently check every other or newly posed item. " + question.instructions }])) : {}),
+        ...((currentTurn.confirmedQuestionGrade || this.options.submittedComprehension) && adherence.questions.assessed_work_completed
+          ? { assessed_work_completed: { ...adherence.questions.assessed_work_completed, instructions: "The learner has already submitted their own answer to the saved question"
+            + (currentTurn.confirmedQuestionGrade ? " and the host recorded its verdict in confirmedQuestionGrade" : "")
+            + ". Explaining or correcting that submitted answer is feedback on completed work, not supplying their assessed solution. Judge only other, still unsubmitted assessed work. "
+            + adherence.questions.assessed_work_completed.instructions } } : {}) } };
     }, [reply]);
     // Keep infrastructure failures distinct from a completed review rejecting
     // the draft. A later completed review supersedes an earlier failure.
@@ -862,7 +867,7 @@ export class TeachingDraftSession<T> {
     const checks: TeachingPolicyCheck[] = [
       ...assessment.checks.map(check => {
         if (step.turn.assessment === "assessed" && check.id === "checkpoint_answer_leaked") return { ...check, severity: "critical" as const };
-        if (this.options.submittedComprehension && step.turn.assessment !== "assessed" && check.id === "assessed_work_completed"
+        if ((this.options.submittedComprehension || step.turn.confirmedQuestionGrade) && step.turn.assessment !== "assessed" && check.id === "assessed_work_completed"
           && check.source === "jev" && check.status === "unknown" && typeof check.probability === "number" && Number.isFinite(check.probability))
           return { ...check, applicability: "submitted-answer-feedback" as const };
         if (submittedGradeWithoutText && check.id === "checkpoint_continued" && check.source === "jev"
