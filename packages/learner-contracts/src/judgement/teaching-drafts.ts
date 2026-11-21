@@ -308,6 +308,8 @@ export interface TeachingDraftResult<T> {
 }
 
 export { blocksRelease, teachingDraftAttemptLimit } from "./teaching-drafts/policy.js";
+/** Hosts reuse the attempt-state question to tell a typed answer to an open card from ordinary chat. */
+export { attemptedCheckpointQuestions } from "./teaching-drafts/attempt-feedback.js";
 export { decideTeachingTriage, teachingTriageRequest, triageRequiresDraft, DIRECT_REPLY_MAX_PROBABILITY, type TeachingTriage } from "./teaching-drafts/triage.js";
 
 /** Run the shared private generation, review, selection, and release flow. */

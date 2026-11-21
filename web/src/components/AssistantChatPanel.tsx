@@ -44,7 +44,7 @@ import { ChatMascotMenu } from "./ChatMascotMenu";
 import { habitLesson } from "../keating/habits/lesson";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
-import { TurnProcessSummary, TurnProgressCard, useSearchStepCovered } from "./TurnProgress";
+import { receiptTimestamps, TurnProcessSummary, TurnProgressCard, useSearchStepCovered } from "./TurnProgress";
 import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -202,6 +202,9 @@ import { useGoogleKeyForUrls, useLoadingStep } from "./chat/thread-status";
 import { quizSubmittedDetail } from "./chat/quiz-conversation";
 import { LearnerResponseReview } from "./LearnerResponseReview";
 import { LearnerQuotedText, QuoteComposerPreview, QuoteMessageButton, QuoteSelectionControl, sendWithDraftQuotes } from "./chat/QuoteParts";
+import { answerOpenCardFromComposer } from "../keating/openui/chat-answer-host";
+import { NEXT_QUESTION_PROMPT } from "../keating/judgement/next-question-suggestions";
+import { NextQuestionChip } from "./chat/NextQuestionChip";
 import { passageQuoteDisplayText } from "../keating/passage-quote";
 import { classifyLlmError, type LlmErrorDetails } from "../core/api-retry";
 import { composerIconButtonClass, srInteractiveClass } from "./chat/composer-styles";
@@ -3398,20 +3401,36 @@ function AssistantThread({
     return () => window.removeEventListener(PLAN_AROUND_CONSTRAINT_EVENT, handler);
   }, [callbacks.sessionId, submitLearnerTurn]);
 
+  // A typed answer to the open question card is submitted through the card;
+  // everything else is ordinary chat. Sends wait for an earlier check in turn.
+  const [checkingTypedAnswer, setCheckingTypedAnswer] = useState(false);
+  const typedAnswerQueue = useRef<Promise<unknown>>(Promise.resolve());
   const storeAdapter = useMemo(
     () => ({
       messages: threadMessages,
       isRunning,
       convertMessage,
 	  onNew: async (message: AppendMessage) => {
-		await sendWithDraftQuotes(callbacks.sessionId, message, onNew);
+		const turn = typedAnswerQueue.current.then(async () => {
+		  setCheckingTypedAnswer(true);
+		  try {
+		    const routed = await answerOpenCardFromComposer({
+		      sessionId: callbacks.sessionId, message, messages: agent?.context.isStreaming ? undefined : agent?.context.messages,
+		      storage: quizGradeStorage,
+		    });
+		    if (routed === "submitted") return;
+		  } finally { setCheckingTypedAnswer(false); }
+		  await sendWithDraftQuotes(callbacks.sessionId, message, onNew);
+		});
+		typedAnswerQueue.current = turn.catch(() => undefined);
+		await turn;
 	  },
       onCancel,
       adapters: {
         attachments: keatingAttachmentAdapter,
       },
     }),
-    [threadMessages, isRunning, convertMessage, onNew, onCancel, callbacks.sessionId],
+    [threadMessages, isRunning, convertMessage, onNew, onCancel, callbacks.sessionId, agent],
   );
 
   const runtime = useExternalStoreRuntime<ThreadMessageLike>(storeAdapter);
@@ -3495,6 +3514,8 @@ function AssistantThread({
         onVoiceComposerOpenChange={setVoiceComposerOpen}
         onMicRecordingChange={setMicRecording}
         onConversationComplete={preserveLiveConversation}
+        checkingTypedAnswer={checkingTypedAnswer}
+        onNextQuestion={() => { void sendText(NEXT_QUESTION_PROMPT); }}
       />
     </ThreadPrimitive.ViewportFooter>
   );
@@ -3764,6 +3785,8 @@ function ThinkingLevelSelect({ model, level, disabled, onChange }: {
   </label>;
 }
 
+const NO_TIMESTAMPS: readonly number[] = [];
+
 function ThreadComposer({
   studyActionsRef,
   pendingPrompt,
@@ -3782,7 +3805,13 @@ function ThreadComposer({
   onMicRecordingChange,
   onConversationComplete,
   manualReasoning = false,
+  checkingTypedAnswer = false,
+  onNextQuestion,
 }: {
+  /** A typed message is being checked against the open question card. */
+  checkingTypedAnswer?: boolean;
+  /** Ask for the next question after a feedback-only reply. */
+  onNextQuestion?: () => void;
   /** Jev chooses thinking per turn unless the learner opted into the Reasoning control. */
   manualReasoning?: boolean;
   studyActionsRef?: (node: HTMLSpanElement | null) => void;
@@ -3805,9 +3834,12 @@ function ThreadComposer({
 }) {
   const composer = useAui().composer;
   const input = useRef<HTMLTextAreaElement>(null);
+  const lastMessage = useAuiState(({ thread }) => thread.messages.at(-1));
   return (
     <>
       <AuiIf condition={state => !state.thread.isEmpty}><div className="ch-study">
+        <NextQuestionChip sessionId={callbacks.sessionId} running={isRunning} onNext={onNextQuestion}
+          timestamps={lastMessage?.role === "assistant" ? receiptTimestamps(lastMessage) : NO_TIMESTAMPS} />
         {[
           ["Explain another way", "Explain the current topic another way, with a concrete example."],
           ["Quiz me", "Quiz me on the current topic, one question at a time."],
@@ -3822,6 +3854,7 @@ function ThreadComposer({
           }
         }}>{label}</Chip>)}
         {studyActionsRef && <span className="ch-study-activities" ref={studyActionsRef} />}
+        {checkingTypedAnswer && <span role="status" className="lesson-status" data-tone="none">Checking your answer against the question…</span>}
       </div></AuiIf>
       <ComposerPrimitive.Root
         data-composer-field={voiceComposerOpen ? undefined : ""}

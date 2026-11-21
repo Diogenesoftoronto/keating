@@ -113,7 +113,7 @@ export function TurnProgressCard({ status, prefill }: { status: TeachingDraftSta
 
 const loadReceipts = (sessionId: string) => keatingStorage.getTeachingDraftReceipts(sessionId);
 
-function receiptTimestamps(message: ThreadMessage): readonly number[] {
+export function receiptTimestamps(message: ThreadMessage): readonly number[] {
   const sources = message.metadata.custom?.keatingDiagnosticTimestamps;
   // The receipt store checks the most recent source first when rows combine.
   if (Array.isArray(sources) && sources.length) {

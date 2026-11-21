@@ -15,6 +15,7 @@ import { toModelMessagesWithTime } from "../../keating/flue/model-messages";
 import { withTeachingDraftGate } from "../../keating/judgement/draft-gate";
 import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftContent, publishTeachingDraftStatus } from "../../keating/judgement/draft-status";
 import { rememberTurnReceipt } from "../../keating/judgement/turn-receipts";
+import { rememberNextQuestionSuggestion } from "../../keating/judgement/next-question-suggestions";
 import { teachingDraftEvidence } from "../../keating/judgement/draft-evidence";
 import { loadActiveWork } from "../../keating/judgement/active-work-host";
 import { createWebActivityLearning } from "../../keating/judgement/activity-learning";
@@ -165,6 +166,7 @@ export function createTeachingConversation({
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
     onDraftContent: candidate => publishTeachingDraftContent(sessionId, candidate),
     onReleasedReply: release => {
+      if (release.suggestNextQuestion) rememberNextQuestionSuggestion(sessionId, release.messageTimestamp);
       // An already-unverified reply shows its caveat; the check only adds work there.
       if (release.unverified) return;
       void agent.whenIdle().then(async () => {

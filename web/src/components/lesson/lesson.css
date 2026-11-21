@@ -411,3 +411,16 @@ body .lesson-frame button.keating-select.keating-select { border: 0; background:
   /* The same rules make every bare button 44–48px tall with .75rem 1rem padding and 1rem text. */
   :where(body:not(.chat-shell-active) .lesson-frame) :where(button, [role=button]) { min-width: 0; min-height: 1.73rem; padding: .24rem .34rem; font-size: .505rem; }
 }
+
+/* Typed chat answer ↔ its card: one quiet link each way; the partner pulses once when reached. */
+.chat-answer-link { margin-top: .24rem; min-height: 1.154rem; }
+.chat-answer-link__up { transform: rotate(180deg); }
+.lesson-document + .chat-answer-link { margin-inline-start: -.34rem; }
+[data-link-flash] { border-radius: .1923rem; animation: k-link-flash 1.6s ease-out; }
+@keyframes k-link-flash {
+  0%, 35% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 55%, transparent); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  [data-link-flash] { animation: none; outline: 2px solid var(--primary); outline-offset: 2px; }
+}
