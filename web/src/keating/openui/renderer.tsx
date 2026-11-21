@@ -27,6 +27,17 @@ import {
 } from "./shared-actions";
 import { PLAN_REVISED_EVENT, type PlanRevisedDetail } from "../plan-revisions";
 import {
+	chatAnswerLink,
+	findLinked,
+	learnerMessageIdOf,
+	receiptIdOf,
+	registerChatAnswerCard,
+	rememberChatAnswer,
+	revealLinked,
+	useChatAnswerLinks,
+	type ChatAnswerLink,
+} from "./chat-answer";
+import {
 	loadOpenUISourceState,
 	migrateOpenUISourceStateToSharedDocument,
 	openUISourceStateKey,
@@ -429,6 +440,7 @@ function DurableSharedUiDocument({
 				kind: "canonical",
 				type: receipt.action.type,
 				humanFriendlyMessage: delivery.humanFriendlyMessage,
+				...(chatAnswerLink(delivery.id) ? { origin: "chat" as const } : {}),
 				params: canonicalActionParams(receipt.action),
 				document: {
 					...metadata,
@@ -457,7 +469,7 @@ function DurableSharedUiDocument({
 		for (const delivery of state.deliveries) void emitDelivery(delivery);
 	}, [emitDelivery, state.deliveries]);
 
-	const handleSharedAction = useCallback((event: { intent: SharedUiActionIntent; humanFriendlyMessage: string }) => {
+	const handleSharedAction = useCallback((event: { intent: SharedUiActionIntent; humanFriendlyMessage: string }, chat?: Omit<ChatAnswerLink, "sessionId" | "documentId" | "at">) => {
 		if (!actionStorage) {
 			setActionError("This interaction could not be saved in this browser. Your entered work is still here; retry after enabling site storage.");
 			return false;
@@ -472,6 +484,10 @@ function DurableSharedUiDocument({
 					? { sessionId: metadata.sessionId, humanFriendlyMessage: event.humanFriendlyMessage }
 					: undefined,
 			);
+			// Recorded before delivery so the learner message carries the chat origin.
+			if (chat && metadata.sessionId && !dispatched.replayed) {
+				rememberChatAnswer(receiptIdOf(dispatched), { ...chat, sessionId: metadata.sessionId, documentId: document.id, at: Date.now() });
+			}
 			setState({ version: 1, document: dispatched.document, journal: dispatched.journal, deliveries: dispatched.deliveries });
 			setActionError(null);
 			if (metadata.sessionId) {
@@ -502,12 +518,38 @@ function DurableSharedUiDocument({
 		}
 	}, [actionStorage, emitDelivery, hostAction, metadata, state.document]);
 
+	// A typed chat answer goes through this card's own action path.
+	const live = useRef({ state, handleSharedAction });
+	live.current = { state, handleSharedAction };
+	useEffect(() => {
+		if (!metadata.sessionId || !hostAction) return;
+		return registerChatAnswerCard({
+			sessionId: metadata.sessionId,
+			documentId: document.id,
+			current: () => ({ document: live.current.state.document, receipts: live.current.state.journal.receipts }),
+			submit: (intent, humanFriendlyMessage, link) => live.current.handleSharedAction({ intent, humanFriendlyMessage }, link),
+		});
+	}, [document.id, hostAction, metadata.sessionId]);
+
+	useChatAnswerLinks();
+	const chatAnswers = state.journal.receipts.filter((receipt) => receipt.state === "completed" && chatAnswerLink(receiptIdOf(receipt)));
+	// Remount once a chat answer lands so the card shows it as if entered there.
+	const answeredKey = chatAnswers.map(receiptIdOf).join(" ");
+
 	return <>
 		<SharedUiDocumentRenderer
+			key={answeredKey}
 			document={state.document}
 			receipts={state.journal.receipts}
 			onAction={handleSharedAction}
 		/>
+		{chatAnswers.map((receipt) => {
+			const receiptId = receiptIdOf(receipt);
+			return <button key={receiptId} type="button" className="lesson-quiet chat-answer-link" data-chat-answer-link={receiptId}
+				onClick={(event) => revealLinked(findLinked(event.currentTarget, `[data-learner-response-id="${learnerMessageIdOf(receiptId)}"]`))}>
+				Answered in chat <KeatingGlyph name="down" size={12} />
+			</button>;
+		})}
 		{actionError ? <div className={css({ marginBlock: "0.75rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", fontSize: "0.75rem", color: "var(--destructive)" })} role="alert">{actionError}</div> : null}
 	</>;
 }

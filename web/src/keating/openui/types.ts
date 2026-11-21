@@ -67,6 +67,8 @@ export interface CanonicalKeatingOpenUIAction {
 	action: UiAction;
 	sourceDocument: UiDocument;
 	receipt: UiActionReceipt;
+	/** The learner typed this answer in the chat composer; the card submitted it. */
+	origin?: "chat";
 }
 
 export type KeatingOpenUIAction = LegacyKeatingOpenUIAction | CanonicalKeatingOpenUIAction;

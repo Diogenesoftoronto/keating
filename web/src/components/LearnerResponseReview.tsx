@@ -6,6 +6,23 @@ import {
 	resolvedLearnerResponseReview,
 	type LearnerResponseEnvelope,
 } from "../keating/learner-response";
+import { chatAnswerLink, findLinked, revealLinked, useChatAnswerLinks } from "../keating/openui/chat-answer";
+import "./lesson/lesson.css";
+
+/** "↑ Answer to …": the delivered message of a typed chat answer points back at its card. */
+function ChatAnswerBacklink({ response }: { response: LearnerResponseEnvelope }) {
+	useChatAnswerLinks();
+	if (response.origin !== "chat" || response.kind !== "openui-action" || response.payload.kind !== "canonical") return null;
+	const action = response.payload.action;
+	const receiptId = `${action.documentId}-${action.idempotencyKey}`;
+	const label = chatAnswerLink(receiptId)?.label ?? "the quick check";
+	return (
+		<button type="button" className="lesson-quiet chat-answer-link" data-chat-answer-backlink={action.documentId}
+			onClick={(event) => revealLinked(findLinked(event.currentTarget, `[data-shared-openui-document="${action.documentId}"]`))}>
+			<KeatingGlyph name="down" size={12} className="chat-answer-link__up" />Answer to {label}
+		</button>
+	);
+}
 
 export function LearnerResponseReview({ response }: { response: LearnerResponseEnvelope }) {
 	const review = resolvedLearnerResponseReview(response);
@@ -16,6 +33,7 @@ export function LearnerResponseReview({ response }: { response: LearnerResponseE
 	return (
 		<section
 			aria-label={review.title}
+			data-learner-response-id={response.id}
 			className={css({
 				width: "100%",
 				maxWidth: "42rem",
@@ -34,6 +52,7 @@ export function LearnerResponseReview({ response }: { response: LearnerResponseE
 					) : null}
 				</div>
 			</header>
+			<ChatAnswerBacklink response={response} />
 			{review.items.length > 0 && answeredQuestions ? (
 				<ol className={css({ marginTop: "0.75rem", display: "grid", gap: "0.625rem" })}>
 					{review.items.map((item, index) => (

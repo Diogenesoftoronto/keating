@@ -137,7 +137,9 @@ export interface TeachingDraftGateOptions {
    * citations); it cannot change what was published.
    */
   readonly onReleasedReply?: (release: { readonly messageTimestamp: number; readonly text: string;
-    readonly sources: TeachingPolicyTurn["sources"]; readonly unverified: boolean }) => void;
+    readonly sources: TeachingPolicyTurn["sources"]; readonly unverified: boolean;
+    /** Feedback only: the host offers the next question as one tap. */
+    readonly suggestNextQuestion?: true }) => void;
   /** Optional advisory ranking of already-approved replies; never authorizes a tool call. */
   readonly activityLearning?: (input: ActivitySelectionInput) => Promise<ActivitySelection>;
   /** Read once at turn start. Loading/research happens outside the public response path. */
@@ -803,7 +805,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         }
         publish(released, result.activitySelection);
         if (result.reply.text.trim()) {
-          try { options.onReleasedReply?.({ messageTimestamp: publishedStage?.message.timestamp ?? released.timestamp, text: result.reply.text, sources: turn.sources, unverified }); }
+          try { options.onReleasedReply?.({ messageTimestamp: publishedStage?.message.timestamp ?? released.timestamp, text: result.reply.text, sources: turn.sources, unverified,
+            ...(result.suggestNextQuestion ? { suggestNextQuestion: true as const } : {}) }); }
           catch { /* Follow-up checks cannot change publication. */ }
         }
       } else {
