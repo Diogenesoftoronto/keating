@@ -17,7 +17,8 @@ const wrapperClass = css({
 	display: "inline-flex",
 	cursor: "pointer",
 	alignItems: "center",
-	"&:has(input:focus-visible) > span": { outline: "2px solid var(--ring)", outlineOffset: "2px" },
+	// Sibling selector, not a :has() check on the label: that form restyled the whole page on every DOM mutation.
+	"& > input:focus-visible + span": { outline: "2px solid var(--ring)", outlineOffset: "2px" },
 });
 const srOnlyClass = css({
 	position: "absolute",

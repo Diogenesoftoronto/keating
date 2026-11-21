@@ -43,6 +43,9 @@ export interface ModelSelectorDialogProps {
 }
 /** Recent models shown under their own heading: the last few, newest first in the stored list. */
 const RECENT_MODEL_LIMIT = 4;
+// Same output as Number#toLocaleString() with no arguments, without building a formatter per model.
+const tokenCount = new Intl.NumberFormat();
+
 function compactTokens(tokens: number): string {
  return tokens >= 1_000_000 ? `${Math.round(tokens / 100_000) / 10}M` : tokens >= 1000 ? `${Math.round(tokens / 1000)}K` : String(tokens);
 }
@@ -126,9 +129,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
   }
  }, []);
  const providers = Array.from(new Set(models.map(entry => entry.model.provider)));
- const hostedProviders = new Map(providerAvailability.filter(provider => provider.cloud).map(provider => [provider.id, provider]));
- const unavailableProviders = [...hostedProviders.values()].filter(provider => !provider.configured);
- const unavailableProviderIds = new Set(unavailableProviders.map(provider => provider.id));
+ const hostedProviders = useMemo(() => new Map(providerAvailability.filter(provider => provider.cloud).map(provider => [provider.id, provider])), [providerAvailability]);
+ const unavailableProviders = useMemo(() => [...hostedProviders.values()].filter(provider => !provider.configured), [hostedProviders]);
+ const unavailableProviderIds = useMemo(() => new Set(unavailableProviders.map(provider => provider.id)), [unavailableProviders]);
  const providerSetupNotice = unavailableProviders.length > 0 ? <div>
   <p>Browse all supported chat models. Connect a provider to use its models.</p>
   {unavailableProviders.map(provider => <p key={provider.id}>
@@ -137,7 +140,9 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
    <button type="button" onClick={openProviderSettings}>Open settings</button>
   </p>)}
  </div> : null;
- const items = models.filter(entry => !excludeKeys?.includes(entry.key) &&
+ // Built only while open, and only when an input changes: the catalog has 1,600+ models, and this dialog
+ // re-renders with the chat page and several times while a list loads.
+ const items = useMemo(() => !open ? [] : models.filter(entry => !excludeKeys?.includes(entry.key) &&
   (!provider || entry.model.provider === provider) &&
   (!capability || (capability === "reasoning" ? entry.model.reasoning : entry.model.input.includes("image"))))
  .map<PickerItem>(({ key, model }) => ({
@@ -149,12 +154,12 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
   summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : "",
    model.provider !== "browser" && model.contextWindow ? `${compactTokens(model.contextWindow)} context` : ""].filter(Boolean).join(" · "),
   details: <div><p>Model ID: {model.id}</p>
-   {model.provider === "browser" ? <p>{getBrowserModel(model.id)?.blurb} Downloads when selected.</p> : <p>Context: {model.contextWindow.toLocaleString()} tokens</p>}
+   {model.provider === "browser" ? <p>{getBrowserModel(model.id)?.blurb} Downloads when selected.</p> : <p>Context: {tokenCount.format(model.contextWindow)} tokens</p>}
    {model.provider === "browser" && local.modelId === model.id && local.loading &&
     <ModelDownloadBar progress={local.download} modelName={model.name} onCancel={() => localModel.cancel()}/>}
    {model.provider === "browser" && !local.loading && <BrowserCache id={model.id}/>}
   </div>,
- }));
+ })), [open, models, excludeKeys, provider, capability, hostedProviders, unavailableProviderIds, recentKeys, local]);
  const thinkingControl = onThinkingLevelChange && level ? <ThinkingLevelControl model={currentModel} level={level} disabled={thinkingDisabled}
   onChange={next => { setLevel(next); onThinkingLevelChange(next); }}/> : undefined;
  return <ModelPicker open={open && !authenticating} label="Find a model" items={items} selected={selected} onClose={onClose} loading={loading} error={error}

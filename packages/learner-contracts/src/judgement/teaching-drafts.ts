@@ -290,6 +290,11 @@ export interface TeachingDraftPlanMemo {
   readonly planningHadFullHistory: boolean;
 }
 export interface TeachingDraftResult<T> {
+  /**
+   * The released reply is feedback only, written after a feedback-plus-next-question reply could not be
+   * verified. Hosts offer the next question as a one-tap suggestion.
+   */
+  readonly suggestNextQuestion?: true;
   /** Present when planning succeeded; pass back as priorPlan on this turn's tool rounds. */
   readonly plan?: TeachingDraftPlanMemo;
   /** Host binds this private selection to the message actually published, never to a draft. */

@@ -90,3 +90,48 @@ test("hosted Jev's router-qualified model name still counts as Jev planning", as
   expect(attempts).toEqual([1, 2]);
   expect(result.receipt.pairReviews?.map(review => review.pair)).toEqual([1]);
 });
+
+const answeredTurn = { ...turn, learnerMessage: "condensation", conversation: [
+  { role: "user" as const, content: "Quiz me on the water cycle, one question at a time." },
+  { role: "assistant" as const, content: "What is it called when liquid water turns into water vapor?" }] };
+const withNext = "Not quite. Condensation is vapor turning into droplets; this is evaporation.\n\nNext question: what is it called when water falls from clouds?";
+const feedbackOnlyText = "Not quite. Condensation is vapor turning into droplets; liquid water turning into vapor is evaporation.";
+// As in the live failure, the learner asked for a quiz, which turns off the feedback-pair path.
+const practice = (request: JudgementRequest): Record<string, number> => request.questions.learning_task ? { practice_requested: 0.95, learning_task: 0.97 } : {};
+const replyText = (request: JudgementRequest) => (request.state as { reply?: { text?: string } }).reply?.text ?? "";
+
+test("a reply to the learner's answer blocked only by leak checks falls back to verified feedback with a next-question suggestion", async () => {
+  const kinds: string[] = [];
+  const result = await runTeachingDrafts({ turn: answeredTurn, ruleIds: [], breadth: "focused",
+    judge: async request => ({ ok: true as const, response: { backend: jev, answers: teachingDraftAnswers(request,
+      replyText(request).includes("?") ? { checkpoint_answer_leaked: 0.95, checkpoint_continued: 0.95 } : practice(request)) } }),
+    generate: async ({ attempt, feedbackOnly }) => { kinds.push(feedbackOnly ? "feedback" : "default");
+      return { reply: { text: feedbackOnly ? feedbackOnlyText : withNext, toolCalls: [] }, value: attempt }; } });
+  expect(kinds.at(-1)).toBe("feedback");
+  expect(kinds.filter(kind => kind === "feedback")).toHaveLength(1);
+  expect(result.status).toBe("released");
+  expect(result.reply?.text).toBe(feedbackOnlyText);
+  expect(result.receipt.reason).toBeNull();
+  expect(result.suggestNextQuestion).toBe(true);
+});
+
+test("when even the feedback cannot be verified but Jev says the learner answered, it is released as best effort", async () => {
+  const result = await runTeachingDrafts({ turn: answeredTurn, ruleIds: [], breadth: "focused",
+    judge: async request => ({ ok: true as const, response: { backend: jev, answers: teachingDraftAnswers(request,
+      replyText(request) ? { checkpoint_answer_leaked: 0.95, checkpoint_continued: 0.95, checkpoint_feedback_support: "uncertain" } : practice(request)) } }),
+    generate: async ({ attempt, feedbackOnly }) => ({ reply: { text: feedbackOnly ? feedbackOnlyText : withNext, toolCalls: [] }, value: attempt }) });
+  expect(result.status).toBe("released");
+  expect(result.reply?.text).toBe(feedbackOnlyText);
+  expect(result.receipt.reason).toBe("best-effort-draft");
+});
+
+test("other blocking findings never take the feedback fallback", async () => {
+  const kinds: string[] = [];
+  const result = await runTeachingDrafts({ turn: answeredTurn, ruleIds: [], breadth: "focused",
+    judge: async request => ({ ok: true as const, response: { backend: jev, answers: teachingDraftAnswers(request,
+      replyText(request) ? { checkpoint_answer_leaked: 0.95, identity_invented: 0.95 } : practice(request)) } }),
+    generate: async ({ attempt, feedbackOnly }) => { kinds.push(feedbackOnly ? "feedback" : "default");
+      return { reply: { text: withNext, toolCalls: [] }, value: attempt }; } });
+  expect(kinds).not.toContain("feedback");
+  expect(result.status).toBe("withheld");
+});
