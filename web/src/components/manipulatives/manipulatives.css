@@ -118,6 +118,9 @@ html[data-reduce-motion="true"] .manip :is(.manip-line__point, .manip-clock__han
   .manip-array[data-wide] .manip-object__emoji { font-size: .8rem; }
   .manip-place__columns { gap: .3rem; }
   .manip-place__column + .manip-place__column { padding-inline-start: .3rem; }
+  /* Touch targets stay 44px; the count sits above its two buttons so three columns fit a 375px screen. */
+  .manip-place__count { flex-wrap: wrap; justify-content: center; row-gap: .15rem; }
+  .manip-place__count > b { flex-basis: 100%; }
   .manip-block--flat { width: 1.6rem; height: 1.6rem; }
   .manip-block--rod { height: 1.6rem; width: .2rem; }
   .manip-block--unit { width: .2rem; height: .2rem; }
