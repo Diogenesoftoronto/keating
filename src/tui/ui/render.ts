@@ -1,5 +1,5 @@
 import type { UiArtifactResource, UiDocument, UiDocumentNode, UiQuestion, UiStudyPlanItem, UiTaskNode } from "../learner-contracts.js";
-import { systemDesignMermaid } from "../learner-contracts.js";
+import { MANIPULATIVE_TITLES, manipulativeTextLines, systemDesignMermaid } from "../learner-contracts.js";
 
 /**
  * Terminal presentation of canonical learning documents.
@@ -177,6 +177,10 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
     case "music-lab": return {
       heading: `Music lab: ${node.title}`,
       body: [...nonEmpty(node.brief), "```js", ...node.code.split("\n"), "```", aside("Plays on web.")],
+    };
+    case "manipulative": return {
+      heading: `${MANIPULATIVE_TITLES[node.model.kind]}: ${node.title}`,
+      body: [...nonEmpty(node.brief), ...manipulativeTextLines(node.model), ...nonEmpty(node.prompt), ...(node.prompt ? [aside("Answer on web, or type your answer here.")] : [])],
     };
     case "language-practice": return {
       heading: `Language practice: ${node.title}`,

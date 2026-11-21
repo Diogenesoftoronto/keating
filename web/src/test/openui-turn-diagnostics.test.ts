@@ -126,7 +126,7 @@ describe("durable content-free OpenUI turn observation", () => {
     }, { preconnect() {} });
     const actor = { ...model, provider: "minimax", api: "anthropic-messages", id: "MiniMax-M3.1", baseUrl: "http://127.0.0.1:9" } as Model<Api>;
     const gate = withTeachingDraftGate((m, c, options) => streamSimple(m, c, { ...options, apiKey: "fixture", fetch: fakeFetch, maxRetries: 0 }), {
-      sessionId, basePrompt: () => "Tutor", onProgress: snapshot => snapshots.push(snapshot), makeCaller: () => async request => {
+      triage: false, breadth: "broad", sessionId, basePrompt: () => "Tutor", onProgress: snapshot => snapshots.push(snapshot), makeCaller: () => async request => {
         judgeRequests++;
         const outcome = answerDraftGateReview(request);
         if (!outcome.ok) return outcome;
@@ -180,7 +180,7 @@ describe("durable content-free OpenUI turn observation", () => {
     const snapshots: TeachingDraftSnapshot[] = [];
     const judgementModel = { id: configuredModel, requestTokens: null, stateQuestionTokens: null };
     const gate = withTeachingDraftGate(() => { tutorRequests++; throw Error("Tutor must not run"); }, {
-      sessionId, basePrompt:() => "Tutor", judgementModel, onProgress: snapshot => snapshots.push(snapshot),
+      triage: false, breadth: "broad", sessionId, basePrompt:() => "Tutor", judgementModel, onProgress: snapshot => snapshots.push(snapshot),
       makeCaller: () => createDraftGateJudgementCaller({settings: {...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted"},
         policy: {tiers:[tier], calibration: {entries:{}}}, judgementModel}),
     });
@@ -238,7 +238,7 @@ describe("durable content-free OpenUI turn observation", () => {
       const reply = assistant(["```python","numbers = [1, 2, 3]","for i in range(len(numbers) + 1):","    print(numbers[i])","```"].join("\n"));
       const stream = createAssistantMessageEventStream();
       stream.push({type:"done",reason:"stop",message:reply}); stream.end(reply); return stream;
-    },{sessionId,basePrompt:()=>"Help the learner.",makeCaller:()=>async input=>{
+    },{triage:false,breadth:"broad",sessionId,basePrompt:()=>"Help the learner.",makeCaller:()=>async input=>{
       const output=answerDraftGateReview(input);
       if (!output.ok) return output;
       const answers={...output.response.answers};
@@ -285,7 +285,7 @@ describe("durable content-free OpenUI turn observation", () => {
       stream.push({ type: "done", reason: "stop", message: reply });
       stream.end(reply);
       return stream;
-    }, { sessionId, basePrompt: () => "Help the learner.", makeCaller: () => async request => {
+    }, { triage: false, breadth: "broad", sessionId, basePrompt: () => "Help the learner.", makeCaller: () => async request => {
       const outcome = answerDraftGateReview(request);
       if (!outcome.ok) return outcome;
       const answers = { ...outcome.response.answers };

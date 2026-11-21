@@ -23,8 +23,10 @@ describe("trusted OpenUI source compiler", () => {
     expect(document.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
       "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab", "lab",
-      "task", "task",
+      "task", "task", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative",
     ]);
+    expect(document.nodes.flatMap((node) => node.type === "manipulative" ? [node.model.kind] : []))
+      .toEqual(["number-line", "ten-frame", "place-value", "fraction-bars", "array", "clock"]);
     expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))
       .toEqual(["assignment", "practice", "draft", "fieldwork", "connect", "person", "practice", "practice", "practice", "practice"]);
     // The current generation fixture contains only advertised components. Persisted

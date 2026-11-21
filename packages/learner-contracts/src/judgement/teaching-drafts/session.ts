@@ -461,15 +461,26 @@ export class TeachingDraftSession<T> {
     const staged = this.options.parallelDrafts && !this.context.extended && !this.options.collectAllAttempts
       && !feedbackAlternatives && !predictionAlternatives && !gradingAlternatives
       && !this.options.submittedComprehension && !this.context.turn.confirmedQuestionGrade;
+    const focused = this.options.breadth === "focused" && !this.context.extended && !this.options.collectAllAttempts;
+    // Focused: an ordinary turn gets one draft plus at most two repairs.
+    if (focused) this.context.maxAttempts = Math.min(3, this.context.maxAttempts);
     if (jevPlanned) {
       this.context.maxAttempts = Math.min(4, this.context.maxAttempts);
-      if (!staged) this.pairReviews = [];
+      // Focused: a host without parallel drafts pairs only when a targeted alternative is wanted.
+      if (!staged && (!focused || feedbackAlternatives || predictionAlternatives || gradingAlternatives)) {
+        this.pairReviews = [];
+        // Focused: feedback, prediction and grading turns compare one targeted and one general reply, not two pairs.
+        if (focused) this.context.maxAttempts = Math.min(2, this.context.maxAttempts);
+      }
     }
     this.context.backgroundActivity = guided.guidance;
     if (plan.planReview) this.context.planReview = plan.planReview;
     if (plan.resourceReview) this.context.resourceReview = plan.resourceReview;
     const compareLiveAlternatives = this.options.activityLearningMode === "live" && this.options.activityLearning !== undefined;
-    const targetCandidates = staged || this.context.standard !== "concise" && (this.context.extended || compareLiveAlternatives)
+    // Focused: two openings compete only when an activity is worth comparing with prose; otherwise the first passing draft is released.
+    const comparable = plan.interaction.action === "create" || plan.interaction.action === "continue";
+    const targetCandidates = staged && (!focused || comparable && this.context.standard !== "concise")
+      || this.context.standard !== "concise" && (this.context.extended || compareLiveAlternatives)
       ? Math.min(2, this.context.maxAttempts) : 1;
     // Interactive and prose drafts compete only when an activity is recommended and two candidates are wanted.
     const paired = targetCandidates === 2 && (plan.interaction.action === "create" || plan.interaction.action === "continue");
@@ -516,7 +527,10 @@ export class TeachingDraftSession<T> {
     }));
     this.context.reason = steps.some(step => step.reason === null) ? null : steps[0]?.reason ?? null;
     this.publish("selecting");
-    this.pairReviews = await Promise.all(([1, 2] as const).map(pair => this.comparePair(pair, completed)));
+    // A pair whose members were never dispatched has nothing to compare.
+    const focused = this.options.breadth === "focused";
+    this.pairReviews = await Promise.all(([1, 2] as const).filter(pair => !focused || pair * 2 <= this.context.maxAttempts)
+      .map(pair => this.comparePair(pair, completed)));
     if (this.context.controller.signal.aborted) throw new Error("draft-interrupted");
   }
 

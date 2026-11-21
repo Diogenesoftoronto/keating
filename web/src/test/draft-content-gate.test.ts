@@ -23,7 +23,7 @@ const judge: JudgementCaller = async request => {
 
 test("web capture is absent by default and text-only when explicitly enabled", async () => {
   const captured: (TeachingDraftCandidateText | null)[] = [];
-  const options = { sessionId: "test", basePrompt: () => "", makeCaller: () => judge, maxAttempts: 1, onDraftContent: (candidate: TeachingDraftCandidateText | null) => captured.push(candidate) };
+  const options = { triage: false, breadth: "broad" as const, sessionId: "test", basePrompt: () => "", makeCaller: () => judge, maxAttempts: 1, onDraftContent: (candidate: TeachingDraftCandidateText | null) => captured.push(candidate) };
   await (await withTeachingDraftGate(stream, options)(model, context)).result();
   expect(captured.filter(Boolean)).toEqual([]);
   captured.length = 0;
@@ -36,7 +36,7 @@ test("disabling inspection while generation runs drops candidate content", async
   let enabled = true;
   const captured: (TeachingDraftCandidateText | null)[] = [];
   const gate = withTeachingDraftGate(() => { enabled = false; return stream(); }, {
-    sessionId: "test", basePrompt: () => "", makeCaller: () => judge, maxAttempts: 1,
+    triage: false, breadth: "broad", sessionId: "test", basePrompt: () => "", makeCaller: () => judge, maxAttempts: 1,
     captureDraftContent: () => enabled, onDraftContent: candidate => captured.push(candidate),
   });
   const result = await (await gate(model, context)).result();

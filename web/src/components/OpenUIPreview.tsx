@@ -21,6 +21,7 @@ const ARTIFACT_ICON: Record<OpenUIPreviewArtifactKind, GlyphName> = {
 	coding: "code",
 	music: "music",
 	language: "globe",
+	manipulative: "shapes",
 	unavailable: "book",
 };
 

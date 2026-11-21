@@ -44,6 +44,11 @@ export interface KeatingUiSettings {
 	webSearch: "auto" | "off";
 	/** Tutor study-plan revisions apply immediately, or wait for the learner's Accept. */
 	planChanges: "autonomous" | "approval";
+	/**
+	 * Off by default: the judgement model picks each turn's thinking level up to
+	 * high. On restores the learner's own Reasoning control as the ceiling.
+	 */
+	manualReasoning: boolean;
 	flashcardSoundEnabled: boolean;
 	/**
 	 * Opt-in consent to send sanitized crash diagnostics to Keating. Off until
@@ -78,6 +83,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	localImageBaseUrl: "",
 	webSearch: "auto",
 	planChanges: "autonomous",
+	manualReasoning: false,
 	flashcardSoundEnabled: true,
 	diagnosticsReporting: false,
 };
@@ -226,6 +232,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
 		webSearch,
 		planChanges: value?.planChanges === "approval" ? "approval" : DEFAULT_UI_SETTINGS.planChanges,
+		manualReasoning: value?.manualReasoning === true,
 		// Flashcard sounds default to on, but an explicit off survives a reload.
 		flashcardSoundEnabled: typeof value?.flashcardSoundEnabled === "boolean"
 			? value.flashcardSoundEnabled

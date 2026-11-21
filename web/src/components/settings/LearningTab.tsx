@@ -31,6 +31,18 @@ export function TeachingSection() {
 				/>
 			</SettingRow>
 			<SettingRow
+				id="manual-reasoning"
+				label="Choose the thinking level myself"
+				help="By default Keating's judgement model decides how much the tutor thinks on each turn, and answers simple messages straight away. Turn this on to show the Reasoning control and use it as the ceiling."
+				scope="this device"
+			>
+				<Switch
+					labelledBy="manual-reasoning-label"
+					checked={settings.manualReasoning}
+					onChange={(checked) => update({ manualReasoning: checked })}
+				/>
+			</SettingRow>
+			<SettingRow
 				id="response-comparison"
 				label="Response comparison chance"
 				help="Occasionally generate a second answer and ask which response helped more. The 1% default keeps comparisons useful without interrupting ordinary chats."

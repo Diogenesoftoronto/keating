@@ -133,6 +133,8 @@ export function createTeachingConversation({
   });
   const draftGate = withTeachingDraftGate(hybridStreamFn, {
     sessionId,
+    // Without the learner's own control, Jev may choose any level up to high.
+    maxReasoning: () => loadKeatingUiSettings().manualReasoning ? undefined : "high",
     basePrompt: () => refs.systemPromptBaseRef.current,
     isCurrent: isLive,
     // Compare only inside this round. A receipt belongs to the learner message

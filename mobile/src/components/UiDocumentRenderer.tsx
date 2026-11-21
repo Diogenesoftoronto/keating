@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
+  MANIPULATIVE_TITLES,
   UI_CONTRACT_VERSION,
   applyReview,
   initialSrsState,
@@ -13,6 +14,7 @@ import {
   type UiStudyPlanItem,
   type UiTaskNode,
   evaluateSimulationExpression,
+  manipulativeTextLines,
   parseSimulationExpression,
 } from "@keating/learner-contracts";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
@@ -222,6 +224,13 @@ function UiNode({
     <Text style={styles.notice}>Open this conversation in the web app to try the lab.</Text>
   </View>;
   if (node.type === "music-lab") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text>{node.brief ? <MarkdownText content={node.brief} /> : null}<Text selectable>{node.code}</Text><Text style={styles.notice}>Open this lab in the web app for Strudel playback and controls.</Text></View>;
+  if (node.type === "manipulative") return <View style={styles.node}>
+    <Text style={styles.nodeTitle}>{node.title}</Text>
+    {node.brief ? <MarkdownText content={node.brief} /> : null}
+    {manipulativeTextLines(node.model).map((line, i) => <Text key={i} selectable>{line}</Text>)}
+    {node.prompt ? <Text>{node.prompt}</Text> : null}
+    {node.prompt ? <Text style={styles.notice}>Open this conversation in the web app to work the {MANIPULATIVE_TITLES[node.model.kind].toLowerCase()}, or type your answer.</Text> : null}
+  </View>;
   if (node.type === "language-practice") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.language} · {node.rounds.length} rounds</Text><Text style={styles.notice}>Open this practice in the web app for word tiles, listening, and pronunciation recording.</Text></View>;
   if (node.type === "task" && node.diagram) return <SystemDesignWorkbench
     node={{ ...node, diagram: node.diagram }} document={document} disabled={disabled} busy={busy !== null}

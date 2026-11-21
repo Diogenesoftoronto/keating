@@ -91,7 +91,8 @@ function streamOf(value: AssistantMessage) {
 
 const caller: JudgementCaller = async (request) => answer(request);
 const gate = (stream: StreamFn, options: Partial<Parameters<typeof withTeachingDraftGate>[1]> = {}) => withTeachingDraftGate(stream, {
-  sessionId: "fixture-session", basePrompt: () => BASE, makeCaller: () => caller, ...options,
+  // These cases exercise drafting and review; draft-triage.test.ts covers the direct route.
+  sessionId: "fixture-session", basePrompt: () => BASE, makeCaller: () => caller, triage: false, breadth: "broad", ...options,
 });
 async function collect(stream: Awaited<ReturnType<StreamFn>>) {
   const events: AssistantMessageEvent[] = [];

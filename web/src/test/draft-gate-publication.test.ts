@@ -38,7 +38,7 @@ test("approved teaching text survives the real Flue native projection without ex
     stream.push({ type: "done", reason: "stop", message });
     stream.end(message);
     return stream;
-  }, { sessionId: providerName, basePrompt: () => "Teach accurately.", makeCaller: () => judge, maxAttempts: 2 });
+  }, { triage: false, breadth: "broad", sessionId: providerName, basePrompt: () => "Teach accurately.", makeCaller: () => judge, maxAttempts: 2 });
   const stream: typeof base.stream = (_model, _context, options) => {
     const output = createAssistantMessageEventStream();
     void (async () => {
@@ -116,7 +116,7 @@ test.each(["finish", "stop"] as const)("Flue keeps one visible opening and its r
       requested_part_missing: { type: "noul", noul: reply.text.includes(addition) ? 0 : 1 } } } };
   };
   const gated = withTeachingDraftGate(fixture.provider.streamSimple, {
-    sessionId: name, basePrompt: () => "", makeCaller: () => judge, maxAttempts: 3,
+    triage: false, breadth: "broad", sessionId: name, basePrompt: () => "", makeCaller: () => judge, maxAttempts: 3,
     onReceipt: receipt => receipts.push(receipt),
   });
   const stream: typeof fixture.provider.stream = (_model, _context, options) => {

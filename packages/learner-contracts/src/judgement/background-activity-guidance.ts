@@ -8,6 +8,7 @@ const componentKinds: Readonly<Record<string, ActivityKind>> = {
   Question: "question", Quiz: "question", Flashcards: "recall", Simulation: "simulation",
   LearningImage: "visual", ConceptMap: "visual", LanguagePractice: "practice",
   CodingChallenge: "practice", MusicLab: "practice", Lab: "practice",
+  NumberLine: "practice", TenFrame: "practice", PlaceValue: "practice", FractionBars: "practice", CountingArray: "practice", Clock: "practice",
 };
 const descriptions: Readonly<Record<ActivityKind, string>> = {
   prose: "a prose explanation", question: "a question", recall: "a recall activity",

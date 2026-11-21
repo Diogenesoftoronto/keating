@@ -78,6 +78,7 @@ describe("mobile OpenUI document wire", () => {
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
       "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation",
       "coding-challenge", "music-lab", "lab", "task", "task",
+      "manipulative", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative",
     ]);
     expect(parsed.content).toBe("Before\nAfter");
     expect(parsed.content).not.toContain("LearningSurface");

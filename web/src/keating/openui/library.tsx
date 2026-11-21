@@ -748,6 +748,122 @@ export const VideoResponse = defineComponent({
     component: ({ props }) => <OpenUIResponse props={props} kind="VideoResponse" />,
 });
 
+// Early-learning manipulatives. Six components share one contract node; key order
+// here IS the positional argument order and must match POSITIONAL_FIELDS in
+// @keating/learner-contracts. A prompt turns the picture into a task the learner
+// works and shares; without one it is a picture to talk over.
+const manipulativePrompt = z.string().optional().describe("What the learner should do with the model, in short concrete words. Omit to show a picture only.");
+const manipulativeBrief = z.string().optional().describe("Optional one-line framing; Markdown");
+
+function OpenUIManipulative({ props, component }: { props: { id: string; lifecycle: string }; component: string }) {
+	const streaming = useIsStreaming();
+	const trigger = useTriggerAction();
+	const document = useMemo(() => compileOpenUISourceToSharedDocument(`model = ${component}(${JSON.stringify(props)})\nroot = LearningSurface([model])`, { documentId: props.id, retention: props.lifecycle as "ephemeral" }), [props, component]);
+	return <SharedUiDocumentRenderer document={{ ...document, lifecycle: streaming ? "streaming" : "ready" }} onAction={(event) => {
+		void trigger(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "manipulative", ...event.intent } });
+		return true;
+	}} />;
+}
+
+const numberLinePropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	min: z.number().describe("First tick"),
+	max: z.number().describe("Last tick"),
+	step: z.number().positive().default(1).describe("Distance between ticks; at most 40 ticks"),
+	marks: z.array(z.object({ value: z.number(), label: z.string().optional() })).max(12).optional().describe("Dots on ticks, e.g. a start number"),
+	jumps: z.array(z.object({ from: z.number(), to: z.number(), label: z.string().optional() })).max(12).optional().describe("Hops drawn as arcs, e.g. {from: 3, to: 7, label: \"+4\"}"),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+	labelEvery: z.number().int().positive().optional().describe("Label every nth tick"),
+});
+export const NumberLine = defineComponent({
+	name: "NumberLine",
+	description: "A number line with labelled ticks, marked points and hop arcs. Use for counting on and back, adding and subtracting as hops, skip counting, ordering numbers, and decimals or fractions on a line. With a prompt the learner places one point on a tick and shares where it landed.",
+	props: numberLinePropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="NumberLine" />,
+});
+
+const tenFramePropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	filled: z.number().int().min(0).max(20).describe("Counters already in the frame"),
+	frames: z.union([z.literal(1), z.literal(2)]).default(1).describe("Use 2 for numbers to 20"),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+});
+export const TenFrame = defineComponent({
+	name: "TenFrame",
+	description: "One or two ten frames with counters. Use for numbers to 20, making ten, number bonds and subitizing. With a prompt the learner taps spaces to add or remove counters; counters they add show in a second colour.",
+	props: tenFramePropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="TenFrame" />,
+});
+
+const placeValuePropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	value: z.number().int().min(0).max(999).describe("Number shown as hundreds flats, tens rods and ones cubes; use 0 when the learner builds from nothing"),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+});
+export const PlaceValue = defineComponent({
+	name: "PlaceValue",
+	description: "Base-ten blocks for a whole number up to 999. Use for place value, reading and building numbers, and regrouping. With a prompt the learner adds or takes away hundreds, tens and ones (up to 19 in a column, for regrouping) and shares the number they built.",
+	props: placeValuePropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="PlaceValue" />,
+});
+
+const fractionBarsPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	bars: z.array(z.object({ parts: z.number().int().min(1).max(12), shaded: z.number().int().min(0).max(12), label: z.string().optional() })).min(1).max(4).describe("Equal-length wholes, each split into equal parts with some shaded"),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+});
+export const FractionBars = defineComponent({
+	name: "FractionBars",
+	description: "One to four equal-length bars, each split into equal parts with some shaded. Use for unit fractions, equivalent fractions and comparing fractions. With a prompt the learner taps parts to shade them and shares what they shaded.",
+	props: fractionBarsPropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="FractionBars" />,
+});
+
+const countingArrayPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	rows: z.number().int().min(1).max(10),
+	columns: z.number().int().min(1).max(12),
+	symbol: z.enum(["dot", "square", "star", "apple", "ball", "fish", "flower", "car", "heart", "bug"]).optional().describe("What each object looks like; defaults to dot"),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+});
+export const CountingArray = defineComponent({
+	name: "CountingArray",
+	description: "Rows of identical objects. Use for counting a collection, equal groups, repeated addition and multiplication as an array. With a prompt the learner taps each object to count it; each tap shows its count.",
+	props: countingArrayPropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="CountingArray" />,
+});
+
+const clockPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	hour: z.number().int().min(1).max(12),
+	minute: z.number().int().min(0).max(59),
+	prompt: manipulativePrompt,
+	lifecycle: lifecycleSchema,
+	brief: manipulativeBrief,
+});
+export const Clock = defineComponent({
+	name: "Clock",
+	description: "An analog clock face without a digital readout. Use for telling time to the hour, half hour, quarter hour and five minutes. With a prompt the learner moves the hands an hour or five minutes at a time and shares the time they set.",
+	props: clockPropsSchema,
+	component: ({ props }) => <OpenUIManipulative props={props} component="Clock" />,
+});
+
 const learningBlock = z.union([
 	AudioResponse.ref,
 	VideoResponse.ref,
@@ -774,6 +890,12 @@ const learningBlock = z.union([
 	CodingChallenge.ref,
 	Lab.ref,
 	MusicLab.ref,
+	NumberLine.ref,
+	TenFrame.ref,
+	PlaceValue.ref,
+	FractionBars.ref,
+	CountingArray.ref,
+	Clock.ref,
 ]);
 
 export const LearningSurface = defineComponent({
@@ -828,6 +950,12 @@ export const keatingOpenUILibrary = createLibrary({
 		CodingChallenge,
 		Lab,
 		MusicLab,
+		NumberLine,
+		TenFrame,
+		PlaceValue,
+		FractionBars,
+		CountingArray,
+		Clock,
 	],
 	componentGroups: [
 		{ name: "Perform and reflect", components: ["AudioResponse", "VideoResponse"] },
@@ -836,6 +964,7 @@ export const keatingOpenUILibrary = createLibrary({
 		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
 		{ name: "People and community", components: ["PersonBrief", "Connect"] },
 		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "Lab"] },
+		{ name: "Early learning", components: ["NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock"] },
 	],
 });
 
@@ -850,12 +979,29 @@ const openUILibraryPrompt = keatingOpenUILibrary.prompt({
 		"Add lifecycle=ephemeral|resumable|workspace and a stable id=<document-id> to the opening fence.",
 		"Use ordinary Markdown for prose that does not need interaction.",
 		"Prefer OpenUI components over tool calls when the only purpose is to render learner-facing interaction.",
+		"For young or beginning learners working on number, place value, fractions, equal groups or time, prefer one Early learning model over abstract prose.",
 		"Use Question for conversational checks and forms; submitted answers return as structured interaction data with a reviewable learner summary.",
 		"Create quizzes and flashcards only with OpenUI Quiz and Flashcards, using resumable lifecycle for persistence. Use native tools for grading, goals, media, and workspace side effects; never call legacy quiz or deck creation tools.",
 		"Questions are ephemeral by default, quizzes and flashcards are resumable, and authored artifacts are workspace documents.",
 		"Never repeat the same question, quiz, or flashcard content outside its component.",
 	],
 });
+
+/** Parser-valid early-learning example: one model, one action, then wait. */
+export const keatingOpenUIEarlyLearningExampleProgram = [
+	'root = LearningSurface([hops], "Adding on a number line", "", "ephemeral")',
+	'hops = NumberLine("add-3-and-4", "Start at 3, hop 4", 0, 10, 1, [{ value: 3, label: "start" }], [], "Make 4 hops from 3. Where do you land? Put your point there.", "ephemeral")',
+].join("\n");
+
+export const keatingOpenUIEarlyLearningGuide = [
+	"## Early learning",
+	"For young or beginning learners, a concrete model beats a paragraph. Pick the one model that matches the idea: `NumberLine` for counting on and back, adding and subtracting as hops, and ordering numbers; `TenFrame` for numbers to 20, making ten and number bonds; `PlaceValue` for hundreds, tens and ones; `FractionBars` for equal parts, equivalent and compared fractions; `CountingArray` for counting a collection, equal groups and multiplication; `Clock` for telling time.",
+	"Keep words short and concrete, and use one model per turn. Without `prompt`, the model is a picture you talk over: draw the worked example, such as jumps of +4 from 3 to 7. With `prompt`, the learner works the model and presses Share. Then stop and wait. Do not draw the answer into the model you ask them to find, such as the landing hop or the shaded parts they must shade.",
+	"A share arrives as a learner response with the exact state: the point on the line, the filled spaces, the blocks in each column, the shaded parts of each bar, how many objects they tapped, or the time they set. Respond to that state: say what is right in plain words, and if it is off, name the one step to look at again, such as counting the hops out loud. Do not grade a young learner harshly or count speed.",
+	"```openui lifecycle=ephemeral id=add-3-and-4",
+	keatingOpenUIEarlyLearningExampleProgram,
+	"```",
+].join("\n");
 
 /** Canonical, parser-valid pattern models can imitate when learner input should guide the next turn. */
 export const keatingOpenUIQuestionExampleProgram = [
@@ -959,6 +1105,7 @@ export const keatingOpenUIPrompt = [
 	"- `PersonBrief(id, name, profile, questions, sources, lifecycle, meetingAt)`: when the learner is preparing to meet, interview, work with, or study a specific person. Search first. `profile` is a short markdown summary in which every claim links to the source it came from; `sources` lists those URLs. Never infer a person's background, beliefs, or role beyond what a source says — write \"the sources don't say\" instead. `questions` are the learner's own questions, refined with them; mark at least one question that asks what the other person wants from the conversation. Set `meetingAt` (ISO instant) when the learner gives a time. After the meeting, respond to their debrief: what they learned, and one follow-up.",
 	"- `Connect(id, title, idea, actions, lifecycle, estimatedMinutes, dueAt)`: when an idea would grow by being discussed, taught, or tested with others — a lone learner, a project that needs feedback, a lesson worth passing on. `idea` states the one idea in the learner's words. `actions` are two to four concrete, low-stakes ways to share it, mixing online (a named kind of community or forum, a post they could write) and offline (a friend, a colleague, a meetup, a class). Prefer asking people a question over broadcasting an answer. Never post, message, or contact anyone on the learner's behalf, and never invent specific groups, events, or people — name a kind of place, or search for real ones and cite them.",
 	"When a Keating study room fits — the learner wants to talk the idea through with a particular person — offer to create an invite with `room_invite`; the learner sends the link themselves.",
+	keatingOpenUIEarlyLearningGuide,
 	"## Manipulable models",
 	"When a relationship is more convincing moved than described, stream a `Simulation` instead of explaining it. The learner drags a parameter and the readouts recompute instantly with no turn spent, so they can try twenty variations while their attention is still on the question.",
 	"`expr` is arithmetic only: `+ - * / % ^`, parentheses, numeric literals, and the parameter ids you declared on the same node. There are no function calls, no `Math.`, no conditionals, and no identifiers you did not declare — a readout that reaches for anything else is dropped. Build percentages and ratios from the arithmetic you have.",

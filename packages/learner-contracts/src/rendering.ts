@@ -85,6 +85,7 @@ export const WEB_OPENUI_COMPONENTS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
   "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice", "Lab",
+  "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -147,7 +148,7 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video, numberline, tenframe, placevalue, fractions, counting, clock], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
   'diagram = Diagram("rendering-diagram", "Trace a water cycle", "Connect the processes and explain what drives them.", [{id: "water", label: "Surface water", kind: "resource"}], [], [{id: "cycle-process", label: "Include a transformation", type: "component", kind: "process"}], ["Explain the role of energy in the cycle."], "resumable", ["resource", "process"] )',
   'design = SystemDesign("rendering-design", "Design a URL shortener", "Build a read path and explain the consistency trade-off.", [{ id: "client", label: "Browser", kind: "client" }], [], [{ id: "storage-path", label: "Client can reach storage", type: "path", fromKind: "client", toKind: "database" }], ["Explain workload assumptions and failure handling."], "resumable")',
   'audio = AudioResponse("rendering-audio", "Animal recall", "Name ten animals in Mandarin, then replay and reflect.", ["Distinct animal names", "Notice uncertain words"], 30, "resumable")',
@@ -173,6 +174,12 @@ export const OPENUI_SOURCE_PARITY_FIXTURE = [
   'connect = Connect("rendering-connect", "Take the update outside", "Explain the base-rate surprise to someone who was not in this lesson, and find out where their intuition lands.", [{ id: "online", title: "Post a three-sentence version where people discuss statistics", detail: "Ask one question rather than declaring an answer." }, { id: "offline", title: "Ask a friend to guess the test result before you explain it" }], "workspace", 30)',
   'person = PersonBrief("rendering-person", "Ada Lovelace", "Mathematician who wrote the first published algorithm for Babbage\'s Analytical Engine ([source](https://example.com/ada)).", [{ id: "q-notes", title: "What did Note G show that the engine could do?" }], ["Sources: example.com/ada"], "workspace", "2026-12-10T16:00:00.000Z")',
   'simulation = Simulation("rendering-simulation", "A positive test result", [{ id: "prevalence", label: "Prevalence", unit: "per 100k", min: 1, max: 5000, step: 1, value: 10 }, { id: "sensitivity", label: "Sensitivity", unit: "%", min: 50, max: 100, step: 0.1, value: 99 }, { id: "specificity", label: "Specificity", unit: "%", min: 50, max: 100, step: 0.1, value: 99 }], [{ id: "ppv", label: "Chance they actually have it", unit: "%", emphasis: true, expr: "100 * (prevalence/100000 * sensitivity/100) / (prevalence/100000 * sensitivity/100 + (1 - prevalence/100000) * (1 - specificity/100))" }, { id: "ratio", label: "False positives per true positive", precision: 1, expr: "((1 - prevalence/100000) * (1 - specificity/100)) / (prevalence/100000 * sensitivity/100)" }], "workspace", "Predict the answer, then raise specificity to 99.9 and watch one decimal place change it.")',
+  'numberline = NumberLine("rendering-number-line", "Add on a number line", 0, 10, 1, [{ value: 3, label: "start" }], [{ from: 3, to: 7, label: "+4" }], "Where do you land after four hops from 3?", "ephemeral", "Count each hop out loud.")',
+  'tenframe = TenFrame("rendering-ten-frame", "Make ten", 7, 1, "How many more make ten? Fill them in.", "ephemeral")',
+  'placevalue = PlaceValue("rendering-place-value", "Build 342", 0, "Build 342 with hundreds, tens and ones.", "ephemeral")',
+  'fractions = FractionBars("rendering-fractions", "Compare halves and quarters", [{ parts: 2, shaded: 1, label: "1/2" }, { parts: 4, shaded: 0, label: "quarters" }], "Shade the quarters bar to match one half.", "ephemeral")',
+  'counting = CountingArray("rendering-counting", "Rows of apples", 3, 4, "apple", "How many apples? Tap each one as you count.", "ephemeral")',
+  'clock = Clock("rendering-clock", "Half past three", 3, 0, "Set the clock to half past three.", "ephemeral")',
 ].join("\n");
 
 /** Canonical JSON interchange fixture containing every current shared node kind. */

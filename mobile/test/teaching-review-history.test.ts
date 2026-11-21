@@ -18,7 +18,7 @@ test.each(["fits", "overflow", "cancel on tool result"] as const)("native tool r
   const history = mobileTeachingHistory(original);
   const reviewed: TeachingPolicyTurn[] = [], actorHistory: ChatMessage[][] = [], visible: string[] = [];
   let committed = 0;
-  const requestRound = createMobileTeachingDraftRound({
+  const requestRound = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",
     reviewHistory: history.reviewHistory, current: () => !controller.signal.aborted,
     judgementModel: { id: "fixture", requestTokens: 64_000, stateQuestionTokens: 6000 },
     evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
@@ -76,7 +76,7 @@ test.each(["fits", "overflow", "cancel on tool result"] as const)("native tool r
 test("retrying a provider continuation replaces only its observed tool batch", async () => {
   const result = (text: string) => ({ callId: "call", name: "generate_practice_quiz", output: { text } });
   const responses: string[][] = [];
-  const round = createMobileTeachingDraftRound({
+  const round = createMobileTeachingDraftRound({ breadth: "broad", triage: false, breadth: "broad",
     current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
     judge: async (request, signal) => {
       const turn = (request.state as { turn: TeachingPolicyTurn }).turn;

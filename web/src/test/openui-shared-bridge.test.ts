@@ -29,6 +29,7 @@ describe("browser OpenUI to shared learner contract", () => {
 			"markdown", "callout", "question-group",
 			"quiz", "quiz", "language-practice", "deck", "study-plan", "concept-map", "image", "notes",
 			"task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab", "lab", "task", "task",
+			"manipulative", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative",
 		]);
 		expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))
 			.toEqual(["assignment", "practice", "draft", "fieldwork", "connect", "person", "practice", "practice", "practice", "practice"]);
