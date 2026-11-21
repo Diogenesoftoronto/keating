@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.10
+
+- Fixed a 4.2.8 regression: after Keating graded a submitted answer, the follow-up explanation could be withheld because the turn reused its pre-grade plan. Keating now plans again once an answer is graded.
+
 ## 4.2.9
 
 - The place-value model fits on a 375px phone screen: each column's count sits above its add and take-away buttons, which stay full-size touch targets.
