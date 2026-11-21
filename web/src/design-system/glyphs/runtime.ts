@@ -1,4 +1,4 @@
-import { animate, hover, stagger, type AnimationOptions, type DOMSegmentWithTransition } from "motion";
+import { animate, isDragActive, stagger, type AnimationOptions, type DOMSegmentWithTransition } from "motion";
 import { DURATION, EASE, motionAllowed, SOFT, SPRING } from "../motion";
 import { GLYPHS, type GlyphName } from "./data";
 import type { GlyphFrames, GlyphProperty, GlyphStep } from "./types";
@@ -7,6 +7,9 @@ const hosts = "button,a,[role=tab],[role=menuitem],[role=option],summary,[data-g
 const selected = ["aria-selected", "aria-current", "aria-pressed"];
 const rest = { x: 0, y: 0, rotate: 0, scale: 1, scaleX: 1, scaleY: 1, opacity: 1, pathLength: 1 };
 const players = new WeakMap<SVGSVGElement, () => void>();
+// Passed to abort(): without a reason, abort() builds an AbortError DOMException and captures a stack trace,
+// which inside a React commit cost ~0.1 ms for every glyph that unmounted (hundreds per session switch).
+const DISPOSED = "keating-glyph-disposed";
 
 export function playGlyph(svg: SVGSVGElement) {
   players.get(svg)?.();
@@ -77,10 +80,49 @@ export function bindGlyph(svg: SVGSVGElement, startAnimation = animate) {
     if (before !== engaged()) interact(!before);
   }
 
-  const unhover = hover(host, () => {
+  // motion's hover() gesture, on this binding's controller so disposal is one abort with a reason (motion's own
+  // controller aborts without one). Same rules: touch and active drags never hover, and a hover that ends while
+  // the pointer is pressed ends on release.
+  const passive = { passive: true, signal: events.signal };
+  let hoverActive = false;
+  let hoverPressed = false;
+  let hoverEndDeferred = false;
+  function endHover() {
+    if (hoverActive) {
+      hoverActive = false;
+      change(() => { hovered = false; });
+    }
+    host.removeEventListener("pointerleave", onHoverLeave);
+  }
+  function onHoverRelease() {
+    hoverPressed = false;
+    window.removeEventListener("pointerup", onHoverRelease);
+    window.removeEventListener("pointercancel", onHoverRelease);
+    if (hoverEndDeferred) {
+      hoverEndDeferred = false;
+      endHover();
+    }
+  }
+  function onHoverLeave(event: Event) {
+    if ((event as PointerEvent).pointerType === "touch") return;
+    if (hoverPressed) {
+      hoverEndDeferred = true;
+      return;
+    }
+    endHover();
+  }
+  host.addEventListener("pointerenter", event => {
+    if ((event as PointerEvent).pointerType === "touch" || isDragActive()) return;
+    hoverEndDeferred = false;
     change(() => { hovered = true; });
-    return () => change(() => { hovered = false; });
-  });
+    hoverActive = true;
+    host.addEventListener("pointerleave", onHoverLeave, passive);
+  }, passive);
+  host.addEventListener("pointerdown", () => {
+    hoverPressed = true;
+    window.addEventListener("pointerup", onHoverRelease, passive);
+    window.addEventListener("pointercancel", onHoverRelease, passive);
+  }, passive);
   // A glyph may mount under a pointer that was already over its host.
   if (hovered) host.addEventListener("pointerleave", () => change(() => { hovered = false; }), { once: true, signal: events.signal });
   host.addEventListener("focusin", () => change(() => { focused = host.matches(":focus-visible"); }), events);
@@ -135,8 +177,7 @@ export function bindGlyph(svg: SVGSVGElement, startAnimation = animate) {
       light();
     },
     dispose() {
-      unhover();
-      events.abort();
+      events.abort(DISPOSED);
       releasePress();
       observer.disconnect();
       clearTimeout(feedback);

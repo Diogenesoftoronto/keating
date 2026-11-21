@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { KeatingGlyph } from "../design-system/glyphs";
 import { placeAgainstAnchor } from "./trajectory/anchor-position";
 import "./selection-library.css";
@@ -22,6 +23,11 @@ export function orderedPickerItems(items: PickerItem[], query: string, selected:
  const recent = search ? [] : rest.filter(item => item.recent);
  return [...items.filter(item => item.pinnedLabel), ...matches.filter(item => item.id === selected), ...recent, ...rest.filter(item => !recent.includes(item))];
 }
+
+/** Rows rendered as the picker opens. More are added as the list scrolls toward its end: the full catalog is
+ *  1,600+ rows (~28k nodes), and building it in one task froze the page for most of a second on every open. */
+const FIRST_ROWS = 40;
+const ROW_CHUNK = 80;
 
 function pickerItemHeading(item: PickerItem, selected: string, query = ""): string {
  return item.pinnedLabel ?? (item.id === selected ? "Selected model" : item.recent && !query.trim() ? "Recently used" : item.group);
@@ -94,10 +100,32 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
    previous?.focus();
   };
  }, [open]);
- const ordered = orderedPickerItems(items, query, selected);
+ // A closed picker keeps no rows; they are rebuilt on open (the list was otherwise left in the DOM for good).
+ const ordered = open ? orderedPickerItems(items, query, selected) : [];
+ const rowsKey = `${open}\u0000${query}`;
+ const [rowWindow, setRowWindow] = useState({ key: rowsKey, limit: FIRST_ROWS });
+ const rowLimit = rowWindow.key === rowsKey ? rowWindow.limit : FIRST_ROWS;
+ const visible = rowLimit >= ordered.length ? ordered : ordered.slice(0, rowLimit);
+ // Closing forgets how far the list had grown, so the next open starts from the first rows again.
+ useEffect(() => { if (!open) setRowWindow(current => current.key === "" ? current : { key: "", limit: FIRST_ROWS }); }, [open]);
+ const results = useRef<HTMLDivElement>(null);
+ const more = useRef<HTMLDivElement>(null);
+ const hasMore = open && rowLimit < ordered.length;
+ useEffect(() => {
+  if (!hasMore || loading) return;
+  const grow = () => startTransition(() => setRowWindow({ key: rowsKey, limit: rowLimit + ROW_CHUNK }));
+  if (typeof IntersectionObserver === "undefined" || !more.current) { grow(); return; }
+  const observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) grow(); },
+   { root: results.current, rootMargin: "0px 0px 1200px 0px" });
+  observer.observe(more.current);
+  return () => observer.disconnect();
+ }, [hasMore, loading, rowsKey, rowLimit]);
  const focus = (index: number) => {
-  const item = ordered[(index + ordered.length) % ordered.length];
+  const position = (index + ordered.length) % ordered.length;
+  const item = ordered[position];
   if (!item) return;
+  // Keyboard travel (End, or ArrowUp from the top) may target a row not built yet.
+  if (position >= rowLimit) flushSync(() => setRowWindow({ key: rowsKey, limit: position + ROW_CHUNK }));
   const button = buttons.current.get(item.id);
   button?.focus(); button?.scrollIntoView({ block: "nearest" });
  };
@@ -129,14 +157,14 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
    </div>
    {controls && <div className="model-picker__controls">{controls}</div>}
    {filters && <div className="model-picker__filters">{filters}</div>}
-   <div className="model-picker__results" aria-label="Models" aria-busy={loading}>
+   <div ref={results} className="model-picker__results" aria-label="Models" aria-busy={loading}>
     {(error || failure) && <>
      <p className="library-message" role="alert">{failure || error}</p>
      {errorAction && <div className="model-picker__error-action">{errorAction}</div>}
     </>}
-    {loading ? <p className="library-message" role="status">Finding available models…</p> :
+    {!open ? null : loading ? <p className="library-message" role="status">Finding available models…</p> :
      !ordered.length ? <p className="library-message">No matching models. Try another name or clear your filters.</p> :
-     ordered.map((item, index) => <div key={item.id} className="model-picker__item">
+     visible.map((item, index) => <div key={item.id} className="model-picker__item">
       {(index === 0 || pickerItemHeading(ordered[index - 1], selected, query) !== pickerItemHeading(item, selected, query)) &&
        <div className="library-group">{pickerItemHeading(item, selected, query)}</div>}
       <div className="model-picker__row" data-provider-status={item.providerStatus}>
@@ -156,6 +184,7 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
       {item.details && <details className="model-picker__details"><summary>Model details</summary>{item.details}</details>}
       {item.action && <div className="model-picker__item-action">{item.action}</div>}
      </div>)}
+    {hasMore && !loading && <div ref={more} className="model-picker__more" aria-hidden="true" />}
    </div>
    {notice && <details className="model-picker__notice"><summary>{noticeLabel}</summary>{notice}</details>}
    <div className="model-picker__hint" role="status"><KeatingGlyph name="rise" size={13} label="Up arrow" /> <KeatingGlyph name="down" size={13} label="Down arrow" /> to browse · Enter to choose · Esc to close</div>

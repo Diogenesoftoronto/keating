@@ -117,8 +117,10 @@ html.dark .chat-page-panel .chat-mascot-perch[data-expanded=true]::after {backgr
 
 .ch-empty-cards {position:relative;width:min(100%,var(--ch-column,29rem));margin:.55rem auto auto}
 
-.chat-page-panel div:has(> .ch-empty-cards) > div:has(> .ch-empty) {flex:0 0 auto;margin-top:auto}
-.chat-page-panel div:has(> .ch-empty-cards) > :has(> .composer-root) {position:relative;background:transparent}
+/* The right-hand compounds carry a class on purpose: `X:has(...) > :has(...)` or `> :first-child` with no class, tag
+   or id makes Chromium restyle the whole document on every DOM mutation (60+ ms per mutation in a long chat). */
+.chat-page-panel div:has(> .ch-empty-cards) > .ch-thread-column:has(> .ch-empty) {flex:0 0 auto;margin-top:auto}
+.chat-page-panel div:has(> .ch-empty-cards) > .ch-footer:has(> .composer-root) {position:relative;background:transparent}
 .ch-spark {position:fixed;width:4px;height:4px;background:var(--phosphor,var(--primary));z-index:100;pointer-events:none}
 @media(prefers-reduced-motion:no-preference) {
 html:not([data-reduce-motion=true]) .ch-banner {animation:ch-rise .2s ease-out}
@@ -169,10 +171,10 @@ html[data-reply-typeface=mono] .chat-page-panel .keating-bubble [data-chat-prose
 .ch-empty-footer {justify-content:space-between;gap:.4rem;margin-block-start:.4rem}
 .ch-empty-footer span {font:.52rem/1.45 var(--mono-body);color:var(--muted-foreground)}
 .ch-other {gap:.2rem}
-.chat-page-panel :has(> .ch-empty-cards) > :has(.composer-root) .composer-hint > span:first-child {display:none}
+.chat-page-panel :has(> .ch-empty-cards) > .ch-footer:has(.composer-root) .composer-hint > .composer-hint__motto {display:none}
 @media(max-width:639px){
   .ch-empty-cards:empty {display:none}
-  .chat-page-panel div:has(> .ch-empty-cards) > div:has(> .ch-empty) {flex:1 0 auto;margin-top:0}
+  .chat-page-panel div:has(> .ch-empty-cards) > .ch-thread-column:has(> .ch-empty) {flex:1 0 auto;margin-top:0}
   .ch-empty-footer span {display:none}
   .ch-greeting h1 {font-size:.962rem}
   .ch-empty {align-content:start}
@@ -226,9 +228,9 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 .chat-page-panel .you-bubble {padding:.3846rem .5769rem;border:1px solid var(--line);border-radius:.1923rem;background:var(--card);box-shadow:none;font-size:.6731rem;line-height:1.5}
 .dark .chat-page-panel .you-bubble {border-color:var(--line)}
 .chat-page-panel .chat-avatar-you:not(:has(img)) {display:none}
-.chat-page-panel :has(> .you-bubble) > .msg-meta {order:2;display:flex;align-items:center;gap:.1923rem;margin:.0962rem 0 0;opacity:0}
-.chat-page-panel :has(> .you-bubble) > .msg-meta > b {display:none}
-.chat-page-panel :has(> .you-bubble):is(:hover,:focus-within) > .msg-meta {opacity:1}
+.chat-page-panel .you-column > .msg-meta {order:2;display:flex;align-items:center;gap:.1923rem;margin:.0962rem 0 0;opacity:0}
+.chat-page-panel .you-column > .msg-meta > b {display:none}
+.chat-page-panel .you-column:is(:hover,:focus-within) > .msg-meta {opacity:1}
 
 /* Reply actions: one even row of bare icons, flush with the text. Earlier replies show theirs on hover or focus. */
 .chat-page-panel .ch-actions {gap:2px;margin-top:.3846rem;margin-left:-.2885rem;min-height:1.3462rem}
@@ -238,10 +240,10 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 .chat-page-panel [data-learning-message-ids]:has(~ [data-learning-message-ids]) .ch-actions:not(:has([aria-pressed=true],[aria-expanded=true],details[open])) {opacity:0}
 .chat-page-panel [data-learning-message-ids]:has(~ [data-learning-message-ids]):is(:hover,:focus-within) .ch-actions {opacity:1}
 @media (prefers-reduced-motion:no-preference) {
-  .chat-page-panel .ch-actions,.chat-page-panel :has(> .you-bubble) > .msg-meta {transition:opacity .14s ease}
+  .chat-page-panel .ch-actions,.chat-page-panel .you-column > .msg-meta {transition:opacity .14s ease}
 }
 @media (hover:none) {
-  .chat-page-panel [data-learning-message-ids] .ch-actions,.chat-page-panel :has(> .you-bubble) > .msg-meta {opacity:1 !important}
+  .chat-page-panel [data-learning-message-ids] .ch-actions,.chat-page-panel .you-column > .msg-meta {opacity:1 !important}
 }
 
 /* Send arms itself: flat while there is nothing to send, a hard shadow once there is. */
@@ -260,8 +262,8 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 .chat-page-shell .chat-page-panel .msg-meta {margin-bottom:.2885rem}
 .chat-page-shell .chat-page-panel .msg-meta {line-height:1.4}
 .chat-page-panel :has(> .you-bubble) {position:relative}
-.chat-page-panel :has(> .you-bubble) > .msg-meta {position:absolute;top:100%;right:0;margin:1px 0 0;white-space:nowrap}
-.chat-page-panel :has(> .you-bubble) > .msg-meta > button {width:1.0577rem;height:1.0577rem}
+.chat-page-panel .you-column > .msg-meta {position:absolute;top:100%;right:0;margin:1px 0 0;white-space:nowrap}
+.chat-page-panel .you-column > .msg-meta > button {width:1.0577rem;height:1.0577rem}
 @media (max-width:640px) {
   .chat-page-panel .composer-hint {max-height:none}
   .chat-page-panel .composer-hint > span {white-space:normal}
@@ -377,7 +379,8 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
   .chat-page-panel .composer-root:has(> textarea) {
     display:grid; grid-template-columns:minmax(0,1fr) repeat(4,auto); align-items:end; column-gap:0; padding:0 4px 4px 0;
   }
-  .chat-page-panel .composer-root:has(> textarea) > :not(textarea,.ch-toolbar) {grid-column:1 / -1}
+  /* data-composer-field mirrors :has(> textarea); a featureless `> :not(...)` after :has() restyles the whole page per mutation. */
+  .chat-page-panel .composer-root[data-composer-field] > :not(textarea,.ch-toolbar) {grid-column:1 / -1}
   .chat-page-panel .composer-root:has(> textarea) > textarea {grid-column:1; align-self:center; min-height:44px; padding:10px 2px 6px 12px}
   .chat-page-panel .composer-root:has(> textarea) > .ch-toolbar {display:contents}
   .chat-page-panel .composer-root:has(> textarea) .ch-spacer {display:none}
@@ -386,8 +389,8 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
   .chat-page-panel .composer-root:has(> textarea:focus) > textarea,
   .chat-page-panel .composer-root:has(> textarea:not(:placeholder-shown)) > textarea {grid-column:1 / -1}
   /* With the field on its own row, the tools right-align on the row below. */
-  .chat-page-panel .composer-root:has(> textarea:focus) .ch-toolbar > :first-child,
-  .chat-page-panel .composer-root:has(> textarea:not(:placeholder-shown)) .ch-toolbar > :first-child {grid-column:2}
+  .chat-page-panel .composer-root:has(> textarea:focus) .ch-toolbar > .ch-attach,
+  .chat-page-panel .composer-root:has(> textarea:not(:placeholder-shown)) .ch-toolbar > .ch-attach {grid-column:2}
 }
 /* Voice mode has no field: "Hold to speak" takes the row the spacer used to hold, so its label stays on one line. */
 @media (max-width:780px) {
@@ -401,5 +404,5 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 /* Too narrow for the field and four tools on one row: keep the stacked layout, still without the thinking row. */
 @container ch-composer (max-width:319px) {
   .chat-page-panel .composer-root:has(> textarea) > textarea {grid-column:1 / -1}
-  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > :first-child {grid-column:2}
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > .ch-attach {grid-column:2}
 }

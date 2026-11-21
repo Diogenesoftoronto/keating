@@ -23,6 +23,7 @@ import { applyBackgroundActivityGuidance, type BackgroundActivityGuidance } from
 import { estimatedTextTokens, measureStateComposition, prepareTeachingWindow, type StateComposition } from "../state-metrics.js";
 
 import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftVariant, TeachingDraftInteraction, TeachingDraftAttempt, TeachingDraftPhase, TeachingStateSample, TeachingWindowSlide } from "../teaching-drafts.js";
+import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_THRESHOLDS } from "../teaching-policy-catalog.js";
 import { effort, standardInstructions, variantPrompt, pairedCandidatePrompt, checkpointReplyMode, allowsQuestionFeedback, allowsNewQuestion, interactionSummary, qualityFloors, blocksDraft, blocksRelease, teachingDraftAttemptLimit, draftQuality, reasoningQuestions, selectedReasoning, standardQuestion, qualityQuestions, selected, splitJudgementRequest } from "./policy.js";
 import { rankDraftCandidates, rankBestEffortDrafts, canRetainTextDraft, bestEffortQuality, needsTextOnlyRecovery, buildRepairFeedback, selectSynthesis, advisoryTeachingChecks, uncertainCheckpointRepetition } from "./policy.js";
 import { approvesAttemptFirstCheckpoint, asksInProse, retainsAttemptFirstCheckpoint } from "./attempt-first.js";
@@ -155,6 +156,10 @@ type DraftPlan = {
 };
 type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestionOnly" | "gradeOnly" | "synthesisSourceAttempts" | "trimmedCheckpointSuffix" | "repairedAssessmentBrief" | "repairSourceAttempt">;
 /** A private worker may slide its own review window without changing a sibling's evidence. */
+const CHECKPOINT_LEAK_CHECKS = new Set(["checkpoint_answer_leaked", "checkpoint_continued", "checkpoint_repeated"]);
+/** Leak findings, or Jev being unsure (never sure it is wrong) that feedback on the attempt is accurate. */
+const feedbackFallbackBlocker = (check: TeachingPolicyCheck) => CHECKPOINT_LEAK_CHECKS.has(check.id)
+  || check.id === CHECKPOINT_FEEDBACK_ISSUE && check.status === "unknown";
 type DraftStep = Pick<DraftContext<unknown>, "attempt" | "phase" | "turn" | "reason">;
 
 type WindowBuilder = Parameters<typeof prepareTeachingWindow>[1];
@@ -196,6 +201,7 @@ export class TeachingDraftSession<T> {
   private pairReviews?: TeachingDraftPairReview[];
   private decisionFailure?: DecisionPlanningFailure;
   private planMemo?: TeachingDraftPlanMemo;
+  private feedbackFallbackTried = false;
   private finalComparison?: TeachingDraftFinalComparison;
   private parallelAttempts?: readonly [number, number];
   private repairSourceAttempt?: number;
@@ -239,7 +245,10 @@ export class TeachingDraftSession<T> {
 
   private result(status: TeachingDraftResult<T>["status"], value?: T, reply?: TeachingPolicyReply): TeachingDraftResult<T> {
     this.publish(status);
-    return { status, ...(this.planMemo ? { plan: structuredClone(this.planMemo) } : {}), ...(status === "released" ? { value, reply: structuredClone(reply),
+    return { status, ...(this.planMemo ? { plan: structuredClone(this.planMemo) } : {}),
+      // Feedback-only replies leave the next question to the learner: hosts offer it as one tap.
+      ...(status === "released" && reply && this.context.attempts.some(entry => entry.attempt === this.context.selectedAttempt && entry.feedbackOnly)
+        ? { suggestNextQuestion: true as const } : {}), ...(status === "released" ? { value, reply: structuredClone(reply),
       ...(this.context.activitySelection ? { activitySelection: structuredClone(this.context.activitySelection) } : {}) } : {}), receipt: { ...this.snapshot(), version: TEACHING_POLICY_VERSION,
       calibration: "uncalibrated", qualityThreshold: qualityFloors[this.context.standard], judgeUsage: this.context.usage, selectorProbabilities: this.context.selectorProbabilities, selectionCandidateAttempts: this.context.selectionCandidateAttempts, selectionOmittedForBudget: this.context.selectionOmittedForBudget } };
   }
@@ -742,7 +751,7 @@ export class TeachingDraftSession<T> {
 
   private async generateCandidate(plan: TeachingPolicyPlan, variant: TeachingDraftVariant,
     feedback: readonly TeachingDraftFeedback[], synthesis: TeachingDraftGenerationInput["synthesis"], provenance: Provenance, step: DraftStep = this.context,
-    continuation?: TeachingDraftGenerationInput["continuation"], onOpeningDispatch?: () => void) {
+    continuation?: TeachingDraftGenerationInput["continuation"], onOpeningDispatch?: () => void, systemPromptOverride?: string) {
     this.publish(synthesis || feedback.length ? "revising" : "drafting", step.attempt);
     const started = this.context.now();
     const textOnlyRecovery = !this.pairReviews && !onOpeningDispatch && !continuation && needsTextOnlyRecovery(step.attempt, this.context.extended,
@@ -754,9 +763,9 @@ export class TeachingDraftSession<T> {
           : "Address the request independently. Use a concrete explanation or example when it helps."
         : "";
       const input: TeachingDraftGenerationInput = { attempt: step.attempt, variant, reasoning: this.context.reasoning,
-        systemPrompt: this.pairReviews ? pairedCandidatePrompt(plan, variant, this.context.standard, step.attempt, provenance,
+        systemPrompt: systemPromptOverride ?? (this.pairReviews ? pairedCandidatePrompt(plan, variant, this.context.standard, step.attempt, provenance,
           this.options.submittedComprehension, step.turn.confirmedQuestionGrade)
-          : [variantPrompt(plan, variant), `Response scope: ${standardInstructions[this.context.standard]}`, approach].filter(Boolean).join("\n\n"),
+          : [variantPrompt(plan, variant), `Response scope: ${standardInstructions[this.context.standard]}`, approach].filter(Boolean).join("\n\n")),
         ...(provenance.feedbackOnly ? { feedbackOnly: true as const } : {}),
         ...(provenance.predictionQuestionOnly ? { predictionQuestionOnly: true as const } : {}),
         ...(provenance.gradeOnly ? { gradeOnly: true as const } : {}),
@@ -909,8 +918,48 @@ export class TeachingDraftSession<T> {
     return this.finalists(eligible);
   }
 
+  /**
+   * Focused breadth only. When every reviewed draft of a reply to the learner's answer was blocked solely by the
+   * checkpoint leak checks (typically feedback plus a next question), write one feedback-only draft that the
+   * attempt-feedback rule can verify; the host offers the next question as a suggestion. If that draft still
+   * cannot be verified but Jev confidently says the learner answered, keep it as a best-effort reply.
+   */
+  private async feedbackFallback(planned: DraftPlan): Promise<void> {
+    if (this.options.breadth !== "focused" || this.context.extended || this.options.collectAllAttempts || this.feedbackFallbackTried) return;
+    this.feedbackFallbackTried = true;
+    const turn = this.context.turn;
+    if (!turn.confirmedQuestionGrade && !followsSingleFeedbackQuestion(this.options.turn)) return;
+    const reviewed = this.context.attempts.filter(attempt => attempt.status !== "generation-error");
+    if (!reviewed.length || !reviewed.every(attempt => {
+      const blocking = attempt.checks.filter(blocksRelease);
+      return blocking.length > 0 && blocking.every(feedbackFallbackBlocker);
+    })) return;
+    if (this.context.controller.signal.aborted) return;
+    const attempt = Math.max(0, ...this.context.attempts.map(entry => entry.attempt)) + 1;
+    this.context.maxAttempts = Math.max(this.context.maxAttempts, attempt);
+    const step: DraftStep = { attempt, phase: "drafting", turn, reason: null };
+    const provenance: Provenance = { feedbackOnly: true };
+    const prompt = pairedCandidatePrompt(planned.plan, "prose", this.context.standard, 1, provenance,
+      this.options.submittedComprehension, turn.confirmedQuestionGrade);
+    const generation = await this.generateCandidate(planned.plan, "prose", [], undefined, provenance, step, undefined, undefined, prompt);
+    if (!generation) return;
+    const review = await this.collectCandidate(generation, planned, step, "prose", provenance);
+    if (review.status === "pass") return;
+    const record = this.context.attempts.find(entry => entry.attempt === attempt);
+    const state = record?.attemptedCheckpointFeedback?.attempt;
+    const answered = Boolean(turn.confirmedQuestionGrade) || (state?.choice === "answered"
+      && Math.min(state.probabilities.answered ?? 0, state.confidence) >= TEACHING_POLICY_THRESHOLDS.failAtLeast);
+    const blocking = record?.checks.filter(blocksRelease) ?? [];
+    const reply = review.candidate.reply;
+    if (answered && blocking.length && blocking.every(feedbackFallbackBlocker)
+      && reply.text.trim() && !reply.toolCalls.length && !this.context.usableDrafts.some(entry => entry.attempt === attempt)) {
+      this.context.usableDrafts.push({ attempt, ...review.candidate, quality: Number.MAX_SAFE_INTEGER });
+    }
+  }
+
   private async selectAndRelease(planned: DraftPlan): Promise<TeachingDraftResult<T>> {
     const { observations } = planned;
+    if (!this.context.candidates.length) await this.feedbackFallback(planned);
     if (!this.context.candidates.length) {
       if (this.options.signal?.aborted) throw new Error("draft-interrupted");
       const eligible = this.bestEffortChoices();

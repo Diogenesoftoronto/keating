@@ -2362,41 +2362,57 @@ function ToolPart({
   );
 }
 
-function messagePartComponents(
-  showToolUi: boolean,
-  showRawErrors: boolean,
-  showReasoning: boolean,
-  autoExpandReasoning: boolean,
-  onImageGenerationModelSelect?: () => void,
-) {
-  return {
-    Text: (props: any) => (
-      <StreamingTextPart {...props} showRawErrors={showRawErrors} />
-    ),
-    Image: ImagePart,
-    File: FilePart,
-    Reasoning: (props: Parameters<typeof ReasoningPart>[0]) => (
-      <div data-quote-exclude="" style={{ display: "contents" }}><ReasoningPart
-        {...props}
-        show={showReasoning}
-        defaultOpen={autoExpandReasoning}
-      /></div>
-    ),
-    tools: {
-      Fallback: (props: Parameters<typeof ToolPart>[0]) => <div data-quote-exclude="" style={{ display: "contents" }}>{
-        isWebSearchToolName(props.toolName) ? (
-          <MessageWebSearchPart {...props} />
-        ) : (
-          <ToolPart
-            {...props}
-            showDetails={showToolUi}
-            showRawErrors={showRawErrors}
-            onImageGenerationModelSelect={onImageGenerationModelSelect}
-          />
-        )}</div>,
-    },
-  };
+type MessagePartOptions = {
+  showToolUi: boolean;
+  showRawErrors: boolean;
+  showReasoning: boolean;
+  autoExpandReasoning: boolean;
+  onImageGenerationModelSelect?: () => void;
+};
+const MessagePartOptionsContext = createContext<MessagePartOptions>({
+  showToolUi: false,
+  showRawErrors: false,
+  showReasoning: false,
+  autoExpandReasoning: false,
+});
+
+// Message part renderers keep one identity for the life of the app. Built per call, a change to any option
+// (or to the image-model callback, which changes with the session) gave every part a new component type and
+// React remounted all message content — re-parsing markdown and code for the whole transcript.
+function TextPartWithOptions(props: any) {
+  const { showRawErrors } = useContext(MessagePartOptionsContext);
+  return <StreamingTextPart {...props} showRawErrors={showRawErrors} />;
 }
+function ReasoningPartWithOptions(props: Parameters<typeof ReasoningPart>[0]) {
+  const { showReasoning, autoExpandReasoning } = useContext(MessagePartOptionsContext);
+  return <div data-quote-exclude="" style={{ display: "contents" }}><ReasoningPart
+    {...props}
+    show={showReasoning}
+    defaultOpen={autoExpandReasoning}
+  /></div>;
+}
+function ToolPartWithOptions(props: Parameters<typeof ToolPart>[0]) {
+  const { showToolUi, showRawErrors, onImageGenerationModelSelect } = useContext(MessagePartOptionsContext);
+  return <div data-quote-exclude="" style={{ display: "contents" }}>{
+    isWebSearchToolName(props.toolName) ? (
+      <MessageWebSearchPart {...props} />
+    ) : (
+      <ToolPart
+        {...props}
+        showDetails={showToolUi}
+        showRawErrors={showRawErrors}
+        onImageGenerationModelSelect={onImageGenerationModelSelect}
+      />
+    )}</div>;
+}
+const MESSAGE_PART_COMPONENTS = {
+  Text: TextPartWithOptions,
+  Image: ImagePart,
+  File: FilePart,
+  Reasoning: ReasoningPartWithOptions,
+  tools: { Fallback: ToolPartWithOptions },
+};
+type MessagePartComponents = typeof MESSAGE_PART_COMPONENTS;
 
 function displayTextFromAgentText(text: string): string {
   const match = text.match(/^<attachment name="([^"]+)"/);
@@ -3276,15 +3292,15 @@ function AssistantThread({
   const activeQuiz = useMemo(() => extractActiveQuiz(messages), [messages]);
   const visibleActiveQuiz =
     activeQuiz && activeQuiz.slug !== dismissedQuizId ? activeQuiz : null;
-  const components = useMemo(
-    () =>
-      messagePartComponents(
-        uiSettings.showDeveloperDetails && uiSettings.showToolUi,
-        uiSettings.showDeveloperDetails && uiSettings.showRawErrors,
-        uiSettings.showDeveloperDetails && uiSettings.showReasoning,
-        uiSettings.autoExpandReasoning,
-        callbacks.onImageGenerationModelSelect,
-      ),
+  const components = MESSAGE_PART_COMPONENTS;
+  const messagePartOptions = useMemo<MessagePartOptions>(
+    () => ({
+      showToolUi: uiSettings.showDeveloperDetails && uiSettings.showToolUi,
+      showRawErrors: uiSettings.showDeveloperDetails && uiSettings.showRawErrors,
+      showReasoning: uiSettings.showDeveloperDetails && uiSettings.showReasoning,
+      autoExpandReasoning: uiSettings.autoExpandReasoning,
+      onImageGenerationModelSelect: callbacks.onImageGenerationModelSelect,
+    }),
     [
       uiSettings.showDeveloperDetails,
       uiSettings.showToolUi,
@@ -3298,7 +3314,7 @@ function AssistantThread({
   if (agent) modelRef.current = agent.context.model;
 
   const threadMessages = useMemo(
-    () => projectThreadMessages(agent, messages, isRunning, speechEnabled, modelRef.current?.provider),
+    () => withThreadSession(projectThreadMessages(agent, messages, isRunning, speechEnabled, modelRef.current?.provider), agent?.sessionId),
     [agent, version, localVersion, messages, isRunning, speechEnabled],
   );
   const sentFrom = useRef<{ top: number; previous: string | undefined } | null>(null);
@@ -3412,34 +3428,17 @@ function AssistantThread({
   }, []);
 
 
-  const UserMessageComponent = useCallback(
-    () => (
-      <UserMessage
-        components={components}
-        profileImage={uiSettings.userProfileImage}
-      />
-    ),
-    [components, uiSettings.userProfileImage],
-  );
-  const AssistantMessageComponent = useCallback(
-    () => (
-      <AssistantMessage
-        components={components}
-        teachingAdjustment={teachingAdjustment}
-        selectedProvider={selectedProvider}
-        onFork={callbacks.onFork}
-        onModelSelect={callbacks.onModelSelect}
-        onRetry={callbacks.onRetry}
-      />
-    ),
-    [components, selectedProvider, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry, teachingAdjustment],
-  );
-  const threadComponents = useMemo(
+  const threadMessageProps = useMemo<ThreadMessageProps>(
     () => ({
-      UserMessage: UserMessageComponent,
-      AssistantMessage: AssistantMessageComponent,
+      components,
+      profileImage: uiSettings.userProfileImage,
+      teachingAdjustment,
+      selectedProvider,
+      onFork: callbacks.onFork,
+      onModelSelect: callbacks.onModelSelect,
+      onRetry: callbacks.onRetry,
     }),
-    [UserMessageComponent, AssistantMessageComponent],
+    [components, uiSettings.userProfileImage, teachingAdjustment, selectedProvider, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry],
   );
 
   const [seated, setSeated] = useState(false);
@@ -3447,7 +3446,7 @@ function AssistantThread({
   const [studyActionsHost, setStudyActionsHost] = useState<HTMLSpanElement | null>(null);
   const footer = (
     <ThreadPrimitive.ViewportFooter
-      className={css({
+      className={cx("ch-footer", css({
         position: "sticky",
         bottom: 0,
         minWidth: 0,
@@ -3458,7 +3457,7 @@ function AssistantThread({
         paddingTop: "0.75rem",
         paddingBottom: "1rem",
         sm: { paddingBottom: "1.5rem" },
-      })}
+      }))}
     >
       <AuiIf condition={state => !state.thread.isEmpty}><LatestReplyControl key={callbacks.sessionId} viewport={viewport} /></AuiIf>
       {responseComparison}
@@ -3548,11 +3547,11 @@ function AssistantThread({
                 })}
               >
                 <div
-                  className={css({
+                  className={cx("ch-thread-column", css({
                     display: "flex",
                     flex: 1,
                     flexDirection: "column",
-                  })}
+                  }))}
                 >
                   <AuiIf condition={(state) => state.thread.isEmpty}>
                     <SuggestedPrompts seated={seated} cardsHost={cardsHost}
@@ -3579,7 +3578,9 @@ function AssistantThread({
                       }}
                     />
                   </AuiIf>
-                  <SnippetDiscussionProvider><ThreadPrimitive.Messages components={threadComponents} /></SnippetDiscussionProvider>
+                  <SnippetDiscussionProvider><MessagePartOptionsContext.Provider value={messagePartOptions}><ThreadMessagePropsContext.Provider value={threadMessageProps}>
+                    <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
+                  </ThreadMessagePropsContext.Provider></MessagePartOptionsContext.Provider></SnippetDiscussionProvider>
                   {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
                 {footer}
@@ -3693,13 +3694,24 @@ function LatestReplyControl({ viewport }: { viewport: { current: HTMLDivElement 
       setAway(reading);
       if (!reading) setUnread(false);
     };
-    const observer = new MutationObserver(records => {
+    // Mutations arrive per streamed token and per committed subtree. Reading layout in the observer forced a
+    // synchronous layout each time; one read per frame sees the same final state without forcing it.
+    let frame = 0;
+    let pending: MutationRecord[] = [];
+    const check = () => {
+      frame = 0;
+      const records = pending;
+      pending = [];
       measure();
       if (!reading) return;
       const reply = el.querySelectorAll(".keating-bubble");
       const latest = reply[reply.length - 1];
       if (!latest || latest.getBoundingClientRect().bottom <= (el.lastElementChild?.getBoundingClientRect().top ?? el.getBoundingClientRect().bottom)) return;
       if (records.some(record => latest.contains(record.target) || Array.from(record.addedNodes).some(node => node.contains(latest)))) setUnread(true);
+    };
+    const observer = new MutationObserver(records => {
+      pending.push(...records);
+      if (!frame) frame = requestAnimationFrame(check);
     });
     observer.observe(el, { childList: true, characterData: true, subtree: true });
     const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
@@ -3707,7 +3719,7 @@ function LatestReplyControl({ viewport }: { viewport: { current: HTMLDivElement 
     if (el.firstElementChild) resize?.observe(el.firstElementChild);
     measure();
     el.addEventListener("scroll", measure, { passive: true });
-    return () => { observer.disconnect(); resize?.disconnect(); el.removeEventListener("scroll", measure); };
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); resize?.disconnect(); el.removeEventListener("scroll", measure); };
   }, [viewport]);
   if (!away) return null;
   return <div className="ch-latest" data-unread={unread || undefined}>
@@ -3812,6 +3824,7 @@ function ThreadComposer({
         {studyActionsRef && <span className="ch-study-activities" ref={studyActionsRef} />}
       </div></AuiIf>
       <ComposerPrimitive.Root
+        data-composer-field={voiceComposerOpen ? undefined : ""}
         className={cx(
           "composer-root",
           css({
@@ -3878,7 +3891,7 @@ function ThreadComposer({
             />
           )}
         <div className="ch-toolbar">
-          <ComposerPrimitive.AddAttachment className={composerIconButtonClass} aria-label="Attach files" title="Attach files"><KeatingGlyph name="clip" /></ComposerPrimitive.AddAttachment>
+          <ComposerPrimitive.AddAttachment className={cx(composerIconButtonClass, "ch-attach")} aria-label="Attach files" title="Attach files"><KeatingGlyph name="clip" /></ComposerPrimitive.AddAttachment>
           <SpeechComposerControl
             expanded={voiceComposerOpen}
             onExpandedChange={onVoiceComposerOpenChange}
@@ -3929,7 +3942,7 @@ function ThreadComposer({
           }),
         )}
       >
-        <span>
+        <span className="composer-hint__motto">
           keating won&apos;t give you the answer —{" "}
           <span className="ok">that&apos;s the point</span>
         </span>
@@ -3946,6 +3959,9 @@ function ThreadComposer({
   );
 }
 
+// toLocaleTimeString([], options) builds a formatter on every call; one per message added up on each switch.
+const messageTimeFormat = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" });
+
 function MessageTime() {
   const timestamp = useAuiState(({ message }) => {
     const metadata = message.metadata.custom;
@@ -3954,14 +3970,50 @@ function MessageTime() {
   if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) return null;
   const date = new Date(timestamp);
   if (!Number.isFinite(date.getTime())) return null;
-  return <time dateTime={date.toISOString()}>{date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>;
+  return <time dateTime={date.toISOString()}>{messageTimeFormat.format(date)}</time>;
 }
+
+type ThreadMessageProps = {
+  components: MessagePartComponents;
+  profileImage?: string | null;
+  teachingAdjustment?: TeachingAdjustmentController | null;
+  selectedProvider?: string;
+  onFork?: (forkPoint?: number) => void | Promise<void>;
+  onModelSelect?: () => void;
+  onRetry?: () => void | Promise<void>;
+};
+const ThreadMessagePropsContext = createContext<ThreadMessageProps | null>(null);
+
+// assistant-ui renders these as component types. They must keep one identity: a per-render closure (the
+// previous useCallback form) made React remount every message whenever a prop such as the provider or a
+// callback changed, re-parsing the whole transcript on each session switch. Changing props arrive by context.
+// Each row carries the session it was projected for, and the message is keyed by it, so per-message state
+// (feedback, open panels) starts fresh in another chat even when a fork reuses the same message ids. The key
+// lives on the row rather than on the list because assistant-ui hands a remounted list the previous session's
+// rows for one commit, which would render the old transcript twice.
+function withThreadSession(rows: ThreadMessageLike[], sessionId: string | undefined): ThreadMessageLike[] {
+  if (!sessionId) return rows;
+  return rows.map(row => ({ ...row, metadata: { ...row.metadata, custom: { ...row.metadata?.custom, keatingThreadSessionId: sessionId } } }));
+}
+function useThreadSessionKey() {
+  return useAuiState(({ message }) => message.metadata.custom?.keatingThreadSessionId as string | undefined);
+}
+function ThreadUserMessage() {
+  const props = useContext(ThreadMessagePropsContext)!;
+  return <UserMessage key={useThreadSessionKey()} components={props.components} profileImage={props.profileImage} />;
+}
+function ThreadAssistantMessage() {
+  const props = useContext(ThreadMessagePropsContext)!;
+  return <AssistantMessage key={useThreadSessionKey()} components={props.components} teachingAdjustment={props.teachingAdjustment}
+    selectedProvider={props.selectedProvider} onFork={props.onFork} onModelSelect={props.onModelSelect} onRetry={props.onRetry} />;
+}
+const THREAD_COMPONENTS = { UserMessage: ThreadUserMessage, AssistantMessage: ThreadAssistantMessage };
 
 function UserMessage({
   components,
   profileImage,
 }: {
-  components: ReturnType<typeof messagePartComponents>;
+  components: MessagePartComponents;
   profileImage?: string | null;
 }) {
   const sessionId = useContext(OpenUISessionScopeContext);
@@ -4042,7 +4094,7 @@ function UserMessage({
           )}
         </div>
         <div
-          className={css({
+          className={cx("you-column", css({
             display: "flex",
             minWidth: 0,
             // Grow to fill the row on mobile so the bubble/text spans the width;
@@ -4051,7 +4103,7 @@ function UserMessage({
             flexDirection: "column",
             alignItems: "stretch",
             sm: { flex: "initial", alignItems: "flex-end" },
-          })}
+          }))}
         >
           <div className="msg-meta">
             <b>YOU</b> <MessageTime />
@@ -4247,7 +4299,7 @@ function AssistantMessage({
   onModelSelect,
   onRetry,
 }: {
-  components: ReturnType<typeof messagePartComponents>;
+  components: MessagePartComponents;
   teachingAdjustment?: TeachingAdjustmentController | null;
   selectedProvider?: string;
   onFork?: (forkPoint?: number) => void | Promise<void>;

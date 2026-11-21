@@ -405,9 +405,6 @@
 	> :not(#settings-section-local-recall, #settings-section-decision-policies) {
 	display: none;
 }
-.st-main[data-section="your-data"]
-	> div:has(> .export-data)
-	> :not(.export-data),
 .st-main:is([data-section="health"], [data-section="developer"]) .export-data {
 	display: none;
 }

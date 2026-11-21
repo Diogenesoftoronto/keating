@@ -142,20 +142,39 @@ async function readArtifact(storage: KeatingStorage, type: string, id: string): 
 	throw new Error(`Unknown Keating artifact: ${type}/${id}`);
 }
 
+// Each WebMCP registerTool call rewrites the bridge's storage and rebuilds its widget DOM, so re-registering the
+// same tools on every session switch cost one full-page restyle per tool. Register a tool again only when its
+// public shape changes; the registered handler always runs the newest tool instance of that name.
+const latestTools = new Map<string, AgentTool>();
+const registeredToolShapes = new WeakMap<WebMcpInstance, Map<string, string>>();
+const registeredExtras = new WeakSet<WebMcpInstance>();
+
+function toolShape(tool: AgentTool): string {
+	return JSON.stringify([tool.description ?? "", tool.parameters ?? null]);
+}
+
 export async function registerKeatingWebMcp(storage: KeatingStorage, tools: AgentTool[]): Promise<void> {
 	if (typeof window === "undefined" || typeof document === "undefined") return;
 
 	const mcp = await ensureWebMcp();
 	if (!mcp) return;
 
+	let shapes = registeredToolShapes.get(mcp);
+	if (!shapes) registeredToolShapes.set(mcp, shapes = new Map());
 	for (const tool of tools) {
+		const name = `keating.${tool.name}`;
+		latestTools.set(name, tool);
+		const shape = toolShape(tool);
+		if (shapes.get(name) === shape) continue;
+		shapes.set(name, shape);
 		mcp.registerTool(
-			`keating.${tool.name}`,
+			name,
 			tool.description ?? `Run Keating tool: ${tool.name}`,
 			tool.parameters as Record<string, unknown>,
 			async (args: Record<string, unknown>) => {
+				const current = latestTools.get(name) ?? tool;
 				try {
-					const result = await tool.execute(`webmcp-${tool.name}-${Date.now()}`, args);
+					const result = await current.execute(`webmcp-${current.name}-${Date.now()}`, args);
 					return { content: result.content };
 				} catch (error) {
 					return errorResult(error);
@@ -163,6 +182,9 @@ export async function registerKeatingWebMcp(storage: KeatingStorage, tools: Agen
 			}
 		);
 	}
+
+	if (registeredExtras.has(mcp)) return;
+	registeredExtras.add(mcp);
 
 	mcp.registerPrompt(
 		"keating.learn",
