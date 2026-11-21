@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.13
+
+- Switching chats and opening the model picker are faster. The outgoing chat no longer re-renders before the new one appears, the picker loads its rows as you scroll instead of all at once, and several page-wide style recalculations are gone.
+- When Keating can't verify a reply to your answer because it also asks the next question, it now sends checked feedback on your answer instead of "Couldn't produce a reply". If even that can't be checked, you get the best available feedback marked as not fully verified.
+
 ## 4.2.12
 
 - A short reply to the tutor's question, such as a single letter, is now always reviewed as an answer instead of being treated as a simple message.
