@@ -43,6 +43,13 @@ describe("draft triage", () => {
       openInteractions: [{ documentId: "d", nodeId: "n", component: "Question", presentedAt: 1, itemId: null, state: "awaiting" }] } }))).toBe(true);
   });
 
+  test("an answer to the tutor's question always drafts", () => {
+    const asked = turn({ learnerMessage: "A", conversation: [{ role: "user", content: "Quiz me on photosynthesis." },
+      { role: "assistant", content: "Which statement describes the gases?\n\nA. Oxygen in\nB. Carbon dioxide in\n\nReply with A or B." }] });
+    expect(triageRequiresDraft(asked)).toBe(true);
+    expect(triageRequiresDraft(turn({ learnerMessage: "thanks!" }))).toBe(false);
+  });
+
   test("the request carries only the latest exchange, clipped", () => {
     const request = teachingTriageRequest(turn({ learnerMessage: "x".repeat(10_000) }));
     const state = request.state as { turn: { latestLearnerMessage: string; previousTutorMessage: string } };
