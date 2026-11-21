@@ -203,6 +203,10 @@ export function blocksRelease(check: TeachingPolicyCheck): boolean {
 }
 
 function isInapplicableCheckpoint(check: TeachingPolicyCheck): boolean {
+  // A saved submission is being graded: explaining the learner's own answer cannot do their work for them.
+  // This critical rule is scoped only while Jev's score is uncertain; a confident finding still blocks.
+  if (check.applicability === "submitted-answer-feedback") return check.source === "jev" && check.id === "assessed_work_completed"
+    && check.status === "unknown" && check.probability !== null && Number.isFinite(check.probability);
   if (check.source !== "jev" || check.severity === "critical" || check.probability === null || !Number.isFinite(check.probability)) return false;
   if (check.applicability === "submitted-grade-without-text") return check.id === "checkpoint_continued";
   if (check.applicability === "feedback-on-attempt") return check.id === "checkpoint_answer_leaked" || check.id === "checkpoint_continued";

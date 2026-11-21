@@ -161,3 +161,18 @@ test("a tool-only saved grade cannot advance the lesson in visible text, while J
     expect(blocked.result.status).toBe("withheld");
   }
 });
+
+test("grading a saved answer is not blocked by an uncertain assessed-work score, but a confident one still blocks", async () => {
+  const uncertain = await run({ ruleIds: ["assessed_work_completed"], reviewScores: { assessed_work_completed: 0.45 } });
+  expect(uncertain.result.status).toBe("released");
+  const scoped = uncertain.result.receipt.attempts.flatMap(a => a.checks).filter(c => c.id === "assessed_work_completed" && c.status === "unknown");
+  expect(scoped.length).toBeGreaterThan(0);
+  expect(scoped.every(c => c.applicability === "submitted-answer-feedback")).toBe(true);
+  const confident = await run({ ruleIds: ["assessed_work_completed"], reviewScores: { assessed_work_completed: 0.95 } });
+  // A confident finding is never scoped or approved (an existing best-effort release may still follow, marked unverified).
+  expect(confident.result.receipt.attempts.every(a => a.status === "fail")).toBe(true);
+  expect(confident.result.receipt.attempts.flatMap(a => a.checks).some(c => c.applicability === "submitted-answer-feedback")).toBe(false);
+  expect(confident.result.receipt.reason === null).toBe(false);
+  const exam = await run({ ruleIds: ["assessed_work_completed"], turn: { ...turn, assessment: "assessed" }, reviewScores: { assessed_work_completed: 0.45 } });
+  expect(exam.result.receipt.attempts.flatMap(a => a.checks).some(c => c.applicability === "submitted-answer-feedback")).toBe(false);
+});

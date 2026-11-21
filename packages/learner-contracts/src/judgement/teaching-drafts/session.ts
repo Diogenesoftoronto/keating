@@ -862,6 +862,9 @@ export class TeachingDraftSession<T> {
     const checks: TeachingPolicyCheck[] = [
       ...assessment.checks.map(check => {
         if (step.turn.assessment === "assessed" && check.id === "checkpoint_answer_leaked") return { ...check, severity: "critical" as const };
+        if (this.options.submittedComprehension && step.turn.assessment !== "assessed" && check.id === "assessed_work_completed"
+          && check.source === "jev" && check.status === "unknown" && typeof check.probability === "number" && Number.isFinite(check.probability))
+          return { ...check, applicability: "submitted-answer-feedback" as const };
         if (submittedGradeWithoutText && check.id === "checkpoint_continued" && check.source === "jev"
           && typeof check.probability === "number" && Number.isFinite(check.probability))
           return { ...check, applicability: "submitted-grade-without-text" as const };
