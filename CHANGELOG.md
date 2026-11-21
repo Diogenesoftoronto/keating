@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.18
+
+- After Keating grades your answer, its explanation of the grade is no longer withheld as if it were doing assessed work for you.
+
 ## 4.2.17
 
 - Grading an answer you submitted (by card or typed in chat) no longer fails with "Couldn't produce a reply" when the reviewer is unsure whether explaining your saved answer counts as doing the work for you.
