@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.8
+
+- Tool-using turns plan once. When the tutor searches or uses a tool, the next round reuses the turn's plan instead of asking Jev to plan again, and still reviews the new reply against what the tool returned.
+- Drafted turns start sooner. Jev's quick "is this simple?" check now runs alongside planning instead of before it; a simple turn cancels the plan and answers directly.
+- Jev can now suggest the early-learning models (number line, ten frame, place value, fraction bars, counting arrays, clock) when a young learner or early number, fraction or time topic would benefit from seeing the quantities.
+
 ## 4.2.7
 
 - Recess has new bosses and minibosses, each with its own scene, attack patterns and tells, plus rival encounters, bombs, trick shots and gentler aim assist. Two-finger touch gestures work during flight.
