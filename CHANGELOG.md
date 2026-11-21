@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.14
+
+- Typing your answer in the chat now counts as answering the open question card. Keating checks that the message is an answer, submits it through the card and saves a grade, just as if you had pressed Finish check. The card shows "Answered in chat" and your message links back to it. Messages like "let me think" or "hint please" stay ordinary chat.
+- After Keating gives feedback on its own, a "Next question" button lets you continue the quiz in one tap.
+
 ## 4.2.13
 
 - Switching chats and opening the model picker are faster. The outgoing chat no longer re-renders before the new one appears, the picker loads its rows as you scroll instead of all at once, and several page-wide style recalculations are gone.
