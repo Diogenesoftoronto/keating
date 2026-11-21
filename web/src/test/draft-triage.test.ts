@@ -104,4 +104,23 @@ describe("draft triage route", () => {
     expect(calls.filter(request => "draft_standard" in request.questions)).toHaveLength(planned);
     expect(calls.filter(request => "draft_needed" in request.questions)).toHaveLength(1);
   });
+
+  test("a tool round after a grade plans again instead of reusing the pre-grade plan", async () => {
+    const calls: JudgementRequest[] = [];
+    let round = 0;
+    const grade = { type: "toolCall" as const, id: "grade-1", name: "grade_question_checks", arguments: { checks: [{ id: "c1", correct: false }] } };
+    const first: AssistantMessage = { ...reply("Let me check your answer."), content: [{ type: "text", text: "Let me check your answer." }, grade], stopReason: "toolUse" };
+    const gate = withTeachingDraftGate((() => streamed(round++ === 0 ? first : reply("Not quite: plants take in carbon dioxide."))) as StreamFn, {
+      sessionId: "triage-grade-round", basePrompt: () => BASE, makeCaller: () => triageJudge(0.9, 2, calls),
+      evidence: async () => ({ pendingSubmissions: [{ kind: "comprehension", id: "c1", questionIds: ["c1"] }] }),
+    });
+    const tools = [{ name: "grade_question_checks", description: "Grade saved checks", parameters: { type: "object", properties: { checks: { type: "array" } }, required: ["checks"] } }];
+    const start: Context = { ...context("oxygen?"), tools: tools as Context["tools"] };
+    const firstResult = await (await gate(MODEL, start)).result();
+    const next: Context = { ...start, messages: [...start.messages, firstResult,
+      { role: "toolResult", toolCallId: "grade-1", toolName: "grade_question_checks", content: [{ type: "text", text: "Saved: incorrect." }], isError: false, timestamp: 3 }] };
+    await (await gate(MODEL, next)).result();
+    // Without the grade rule the second round would reuse the first plan (one planning request).
+    expect(calls.filter(request => "draft_standard" in request.questions)).toHaveLength(2);
+  });
 });
