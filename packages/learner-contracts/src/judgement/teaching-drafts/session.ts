@@ -467,7 +467,7 @@ export class TeachingDraftSession<T> {
     // Trust the model that actually planned the turn, including a provider fallback.
     // An explicit research collection still follows its enrolled attempt protocol.
     const jevPlanned = !this.options.collectAllAttempts
-      && decision.response.backend.backend === "system-one" && /^jev-/i.test(decision.response.backend.model);
+      && decision.response.backend.backend === "system-one" && /^(judgement-jev\/)?jev-/i.test(decision.response.backend.model);
     const feedbackAlternatives = jevPlanned && (!!this.context.turn.confirmedQuestionGrade
       || !!decisionRequest?.questions.checkpoint_reply_mode && allowsQuestionFeedback(plan, decision));
     const predictionAlternatives = jevPlanned && !feedbackAlternatives && allowsNewQuestion(this.options.turn, plan)

@@ -77,3 +77,16 @@ test("proceed=false ends the session after planning without drafting", async () 
   expect(result.status).toBe("cancelled");
   expect(attempts).toEqual([]);
 });
+
+test("hosted Jev's router-qualified model name still counts as Jev planning", async () => {
+  const hosted: JudgementBackendKey = { backend: "system-one", model: "judgement-jev/jev-1.14.0", calibrationSha256: null };
+  const predictionTurn = { ...turn, learnerMessage: "A shaded part of the garden gets less light. I want to predict what grows there first." };
+  const due = { learning_task: .97, learner_response_due: .85, prediction_opportunity: .64, direct_answer_requested: .84 };
+  const attempts: number[] = [];
+  const result = await runTeachingDrafts({ turn: predictionTurn, ruleIds: [], breadth: "focused",
+    judge: async request => ({ ok: true as const, response: { backend: hosted, answers: teachingDraftAnswers(request, request.questions.learning_task ? due : {}) } }),
+    generate: async ({ attempt }) => { attempts.push(attempt); return generated(attempt); } });
+  // Jev-planned prediction turns compare a targeted and a general candidate; an unrecognized planner writes one draft.
+  expect(attempts).toEqual([1, 2]);
+  expect(result.receipt.pairReviews?.map(review => review.pair)).toEqual([1]);
+});
