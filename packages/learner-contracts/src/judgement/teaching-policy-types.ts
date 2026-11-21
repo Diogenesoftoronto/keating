@@ -59,7 +59,7 @@ export interface TeachingPolicyPlan {
 export interface TeachingPolicyCheck {
   readonly id: string;
   /** Raw status and probability are retained when independent evidence establishes that no checkpoint is at stake. */
-  readonly applicability?: "standalone-direct-answer" | "debugging-expected-output" | "feedback-on-attempt" | "submitted-grade-without-text";
+  readonly applicability?: "standalone-direct-answer" | "debugging-expected-output" | "feedback-on-attempt" | "submitted-grade-without-text" | "submitted-answer-feedback";
   readonly status: "pass" | "fail" | "unknown";
   readonly source: "deterministic" | "jev";
   readonly severity: "critical" | "major" | "minor";
