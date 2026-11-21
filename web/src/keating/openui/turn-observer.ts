@@ -136,7 +136,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
           row.decisionModel = identity(reviewer.model);
           const codeLanguage = recordedCodePracticeLanguage(snapshot.interaction);
           row.guidance = {
-            source: reviewer.backend === "system-one" && /^jev[-.]/i.test(reviewer.model) ? "jev" : "other",
+            source: reviewer.backend === "system-one" && /^(judgement-jev\/)?jev[-.]/i.test(reviewer.model) ? "jev" : "other",
             action: snapshot.interaction.action, delivered: offers.get(row.model) ?? null,
             ...(snapshot.interaction.reason && INTERACTION_REASONS.includes(snapshot.interaction.reason) ? { reason: snapshot.interaction.reason } : {}),
             ...(codeLanguage ? {codeLanguage} : {}),
