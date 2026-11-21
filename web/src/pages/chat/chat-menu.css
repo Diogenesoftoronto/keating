@@ -9,56 +9,51 @@
 .chat-page-shell .chat-header .chat-actions > button[aria-expanded=true] {color:var(--ink);background:var(--k-wash)}
 
 /* ── The menu ────────────────────────────────────────────────────────── */
-.chat-header .ch-menu {
+:is(.chat-header,.ch-tabbar) .ch-menu {
   right:.3846rem; top:calc(100% + .1923rem); z-index:70;
   width:min(13.4615rem, calc(100vw - .7692rem)); max-height:min(76dvh, 30rem);
   overflow-y:auto; overscroll-behavior:contain; padding:.1923rem; gap:0;
 }
-.chat-header .ch-menu hr {margin:.1923rem .2885rem}
+:is(.chat-header,.ch-tabbar) .ch-menu hr {margin:.1923rem .2885rem}
 .ch-menu-group {display:flex;flex-direction:column}
 .ch-menu-heading {padding:.2885rem .4808rem .0962rem;font:500 .5288rem/1.4 var(--mono-body);color:var(--k-ink-faint, var(--muted-foreground))}
-.chat-header .ch-menu .ch-menu-item {
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item {
   min-height:1.5385rem; padding:.2885rem .4808rem; gap:.4808rem; border-radius:.1442rem;
   font:500 .625rem/1.35 var(--font-ui); color:var(--ink); text-decoration:none;
 }
-.chat-header .ch-menu .ch-menu-item > svg[data-glyph] {flex:none;color:var(--ink-soft)}
-.chat-header .ch-menu .ch-menu-item:is(:hover,:focus-visible) > svg[data-glyph] {color:var(--ink)}
-.chat-header .ch-menu .ch-menu-item:focus-visible {outline:2px solid var(--ring, var(--ink));outline-offset:-2px}
-.chat-header .ch-menu .ch-menu-item:disabled {opacity:.5;cursor:not-allowed;background:transparent}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item > svg[data-glyph] {flex:none;color:var(--ink-soft)}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item:is(:hover,:focus-visible) > svg[data-glyph] {color:var(--ink)}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item:focus-visible {outline:2px solid var(--ring, var(--ink));outline-offset:-2px}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item:disabled {opacity:.5;cursor:not-allowed;background:transparent}
 .ch-menu-text {flex:1;min-width:0;overflow-wrap:anywhere}
 .ch-menu-text small {display:block;margin-top:.0481rem;font:400 .5288rem/1.35 var(--mono-body);color:var(--k-ink-faint, var(--muted-foreground))}
-.chat-header .ch-menu .ch-menu-ext {flex:none;color:var(--k-ink-faint, var(--muted-foreground))}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-ext {flex:none;color:var(--k-ink-faint, var(--muted-foreground))}
 /* Sharing leads the list: the one entry with a soft fill. */
-.chat-header .ch-menu .ch-menu-share {background:var(--k-wash)}
-.chat-header .ch-menu .ch-menu-share > svg[data-glyph] {color:var(--k-green, var(--primary))}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-share {background:var(--k-wash)}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-share > svg[data-glyph] {color:var(--k-green, var(--primary))}
 /* Speech is a toggle: its state shows in the line under the label. */
-.chat-header .ch-menu .ch-menu-item[aria-pressed=true] small {color:var(--k-green, var(--primary))}
+:is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item[aria-pressed=true] small {color:var(--k-green, var(--primary))}
 
 /* ── Phones and touch: 44px targets, readable rows ───────────────────── */
 @media (pointer:coarse) and (min-width:781px) {
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-model-button,.chat-actions > :is(button,a)) {min-width:44px;min-height:44px}
-  html body .chat-header .ch-menu .ch-menu-item {min-height:44px}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item {min-height:44px}
 }
 @media (max-width:780px) {
   html body .chat-page-shell .chat-header .chat-actions {gap:6px}
   .chat-header .chat-actions .ch-theme > button {width:44px;height:44px}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button,.chat-actions > button.chat-action-button:not(:has(.ch-label)),.chat-actions > button.chat-action-button:has(.ch-label)) {width:44px;min-width:44px;height:44px;min-height:44px;padding:0}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button) > svg[data-glyph] {width:18px;height:18px}
-  html body .chat-header .ch-menu .ch-menu-item {min-height:44px}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item {min-height:44px}
 }
 @media (max-width:780px) {
   /* Full-width list under the header, so labels never need to clip. */
-  .chat-header .ch-menu {left:.3846rem;right:.3846rem;width:auto;max-height:calc(100dvh - 4.5rem);padding:4px}
-  .chat-header .ch-menu .ch-menu-item {min-height:48px;padding:6px 12px;gap:12px;font-size:.7692rem;line-height:1.3}
-  .chat-header .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
+  :is(.chat-header,.ch-tabbar) .ch-menu {left:.3846rem;right:.3846rem;width:auto;max-height:calc(100dvh - 4.5rem);padding:4px}
+  :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item {min-height:48px;padding:6px 12px;gap:12px;font-size:.7692rem;line-height:1.3}
+  :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
   .ch-menu-text small {font-size:.625rem;margin-top:2px}
   .ch-menu-heading {padding:10px 12px 4px;font-size:.5769rem}
-  .chat-header .ch-menu hr {margin:4px 12px}
-}
-/* Narrow phones: Share stays first in More, so the title and model get the room. */
-@media (max-width:419px) {
-  html body .chat-page-shell .chat-header .chat-actions .ch-share {display:none}
-  html body .chat-page-shell .chat-header .chat-actions::before {display:none}
+  :is(.chat-header,.ch-tabbar) .ch-menu hr {margin:4px 12px}
 }
 
 /* ── Phones: the title block is the model trigger ────────────────────── */
@@ -89,12 +84,12 @@
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))) {width:1.9231rem;height:1.9231rem;padding:0}
   html body .chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > :is(button,a)) > svg[data-glyph] {width:18px;height:18px}
 
-  html body .chat-header .ch-menu {width:min(17.3077rem, calc(100vw - .7692rem));max-height:min(80dvh, 40rem);padding:.1923rem}
-  html body .chat-header .ch-menu .ch-menu-item {min-height:2.1154rem;padding:.3846rem .5769rem;gap:.5769rem;font-size:.7692rem;line-height:1.3}
-  html body .chat-header .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
-  html body .chat-header .ch-menu .ch-menu-text small {font-size:.625rem;margin-top:.0962rem}
-  html body .chat-header .ch-menu .ch-menu-heading {padding:.4808rem .5769rem .1923rem;font-size:.625rem}
-  html body .chat-header .ch-menu hr {margin:.2885rem .5769rem}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu {width:min(17.3077rem, calc(100vw - .7692rem));max-height:min(80dvh, 40rem);padding:.1923rem}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item {min-height:2.1154rem;padding:.3846rem .5769rem;gap:.5769rem;font-size:.7692rem;line-height:1.3}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-item > svg[data-glyph] {width:18px;height:18px}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-text small {font-size:.625rem;margin-top:.0962rem}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu .ch-menu-heading {padding:.4808rem .5769rem .1923rem;font-size:.625rem}
+  html body :is(.chat-header,.ch-tabbar) .ch-menu hr {margin:.2885rem .5769rem}
 }
 /* Laptop widths: the action labels fold into their icons (names stay in aria-label and title). */
 @media (min-width:781px) and (max-width:1199px) {

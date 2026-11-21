@@ -109,11 +109,18 @@ export function install(G) {
       const e = d.e, a = d.ang !== undefined ? d.ang : Math.atan2(e.y - d.y, e.x - d.x) || -Math.PI / 2;
       // a hit on the open thesis lands three times as hard and looks it: more, longer green sparks, a
       // held breath, the boss trembles, and one "×3" that swells with every hit instead of a stack of numbers
-      const crit = e === G.boss && e.mode === "thesis" && Math.abs(d.y - G.aimPoint(e).y) < 15, n = crit ? 4 : 2;
+      const crit = d.critical || (e === G.boss && e.mode === "thesis" && Math.abs(d.y - G.aimPoint(e).y) < 15), n = crit ? 4 : 2;
       for (let i = 0; i < n; i++) { const b = a + rnd(-0.6, 0.6), s = rnd(120, 240) * (crit ? 1.5 : 1); part("spark", d.x, d.y, Math.cos(b) * s, Math.sin(b) * s, crit ? 0.2 : 0.12, crit ? 10 : 6, G.pal.phos); }
       if (crit) {
-        if (tPop && tPop.t < tPop.life) { tPop.t = Math.min(tPop.t, 0.15); tPop.bump = 1; tPop.size = Math.min(24, tPop.size + 0.7); }
-        else tPop = pop(e.x - e.w / 2 - 8, d.y - 14, "×3", GRN(), 14, 1.1);
+        const mini = e.k === "mini";
+        const label = mini ? "×2 damage" : "×3";
+        if (tPop?.text === label && tPop.t < tPop.life) {
+          tPop.t = Math.min(tPop.t, .15); tPop.bump = 1; tPop.size = Math.min(mini ? 18 : 24, tPop.size + .7);
+        } else {
+          const x = mini ? clamp(e.x, 67, G.W - 67) : e.x - e.w / 2 - 8;
+          const y = mini ? Math.max(20, e.y - e.h * .46 - 12) : d.y - 14;
+          tPop = pop(x, y, label, GRN(), 14, 1.1);
+        }
         stop(0.035, true); if (!G.calm) { if (!(e.jit > 0)) jits.push(e); e.jit = Math.max(e.jit || 0, 2); }
       }
     });
@@ -192,6 +199,14 @@ export function install(G) {
     G.on("bossPhase", (d) => { thud(d.e.x, d.e.y, 1.2, 10, d.e.x - P.x, d.e.y - P.y, d.first ? 0.04 : 0.09); if (!d.first) chars(d.e.x, d.e.y, d.line || "…", 14); pop(d.x, d.y + 18, d.name, G.pal.ink, 13, 1.5); });
     // the boss: the frame holds on the final blow (the "boss stop"), then the world slows as the wall comes apart
     G.on("bossDeath", (d) => {
+      if (d.e.k === "rival") {
+        const e = d.e;
+        stop(0.1);
+        if (!G.calm) slow(0.6, 0.38);
+        ring(e.x, e.y, 0.55, e.w * 0.35, e.w * 0.7, GRN(), 2);
+        sparkles(e.x, e.y, 6, e.w * 0.44, e.h * 0.32, 16, 0.45, 0.04);
+        return;
+      }
       const e = d.e, hold = G.calm ? 0 : 0.32; stop(hold, false, 0.4); if (hold) { e.jit = 4; jits.push(e); } slow(0.25, 1.2 + hold); if (!G.calm) fx.flash = 0.8; shake(22);
       for (let i = 0; i < 4; i++) G.later(i * 0.06, () => { const x = e.x + rnd(-e.w / 2, e.w / 2), y = e.y + rnd(-e.h / 2, e.h / 2); shock(x, y, 1.5); death(x, y, 26, 2.2); });
       for (const ln of e.lines) chars(e.x + rnd(-e.w / 2, e.w / 2), e.y + rnd(-e.h / 2, e.h / 2), ln, 9);
@@ -239,19 +254,25 @@ export function install(G) {
       halo(d.x, d.y, 16, 56, 15, 0.5);
       G.knock(d.x, d.y, 180, 440); G.jolt(d.x, 420, 500); jitter(d.x, d.y, 320, 3);
     });
-    G.on("bomb", (d) => { shock(d.x, d.y, 1.6); if (!G.calm) fx.flash = 0.9; shake(12); flip("eureka", d.x, d.y, 300, 0.7); pop(d.x, d.y - 46, "EUREKA", GRN(), 16, 1.1); });
+    G.on("bomb", (d) => {
+      if (d.kind === "sweep" || d.kind === "inkwell") {
+        pop(d.x, d.y - 40, d.kind === "sweep" ? "SWEEP" : "INK WELL", GRN(), 13, 0.9);
+        return;
+      }
+      shock(d.x, d.y, 1.6); if (!G.calm) fx.flash = 0.9; shake(12); flip("eureka", d.x, d.y, 300, 0.7); pop(d.x, d.y - 46, "EUREKA", GRN(), 16, 1.1);
+    });
     // graze: an arc on the side the bullet passed, a glint, and the charge ring shows
     G.on("graze", (d) => {
       const a = Math.atan2(d.y - P.y, d.x - P.x); meterShow = 1;
       part("arc", P.x, P.y, 0, 0, 0.22, 24, GRN(), { a });
       part("spark", d.x, d.y, Math.cos(a) * 140 + rnd(-40, 40), Math.sin(a) * 140 + rnd(-40, 40), 0.16, 7, G.pal.green);
     });
-    G.on("charge", (d) => { pop(d.x, d.y - 42, "Eureka charged", GRN(), 12, 1.1); sparkles(d.x, d.y, 6, 30, 30, 14, 0.5, 0.04); });
+    G.on("charge", (d) => { pop(d.x, d.y - 42, G.bombKind === "eureka" ? "Eureka charged" : "Bomb charged", GRN(), 12, 1.1); sparkles(d.x, d.y, 6, 30, 30, 14, 0.5, 0.04); });
     // each pickup swells the collect ring a little
     G.on("pickup", (d) => {
       collect = Math.min(1.4, collect + 0.18); const k = d.p.k;
       if (k === "s") { if (d.streak % 5 === 0) flip("sparkle", P.x + rnd(-10, 10), P.y + rnd(-14, 4), 10 + Math.min(10, d.streak / 3), 0.32); }
-      else if (k === "c" || k === "h") { pop(P.x, P.y - 38, k === "c" ? "Flashcard · Eureka +1" : "+1", GRN(), 12, 1.1); ring(P.x, P.y, 0.4, 10, 40, GRN()); }
+      else if (k === "c" || k === "h") { pop(P.x, P.y - 38, k === "c" ? "Flashcard · Bomb +1" : "+1", GRN(), 12, 1.1); ring(P.x, P.y, 0.4, 10, 40, GRN()); }
       else if (k === "e") { pop(P.x, P.y - 38, "Charge +" + Math.round((d.amount || 0) * 100) + "%", GRN(), 13, 1.1); ring(P.x, P.y, 0.45, 12, 70, GRN()); }
     });
     // Charge: say it once when it falls a tier, and again when a cell is on its way.
@@ -488,7 +509,8 @@ export function install(G) {
         const q = pend >= 0 ? (G.T - pend) / 0.1 : 2;
         if (q < 1.05) {
           c.globalAlpha = 0.9; c.strokeStyle = pal.ink; c.lineWidth = 2.5; c.setLineDash([6, 5]); c.beginPath(); c.arc(P.x, P.y, 12 + 50 * (1 - Math.min(1, q)), 0, TAU); c.stroke(); c.setLineDash([]);
-          c.font = "700 12px " + MONO; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = pal.paper; c.fillStyle = pal.ink; c.strokeText("EUREKA!", P.x, P.y - 72); c.fillText("EUREKA!", P.x, P.y - 72);
+          const cue = G.bombKind === "eureka" ? "EUREKA!" : "BOMB!";
+          c.font = "700 12px " + MONO; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = pal.paper; c.fillStyle = pal.ink; c.strokeText(cue, P.x, P.y - 72); c.fillText(cue, P.x, P.y - 72);
         }
         c.globalAlpha = 1;
       }

@@ -1,4 +1,8 @@
 import { RecessArt } from "./foes.js";
+import { chooseBossEncounter, bossRoster } from "./boss-roster.js";
+import { installRivals, makeRival } from "./boss-encounters.js";
+import { minibossRoster } from "./miniboss-roster.js";
+import { installMinibosses, spawnMiniboss } from "./minibosses.js";
 // Recess patterns: what each enemy does, what it fires, and the order they arrive in.
 // Owner: the patterns lane. Bullet kinds (how a bullet moves and looks) live in bullets.js.
 //
@@ -16,6 +20,8 @@ import { RecessArt } from "./foes.js";
 // Set e.act ("idle" | "windup" | "attack") and e.actT = 0 when an enemy changes what it is
 // doing: the characters lane picks animation frames from it, and it is the telegraph.
 export function install(G) {
+    installRivals(G);
+    installMinibosses(G);
     const { rnd, clamp, lerp, TAU } = G, fire = G.fire, aim = G.aim, SERIF = RecessArt.SERIF;
     // big = an attack worth a warning sound: popcorn windups only set e.act, so "warn" does not chatter
     const act = (e, a, big) => { if (e.act !== a) { e.act = a; e.actT = 0; if (big && a === "windup") G.emit("telegraph", { e }); } };
@@ -472,7 +478,7 @@ export function install(G) {
     };
     // what the fight draws over everything: the clock, the slam column, the charge lane, the thesis
     G.hook("draw.over", (env) => {
-      const e = G.boss, c = G.c, p = env.pal; if (!e || e.dead || e.stage < 0) return;
+      const e = G.boss, c = G.c, p = env.pal; if (!e || e.k !== "wall" || e.dead || e.stage < 0) return;
       c.save(); c.lineWidth = 2; c.strokeStyle = p.faint; c.globalAlpha = 0.55;
       c.beginPath(); c.ellipse(e.x, e.y, e.w / 2 + 14, e.h / 2 + 14, 0, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(e.clk / CLOCK, 0, 1)); c.stroke();
       c.globalAlpha = 1; c.setLineDash([8, 6]); c.lineDashOffset = -env.T * 30; c.strokeStyle = p.red; c.lineWidth = 1.6; c.beginPath();
@@ -498,11 +504,19 @@ export function install(G) {
       const m = G.pack.myths[i % G.pack.myths.length]; G.c.font = "italic 600 13px " + SERIF; const tw = G.c.measureText(m.wrong).width;
       return G.mk("myth", x, y, { w: tw + 50, h: 38, r: 24, hp: 125, pts: 1500, myth: m, tw, ty: G.H * 0.2, ct: -0.6, ci: 0, cyc: 0, off: 0, dT: 0, born: born ? 0.6 : 0 });
     }
-    function spawnBoss() {
+    function makeWall() {
       const lines = G.pack.wall, w = Math.min(G.W - 60, 360);
       let kf = 0; for (const m of G.pack.thread || []) { const r = /sin\((\d*)x\)/.exec(m.code || ""); if (r) { kf = +(r[1] || 1); break; } } // the lesson's own sin(kx)
       const e = G.mk("wall", G.W / 2, -100, { w, lh: 17, lines, h: lines.length * 17 + 14, r: 60, hp: lines.length * 120, per: 120, pts: 5000, ty: Math.max(92, G.H * 0.2), ct: 0, ci: 0, a: Math.PI / 2, sw: 0, stage: -1, mode: "pat", clk: CLOCK, notes: [], eat: [], kf });
       if (G.toy) { e.w = 150; e.h = 150; e.ty = Math.max(104, G.H * 0.21); }
+      return e;
+    }
+    function spawnBoss() {
+      const owner = G.o?.arena?.ownerDocument ?? G.o?.arena ?? G;
+      const encounter = chooseBossEncounter(G.pack, owner, G.o?.bossEncounter);
+      const e = encounter.id === "wall" ? makeWall() : makeRival(G, encounter);
+      G.label = encounter.id === "wall" ? G.pack.boss?.name || G.pack.names?.wall || bossRoster.wall.name : bossRoster[encounter.id].name;
+      if (!G.o?.bossScene) G.emit("say", { text: G.label });
       G.boss = G.spawn(e); G.fx.speed = 0.62; G.emit("bossSpawn", { e });
     }
 
@@ -525,6 +539,9 @@ export function install(G) {
     // ── the wave script ──
     function script(scene) {
       let si = 0, wait = null; const W = () => G.W, H = () => G.H;
+      const requested = typeof scene === "string" && scene.startsWith("mini/") ? scene.slice(5) : "";
+      const miniId = Object.hasOwn(minibossRoster, requested) ? requested : undefined;
+      if (miniId) scene = "miniboss";
       const OPS = {
         say(t) { G.label = t; G.emit("say", { text: t }); },
         wait(s) { let r = s; wait = (dt) => (r -= dt) <= 0; },
@@ -542,7 +559,15 @@ export function install(G) {
         split() { G.spawn(G.mk("split", rnd(100, W() - 100), -36, { vx: Math.random() < 0.5 ? -58 : 58, vy: 56, r: 30, hp: 18, pts: 300, sym: G.pack.split[0], kids: [G.pack.split[1], G.pack.split[2]], cd: 1.5 })); },
         worm() { G.fromTerm("worm", (x, y, born) => G.spawn(mkWorm(...away(x, y), born))); },
         myth(i) { if (G.pack.myths.length) G.fromTerm("myth", (x, y, born) => G.spawn(mkMyth(i, ...away(x, y), born))); },
-        gates(i) { G.startGates(i); wait = () => !G.gates; },
+        gates(i) {
+          // The first question and its breather belong to the student, even if Wave 1 timed out.
+          if (i === 0 && G.pack.gates?.[0]) G.foes = [];
+          G.startGates(i); wait = () => !G.gates;
+        },
+        miniboss() {
+          if (!miniId && !G.res.gates.length) return;
+          spawnMiniboss(G, miniId); wait = () => !G.miniboss;
+        },
         explain() { if (G.startExplain && G.startExplain()) wait = () => G.state !== "pause"; },
         boss() { spawnBoss(); wait = () => !G.boss; },
         end() { G.finish(true); },
@@ -551,7 +576,8 @@ export function install(G) {
       // drifters from the left, the right, then above) and that he aims by himself.
       const all = [["say", "Recess · " + G.pack.label], ["wait", 0.6], ["drift", { n: 4, from: "L" }], ["wait", 3], ["drift", { n: 4, from: "R" }], ["wait", 2.8], ["drift", { n: 5, from: "T" }], ["wait", 3.4],
         ["dart", 2], ["wait", 1.4], ["spin"], ["wait", 3.6], ["drift", { n: 4, from: "far" }], ["drift", { n: 3, from: "T" }], ["clear", 11],
-        ["mark", "gates"], ["wait", 0.5], ["gates", 0], ["wait", 0.4],
+        ["mark", "gates"], ["wait", 0.5], ["gates", 0], ["wait", 0.75],
+        ["mark", "miniboss"], ["miniboss"], ["wait", 0.35],
         ["say", "Wave 2"], ["split"], ["wait", 3], ["dart", 3], ["wait", 2.6], ["worm"], ["wait", 4.5], ["loop"], ["wait", 3], ["drift", { n: 4, from: "far" }], ["clear", 14],
         // A pack may carry up to four gate questions; a slot with no question skips itself at once.
         ["wait", 0.5], ["gates", 1], ["wait", 0.4],
@@ -560,7 +586,7 @@ export function install(G) {
         // The one open question, when the pack has one: a breather before the last stretch.
         ["mark", "explain"], ["explain"], ["wait", 0.4], ["drift", { n: 4, from: "T" }], ["clear", 8],
         ["wait", 0.5], ["gates", 3], ["wait", 0.5],
-        ["mark", "boss"], ["say", (G.pack.boss && G.pack.boss.name) || "The Wall of Text"], ["wait", 1.1], ["boss"], ["wait", 2.8], ["end"]];
+        ["mark", "boss"], ["wait", 1.1], ["boss"], ["wait", 2.8], ["end"]];
       // scenes let the mockup page jump straight to one part of the run
       const at = all.findIndex((s) => s[0] === "mark" && s[1] === scene), steps = at < 0 ? all : all.slice(at);
       return {

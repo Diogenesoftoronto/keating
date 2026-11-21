@@ -1,9 +1,13 @@
 import type { RecessHelperId, RecessWeaponId } from "../../keating/habits/quest-catalog";
+import type { BossId } from "./engine/boss-roster.js";
+import type { MinibossId } from "./engine/miniboss-roster.js";
 
 export type RecessLessonTurn = { role: "learner" | "tutor"; text: string };
 export type RecessCondition = { charge: number; tune: number; shine: number };
 export type RecessControl = "follow" | "twin" | "thrust";
 export type RecessTheme = "paper" | "term";
+export type RecessRivalId = Exclude<BossId, "wall">;
+export type RecessActorId = RecessRivalId | MinibossId;
 
 export type RecessQuestionKind = "cloze" | "name" | "formula" | "swap" | "correction" | "apply"
   | "truefalse" | "why" | "example" | "order" | "meaning" | "oddone" | "compare";
@@ -61,6 +65,10 @@ export interface RecessCheckResult {
 export interface RecessResult {
   won: boolean;
   quit: boolean;
+  /** The actual opponent reached in this flight. Older logs and early landings may omit it. */
+  bossName?: string;
+  /** A knockout earns an entry, even if the pilot lands before the finale. */
+  minibosses?: string[];
   score: number;
   kills: number;
   grazes: number;
@@ -83,6 +91,7 @@ export interface RecessResult {
 
 export interface RecessBotArt {
   sheet: HTMLImageElement;
+  rivalSheets?: Partial<Record<RecessActorId, HTMLImageElement>>;
   rows: Record<string, number>;
   hasJetpack: boolean;
   toy: { img: HTMLImageElement; box: readonly (readonly number[])[]; cell: number; cast: string; axis: string; poses: Record<string, HTMLImageElement> } | null;

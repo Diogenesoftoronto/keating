@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { ChatHeader, type ChatHeaderProps } from "../pages/chat/ChatHeader";
+import { ChatTabBar } from "../pages/chat/ChatTabBar";
 import { moveMenuFocus, shareMenuDetail } from "../pages/chat/ChatActionsMenu";
 import { renderWithRouter } from "./course-render";
 
@@ -54,15 +55,44 @@ test("thinking level is named in the desktop trigger's label and shown after the
   expect(phone).toContain("<span>Selected tutor · Thinking: High</span>");
 });
 
-test("on phones the title block is the model trigger and More stays visible", async () => {
+test("on phones the header is a thin bar: the title block is the model trigger, and Share is its only action", async () => {
   const html = await asPhone(() => renderWithRouter(<ChatHeader {...props} />));
   expect(html).toContain('class="ch-title ch-title-model"');
   expect(html).toContain('aria-label="Change model. Current model: Selected tutor"');
-  expect(html).toContain('aria-label="More menu"');
-  expect(html).toContain('aria-label="Open materials"');
   expect(html).toContain('aria-label="Share session"');
+  // Navigation moved to the bottom tab bar.
+  expect(html).not.toContain('aria-label="More menu"');
+  expect(html).not.toContain("data-material-count");
+  expect(html).not.toContain("sessions panel");
+  expect(html).not.toMatch(/aria-label="Switch to (dark|light) mode"/);
   expect(html).not.toContain('aria-label="Review session"');
   expect(html).not.toContain("knowledge-sources-button");
+});
+
+test("on phones the bottom tab bar holds sessions, materials, new, review and More", async () => {
+  const html = await asPhone(() => renderWithRouter(<ChatTabBar {...props} materialCount={3} />));
+  expect(html).toContain('class="ch-tabbar"');
+  expect(html).toContain('aria-label="Open sessions"');
+  expect(html).toContain('aria-label="Open materials, 3 in this session"');
+  expect(html).toContain('data-material-count="3"');
+  expect(html).toContain('aria-label="New session"');
+  expect(html).toContain('href="/review/sessions/calculus"');
+  expect(html).toContain('aria-label="More menu"');
+  expect(html).toContain('aria-expanded="false"');
+  const order = ["Sessions", "Materials", "New", "Review", "More"].map(label => html.indexOf(`<span>${label}</span>`));
+  expect(order.every(index => index >= 0)).toBe(true);
+  expect([...order].sort((a, b) => a - b)).toEqual(order);
+});
+
+test("the tab bar shows open surfaces as pressed, holds New while a reply is pending, and stays off wide screens", async () => {
+  const open = await asPhone(() => renderWithRouter(<ChatTabBar {...props} mobileSidebarOpen artifactBrowserOpen isPending />));
+  expect(open).toMatch(/<button[^>]*aria-label="Close sessions"[^>]*aria-pressed="true"/);
+  expect(open).toMatch(/<button[^>]*aria-label="Close materials"[^>]*aria-pressed="true"/);
+  expect(open).toMatch(/<button[^>]*aria-label="New session"[^>]*disabled/);
+  const withoutCanvas = await asPhone(() => renderWithRouter(<ChatTabBar {...props} canvasEnabled={false} />));
+  expect(withoutCanvas).not.toContain("data-material-count");
+  const desktop = await renderWithRouter(<ChatTabBar {...props} />);
+  expect(desktop).not.toContain("ch-tabbar");
 });
 
 test("share menu line says what the link is and how far it got", () => {

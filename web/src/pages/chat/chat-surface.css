@@ -341,3 +341,65 @@ body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!i
 /* Wide screens: let the reading column grow (it is a max-width, so it still shrinks with the panel). ~80ch at the desktop reply size. */
 @media (min-width:1280px) { .chat-page-panel {--ch-column:46rem} }
 @media (min-width:1680px) { .chat-page-panel {--ch-column:52rem} }
+
+/* ── Phones: the suggestions and the composer keep to one row each ─────────
+   Wrapped chips and a two-row composer took a third of a phone screen. The chips now scroll sideways in one row,
+   and the composer rests as one row and grows a full-width writing row only while it is being written in.
+   Sizes are px: these are touch targets, and the app's root font is 130%. */
+@media (max-width:780px) {
+  /* Chips: one row. The next chip peeks past the edge and the edge fades, so it is clear the row scrolls. */
+  .chat-page-panel .ch-study {
+    flex-wrap:nowrap; gap:6px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none;
+    padding:0 28px 0 0; min-height:44px;
+    mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);
+  }
+  [dir=rtl] .chat-page-panel .ch-study {padding:0 0 0 28px;mask-image:linear-gradient(to left,#000 calc(100% - 28px),transparent)}
+  .chat-page-panel .ch-study::-webkit-scrollbar {display:none}
+  /* A 36px chip in a 44px row: the row is the touch target, so the chip can sit lower without being harder to hit. */
+  .chat-page-panel .ch-study button {position:relative;flex:none;min-height:36px;padding-inline:10px;white-space:nowrap}
+  .chat-page-panel .ch-study button::after {content:"";position:absolute;inset:-4px 0}
+  /* Keating keeps his seat at the start of the row; the chips scroll beside him instead of under him. */
+  .chat-page-panel .chat-mascot-perch:not([data-expanded=true]) + .ch-study {padding-left:0;margin-left:2.55rem;width:auto;min-height:44px}
+  .chat-page-panel .chat-mascot-perch:not([data-expanded=true]):has(+ .ch-study) .chat-mascot-perch__bot {top:-2px}
+
+  .chat-page-panel .ch-study {margin-bottom:4px}
+  /* "Jump to latest" floats over the thread, above the chip row, so it never covers the chip that peeks. */
+  .chat-page-panel .ch-latest {top:auto;bottom:calc(100% + 6px)}
+
+  /* Thinking level: on phones it lives in the top bar's model picker, which names the current level. */
+  .chat-page-panel .composer-root .ch-reason {display:none}
+}
+
+/* Composer at rest: [ Message Keating ][ attach ][ dictate ][ talk ][ send ] in one row.
+   Writing in it (focus or text) gives the field its own full-width row above. The tools hold the bottom-right
+   corner in both states, so nothing moves under a finger when focus changes. Voice mode has no field and keeps its own layout. */
+@media (max-width:780px) {
+  .chat-page-panel .composer-root:has(> textarea) {
+    display:grid; grid-template-columns:minmax(0,1fr) repeat(4,auto); align-items:end; column-gap:0; padding:0 4px 4px 0;
+  }
+  .chat-page-panel .composer-root:has(> textarea) > :not(textarea,.ch-toolbar) {grid-column:1 / -1}
+  .chat-page-panel .composer-root:has(> textarea) > textarea {grid-column:1; align-self:center; min-height:44px; padding:10px 2px 6px 12px}
+  .chat-page-panel .composer-root:has(> textarea) > .ch-toolbar {display:contents}
+  .chat-page-panel .composer-root:has(> textarea) .ch-spacer {display:none}
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > button,
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > * > button {margin-top:4px}
+  .chat-page-panel .composer-root:has(> textarea:focus) > textarea,
+  .chat-page-panel .composer-root:has(> textarea:not(:placeholder-shown)) > textarea {grid-column:1 / -1}
+  /* With the field on its own row, the tools right-align on the row below. */
+  .chat-page-panel .composer-root:has(> textarea:focus) .ch-toolbar > :first-child,
+  .chat-page-panel .composer-root:has(> textarea:not(:placeholder-shown)) .ch-toolbar > :first-child {grid-column:2}
+}
+/* Voice mode has no field: "Hold to speak" takes the row the spacer used to hold, so its label stays on one line. */
+@media (max-width:780px) {
+  .chat-page-panel .composer-root:not(:has(> textarea)) .ch-spacer {display:none}
+}
+/* Smaller phones: the tools give up 4px of width each (still 44px tall) so the placeholder fits on one line. */
+@container ch-composer (max-width:335px) {
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > button,
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > * > button {min-width:40px;width:40px}
+}
+/* Too narrow for the field and four tools on one row: keep the stacked layout, still without the thinking row. */
+@container ch-composer (max-width:319px) {
+  .chat-page-panel .composer-root:has(> textarea) > textarea {grid-column:1 / -1}
+  .chat-page-panel .composer-root:has(> textarea) .ch-toolbar > :first-child {grid-column:2}
+}

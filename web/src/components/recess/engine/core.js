@@ -1,6 +1,10 @@
 import { install as installAudio } from "./audio.js";
+import { autoAimSpread } from "./aim.js";
 import { install as installFeedback } from "./feedback.js";
 import { install as installBullets } from "./bullets.js";
+import { advanceBombFields, drawBombFields, interceptBombBullet, releaseBomb, resolveBombKind } from "./bombs.js";
+import { createBossScenes } from "./boss-scenes.js";
+import { flightTouchGestures } from "./touch-gestures.js";
 import { install as installPatterns } from "./patterns.js";
 import { RecessArt } from "./foes.js";
 import { RecessFx } from "./fx.js";
@@ -48,6 +52,7 @@ export const Recess = (function () {
       P: { scale: 1, x: 0, y: 0, vx: 0, vy: 0, tilt: 0, inv: 0, hearts: 4, bombs: 2, power: 1, pw: 0, shotT: 0, vol: 0, anim: "hover", animT: 0, focus: false, ox: 0, oy: 0, left: false, thrust: 0, aim: -Math.PI / 2, lock: null, fireT: 9, manual: false, flick: 0, seed: 0 },
       home: { x: 0, y: 0 }, inp: { tx: 0, ty: 0, ax: 0, ay: 0, held: false, keys: {}, lx: 0, ly: 0, pid: null, aid: null, touch: false, usingKeys: false },
       foes: [], shots: [], bul: [], picks: [], helpers: [], words: [], timers: [], gates: null, boss: null, ring: null, tldr: null,
+      bombKind: resolveBombKind(o.bombKind), bombFields: [],
       loadout: {
         weapon: o.loadout?.weapon || "pulse",
         helper: o.loadout?.helper || "drone",
@@ -177,17 +182,18 @@ export const Recess = (function () {
       G.emit("cancel", { bullets: list, toSparks: !!toSparks });
     };
     // ang, where given, is the direction the shot that landed was travelling
-    G.hurtFoe = function (e, d, x, y, ang) {
-      if (e.born > 0 || e.dead) return; e.hp -= d; e.flash = 1; G.emit("foeHit", { e, d, x: x === undefined ? e.x : x, y: y === undefined ? e.y : y, ang });
+    G.hurtFoe = function (e, d, x, y, ang, critical = false) {
+      if (e.born > 0 || e.dead) return; e.hp -= d; e.flash = 1; G.emit("foeHit", { e, d, x: x === undefined ? e.x : x, y: y === undefined ? e.y : y, ang, critical });
       if (e.hp <= 0) G.kill(e, ang);
     };
     G.kill = function (e, ang) {
       if (e.dead) return; e.dead = 1; G.kills++; G.addChain();
       const pts = Math.round(e.pts * G.mult * (G.loadout.perks.scoreBonus || 1)); G.score += pts; G.knock(e.x, e.y, 36 + e.r * 1.5, 240);
       const def = G.kinds[e.k]; const n = (def && def.drops) || 2;
-      for (let i = 0; i < n; i++) G.addPick("s", e.x + rnd(-e.r, e.r), e.y + rnd(-e.r, e.r) * 0.6, e.k === "wall");
+      const isBoss = e === G.boss || e.k === "wall";
+      for (let i = 0; i < n; i++) G.addPick("s", e.x + rnd(-e.r, e.r), e.y + rnd(-e.r, e.r) * 0.6, isBoss);
       // Occasional mid-run Weapon Pod drop so learners can sample other weapons mid-flight.
-      if (G.kills > 0 && G.kills % 9 === 0 && e.k !== "wall" && G.tempWeaponT <= 0 && !G.picks.some((p) => p.k === "w")) {
+      if (G.kills > 0 && G.kills % 9 === 0 && !isBoss && G.tempWeaponT <= 0 && !G.picks.some((p) => p.k === "w")) {
         const pod = G.addPick("w", e.x, e.y, false);
         pod.weapon = pickDropWeapon(G.activeWeapon(), rnd);
       }
@@ -242,9 +248,8 @@ export const Recess = (function () {
     G.bomb = function () {
       if (G.state !== "play" || P.bombs <= 0 || bombT > 0) return;
       if (hitT > 0) { hitT = 0; G.emit("lastChance", { x: P.x, y: P.y }); } // pressed just in time: the hit never lands
-      P.bombs--; bombT = 0.7; P.inv = Math.max(P.inv, 1.4); P.anim = o.rows.eureka === undefined ? P.anim : "eureka"; P.animT = 0;
-      G.cancelBullets(true); G.ring = { x: P.x, y: P.y, r: 0 }; G.emit("bomb", { x: P.x, y: P.y });
-      for (const e of G.foes.slice()) { if (e.born > 0 || e.dead) continue; const def = G.kinds[e.k]; if (def && def.bombed) def.bombed(G, e); else G.hurtFoe(e, 26); }
+      P.bombs--; bombT = 0.7; P.anim = o.rows.eureka === undefined ? P.anim : "eureka"; P.animT = 0;
+      releaseBomb(G);
     };
 
     // ── gates: three answers to a question from the lesson ──
@@ -291,11 +296,8 @@ export const Recess = (function () {
     }
 
     // ── player ──
-    // He fires where he aims. With the pointer flying him, he aims by himself at the nearest
-    // enemy (and stays on it). With the keys flying him, the pointer is the aim. On a touch
-    // screen a second finger aims while it is down; lifting it hands aim back to him.
-    // His own aim is a player's, not a turret's: it wanders a little on two slow waves and
-    // overshoots when he swings to a new enemy. Both are smooth and bounded; nothing is rolled per frame.
+    // The automatic sight holds the nearest foe, opens at long range and
+    // tightens under focus. Twin-stick and a second aiming finger set the angle directly.
     const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
     G.aimPoint = function (e) { const def = G.kinds[e.k]; return def && def.aimAt ? def.aimAt(G, e, P.x, P.y) : e; };
     function aimUpdate(dt) {
@@ -303,15 +305,27 @@ export const Recess = (function () {
       const ct = clamp(G.care.tune / 0.75, 0, 1);
       P.flick *= Math.exp(-dt * 4.5);
       P.manual = inp.aid !== null || (G.control === "twin" && !inp.touch);
+      P.aimSpread = 0;
       if (P.manual) { want = Math.atan2(inp.ay - P.y, inp.ax - P.x); P.lock = null; turn = 40; }
       else {
-        let best = null, bd = 1e9;
-        for (const e of G.foes) { if (e.born > 0 || e.dead) continue; const q = G.aimPoint(e), d = Math.hypot(q.x - P.x, q.y - P.y) * (e === P.lock ? 0.72 : 1); if (d < bd) { bd = d; best = e; } }
+        let best = null, bestRank = Infinity;
+        for (const foe of G.foes) {
+          if (foe.born > 0 || foe.dead) continue;
+          const target = G.aimPoint(foe);
+          const distance = Math.hypot(target.x - P.x, target.y - P.y);
+          const rank = distance * (foe === P.lock ? 0.72 : 1);
+          if (rank >= bestRank) continue;
+          best = foe;
+          bestRank = rank;
+        }
         if (best) {
-          const q = G.aimPoint(best); want = Math.atan2(q.y - P.y, q.x - P.x);
+          const point = G.aimPoint(best);
+          const dx = point.x - P.x, dy = point.y - P.y;
+          want = Math.atan2(dy, dx);
           if (best !== P.lock) P.flick = clamp(angDiff(want, P.aim) * 0.25, -0.13, 0.13);
-          const sway = lerp(0.085, 0.05, ct), t = G.T;
-          want += sway * (0.62 * Math.sin(t * 0.83 + P.seed) + 0.38 * Math.sin(t * 2.17 + P.seed * 1.7)) + P.flick;
+          P.aimSpread = autoAimSpread(Math.hypot(dx, dy), G.W, G.H, G.care.tune, P.focus);
+          const drift = 0.62 * Math.sin(G.T * 0.83 + P.seed) + 0.38 * Math.sin(G.T * 2.17 + P.seed * 1.7);
+          want += clamp(P.aimSpread * drift + P.flick, -P.aimSpread, P.aimSpread);
         }
         P.lock = best;
       }
@@ -358,11 +372,11 @@ export const Recess = (function () {
         if (k >= 1.95) done();
         return;
       }
-      p.fireT += dt; aimUpdate(dt);
+      p.fireT += dt;
       const cc = clamp(G.care.charge / 0.75, 0, 1), ct = clamp(G.care.tune / 0.75, 0, 1); // 1 is top form
       const mv = (1 - clamp(p.mire || 0, 0, 0.6)) * lerp(0.8, 1, cc); p.mire = 0; // how freely he moves this frame; enemies set P.mire again every frame they hold him
       const K = inp.keys, kx = (K.ArrowRight || K.d ? 1 : 0) - (K.ArrowLeft || K.a ? 1 : 0), ky = (K.ArrowDown || K.s ? 1 : 0) - (K.ArrowUp || K.w ? 1 : 0);
-      p.focus = !!K.Shift || (G.control !== "thrust" && inp.held);
+      p.focus = !!K.Shift || (G.control !== "thrust" && inp.held) || (inp.pid !== null && touchGestures.isFocused(performance.now()));
       let thrust = 0.35, direct = false;
       const focusSpd = 270 * (G.loadout.perks.focusSpeed || 1);
       if (G.control === "thrust") {
@@ -388,6 +402,7 @@ export const Recess = (function () {
       const bot = G.control === "thrust" ? G.floorY - 24 : H - 22;
       if (p.x < 16) { p.x = 16; p.vx = Math.max(0, p.vx); } if (p.x > W - 16) { p.x = W - 16; p.vx = Math.min(0, p.vx); }
       if (p.y < 26) { p.y = 26; p.vy = Math.max(0, p.vy); } if (p.y > bot) { p.y = bot; p.vy = G.control === "thrust" && p.vy > 60 ? -p.vy * 0.3 : Math.min(0, p.vy); }
+      aimUpdate(dt);
       p.tilt = lerp(p.tilt, clamp(p.vx / 620, -0.48, 0.48), 1 - Math.exp(-dt * 12));
       if ((p.anim === "hit" && p.animT > 0.8) || (p.anim === "eureka" && p.animT > 0.85) || (p.anim === "cheer" && p.animT > 0.9)) { p.anim = "hover"; p.animT = 0; }
       cellUpdate(dt);
@@ -410,8 +425,9 @@ export const Recess = (function () {
       post?.clear();
       v2.clearRect(0, 0, view.width, view.height);
       unbind();
-      const r = { won: G.won, quit: G.quit, score: G.score, kills: G.kills, grazes: G.grazes, rattled: G.rattled, hearts: P.hearts, gates: G.res.gates, myths: G.res.myths, wind: G.res.wind || null, explain: G.res.explain || null, tldr: G.won ? G.pack.tldr : null,
+      const r = { won: G.won, quit: G.quit, bossName: G.res.bossName, score: G.score, kills: G.kills, grazes: G.grazes, rattled: G.rattled, hearts: P.hearts, gates: G.res.gates, myths: G.res.myths, wind: G.res.wind || null, explain: G.res.explain || null, tldr: G.won ? G.pack.tldr : null,
         care: { used: 0.1, chargeDelta: G.chargeDelta(), cogs: G.res.gates.filter((q) => q.ok).length, sparks: Math.floor(G.sparks / 20) } }; // what the run took from him and gave back
+      if (G.res.minibosses?.length) r.minibosses = G.res.minibosses;
       G.emit("end", { result: r }); o.end(r);
     }
 
@@ -426,6 +442,7 @@ export const Recess = (function () {
       const W = G.W, H = G.H;
       for (let i = G.timers.length - 1; i >= 0; i--) { const t = G.timers[i]; t.t -= dt; if (t.t <= 0) { G.timers.splice(i, 1); t.fn(); } }
       if (G.state === "play" && script) script.step(dt);
+      if (G.state === "cutscene") return;
       if (hitT > 0) { hitT -= dt; if (hitT <= 0) landHit(); }
       calmT += dt; if (calmT > 30 && G.mercy > 0) { G.mercy = Math.max(0, G.mercy - 0.34); calmT = 20; }
       player(dt); if (G.state === "idle") return;
@@ -444,7 +461,7 @@ export const Recess = (function () {
       // his shots (and companion helper shots)
       for (const s of G.shots) {
         stepShot(G, s, dt);
-        if (s.y < -24 || s.x < -24 || s.x > W + 24 || s.y > H + 24 || s.t > 2.2) { s.dead = true; continue; }
+        if (s.dead || s.y < -24 || s.x < -24 || s.x > W + 24 || s.y > H + 24 || s.t > 2.2) { s.dead = true; continue; }
         for (const e of G.foes) {
           if (s.pierce && s.hit && s.hit.has(e)) continue;
           const h = hitTest(e, s.x, s.y, s.r || 5);
@@ -458,10 +475,18 @@ export const Recess = (function () {
       }
       if (G.shots.length) G.shots = G.shots.filter((s) => !s.dead);
       // their bullets
+      advanceBombFields(G, dt);
       const px = P.x, py = P.y; let hit = false;
+      let intercepted = null;
       const grazeR = G.loadout.perks.grazeRadius || 26;
       for (const b of G.bul) {
+        const fromX = b.x, fromY = b.y;
         b.t += dt; const def = G.bullets[b.k]; if (def && def.move) def.move(G, b, dt); else { b.x += b.vx * dt; b.y += b.vy * dt; }
+        if (G.bombFields.length && !b.dead && interceptBombBullet(G, b, fromX, fromY)) {
+          b.dead = true;
+          (intercepted ??= []).push(b);
+          continue;
+        }
         if (b.x < -40 || b.x > W + 40 || b.y < -50 || b.y > H + 40) { if (!b.keep) b.dead = true; continue; }
         if (!playing || b.safe) continue;
         const dx = b.x - px, dy = b.y - py, d2 = dx * dx + dy * dy, hr = b.r * 0.62 + 3;
@@ -471,6 +496,7 @@ export const Recess = (function () {
           if (G.meter >= 36) { G.meter = 0; if (P.bombs < 3) { P.bombs++; G.emit("charge", { x: px, y: py, bombs: P.bombs }); } }
         }
       }
+      if (intercepted) G.emit("cancel", { bullets: intercepted, toSparks: false });
       if (hit) G.hitPlayer();
       if (G.bul.some((b) => b.dead)) G.bul = G.bul.filter((b) => !b.dead);
       // pickups
@@ -524,6 +550,19 @@ export const Recess = (function () {
       const sx = (on ? wob(71, 113) * fx.shake * 0.6 : 0) + (G.calm ? 0 : fx.kx || 0), sy = (on ? wob(83, 127) * fx.shake * 0.6 : 0) + (G.calm ? 0 : fx.ky || 0);
       for (const x of [c, em]) { x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H); x.translate(sx, sy); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; }
       const env = { pal, T: G.T, lx: P.x, ly: P.y, dark: G.dark, toy: G.toy, G };
+      if (G.state === "cutscene" && G.boss) {
+        // Frame the actual opponent. Frozen pickups, shots and wave announcements return with play.
+        const boss = G.boss;
+        c.save();
+        c.fillStyle = G.dark ? "rgba(168, 218, 168, 0.15)" : "rgba(65, 57, 33, 0.13)";
+        c.beginPath();
+        c.ellipse(boss.x, boss.y + boss.h * 0.49, boss.w * 0.34, 5, 0, 0, TAU);
+        c.fill();
+        c.restore();
+        // Let the idle poses breathe while the combat clock is stopped.
+        A.drawFoe(c, boss, { ...env, T: G.calm ? G.T : G.RT });
+        return;
+      }
       // loose words
       c.textAlign = "center"; c.textBaseline = "middle";
       for (const w of G.words) {
@@ -552,6 +591,7 @@ export const Recess = (function () {
         c.fillStyle = pal.ink; for (let i = 0; i <= n; i++) { const x = clamp(i * sw, 5, W - 5); c.beginPath(); c.moveTo(x, Gt.y - 6); c.lineTo(x + 6, Gt.y); c.lineTo(x, Gt.y + 6); c.lineTo(x - 6, Gt.y); c.closePath(); c.fill(); }
       }
       run("draw.back", env);
+      drawBombFields(G);
       for (const p of G.picks) A.drawPickup(c, p, env);
       for (const e of G.foes) A.drawFoe(c, e, env);
       drawShots(c, em, G, pal);
@@ -592,7 +632,15 @@ export const Recess = (function () {
       fx.on = clamp(fx.on + (G.state === "outro" && G.T - outT > 1.1 ? -rdt * 1.6 : rdt * 2.2), 0, 1);
       fx.focus += ((P.focus && G.state === "play" ? 1 : 0) - fx.focus) * (1 - Math.exp(-rdt * 12));
       for (const s of fx.shocks) s.t += rdt; while (fx.shocks.length && fx.shocks[0].t > 1.3) fx.shocks.shift();
-      let dt = G.state === "down" || G.state === "pause" ? 0 : rdt; if (fx.stop > 0) { fx.stop -= rdt; if (!G.calm) dt = 0; } if (fx.slowT > 0) { fx.slowT -= rdt; if (fx.slowT <= 0) fx.slow = 1; } dt *= fx.slow;
+      let dt = G.state === "down" || G.state === "pause" ? 0 : rdt;
+      if (G.state === "cutscene") {
+        dt = 0;
+        bossScenes.tick(rdt);
+      } else {
+        if (fx.stop > 0) { fx.stop -= rdt; if (!G.calm) dt = 0; }
+        if (fx.slowT > 0) { fx.slowT -= rdt; if (fx.slowT <= 0) fx.slow = 1; }
+        dt *= fx.slow;
+      }
       run("frame", rdt);
       if (dt > 0) { G.T += dt; update(dt); }
       if (G.state === "idle") return;
@@ -611,10 +659,14 @@ export const Recess = (function () {
       return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
     const captured = new Set();
+    const touchGestures = flightTouchGestures();
+    const onControl = (e) => e.target !== arena && e.target?.closest?.("button, input, select, textarea, summary, a[href], [contenteditable=true], [role=dialog], [data-interface]");
+    const canGesture = () => G.state === "play" && !G.gates && !document.hidden;
     const capture = (e) => { if (e.isTrusted) { arena.setPointerCapture(e.pointerId); captured.add(e.pointerId); } };
     // Touch: the first finger flies him (relative, like a trackpad), the second aims where it
     // rests. A third is ignored. Either finger can lift without disturbing the other.
     function down(e) {
+      if (onControl(e)) { touchGestures.cancel(); return; }
       if (G.state !== "play" && G.state !== "intro") return;
       arena.focus({ preventScroll: true });
       G.snd.unlock();
@@ -623,6 +675,10 @@ export const Recess = (function () {
       if (e.pointerType === "touch") {
         inp.touch = true;
         if (e.pointerId === inp.pid || e.pointerId === inp.aid) { e.preventDefault(); return; }
+        // A touch already down outside the arena owns the primary pointer. It
+        // must not combine with new fingers on the playfield to fire a bomb.
+        const firstOnField = inp.pid === null && inp.aid === null;
+        touchGestures.down(e.pointerId, e.clientX, e.clientY, performance.now(), canGesture() && !(firstOnField && e.isPrimary === false));
         if (inp.pid === null) {
           inp.pid = e.pointerId; inp.lx = p.x; inp.ly = p.y;
           if (G.control === "thrust") { inp.tx = p.x; inp.ty = p.y; }
@@ -641,9 +697,10 @@ export const Recess = (function () {
       e.preventDefault();
     }
     function move(e) {
-      if (G.state !== "play") return;
+      if (G.state !== "play" || onControl(e)) return;
       const p = pt(e);
       if (e.pointerType === "touch") {
+        touchGestures.move(e.pointerId, e.clientX, e.clientY, performance.now());
         if (e.pointerId === inp.aid) { inp.ax = p.x; inp.ay = p.y; return; }
         if (e.pointerId !== inp.pid) return;
         if (G.control === "thrust") { inp.tx = p.x; inp.ty = p.y; }
@@ -662,16 +719,21 @@ export const Recess = (function () {
     function up(e) {
       captured.delete(e.pointerId);
       if (e.pointerType !== "touch") inp.held = false;
-      else if (e.pointerId === inp.pid) inp.pid = null;
-      else if (e.pointerId === inp.aid) inp.aid = null;
+      const completed = e.pointerType === "touch" && e.type === "pointerup" && canGesture() && !onControl(e);
+      const bomb = touchGestures.up(e.pointerId, e.clientX, e.clientY, performance.now(), completed);
+      if (e.pointerId === inp.pid) inp.pid = null;
+      if (e.pointerId === inp.aid) inp.aid = null;
+      if (bomb) G.bomb();
     }
     function release() {
+      touchGestures.reset();
       for (const id of captured) if (arena.hasPointerCapture?.(id)) arena.releasePointerCapture(id);
       captured.clear();
       inp.pid = null; inp.aid = null;
     }
     function stop() {
-      if (G.state !== "play" && G.state !== "intro" && G.state !== "down" && G.state !== "pause") return;
+      if (G.state !== "play" && G.state !== "intro" && G.state !== "down" && G.state !== "pause" && G.state !== "cutscene") return;
+      bossScenes.cancel();
       G.state = "play"; G.quit = true; o.revive?.(null); o.explain?.(null); G.finish(false);
     }
     function key(e) {
@@ -681,22 +743,37 @@ export const Recess = (function () {
       if (G.state !== "play" && G.state !== "intro") return;
       // Number keys answer an open gate directly: the choice never depends on aim, charge or flying skill.
       if (dn && /^[1-4]$/.test(k) && G.gates && G.gates.st === 0) { e.preventDefault(); G.answerGate(Number(k) - 1); return; }
+      if (onControl(e)) return;
       if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "w", "a", "s", "d", "Shift", "x"].includes(k)) return;
       if (k !== "Shift") e.preventDefault(); inp.keys[k] = dn;
       if (dn && (k === " " || k === "x") && !e.repeat) G.bomb();
     }
     const menu = (e) => e.preventDefault();
-    // Losing arena focus (a tap on the Eureka key) keeps fingers that are still down; losing the window drops them.
-    const blur = () => { inp.keys = {}; inp.held = false; };
-    const leave = () => { blur(); release(); };
+    // A control can keep keyboard focus without stealing a steering finger.
+    const blur = () => { inp.keys = {}; inp.held = false; touchGestures.cancel(); };
+    function resetFlightInput() {
+      release();
+      inp.keys = {}; inp.held = false; inp.usingKeys = false;
+      inp.tx = P.x; inp.ty = P.y;
+      P.focus = false; P.manual = false;
+    }
+    G.resetFlightInput = resetFlightInput;
+    for (const event of ["downed", "explainStart", "finish"]) G.on(event, resetFlightInput);
+    G.on("gateStart", touchGestures.cancel);
+    const hidden = () => { if (document.hidden) resetFlightInput(); };
+    const otherTouch = (e) => {
+      if (e.pointerType === "touch" && (inp.pid !== null || inp.aid !== null) &&
+          (onControl(e) || !e.composedPath().includes(arena))) touchGestures.cancel();
+    };
     const bindings = [
       [arena, "pointerdown", down], [arena, "pointermove", move], [arena, "pointerup", up],
       [arena, "pointercancel", up], [arena, "lostpointercapture", up], [arena, "keydown", key],
-      [arena, "keyup", key], [arena, "contextmenu", menu], [arena, "blur", blur], [window, "blur", leave],
+      [arena, "keyup", key], [arena, "contextmenu", menu], [arena, "blur", blur], [window, "blur", resetFlightInput],
+      [window, "visibilitychange", hidden, true], [window, "pointerdown", otherTouch, true],
     ];
-    const bind = () => { for (const [target, event, fn] of bindings) target.addEventListener(event, fn); };
+    const bind = () => { for (const [target, event, fn, capture] of bindings) target.addEventListener(event, fn, capture); };
     const unbind = () => {
-      for (const [target, event, fn] of bindings) target.removeEventListener(event, fn);
+      for (const [target, event, fn, capture] of bindings) target.removeEventListener(event, fn, capture);
       release();
     };
 
@@ -718,15 +795,27 @@ export const Recess = (function () {
     // A pack compiled by the AI director may give its boss lines (pack.boss.taunts). They are jokes on the boss.
     const taunt = (e, text) => { if (text && G.J) G.J.pop(e.x, e.y + (e.h || 60) / 2 + 30, "“" + text + "”", G.pal.ink, 12, 2.6); };
     let lowSaid = false;
+    const bossScenes = createBossScenes(G);
     G.on("start", () => { lowSaid = false; });
-    G.on("bossSpawn", (d) => G.later(1.2, () => { const t = G.pack.boss && G.pack.boss.taunts; if (t && G.boss === d.e) taunt(d.e, t.intro); }));
-    G.on("bossPhase", (d) => { const t = G.pack.boss && G.pack.boss.taunts; if (t && !d.first && t.phase) G.later(0.9, () => { if (G.boss === d.e) taunt(d.e, t.phase[(d.stage - 1) % t.phase.length]); }); });
-    G.on("foeHit", (d) => { const t = G.pack.boss && G.pack.boss.taunts; if (t && !lowSaid && d.e === G.boss && d.e.hp < d.e.max * 0.2) { lowSaid = true; taunt(d.e, t.low); } });
-    G.on("bossDeath", (d) => { const t = G.pack.boss && G.pack.boss.taunts; if (t) taunt(d.e, t.defeat); });
+    G.on("bossSpawn", ({ e }) => {
+      G.res.bossName = G.label;
+      if (bossScenes.open(e)) {
+        hitT = 0; // the entrance also clears any pending hit from the previous wave
+        return;
+      }
+      G.later(1.2, () => { const t = wallTaunts(e); if (t && G.boss === e) taunt(e, t.intro); });
+    });
+    function wallTaunts(e) { return e.k === "wall" ? G.pack.boss?.taunts : undefined; }
+    G.on("bossPhase", (d) => { const t = wallTaunts(d.e); if (t && !d.first && t.phase?.length) G.later(0.9, () => { if (G.boss === d.e) taunt(d.e, t.phase[(d.stage - 1) % t.phase.length]); }); });
+    G.on("foeHit", (d) => { const t = wallTaunts(d.e); if (t && !lowSaid && d.e === G.boss && d.e.hp < d.e.max * 0.2) { lowSaid = true; taunt(d.e, t.low); } });
+    G.on("bossDeath", (d) => { const t = wallTaunts(d.e); if (t) taunt(d.e, t.defeat); });
     // The installation order matches the authored game. Each module is scoped to this run.
+    for (const event of ["start", "finish", "downed", "gateStart"]) G.on(event, () => { G.bombFields = []; });
+    G.on("start", () => { bombT = 0; });
     for (const install of [A.install, installAudio, installFeedback, installBullets, installPatterns]) install(G);
     return {
       start, stop, bomb: G.bomb, answerGate: (i) => G.answerGate(i),
+      advanceBossScene: bossScenes.advance, skipBossScene: bossScenes.skip,
       get state() { return G.state; },
       /** Remaining firing charge minus the charge this run started with, in [-1, 1]. */
       get chargeDelta() { return G.chargeDelta(); },
@@ -742,6 +831,7 @@ export const Recess = (function () {
         if (disposed) return;
         disposed = true;
         G.state = "idle";
+        bossScenes.cancel();
         cancelAnimationFrame(raf);
         G.timers.length = 0;
         unbind();

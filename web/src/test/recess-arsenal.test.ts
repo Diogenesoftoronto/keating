@@ -30,10 +30,10 @@ function mockGame(weapon = "pulse", helper = "drone") {
   return { G, events };
 }
 
-test("all 6 Recess weapons produce distinct shot patterns and pierce/spread/wave properties", () => {
+test("Recess weapons produce distinct shot patterns and pierce/spread/wave properties", () => {
   const CHARGE = { cost: 0.002 };
 
-  for (const weapon of ["pulse", "gavel", "scatter", "beam", "wave", "burst"] as const) {
+  for (const { weapon } of RECESS_WEAPONS) {
     const { G } = mockGame(weapon, "drone");
     G.P.power = 2;
     let drained = 0;
@@ -133,7 +133,7 @@ test("Tamagotchi Workshop crafts and equips parts-only weapons and companions an
     },
   });
 
-  expect(RECESS_WEAPONS.length).toBe(6);
+  expect(RECESS_WEAPONS.length).toBe(8);
   expect(RECESS_HELPERS.length).toBe(4);
   for (const piece of HABIT_KIT) {
     expect(piece.recessEffect).toBeTruthy();

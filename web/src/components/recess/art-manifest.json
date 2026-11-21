@@ -16,6 +16,16 @@
   "hasJetpack": true,
   "sheet": "sheet.webp",
   "sit": "sit.webp",
+  "rivals": {
+    "compass": "boss-compass.webp",
+    "cell": "boss-cell.webp",
+    "metronome": "boss-metronome.webp",
+    "carbon": "boss-carbon.webp",
+    "projector": "boss-projector.webp",
+    "clip": "boss-clip.webp",
+    "pinwheel": "boss-pinwheel.webp",
+    "magnet": "boss-magnet.webp"
+  },
   "fx": {
     "src": "effects.webp",
     "cell": 96,

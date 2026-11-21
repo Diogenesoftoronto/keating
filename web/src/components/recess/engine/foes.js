@@ -1,3 +1,5 @@
+import { drawRivalActor } from "./rival-art.js";
+
 // Recess characters: how every enemy, the bot and the pickups are drawn.
 // Owner: the characters lane. Two enemy skins: ink, drawn in code (outlines "boil" at eight
 // frames a second, the same stepped cadence as the mascot's sprites), and toys, drawn from
@@ -178,6 +180,15 @@ export const RecessArt = (function () {
     const p = env.pal, T = e.frz ? 0 : env.T, seed = e.seed || 0;
     c.save();
     if (e.born > 0) { const k = 1 - Math.min(1, e.born / (e.born0 || 0.5)), s = 0.25 + 0.75 * k * (2 - k); c.translate(e.x, e.y); c.scale(s, s); c.translate(-e.x, -e.y); c.globalAlpha *= 0.4 + 0.6 * k; }
+    if (e.k === "rival" || e.k === "mini") {
+      if (!e.bossLobes) {
+        c.translate(e.x, e.y); c.rotate(e.rot || 0);
+        c.scale(e.sx ?? 1, e.sy ?? 1); c.translate(-e.x, -e.y);
+      }
+      drawRivalActor(c, e, env.toy ? env.G?.o?.rivalSheets?.[e.bossId] : undefined, p);
+      c.restore();
+      return;
+    }
     // Anticipation compresses about the collision centre. Release briefly overshoots.
     const role = e.look || e.k, t = e.actT || 0;
     const press = e.flash > .25 ? .16 * e.flash : e.act === "windup" ? .14 * Math.min(1, .45 + t * 5)
@@ -362,6 +373,11 @@ export const RecessArt = (function () {
   // Sheet rows are named in G.o.rows (hover, hit, cheer, launch, and when generated: aim,
   // aimB, aimFire, eureka, land ...). Each row is eight 128 px frames.
   const BOT = { cream: "#efe7d6", green: "#1e9b50", ink: "#1c211b" }; // the toy keeps his colours in every theme
+  // Peak displacement in arena pixels and settling time in seconds.
+  const recoilProfiles = {
+    pulse: [2, .09], scatter: [3.4, .12], gavel: [5, .16],
+    beam: [1.6, .12], wave: [2.2, .11], burst: [2.8, .08],
+  };
   const turn = (d) => { while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
   const SCREEN_X = [-2,-2,-4,-1,0,-2,-3,-2], SCREEN_Y = [-21,-21,-19,-21,-20,-21,-19,-21];
   const SCREEN_TILT = [.05,.2,.22,.26,.22,.1,0,-.07];
@@ -414,16 +430,24 @@ export const RecessArt = (function () {
     }
     c.save();
     if (!G.calm && p.inv > 0 && playing && !revived && p.anim !== "hit" && Math.floor(G.RT * 14) % 2 === 0) c.globalAlpha = 0.45;
-    c.translate(p.x, p.y); c.rotate(p.tilt + lean + (low && playing && !revived ? .12 : 0)); c.scale(p.scale, p.scale);
+    const flightMotion = playing && !G.calm && !revived && p.anim === "hover";
+    let recoil = 0;
+    if (flightMotion && p.fireT < .16) {
+      const [travel, duration] = recoilProfiles[G.activeWeapon()] || recoilProfiles.pulse;
+      recoil = travel * Math.max(0, 1 - p.fireT / duration) ** 2;
+    }
+    const gearLag = flightMotion ? p.tilt * 5 : 0;
+    c.translate(p.x - Math.cos(p.aim) * recoil, p.y - Math.sin(p.aim) * recoil);
+    c.rotate(p.tilt + lean + (low && playing && !revived ? .12 : 0)); c.scale(p.scale, p.scale);
     if (!o.hasJetpack) for (const s of [-1, 1]) { // a drawn pack when the sprite sheet has none
       box(c, s * 15 - 5.5, -8, 11, 21, 4); c.fillStyle = BOT.cream; c.fill(); c.strokeStyle = BOT.ink; c.lineWidth = 1.5; c.stroke();
       c.fillStyle = BOT.green; c.fillRect(s * 15 - 5.5, -1, 11, 3.5); c.fillStyle = BOT.ink; c.beginPath(); c.moveTo(s * 15 - 3.5, 13); c.lineTo(s * 15 + 3.5, 13); c.lineTo(s * 15 + 5, 17.5); c.lineTo(s * 15 - 5, 17.5); c.closePath(); c.fill();
     }
     c.save();
     const tint = down ? "saturate(.3) brightness(.78)" : low ? "brightness(.78)" : charge > .9 ? "brightness(1.09)" : "";
-    drawEquipment(c, o.equipment.pack, -19, -1, 37, tint);
+    drawEquipment(c, o.equipment.pack, -19 - gearLag * .5, -1, 37, tint);
     blit(c, sheet, f * cell, row * cell, cell, cell, -S / 2, -S / 2 - 5, S, S, tint);
-    drawEquipment(c, o.equipment.topper, -10, -35, 25, tint);
+    drawEquipment(c, o.equipment.topper, -10 - gearLag, -35, 25, tint);
     if (o.equipment.blaster) {
       c.save();
       c.rotate(p.aim - p.tilt - lean - (low && !revived ? .12 : 0));
@@ -480,7 +504,13 @@ export const RecessArt = (function () {
       for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(x + ux * 4, y + uy * 4); c.lineTo(x + ux * 10, y + uy * 10); }
       c.stroke(); c.fillStyle = c.strokeStyle; c.fillRect(x - 1, y - 1, 2, 2);
     } else if (p.lock && !p.lock.dead) {
-      const q = G.aimPoint(p.lock), r = (q === p.lock ? p.lock.r : 10) + 8 + Math.sin(G.T * 6) * 1.5, k = r * 0.45; c.globalAlpha = 0.85; c.beginPath();
+      const q = G.aimPoint(p.lock);
+      const impact = p.lock.flash || 0;
+      // Open brackets signal a wider shot. Closing distance or focusing pulls them in.
+      const margin = 7 + Math.min(14, (p.aimSpread ?? 0) * 86) - (G.calm ? 0 : 4 * impact ** 2);
+      const r = (q === p.lock ? p.lock.r : 10) + margin, k = r * .45;
+      c.lineWidth = 1.8 + impact;
+      c.globalAlpha = .85; c.beginPath();
       for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { c.moveTo(q.x + sx * r, q.y + sy * (r - k)); c.lineTo(q.x + sx * r, q.y + sy * r); c.lineTo(q.x + sx * (r - k), q.y + sy * r); }
       c.stroke(); c.globalAlpha = 1;
     }
@@ -528,9 +558,9 @@ export const RecessArt = (function () {
     G.on("multUp", ({mult}) => show("×" + mult, .65));
     G.on("gateResolve", ({ok}) => show(ok ? "✓" : "?", .7));
     function ghost(e, role, x, y, ch) {
-      const boss = role === "wall", seg = role === "wormseg", toy = G.toy;
+      const boss = role === "wall" || role === "rival", seg = role === "wormseg", toy = G.toy;
       const size = boss ? e.h * 1.2 : seg ? 25 : role === "myth" ? 58 : (e.r || 15) * 2.7;
-      const img = toy && clip(toy, boss ? "wall-fall" : role);
+      const img = toy && (role === "rival" || role === "mini" ? G.o.rivalSheets?.[e.bossId] : clip(toy, boss ? "wall-fall" : role));
       if (ghosts.length >= 32) ghosts.shift();
       ghosts.push({ e, role, x, y, size, img, toy, ch, half: e.half, start: G.T, life: boss ? .84 : seg ? .32 : .25 });
     }
@@ -575,7 +605,11 @@ export const RecessArt = (function () {
         const boss = g.role === "wall", seg = g.role === "wormseg";
         c.save(); c.translate(g.x, g.y + (G.calm ? 0 : u * u * 8));
         c.globalAlpha *= Math.min(.85, (1 - u) * 3);
-        if (g.img?.naturalWidth) frame(c, g.img, boss ? Math.min(7, Math.floor(age * 10)) : seg ? 5 + Math.min(2, Math.floor(age * 10)) : g.role === "kid" ? (g.half ? 7 : 3) : 7, 0, 0, g.size);
+        if (g.role === "rival" || g.role === "mini") {
+          if (!G.calm) { c.rotate(u * .12); c.scale(1 - u * .1, 1 - u * .2); }
+          c.translate(-g.e.x, -g.e.y);
+          drawRivalActor(c, { ...g.e, bossPose: 3 }, g.img, env.pal);
+        } else if (g.img?.naturalWidth) frame(c, g.img, boss ? Math.min(7, Math.floor(age * 10)) : seg ? 5 + Math.min(2, Math.floor(age * 10)) : g.role === "kid" ? (g.half ? 7 : 3) : 7, 0, 0, g.size);
         else {
           c.rotate(G.calm ? 0 : u * .18); c.scale(1 + u * .12, 1 - u * .55);
           const slot = ["drift","spin","split","dart","worm","myth","wall"].indexOf(g.role);
