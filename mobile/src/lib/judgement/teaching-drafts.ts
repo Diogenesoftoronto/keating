@@ -63,7 +63,7 @@ export function createMobileTeachingDraftRound(options: {
   const openAiToolBatches: { responseId: string; results: ProviderToolResult[] }[] = [];
   // One triage per learner message; tool rounds of a direct turn stay direct.
   let triaged: { readonly messageId: string; readonly direct: TeachingDraftReasoning | null } | undefined;
-  let plannedTurn: { readonly messageId: string; readonly plan: TeachingDraftPlanMemo } | undefined;
+  let plannedTurn: { readonly messageId: string; readonly plan: TeachingDraftPlanMemo; readonly gradeFirst: boolean } | undefined;
   return async (settings, apiKey, messages, providerOptions = {}) => {
     const priorGrade = lastGrade;
     lastGrade = undefined;
@@ -205,7 +205,10 @@ export function createMobileTeachingDraftRound(options: {
       } else triaged = { messageId, direct: null };
     }
     // A tool round of this learner message reuses its plan.
-    const priorPlan = continuation && (options.breadth ?? "focused") === "focused" && plannedTurn?.messageId === messageId ? plannedTurn.plan : undefined;
+    // A grade changes what the learner still owes, so plan again after one.
+    const graded = Boolean(confirmedQuestionGrade || submitted) || plannedTurn?.gradeFirst === true
+      || results.some(result => result.name === NATIVE_GRADE_TOOL || /^grade_/.test(result.name));
+    const priorPlan = continuation && (options.breadth ?? "focused") === "focused" && plannedTurn?.messageId === messageId && !graded ? plannedTurn.plan : undefined;
     const result = await runTeachingDrafts<ProviderRound>({ turn, signal: drafting.signal,
       ...(proceed ? { proceed } : {}), ...(priorPlan ? { priorPlan } : {}), judgementModel: options.judgementModel,
       configuredDecisionModel: options.configuredDecisionModel, maxQuestionChars: options.maxQuestionChars,
@@ -266,7 +269,7 @@ export function createMobileTeachingDraftRound(options: {
     providerOptions.signal?.removeEventListener("abort", stopDrafting);
     const triagedLevel = directLevel as TeachingDraftReasoning | null;
     if (triagedLevel !== null) return answerDirectly(triagedLevel);
-    if (result.plan && messageId) plannedTurn = { messageId, plan: result.plan };
+    if (result.plan && messageId) plannedTurn = { messageId, plan: result.plan, gradeFirst: result.receipt.interaction?.action === "grade-first" };
     await stageDelivery;
     await stillCurrent();
     if (feedbackQuestion && feedbackCandidateIssued && options.questionJournal) {

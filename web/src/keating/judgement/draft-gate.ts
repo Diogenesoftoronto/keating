@@ -311,7 +311,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
   // One triage per learner turn, so the tool-loop rounds of a direct turn stay direct.
   let triageTurn: { readonly learnerTurns: number; readonly triage: TeachingTriage } | null = null;
   // The plan a learner turn made, reused by that turn's tool rounds instead of planning again.
-  let planMemo: { readonly learnerTurns: number; readonly plan: TeachingDraftPlanMemo } | null = null;
+  let planMemo: { readonly learnerTurns: number; readonly plan: TeachingDraftPlanMemo; readonly gradeFirst: boolean } | null = null;
   const planReviewTrigger = (context: Context, work: ActiveWork | undefined) => {
     const learnerTurns = context.messages.filter((message) => message.role === "user").length;
     if (planTurn?.learnerTurns === learnerTurns) return planTurn.trigger;
@@ -660,8 +660,12 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           return false;
         }, () => true);
       const learnerTurns = learnerCount;
+      // A grade changes what the learner still owes (learner_response_due, checkpoint scope), so plan again after one.
+      const gradedThisTurn = Boolean(priorGrade || confirmedQuestionGrade || evidence?.submittedComprehension)
+        || snapshot.messages.slice(snapshot.messages.findLastIndex(message => message.role === "user") + 1)
+          .some(message => message.role === "toolResult" && /^grade_/.test(message.toolName));
       const priorPlan = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused"
-        && planMemo?.learnerTurns === learnerTurns ? planMemo.plan : undefined;
+        && planMemo?.learnerTurns === learnerTurns && !planMemo.gradeFirst && !gradedThisTurn ? planMemo.plan : undefined;
       const hosted = model.provider !== "browser" && model.provider !== DESKTOP_OFFLINE_PROVIDER;
       // A tool round is an intermediate step: one draft, not a comparison, unless research breadth was asked for.
       const toolRound = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused";
@@ -780,7 +784,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       if (stopped()) { publish(safeMessage("", true)); return; }
       const directRoute = direct as TeachingTriage | null;
       if (directRoute?.route === "direct") { await answerDirectly(directRoute.reasoning, draftContext, activeWork); return; }
-      if (result.plan) planMemo = { learnerTurns, plan: result.plan };
+      if (result.plan) planMemo = { learnerTurns, plan: result.plan, gradeFirst: result.receipt.interaction?.action === "grade-first" };
       if (result.status === "released" && result.value && result.reply && current()) {
         const unverified = result.receipt.reason === "best-effort-draft";
         const released = approvedMessage(result.value, result.reply, usage, unverified);
