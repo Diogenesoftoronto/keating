@@ -176,3 +176,10 @@ test("grading a saved answer is not blocked by an uncertain assessed-work score,
   const exam = await run({ ruleIds: ["assessed_work_completed"], turn: { ...turn, assessment: "assessed" }, reviewScores: { assessed_work_completed: 0.45 } });
   expect(exam.result.receipt.attempts.flatMap(a => a.checks).some(c => c.applicability === "submitted-answer-feedback")).toBe(false);
 });
+
+test("the assessed-work review knows the learner's answer was already submitted", async () => {
+  const { requests } = await run({ ruleIds: ["assessed_work_completed"] });
+  const asked = requests.map(r => r.questions.assessed_work_completed).filter(Boolean);
+  expect(asked.length).toBeGreaterThan(0);
+  expect(asked.every(q => q!.instructions.startsWith("The learner has already submitted their own answer"))).toBe(true);
+});
