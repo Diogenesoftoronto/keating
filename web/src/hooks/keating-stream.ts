@@ -1,4 +1,4 @@
-import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE, GPT_6_LUNA_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
+import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE, GPT_6_LUNA_PROFILE, NOTORGANIC_INKLING_ROUTER_ALIASES, SERVICE_ENDPOINTS } from "@keating/runtime-config";
 import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
@@ -396,7 +396,7 @@ export function notOrganicInferenceRequestUrl(model: Pick<Model<Api>, "api" | "b
 	return `${model.baseUrl.replace(/\/+$/, "")}/${endpoint}`;
 }
 
-const hostedInklingModels = new Set([NOTORGANIC_INKLING_2_SMALL_MODEL.id, "balanced", "inkling-small", "inkling", "fast", "reasoning"]);
+const hostedInklingModels = new Set([NOTORGANIC_INKLING_2_SMALL_MODEL.id, ...NOTORGANIC_INKLING_ROUTER_ALIASES]);
 let inklingUnavailableUntil = 0;
 
 export async function hybridStreamFn(
