@@ -3,7 +3,7 @@ import type { Context } from "@earendil-works/pi-ai";
 import type { ActiveWork } from "@keating/learner-contracts";
 import { learningMessageId } from "../keating/learning-intelligence/source-navigation";
 import { presentationsFromAssistantText } from "../keating/judgement/active-work-host";
-import { previousQuestionPresentation, registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
+import { openCardPresentation, previousQuestionPresentation, registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
 
 const text = 'Guess first.\n\n```openui lifecycle=ephemeral id=draw\nroot = LearningSurface([guess], "Draw", "", "ephemeral")\nguess = Question([{ question: "Which?", type: "choice", choices: ["A", "B"] }], "ephemeral", "Prediction", "Choose.")\n```';
 const session = "test-session", display = "actual-flue-id";
@@ -47,4 +47,19 @@ test("omits a changed or grouped reply, a detached row, a different node, or the
     const release=registerQuestionSourceRow(session,element,id,flue,body)!;
     try { expect(previousQuestionPresentation(session,messages,active)).toBeUndefined(); } finally { release(); }
   }
+});
+
+test("a typed answer can reach the awaiting card past replies that asked nothing new", () => {
+  const release = registerQuestionSourceRow(session,committed(),sourceId,display,text)!;
+  const reply = (body: string, timestamp: number) => ({role:"assistant",content:[{type:"text",text:body}],timestamp}) as Context["messages"][number];
+  const later = [...messages.slice(0,2),{role:"user",content:"let me think",timestamp:3},reply("Take your time.",4),{role:"user",content:"B",timestamp:5}] as Context["messages"];
+  try {
+    expect(openCardPresentation(session,later,active)).toEqual({assistantTurnIndex:1,documentId:node.documentId,nodeId:"guess"});
+    // The review path still binds only the immediately preceding question.
+    expect(previousQuestionPresentation(session,later,active)).toBeUndefined();
+    const asked = [...later.slice(0,3),reply("Do you want a hint?",4),later[4]!] as Context["messages"];
+    expect(openCardPresentation(session,asked,active)).toBeUndefined();
+    expect(openCardPresentation(session,later,active,0)).toBeUndefined();
+    expect(openCardPresentation(session,later,{...active,openInteractions:[{...active.openInteractions[0]!,state:"graded"}]})).toBeUndefined();
+  } finally { release(); }
 });

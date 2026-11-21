@@ -24,7 +24,35 @@ export function previousQuestionPresentation(sessionId: string | undefined, mess
   if (!sessionId || !open || open.length !== 1 || work?.truncated || messages.at(-1)?.role !== "user") return;
   const awaiting = open[0]!;
   if (awaiting.state !== "awaiting" || !["question", "question-group"].includes(awaiting.component)) return;
-  const index = messages.length - 2, previous = messages[index];
+  return presentationAt(sessionId, messages, awaiting, messages.length - 2);
+}
+
+/**
+ * For a typed answer only: the awaiting card may sit a few tutor messages back when the replies since then asked
+ * nothing new ("Take your time."). Any later tutor question, card or tool use ends the search.
+ */
+export function openCardPresentation(sessionId: string | undefined, messages: Context["messages"],
+  work: ActiveWork | undefined, maxSkipped = 3): TeachingPolicyTurn["previousQuestionPresentation"] {
+  const open = work?.openInteractions;
+  if (!sessionId || !open || open.length !== 1 || work?.truncated || messages.at(-1)?.role !== "user") return;
+  const awaiting = open[0]!;
+  if (awaiting.state !== "awaiting" || !["question", "question-group"].includes(awaiting.component)) return;
+  let skipped = 0;
+  for (let index = messages.length - 2; index >= 0; index--) {
+    const message = messages[index]!;
+    if (message.role === "user") continue;
+    if (message.role !== "assistant") return;
+    const found = presentationAt(sessionId, messages, awaiting, index);
+    if (found) return found;
+    if (!Array.isArray(message.content) || message.content.some(part => part.type === "toolCall")) return;
+    const text = message.content.flatMap(part => part.type === "text" ? [part.text] : []).join("\n");
+    if (/[?？]/u.test(text) || /[`~]{3}/u.test(text) || ++skipped > maxSkipped) return;
+  }
+}
+
+function presentationAt(sessionId: string, messages: Context["messages"], awaiting: ActiveWork["openInteractions"][number],
+  index: number): TeachingPolicyTurn["previousQuestionPresentation"] {
+  const previous = messages[index];
   if (previous?.role !== "assistant" || !Array.isArray(previous.content) || previous.content.some(part => part.type === "toolCall")) return;
   const parts = previous.content.filter(part => part.type === "text");
   if (parts.length !== 1) return;
