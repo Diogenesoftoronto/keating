@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.15
+
+- A typed answer still reaches the open question card after you asked for a moment to think, so it is graded instead of being treated as a separate message.
+
 ## 4.2.14
 
 - Typing your answer in the chat now counts as answering the open question card. Keating checks that the message is an answer, submits it through the card and saves a grade, just as if you had pressed Finish check. The card shows "Answered in chat" and your message links back to it. Messages like "let me think" or "hint please" stay ordinary chat.
