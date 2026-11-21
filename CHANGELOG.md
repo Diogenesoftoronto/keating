@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.6
+
+- Simple messages get a direct reply. Before drafting, Jev makes one small check: does this turn need a planned and reviewed reply, and how much thinking does it need? A greeting, a thanks or a short familiar fact now streams straight from the tutor at the chosen thinking level. Grading, open activities, practice and anything Jev is unsure about still go through the full review. Settings' review panel labels these turns "answered directly".
+- Drafted turns use fewer hidden rounds. An ordinary turn releases its first passing draft and compares two openings only when an activity is worth weighing against prose. Feedback, prediction and grading turns compare one targeted and one general reply instead of four. Ordinary repairs stop after three attempts. On a clean drafted turn this halves the judge requests and tutor drafts. Research runs keep the wider comparison.
+- Jev chooses the thinking level. The Reasoning control is hidden by default on web and mobile, and the tutor may think up to high when a turn needs it. Turn on "Choose the thinking level myself" in Settings → Teaching to bring the control back as a ceiling.
+- Six early-learning components for younger learners: NumberLine (with hops for adding and subtracting), TenFrame, PlaceValue (hundreds, tens and ones), FractionBars, CountingArray and Clock. The tutor can show one as a picture, or ask the learner to work it and press Share my answer. They work with touch, mouse and keyboard, and in the terminal and mobile apps as text.
+
 ## 4.2.5
 
 - Compare three production classroom sessions that used the same implicit prediction prompt and MiniMax M3.1 Flash. The inspector includes each original turn, the Jev grading round and its withheld follow-up. [Inspect the three sessions](https://chat.keating.help/chat?settings=diagnostics&source=hosted-guidance)
