@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.16
+
+- Fixed being signed out of Not Organic a few minutes after signing in. Signing in could create two device keys at once, so the first session renewal was rejected.
+
 ## 4.2.15
 
 - A typed answer still reaches the open question card after you asked for a moment to think, so it is graded instead of being treated as a separate message.
