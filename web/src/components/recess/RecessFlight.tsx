@@ -7,7 +7,10 @@ import { RecessInlineMarkdown, RecessLessonMarkdown } from "./RecessLessonMarkdo
 import { sittingBot } from "./assets";
 import { RecessAudio } from "./engine/audio.js";
 import { WEAPON_LABELS } from "./engine/arsenal.js";
+import { RECESS_BOMBS, type RecessBombKind } from "./engine/bombs.js";
 import { Recess } from "./engine/core.js";
+import { createBossSceneView } from "./boss-scene-view";
+import "./boss-scene.css";
 import type { RecessBotArt, RecessCondition, RecessControl, RecessExplainItem, RecessExplainLevel, RecessHud, RecessLessonTurn, RecessPack, RecessQuestionKind, RecessResult, RecessWind } from "./types";
 
 export interface RecessFlightSettings {
@@ -15,6 +18,8 @@ export interface RecessFlightSettings {
   skin: "toy" | "ink";
   calm: boolean;
   sound: boolean;
+  bombKind: RecessBombKind;
+  bossScenes?: boolean;
   /** How strongly the lesson shows behind the play, 8 to 70. */
   opacity: number;
   /** Local weapon/helper picks used when Companion mode is Off. */
@@ -216,7 +221,7 @@ function gateHint(options: readonly string[], targets: boolean) {
 }
 
 const EXPLAIN_FEEDBACK: Record<RecessExplainLevel, string> = {
-  sound: "Spot on. A Eureka for that.",
+  sound: "Spot on.",
   partial: "Part of it. Here is how Keating put it:",
   missed: "Not quite. Here is how Keating put it:",
 };
@@ -280,6 +285,8 @@ const initialHud: RecessHud = { hearts: 4, bombs: 2, score: 0, mult: 1, combo: 0
 /** One run, laid over the chat thread. Mounting starts the run; ending it calls onEnd and the parent unmounts it. */
 export function RecessFlight({ pack, lesson, assets, condition, loadout, settings, host, column, dark, onEnd, onAbandon, onFailure, gradeExplain }: Props) {
   const [status, setStatus] = useState<"play" | "outro">("play");
+  const [inBossScene, setInBossScene] = useState(false);
+  const [minibossNotice, setMinibossNotice] = useState("");
   const hudStore = useMemo(() => createHudStore({ ...initialHud, bombs: condition.shine >= 0.9 ? 3 : 2, charge: condition.charge }), []);
   const bombs = useHud(hudStore, value => value.bombs);
   // The canvas draws text as it is: hand it plain words, keep Markdown and maths for the DOM.
@@ -302,20 +309,26 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
   const shader = useRef<HTMLCanvasElement>(null);
   const lanes = useRef<HTMLDivElement>(null);
   const targets = useRef<HTMLDivElement>(null);
+  const cinema = useRef<HTMLElement>(null);
   const engine = useRef<ReturnType<typeof Recess.create> | null>(null);
   const audio = useRef<ReturnType<typeof RecessAudio.create> | null>(null);
   const nextHud = useRef(0);
-  // Callbacks change identity with every parent render; the run binds the latest through refs.
-  const latest = useRef({ onEnd, onAbandon, onFailure, gradeExplain });
-  latest.current = { onEnd, onAbandon, onFailure, gradeExplain };
+  // A flight keeps running as callbacks and the live motion preference change.
+  const latest = useRef({ onEnd, onAbandon, onFailure, gradeExplain, calm: settings.calm });
+  latest.current = { onEnd, onAbandon, onFailure, gradeExplain, calm: settings.calm };
 
   useLayoutEffect(() => {
-    if (!arena.current || !thread.current || !dock.current || !bot.current || !view.current) return;
+    if (!arena.current || !thread.current || !dock.current || !bot.current || !view.current || !cinema.current) return;
     const playfield = arena.current;
     const sound = RecessAudio.create();
     let resize: ResizeObserver | null = null;
     let game: ReturnType<typeof Recess.create> | null = null;
     let ended = false;
+    let mounted = true;
+    const showScene = createBossSceneView(cinema.current, assets, {
+      advance: () => game?.advanceBossScene(), skip: () => game?.skipBossScene(),
+      returnFocus: () => playfield.focus({ preventScroll: true }),
+    });
     try {
       sound.set(settings.sound);
       sound.unlock();
@@ -323,7 +336,12 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
         ...assets,
         arena: playfield, thread: thread.current, dock: dock.current, bot: bot.current,
         view: view.current, shader: shader.current, gateLayer: lanes.current, targetLayer: targets.current, theme: dark ? "term" : "paper",
-        sound, pack: enginePack, calm: settings.calm, control: settings.control, loadout,
+        sound, pack: enginePack, calm: settings.calm, control: settings.control, loadout, bombKind: settings.bombKind,
+        bossScene: settings.bossScenes === false ? undefined : beat => {
+          if (!mounted) return;
+          showScene(beat, latest.current.calm);
+          setInBossScene(Boolean(beat));
+        },
         hud: update => {
           const now = performance.now();
           if (now < nextHud.current) return;
@@ -331,6 +349,7 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
           hudStore.set(update);
         },
         ask: setGate,
+        minibossNotice: setMinibossNotice,
         phase: value => setStatus(value === "outro" ? "outro" : "play"),
         revive: (question, answer) => setWind(question && answer ? {
           question, answer: index => {
@@ -372,6 +391,7 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
       queueMicrotask(() => latest.current.onFailure("Recess could not open on this device. You can try again.", true));
     }
     return () => {
+      mounted = false;
       resize?.disconnect();
       engine.current = null;
       // Closing or switching chats mid-run never reaches onEnd: settle spent charge once, then dispose.
@@ -404,6 +424,8 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
       <canvas ref={view} className="recess-canvas" aria-hidden="true"/>
       <canvas ref={shader} className="recess-canvas" aria-hidden="true" hidden />
       {status === "play" && <Hud store={hudStore}/>}
+      <span className="recess-sr" role="status" aria-atomic="true">{minibossNotice}</span>
+      <section ref={cinema} className="recess-cinema" data-calm={settings.calm} hidden/>
       {gate && <div className="recess-gate" role="status" data-kind={gate.kind}>
         {gate.kind && KIND_LABELS[gate.kind as RecessQuestionKind] && <small className="recess-gate-kind">{KIND_LABELS[gate.kind as RecessQuestionKind]}</small>}
         <strong><RecessInlineMarkdown text={gate.question} /></strong>
@@ -427,9 +449,9 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
       <div ref={dock} className="recess-dock">
         <img src={sittingBot} alt="" ref={bot} draggable={false} />
         <div className="recess-flight-bar">
-          <button type="button" className="recess-key recess-eureka" data-glyph-host disabled={status !== "play" || Boolean(wind) || bombs === 0}
+          <button type="button" className="recess-key recess-eureka" data-glyph-host title={RECESS_BOMBS[settings.bombKind].effect} disabled={status !== "play" || inBossScene || Boolean(wind || explain) || bombs === 0}
             aria-keyshortcuts="Space" onClick={() => { engine.current?.bomb(); arena.current?.focus({ preventScroll: true }); }}>
-            <RecessIcon name="eureka" size={15}/>Eureka<span className="recess-pips" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <i key={index} data-empty={index >= bombs}/>)}</span>
+            <RecessIcon name="eureka" size={15}/>{RECESS_BOMBS[settings.bombKind].name}<span className="recess-pips" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <i key={index} data-empty={index >= bombs}/>)}</span>
             <kbd className="recess-keycap" aria-hidden="true">Space</kbd>
           </button>
           <button type="button" className="recess-key recess-stop" data-glyph-host disabled={status === "outro"} aria-keyshortcuts="Escape"

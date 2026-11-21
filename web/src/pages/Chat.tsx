@@ -7,7 +7,8 @@ import { KeatingGlyph } from "../design-system/glyphs";
 import { useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
-import { ChatHeader } from "./chat/ChatHeader";
+import { ChatHeader, type ChatHeaderProps } from "./chat/ChatHeader";
+import { ChatTabBar } from "./chat/ChatTabBar";
 import { thinkingLevelSummary } from "../components/thinking-level";
 import { useSessionSharing } from "./chat/useSessionSharing";
 import { useChatActivationTracking } from "./chat/useChatActivationTracking";
@@ -1042,6 +1043,32 @@ function ChatContent() {
 
   const storageLine = showPersistenceBanner ? <PersistentStorageBanner onRetry={retryPersistentStorage} onDismiss={dismissPersistentBanner} /> : null;
   const panelExpanded = isWideViewport && !sessionSidebarCollapsed;
+  // One set of props drives both bars: the header at the top and, on phones, the tab bar at the bottom.
+  const navigation: ChatHeaderProps = {
+    isPending,
+    modelLabel,
+    // Jev picks the thinking level unless the learner chose to set it, so only a chosen level is shown.
+    modelDetail: uiSettings.manualReasoning ? thinkingLevelSummary(activeModel, activeThinkingLevel) : undefined,
+    activeSessionId,
+    sessionTitle: meta?.title,
+    messageCount: meta?.messageCount,
+    mobileSidebarOpen: isWideViewport ? !sessionSidebarCollapsed : mobileSidebarOpen,
+    speechEnabled,
+    canvasEnabled,
+    artifactBrowserOpen,
+    materialCount,
+    shareState,
+    toggleMobileSidebar: isWideViewport ? toggleSessionSidebar : toggleMobileSidebar,
+    openModelSelector,
+    openSettings,
+    toggleArtifactBrowser,
+    newSession,
+    handleShare,
+    confirmShare,
+    toggleSpeech,
+    onOpenOriginal: courseContext && forkInfo ? openOriginalSession : undefined,
+    onOpenNodePod: () => setNodePodOpen(true),
+  };
   return (
     <div
       className={cx(
@@ -1058,29 +1085,7 @@ function ChatContent() {
       )}
     >
       {/* Header */}
-      {!showOnboarding && <ChatHeader
-        isPending={isPending}
-        modelLabel={modelLabel}
-        modelDetail={thinkingLevelSummary(activeModel, activeThinkingLevel)}
-        activeSessionId={activeSessionId}
-        sessionTitle={meta?.title} messageCount={meta?.messageCount}
-        mobileSidebarOpen={isWideViewport ? !sessionSidebarCollapsed : mobileSidebarOpen}
-        speechEnabled={speechEnabled}
-        canvasEnabled={canvasEnabled}
-        artifactBrowserOpen={artifactBrowserOpen}
-        materialCount={materialCount}
-        shareState={shareState}
-        toggleMobileSidebar={isWideViewport ? toggleSessionSidebar : toggleMobileSidebar}
-        openModelSelector={openModelSelector}
-        openSettings={openSettings}
-        toggleArtifactBrowser={toggleArtifactBrowser}
-        newSession={newSession}
-        handleShare={handleShare}
-        confirmShare={confirmShare}
-        toggleSpeech={toggleSpeech}
-        onOpenOriginal={courseContext && forkInfo ? openOriginalSession : undefined}
-        onOpenNodePod={() => setNodePodOpen(true)}
-      />}
+      {!showOnboarding && <ChatHeader {...navigation} />}
 
       {(courseContext || forkInfo) && <div className="ch-banner">
         {courseContext ? <CourseContextBanner courseContext={courseContext} /> :
@@ -1156,6 +1161,9 @@ function ChatContent() {
           </div>
         )}
       </div>
+
+      {/* Phones: navigation sits on the bottom edge, after the conversation in reading order. */}
+      {!showOnboarding && <ChatTabBar {...navigation} />}
 
       {/* Rendered only once the chat is actually on screen, so the tour has real
           elements to point at rather than the hidden panel behind onboarding. */}

@@ -1,0 +1,75 @@
+/* Phone chrome for the chat: a thin title bar on top and a thin tab bar on the bottom edge.
+   Sizes are in px: the app's root font is 130%, and these are touch targets, not type that should scale with it. */
+
+/* ── Top bar: the session title (the model trigger) and Share ─────────── */
+@media (max-width:780px) {
+  html body .chat-page-shell .chat-header[data-compact] {height:48px;min-height:48px;padding:0 6px 0 12px;gap:8px}
+  html body .chat-page-shell .chat-header[data-compact] .chat-actions {gap:0}
+  html body .chat-page-shell .chat-header[data-compact] .chat-actions::before {display:none}
+}
+
+/* The tagline and the keyboard hint under the composer give their room to the tab bar on phones. */
+@media (max-width:780px) {
+  .chat-page-shell .composer-hint {display:none}
+  .chat-page-shell .chat-page-panel :has(> .composer-hint) {padding-bottom:8px}
+}
+
+/* ── Bottom bar ───────────────────────────────────────────────────────── */
+.ch-tabbar {
+  position:relative; z-index:30; flex:none;
+  display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); align-items:stretch; gap:2px;
+  padding:4px max(4px, min(8px, 2vw)) calc(4px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line, var(--border)); background:var(--background); color:var(--ink-soft, var(--muted-foreground));
+}
+html body .chat-page-shell .ch-tabbar .ch-tab {
+  position:relative; display:grid; grid-template-rows:24px auto; justify-items:center; align-items:center; align-content:center; gap:3px;
+  width:auto; min-width:0; height:auto; min-height:48px; margin:0; padding:4px 2px; border:0; border-radius:6px;
+  background:transparent; color:inherit; box-shadow:none;
+  font:500 11px/1.2 var(--font-ui); letter-spacing:0; text-transform:none; text-decoration:none;
+  cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  transition-property:scale, color, background-color; transition-duration:150ms; transition-timing-function:ease-out;
+}
+.ch-tabbar .ch-tab > span:last-child {max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ch-tabbar .ch-tab > svg[data-glyph], .ch-tabbar .ch-tab-icon > svg[data-glyph] {flex:none}
+.ch-tabbar .ch-tab-icon {position:relative;display:grid;place-items:center;min-width:24px;height:24px}
+
+/* Open or current: ink, heavier label and a short bar on the top edge, so colour is never the only cue. */
+html body .chat-page-shell .ch-tabbar .ch-tab:is([aria-pressed=true],[aria-expanded=true]) {color:var(--ink, var(--foreground));font-weight:700}
+.ch-tabbar .ch-tab:is([aria-pressed=true],[aria-expanded=true])::before {
+  content:""; position:absolute; inset-block-start:-4px; inset-inline:calc(50% - 12px); height:2px; background:var(--green-deep, var(--primary));
+}
+html body .chat-page-shell .ch-tabbar .ch-tab:disabled {opacity:.5;cursor:default}
+html body .chat-page-shell .ch-tabbar .ch-tab:focus-visible {outline:2px solid var(--ring, var(--primary));outline-offset:-2px}
+@media (hover:hover) {
+  html body .chat-page-shell .ch-tabbar .ch-tab:not(:disabled):hover {color:var(--ink, var(--foreground));background:var(--k-wash)}
+}
+@media (prefers-reduced-motion:no-preference) {
+  html:not([data-reduce-motion=true]) .ch-tabbar .ch-tab:not(:disabled):active {scale:.96}
+}
+@media (prefers-reduced-motion:reduce) {
+  html body .chat-page-shell .ch-tabbar .ch-tab {transition:none}
+}
+
+/* New session: the bar's one filled mark, the same ink chip as the desktop rail's "New". */
+.ch-tabbar .ch-tab-new .ch-tab-icon {width:40px;border-radius:4px;background:var(--ink, var(--foreground));color:var(--paper, var(--background))}
+html body .chat-page-shell .ch-tabbar .ch-tab-new {color:var(--ink, var(--foreground))}
+
+/* Materials count rides the icon's corner. */
+.ch-tabbar .ch-tab-icon > b {
+  position:absolute; inset-block-start:-3px; inset-inline-start:calc(100% - 7px);
+  min-width:15px; height:15px; padding:0 4px; border-radius:999px;
+  display:grid; place-items:center;
+  background:var(--green-deep, var(--primary)); color:var(--paper, var(--background));
+  font:700 10px/1 var(--mono-body); font-variant-numeric:tabular-nums;
+}
+
+/* More opens upward from the bar, across the screen's width. */
+html body .ch-tabbar .ch-menu {
+  top:auto; bottom:calc(100% + 6px); left:8px; right:8px; width:auto;
+  max-height:calc(100dvh - 48px - 100% - 20px);
+}
+
+/* A contextual bottom bar takes this one's place; two bars never stack.
+   Recess in flight has its own dock, and Recess settings bring their Loadout / Controls / Look tabs. */
+.chat-page-shell:has(.recess-chat-stage) .ch-tabbar,
+.chat-page-shell:has(.recess-strip[data-settings="open"]) .ch-tabbar {display:none}

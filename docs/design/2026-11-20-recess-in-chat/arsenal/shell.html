@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recess · Jetpack flight kit</title>
+  <style>
+    :root {
+      --ui: var(--font-sans, system-ui, sans-serif);
+      --digits: var(--font-mono, ui-monospace, "DejaVu Sans Mono", monospace);
+      --book: "Literata", "STIX Two Text", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; color: var(--foreground, #222a23); font: 14px/1.4 var(--ui); }
+    main { max-width: 900px; margin-inline: auto; display: grid; gap: 14px; }
+    button, select, input, summary { font: inherit; }
+    button, select, summary { cursor: pointer; touch-action: manipulation; }
+    button { color: inherit; }
+    button:disabled { opacity: .5; cursor: default; }
+    :focus-visible { outline: 2px solid var(--ring, #22764e); outline-offset: 3px; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+    /* The game occupies the lesson, from the K in the title bar down to the composer. */
+    .lesson {
+      --field-height: clamp(396px, 63vw, 508px);
+      --page: #f1ece0; --sheet: #f8f4ea; --ink: #1c211b; --soft: #545d50;
+      --rule: #c2beaf; --wash: #e0e9dd; --accent-ink: #17643b;
+      --btn: #17673c; --btn-text: #fffaf0; --danger: #ae402c; --code: #11241a; --code-type: #dcf3db;
+      color: var(--ink); background: var(--page); border-radius: var(--radius, 8px);
+      overflow: hidden; isolation: isolate; outline: 1px solid color-mix(in srgb, var(--rule) 73%, transparent);
+    }
+    .lesson[data-theme="term"] {
+      --page: #0c1510; --sheet: #15241b; --ink: #e2eddc; --soft: #abbaa9;
+      --rule: #344539; --wash: #193927; --accent-ink: #69e39b;
+      --btn: #7be8a8; --btn-text: #0b1d10; --danger: #ff806b; --code: #040c07; --code-type: #7be8a8;
+    }
+    .lesson :focus-visible { outline-color: var(--accent-ink); }
+    .lesson-head {
+      min-height: 52px; display: flex; align-items: center; padding: 6px 14px; gap: 10px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .brand { width: 23px; height: 23px; flex: none; color: var(--ink); }
+    .lesson-title { min-width: 0; }
+    h1 { margin: 0; font: 650 16px/1.23 var(--ui); letter-spacing: -.025em; }
+    .lesson-sub { margin: 2px 0 0; color: var(--soft); font: 10.5px/1.25 var(--digits); }
+    .recess-mark { margin-left: auto; font: 650 10px/1 var(--digits); letter-spacing: .13em; color: var(--accent-ink); }
+    .tool, .fly, .land {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border: 1px solid var(--rule); border-radius: 5px; background: transparent;
+      min-height: 30px; padding: 4px 9px; font: 580 11.5px/1.2 var(--digits); white-space: nowrap;
+    }
+    .tool:hover, .land:hover { background: var(--wash); }
+    .fly { border-color: var(--btn); color: var(--btn-text); background: var(--btn); }
+    .fly:hover { filter: brightness(1.08); }
+    .ico { flex: none; width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+    #pause-icon { display: inline-block; width: 11px; height: 12px; border-inline: 3px solid; }
+    #pause[aria-pressed="true"] #pause-icon { width: 0; height: 0; border: 6px solid transparent; border-right: 0; border-left: 9px solid; }
+
+    .arena {
+      position: relative; overflow: hidden; height: calc(var(--field-height) - 26px);
+      touch-action: none; outline-offset: -3px; background: var(--page); user-select: none;
+    }
+    .lesson[data-mode="pilot"] .arena { cursor: crosshair; }
+    .lesson[data-mode="landed"] .arena { touch-action: auto; user-select: text; height: var(--field-height); }
+    .thread {
+      position: absolute; inset: 51px 0 60px; display: flex; flex-direction: column;
+      justify-content: flex-end; gap: 10px; padding: 0 18px; overflow: hidden;
+      opacity: .37; transition: opacity 220ms ease-out; pointer-events: none;
+    }
+    .thread > * { flex: none; margin: 0; }
+    .thread .me { align-self: flex-end; max-width: 86%; padding: 5px 10px; border-radius: 4px; background: var(--sheet); font: 13px/1.45 var(--ui); }
+    .thread .prose { font: 15.5px/1.52 var(--book); }
+    .thread .code { padding: 7px 10px; border-radius: 4px; color: var(--code-type); background: var(--code); font: 12px/1.45 var(--digits); white-space: pre-wrap; }
+    .w { display: inline-block; }
+    .term { text-decoration: underline dotted var(--accent-ink); text-underline-offset: .18em; }
+    .term.stir { color: var(--danger); text-decoration-color: currentColor; }
+    .lesson[data-mode="landed"] .thread { justify-content: safe flex-end; inset-block-start: 12px; overflow: auto; opacity: 1; pointer-events: auto; }
+    .surface { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .lesson[data-mode="landed"] .surface { display: none; }
+
+    .hud {
+      display: flex; gap: 10px; padding: 4px 15px 0;
+      align-items: center; height: 26px; font: 600 11px/1 var(--digits);
+      font-variant-numeric: tabular-nums;
+    }
+    .hearts, .bulbs, .pips { display: inline-flex; align-items: center; gap: 3px; }
+    .hearts svg { height: 11px; width: 13px; color: var(--danger); }
+    .bulbs svg { height: 13px; width: 11px; color: var(--accent-ink); }
+    .hud svg { display: block; fill: currentColor; }
+    .hud svg.off { opacity: .6; fill: none; stroke: var(--soft); }
+    .charge { display: inline-flex; align-items: center; gap: 4px; color: var(--soft); font: 10px var(--digits); }
+    .meter { width: 33px; height: 5px; background: var(--rule); border-radius: 1px; overflow: hidden; }
+    .meter i { display: block; height: 100%; width: 100%; transform-origin: left center; background: var(--accent-ink); }
+    .boss-meter { flex: 1; max-width: 168px; min-width: 16px; margin-inline: auto; height: 4px; }
+    .boss-meter i { background: var(--danger); }
+    .pips { margin-left: auto; gap: 2px; }
+    .pips i { width: 4px; height: 10px; background: var(--rule); }
+    .pips i.on { background: var(--accent-ink); }
+    #mult { color: var(--accent-ink); }
+    #score { min-width: 3.6ch; text-align: right; font-size: 14px; }
+    .lesson[data-mode="landed"] .hud { display: none; }
+    .wind {
+      position: absolute; z-index: 3; left: 50%; transform: translateX(-50%);
+      background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 5px;
+    }
+    .ask { min-width: 0; }
+    .ask small, .wind small { display: block; font: 600 10px/1.45 var(--digits); color: var(--accent-ink); }
+    .ask > strong, .wind > strong { display: block; font: 600 17px/1.3 var(--book); margin-top: 1px; }
+    .gates {
+      position: absolute; z-index: 4; inset: 0 0 auto; display: grid; grid-template-columns: repeat(var(--lanes, 3), minmax(0, 1fr));
+      transform: translateY(var(--gate-y, -60px)); pointer-events: none;
+    }
+    .gates button {
+      justify-self: center; transform: translateY(-50%); max-width: calc(100% - 8px);
+      border: 1.5px solid var(--ink); border-radius: 5px; background: var(--sheet); color: var(--ink);
+      min-height: 34px; padding: 4px 7px; font: 650 12px/1.25 var(--digits); overflow-wrap: anywhere; pointer-events: auto;
+    }
+    .gates kbd { font: 10px var(--digits); color: var(--soft); margin-inline-end: 4px; }
+    .gates[data-st="1"] button { opacity: .45; pointer-events: none; }
+    .gates[data-st="1"][data-ok="0"] button:nth-child(1),
+    .gates[data-st="1"][data-ok="1"] button:nth-child(2),
+    .gates[data-st="1"][data-ok="2"] button:nth-child(3) { opacity: 1; border-color: var(--accent-ink); color: var(--accent-ink); background: var(--wash); }
+    .wind { top: 50%; transform: translate(-50%, -50%); width: min(350px, calc(100% - 32px)); padding: 14px 16px; }
+    .wind-answers { display: grid; margin-top: 10px; }
+    .wind-answers button { text-align: left; padding: 8px 2px; border: 0; border-top: 1px solid var(--rule); background: transparent; color: var(--ink); }
+    .wind-answers button:hover { background: var(--wash); }
+    .dock { position: absolute; z-index: 5; bottom: 0; inset-inline: 0; padding: 8px 14px 10px; pointer-events: none; }
+    .composer {
+      display: flex; align-items: center; gap: 6px; min-height: 41px; padding: 4px 5px 4px 10px;
+      border-radius: 6px; background: color-mix(in srgb, var(--sheet) 94%, transparent);
+      border: 1px solid var(--rule); color: var(--soft);
+    }
+    .composer button { pointer-events: auto; }
+    .hint { margin: 0 auto 0 0; font: 12px/1.3 var(--ui); }
+    .answer-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-right: auto; }
+    .answer-keys span { font: 11px/1.2 var(--ui); }
+    .answer-keys button {
+      min-width: 30px; min-height: 30px; padding: 2px 6px; background: var(--sheet);
+      color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; font: 600 12px var(--digits);
+    }
+    .answer-keys button[data-right] { opacity: 1; border-color: var(--accent-ink); color: var(--accent-ink); background: var(--wash); }
+    .answer-keys button[data-missed] { opacity: 1; border-color: var(--danger); color: var(--danger); }
+    #home-bot { position: absolute; right: 25px; bottom: 47px; width: 50px; height: 50px; visibility: hidden; }
+    .lesson[data-mode="landed"] #home-bot { visibility: visible; }
+    .landing-note { padding-top: 6px; font: 600 11px/1.4 var(--digits); color: var(--accent-ink); }
+
+    /* The kit stays beside the playground. All swatches are actual Workshop pieces. */
+    .bench {
+      --fg: var(--foreground, #212721); --quiet: color-mix(in srgb, var(--muted-foreground, #525d53) 65%, var(--fg));
+      --line: var(--border, #c6cabe); --seat: var(--card, #f4f4ef); --selection: var(--success, #1b6945);
+      display: grid; gap: 12px; color: var(--fg);
+    }
+    .scene-row { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 9px; }
+    .small-label { font: 600 11px/1.3 var(--digits); color: var(--quiet); }
+    .scenes { display: inline-flex; align-items: center; gap: 2px; }
+    .scene-btn, .opts summary { font: 570 12px/1.3 var(--ui); }
+    .scene-btn { border: 1px solid transparent; border-radius: 5px; background: none; color: var(--quiet); padding: 5px 8px; min-height: 30px; }
+    .scene-btn:hover { background: var(--seat); }
+    .scene-btn[aria-pressed="true"] { border-color: var(--line); background: var(--seat); color: var(--fg); }
+    .kit { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px 24px; border-block: 1px solid var(--line); padding-block: 12px; }
+    .kit fieldset { min-width: 0; margin: 0; border: 0; padding: 0; }
+    .kit legend { padding: 0; margin-bottom: 3px; }
+    .equipped { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 9px; margin-bottom: 5px; }
+    .equipped strong { font: 650 15px/1.25 var(--ui); letter-spacing: -.015em; }
+    .equipped small { color: var(--quiet); font: 10.5px/1.3 var(--digits); }
+    .items { display: flex; flex-wrap: wrap; gap: 4px; }
+    .pick { position: relative; cursor: pointer; border-radius: 5px; }
+    .pick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+    .piece {
+      display: grid; place-items: center; border-radius: 5px; width: 42px; height: 39px;
+      background: color-mix(in srgb, var(--seat) 68%, transparent); border: 1.5px solid transparent;
+    }
+    .piece i { width: 31px; height: 31px; background-size: 400% 200%; background-repeat: no-repeat; pointer-events: none; }
+    .pick:hover .piece { border-color: var(--line); }
+    .pick input:checked + .piece { border-color: var(--selection); background: color-mix(in srgb, var(--selection) 11%, var(--seat)); }
+    .pick input:checked + .piece::after { content: ""; position: absolute; inset: auto 6px 5px auto; width: 4px; height: 4px; background: var(--selection); }
+    .pick input:focus-visible + .piece { outline: 2px solid var(--ring, #27764d); outline-offset: 2px; }
+    .effect { margin: 6px 0 0; font: 12px/1.4 var(--ui); color: var(--quiet); }
+    .opts summary { color: var(--quiet); width: fit-content; min-height: 28px; }
+    .opts summary span { margin-left: 8px; font: 11px/1.4 var(--digits); }
+    .settings {
+      display: flex; align-items: end; flex-wrap: wrap; gap: 10px 16px; padding: 4px 0 9px;
+      font: 12px/1.4 var(--ui); color: var(--fg);
+    }
+    .settings label.field { display: grid; gap: 3px; }
+    .settings select, .settings button {
+      border: 1px solid var(--line); background: var(--seat); color: var(--fg); border-radius: 4px;
+      min-height: 31px; padding: 4px 7px; font: 12px var(--ui);
+    }
+    .settings label.toggle { display: inline-flex; min-height: 31px; align-items: center; gap: 5px; }
+    .toggle input { margin: 0; accent-color: var(--selection); }
+    .error { color: var(--destructive, #a22d23); margin: 0; }
+    @media (max-width: 540px) {
+      .lesson { --field-height: 435px; }
+      .lesson-head { padding-inline: 10px; gap: 7px; }
+      .thread { padding-inline: 12px; gap: 8px; }
+      .thread .prose { font-size: 14px; line-height: 1.43; }
+      .thread .me { font-size: 12px; }
+      .thread .code { font-size: 11px; }
+      .hud { padding-inline: 10px; gap: 7px; }
+      .dock { padding-inline: 8px; }
+      .kit { grid-template-columns: 1fr; gap: 14px; }
+      .bench { gap: 9px; }
+      .scene-btn { padding-inline: 6px; }
+      .piece { height: 42px; }
+      .settings { gap: 8px 12px; }
+    }
+    @media (max-width: 360px) {
+      .tool, .fly, .land { padding-inline: 7px; }
+      .charge-label { display: none; }
+      .scene-row { gap: 4px; }
+      .hint { font-size: 11px; }
+      .recess-mark { font-size: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; } }
+    .lesson .rich p { margin: 0; }
+    .rich code { font-family: var(--digits); font-size: .9em; }
+    .rich .katex-mathml { white-space: nowrap; }
+    .lesson .ask > strong { font-size: clamp(14px, 2.5vw, 17px); }
+    .lesson .rich strong { font-weight: 780; }
+    .range-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+    .range-tools [role=group] { display: flex; gap: 2px; }
+    .range-tools output { margin-inline-start: auto; color: var(--quiet); font: 11px/1.35 var(--digits); font-variant-numeric: tabular-nums; }
+    .range-tools button { padding-inline: 10px; }
+    .boss-tools { display: grid; gap: 6px; }
+    .boss-groups { display: flex; align-items: center; gap: 4px; }
+    .boss-groups button { min-height: 36px; padding-inline: 12px; }
+    .bosses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+    .bosses button {
+      display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px;
+      padding: 3px; border: 1px solid var(--line); border-radius: 5px; background: none;
+      color: var(--fg); font: 620 12px/1.2 var(--ui);
+    }
+    .bosses button[aria-pressed="true"] { background: color-mix(in srgb, var(--selection) 10%, var(--seat)); border-color: var(--selection); }
+    .bosses i { flex: 0 0 38px; width: 38px; height: 38px; background-size: 200% 200%; background-repeat: no-repeat; }
+    .bosses [data-boss="wall"] i { background-size: 400% 200%; }
+    .boss-actions, .boss-patterns { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    #boss-fly { margin-inline-start: auto; color: var(--selection); border-color: var(--selection); }
+    #mini-outcome { flex: 1 1 128px; font: 570 12px/1.35 var(--ui); color: var(--fg); }
+    #mini-outcome:empty { display: none; }
+    @media (min-width: 680px) {
+      #bosses { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      #bosses button { flex-direction: column; gap: 2px; }
+    }
+    @media (max-width: 540px) {
+      .bosses button { flex-direction: column; gap: 1px; }
+      .bosses i { flex-basis: 33px; width: 33px; height: 33px; }
+      .boss-actions button, .boss-groups button { min-height: 44px; }
+    }
+    #intro-replay { margin-right: auto; }
+    .targets { position: absolute; z-index: 4; inset: 0; pointer-events: none; opacity: var(--t-in, 1); }
+    .targets button {
+      position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%);
+      max-width: 24%; min-height: 34px; padding: 3px 6px; pointer-events: auto;
+      border: 1.5px solid var(--ink); border-radius: 5px; background: var(--sheet);
+      color: var(--ink); font: 650 12px/1.2 var(--digits); overflow-wrap: anywhere;
+    }
+    .targets button:nth-child(1) { --x: var(--t0-x); --y: var(--t0-y); }
+    .targets button:nth-child(2) { --x: var(--t1-x); --y: var(--t1-y); }
+    .targets button:nth-child(3) { --x: var(--t2-x); --y: var(--t2-y); }
+    .targets button:nth-child(4) { --x: var(--t3-x); --y: var(--t3-y); }
+    .targets kbd { font: 10px var(--digits); margin-right: 3px; color: var(--soft); }
+    .targets .rich, .gates .rich { display: inline; }
+    .gates .rich p, .targets .rich p { display: inline; }
+    .targets button[data-right], .gates button[data-right] { border-color: var(--accent-ink); background: var(--wash); opacity: 1; }
+    .targets button[data-missed], .gates button[data-missed] { border-color: var(--danger); }
+    .feedback {
+      position: absolute; z-index: 6; top: 8px; left: 50%; transform: translateX(-50%);
+      width: min(410px, calc(100% - 24px)); max-height: calc(100% - 82px); overflow: auto;
+      border: 1px solid var(--rule); border-left: 3px solid var(--accent-ink); border-radius: 5px;
+      background: var(--sheet); padding: 10px 12px; color: var(--ink); user-select: text; touch-action: pan-y;
+    }
+    #feedback-title, #short-title { display: block; font: 650 15px/1.3 var(--ui); }
+    .feedback p, .chat-choice p { margin: 4px 0; font: 13px/1.45 var(--ui); }
+    .feedback blockquote, .reference { margin: 7px 0; border-inline-start: 2px solid var(--rule); padding-inline-start: 9px; color: var(--soft); font: 14px/1.4 var(--book); }
+    .feedback small, .chat-choice small { font: 600 10px var(--digits); color: var(--accent-ink); }
+    .feedback .tool { display: block; margin: 6px 0 0 auto; }
+    .explain, .chat-choice { max-height: calc(100% - 70px); overflow: auto; user-select: text; touch-action: pan-y; }
+    textarea { width: 100%; margin: 8px 0 4px; padding: 8px; border: 1px solid var(--rule); color: var(--ink); background: var(--page); font: 14px/1.4 var(--ui); resize: vertical; }
+    .wind-actions { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .chat-choice { width: min(390px, calc(100% - 26px)); z-index: 6; }
+    .lesson[data-mode="chat"] .surface, .lesson[data-mode="chat"] .hud, .lesson[data-mode="chat"] .dock { display: none; }
+    .lesson[data-mode="chat"] .arena { touch-action: pan-y; user-select: text; }
+    .lesson[data-mode="chat"] .thread { inset: 14px 0 auto; justify-content: flex-start; opacity: .85; }
+    .lesson:is([data-mode="demo"],[data-mode="pilot"]):is([data-entrance="waves"],[data-entrance="boss"],[data-entrance="gates"]) .thread > [data-followup] { display: none; }
+    .scene-row select, .more-lesson {
+      min-height: 32px; border: 1px solid var(--line); border-radius: 4px; padding: 4px 7px;
+      color: var(--fg); background: var(--seat); font: 12px var(--ui); max-width: 100%;
+    }
+    .scene-row { justify-content: space-between; }
+    .scene-row label, .jump { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+    .scenes { flex-wrap: wrap; }
+    .bomb-piece { width: 46px; }
+    .bomb-piece svg { height: 26px; width: 26px; fill: none; stroke: var(--selection); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+    .kit { grid-template-columns: minmax(0, 1.65fr) minmax(0, .85fr) minmax(0, .85fr); column-gap: 16px; }
+    .kit .piece { width: clamp(32px, 5vw, 40px); }
+    #trigger-bomb { background: var(--wash); border-color: var(--accent-ink); color: var(--accent-ink); }
+    #trigger-bomb kbd { font: 9px var(--digits); }
+    .landing-note dl { margin: 8px 0 0; color: var(--ink); font: 13px/1.45 var(--ui); }
+    .landing-note dd { margin: 2px 0 8px; }
+    @media (max-width: 639px) {
+      .kit { grid-template-columns: 1fr 1fr; gap: 10px; } .kit fieldset:first-child { grid-column: 1/-1; }
+      .kit .piece { width: 36px; } .answer-keys { gap: 2px; } .answer-keys button { min-width: 26px; }
+      #trigger-bomb kbd { display: none; } .scene-row { gap: 8px; } .ask:not([hidden]) ~ .recess-mark { display: none; }
+    }
+    <!--BOSS_STYLE-->
+  </style>
+</head>
+<body>
+  <main>
+    <section id="lesson" class="lesson" data-theme="paper" data-mode="demo" aria-labelledby="title">
+      <header class="lesson-head">
+        <svg class="brand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v18M17 3 7 12l10 9" fill="none" stroke="currentColor" stroke-width="2.3"/><path d="M19 17h3v3h-3z" fill="var(--accent-ink)"/></svg>
+        <div class="lesson-title" id="lesson-title"><h1 id="title">Chain rule, slowly</h1><p id="lesson-sub" class="lesson-sub">Calculus · demo lesson</p></div>
+        <div id="ask" class="ask" role="status" hidden><small>Answer gate</small><strong></strong></div>
+        <span class="recess-mark">RECESS</span>
+        <button class="tool" type="button" id="pause" aria-pressed="false"><i id="pause-icon" aria-hidden="true"></i><span>Pause</span></button>
+      </header>
+      <div id="hud" class="hud" aria-label="Flight instruments">
+          <span class="hearts" id="hearts" role="img" title="Hearts"></span>
+          <span class="bulbs" id="bulbs" role="img" title="Bomb charges"></span>
+          <span id="charge" class="charge" role="meter" aria-label="Firing charge" aria-valuemin="0" aria-valuemax="100">
+            <span class="charge-label">CHG</span><span class="meter"><i></i></span>
+          </span>
+          <span class="boss-meter meter" id="boss-health" role="meter" aria-label="Boss health" aria-valuemin="0" aria-valuemax="100" hidden><i></i></span>
+          <span class="pips" id="power-pips" role="img" title="Power"><i></i><i></i><i></i><i></i></span>
+          <span id="mult" title="Score multiplier"></span><span id="score" aria-label="Score">0</span>
+      </div>
+      <div id="arena" class="arena" tabindex="0" role="region" aria-label="Jetpack playfield" aria-describedby="controls">
+        <span id="flight-notice" class="visually-hidden" role="status"></span>
+        <div id="thread" class="thread" aria-label="Demo conversation"></div>
+        <canvas id="view" class="surface" aria-hidden="true"></canvas>
+        <canvas id="shader" class="surface" aria-hidden="true" hidden></canvas>
+        <section id="cinema" class="recess-cinema" data-interface hidden></section>
+        <div id="gates" class="gates" aria-label="Gate answers" data-interface hidden></div>
+        <div id="targets" class="targets" aria-label="Answer targets" data-interface hidden></div>
+        <section id="feedback" class="feedback" data-interface hidden aria-labelledby="feedback-title">
+          <div role="status"><strong id="feedback-title"></strong><p id="feedback-body" class="rich"></p></div>
+          <small id="feedback-from">From the lesson</small><blockquote class="rich" id="feedback-source"></blockquote>
+          <button id="continue-flight" class="tool" type="button">Continue flight</button>
+        </section>
+        <section id="wind" class="wind" role="dialog" aria-labelledby="wind-q" data-interface hidden>
+          <small>Second wind<span id="wind-clock"></span></small><strong id="wind-q"></strong><div class="wind-answers"></div>
+        </section>
+        <section id="explain" class="wind explain" role="dialog" aria-labelledby="explain-q" data-interface hidden>
+          <small>Explain it</small><strong id="explain-q" class="rich"></strong>
+          <textarea id="written" rows="2" aria-label="Your explanation" placeholder="In your own words…"></textarea>
+          <button id="compare" type="button" class="fly">Compare with the lesson</button>
+          <div id="self-check" hidden><small>From the lesson</small><div class="reference rich" id="explain-reference"></div>
+            <small>How did yours compare?</small><div class="wind-actions">
+              <button type="button" class="tool" data-grade="sound">Got it</button>
+              <button type="button" class="tool" data-grade="partial">Got part of it</button>
+              <button type="button" class="tool" data-grade="missed">Review again</button>
+            </div></div>
+        </section>
+        <section id="short-chat" class="wind chat-choice" aria-labelledby="short-title" data-interface hidden>
+          <small>Sample chat</small><strong id="short-title">A little more lesson first</strong><p id="short-reason"></p>
+          <div class="wind-actions"><button class="fly" id="keep-chatting" type="button">Keep chatting</button>
+            <button class="tool" id="another-chat" type="button">Another chat</button><button class="tool" id="demo-lesson" type="button">Try a demo</button></div>
+          <div id="short-draft" hidden><label for="draft">Your next message</label><textarea id="draft" rows="2"></textarea>
+            <small>Editable draft in this offline mockup</small></div>
+          <div class="wind-actions" id="chat-options" hidden></div>
+        </section>
+        <div id="dock" class="dock">
+          <img id="home-bot" width="50" height="50" alt="">
+          <div class="composer" data-interface>
+            <span id="hint" class="hint">Watching the demo pilot</span>
+            <button id="intro-replay" type="button" class="tool" hidden>Another entrance</button>
+            <div id="answer-keys" class="answer-keys" role="group" aria-label="Choose an answer gate" hidden></div>
+            <button id="trigger-bomb" class="tool" type="button" aria-keyshortcuts="Space">Fire bomb <kbd>Space</kbd></button>
+            <button id="land" class="land" type="button">Land</button>
+            <button id="fly" class="fly" type="button"><span>Fly it</span><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M8 3l5 5-5 5"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="bench">
+      <section class="boss-tools" id="boss-tools" aria-label="Boss encounters">
+        <div class="boss-groups" role="group" aria-label="Encounter type">
+          <button class="scene-btn" type="button" id="finale-group" aria-controls="bosses" aria-pressed="true">Final bosses</button>
+          <button class="scene-btn" type="button" id="mini-group" aria-controls="minibosses" aria-pressed="false">Minibosses</button>
+        </div>
+        <div class="bosses" id="bosses" role="group" aria-label="Choose a final boss"></div>
+        <div class="bosses" id="minibosses" role="group" aria-label="Choose a miniboss" hidden></div>
+        <div class="boss-actions">
+          <div class="boss-patterns" id="boss-patterns" role="group" aria-labelledby="pattern-label">
+            <span class="small-label" id="pattern-label">Pattern</span>
+            <button type="button" class="scene-btn" data-variant="0"></button>
+            <button type="button" class="scene-btn" data-variant="1"></button>
+          </div>
+          <span id="mini-outcome" role="status"></span>
+          <button type="button" class="scene-btn" id="boss-fly">Fly this fight</button>
+        </div>
+      </section>
+      <div class="scene-row" role="group" aria-labelledby="jump-label">
+        <div class="jump"><span class="small-label" id="jump-label">Jump to</span>
+        <div class="scenes"><button class="scene-btn" data-scene="boss" type="button" aria-pressed="true">Boss entrance</button><button class="scene-btn" data-scene="range" type="button" aria-pressed="false">Aim range</button><button class="scene-btn" data-scene="waves" type="button" aria-pressed="false">Opening waves</button><button class="scene-btn" data-scene="shells" type="button" aria-pressed="false">Burst shells</button><button class="scene-btn" data-scene="gates" type="button" aria-pressed="false">Answer gates</button></div></div>
+        <label><span class="small-label">Practice</span><select id="encounter" aria-label="Practice encounter"><option value="">Choose an encounter…</option></select></label>
+      </div>
+      <div class="range-tools" id="range-tools" hidden>
+        <span class="small-label" id="range-label">Target distance</span>
+        <div role="group" aria-labelledby="range-label">
+          <button type="button" class="scene-btn" data-range="near" aria-pressed="false">Near</button>
+          <button type="button" class="scene-btn" data-range="far" aria-pressed="true">Far</button>
+        </div>
+        <button type="button" class="scene-btn" id="range-focus" aria-pressed="false">Focus aim</button>
+        <output id="range-reading" aria-label="Current aim spread" aria-live="off"></output>
+      </div>
+      <div class="kit">
+        <fieldset><legend class="small-label">Blaster</legend><div class="equipped"><strong id="weapon-name"></strong><small id="weapon-cost"></small></div><div class="items" id="weapons"></div><p class="effect" id="weapon-effect"></p></fieldset>
+        <fieldset><legend class="small-label">Bomb</legend><div class="equipped"><strong id="bomb-name"></strong></div><div class="items" id="bombs"></div><p class="effect" id="bomb-effect"></p></fieldset>
+        <fieldset><legend class="small-label">Companion</legend><div class="equipped"><strong id="helper-name"></strong><small id="helper-cost"></small></div><div class="items" id="helpers"></div><p class="effect" id="helper-effect"></p></fieldset>
+      </div>
+      <details class="opts">
+        <summary>Flight settings <span id="settings-status"></span></summary>
+        <div class="settings">
+          <label class="field">Sample chat<select id="subject"><option value="maths">Chain rule</option><option value="biology">Cell division</option><option value="short">A new chat</option></select></label>
+          <label class="field">Power<select id="power"><option value="1">1 · Solo</option><option value="2">2 · One helper</option><option value="3" selected>3 · Two helpers</option><option value="4">4 · Full power</option></select></label>
+          <label class="field">Palette<select id="theme"><option value="paper">Paper</option><option value="term">Terminal</option></select></label>
+          <label class="toggle"><input id="calm" type="checkbox"> Calm effects</label>
+          <label class="toggle"><input id="sound" type="checkbox"> Sound</label>
+          <label class="toggle"><input id="focus" type="checkbox"> Focus fire</label>
+          <button type="button" id="drop">Drop weapon pod</button>
+        </div>
+        <p id="controls" class="effect">Drag or use the arrows to fly. Hold Shift to tighten your aim, Space to use your bomb, and Esc to land. On touch, hold still to focus, then drag to weave. Drag a second finger to aim. Tap with two fingers to use your bomb.</p>
+      </details>
+      <p id="problem" class="error" role="alert" hidden></p>
+    </div>
+  </main>
+  <!--FLIGHT_DATA-->
+  <!--FLIGHT_JS-->
+</body>
+</html>

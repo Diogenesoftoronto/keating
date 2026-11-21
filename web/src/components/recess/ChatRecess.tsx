@@ -16,7 +16,10 @@ import { recessReviewDraft } from "../../keating/habits/recess-review";
 import { currentHabitsScope, dispatchHabits, readHabits, subscribeHabits } from "../../keating/habits/store";
 import { RecessFlight, RecessIcon, type RecessFlightSettings } from "./RecessFlight";
 import { RecessInlineMarkdown } from "./RecessLessonMarkdown";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { Select } from "../Select";
 import { loadRecessArt } from "./assets";
+import { RECESS_BOMBS, resolveBombKind } from "./engine/bombs.js";
 import { RECESS_OPEN_SESSION_EVENT, RECESS_PENDING_KEY } from "./recess-events";
 import { packs } from "./engine/packs.js";
 import type { RecessBotArt, RecessCheckResult, RecessPack, RecessResult } from "./types";
@@ -25,12 +28,19 @@ import "./recess.css";
 
 const standard = { charge: 0.75, tune: 0.75, shine: 0.75 };
 const SETTINGS_KEY = "keating:recess-settings";
+type SettingsTab = "loadout" | "controls" | "look";
+/* On a narrow strip the settings show one section at a time, picked from a bottom bar. */
+const SETTINGS_TABS: { id: SettingsTab; label: string; glyph: "target" | "hand" | "eye" }[] = [
+  { id: "loadout", label: "Loadout", glyph: "target" },
+  { id: "controls", label: "Controls", glyph: "hand" },
+  { id: "look", label: "Look", glyph: "eye" },
+];
 const CONTROL_MODES: { id: RecessFlightSettings["control"]; label: string; help: string }[] = [
-  { id: "follow", label: "Follow", help: "Move the pointer or drag to fly; arrows or WASD work too. Hold Shift, or keep pressing, to slow down and weave." },
-  { id: "twin", label: "Twin-stick", help: "Arrows or WASD fly and the pointer aims. On touch, drag to fly and a second finger aims." },
+  { id: "follow", label: "Follow", help: "Move the pointer or drag to fly. Arrows or WASD work too." },
+  { id: "twin", label: "Twin-stick", help: "Use arrows or WASD to fly and point to aim." },
   { id: "thrust", label: "Thrust", help: "Press, or hold an arrow, to burn toward the pointer. Gravity pulls you down and the floor bounces you back." },
 ];
-const defaults: RecessFlightSettings = { control: "follow", skin: "toy", calm: false, sound: false, opacity: 36 };
+const defaults: RecessFlightSettings = { control: "follow", skin: "toy", calm: false, sound: false, opacity: 36, bombKind: "eureka", bossScenes: true };
 const demos = Object.values(packs);
 const percent = (value: number) => `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
 const chargeTone = (value: number) => value <= 0 ? "empty" : value < 0.25 ? "low" : "ok";
@@ -38,7 +48,7 @@ const chargeTone = (value: number) => value <= 0 ? "empty" : value < 0.25 ? "low
 function loadSettings(): RecessFlightSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null") as Partial<RecessFlightSettings> | null;
-    return saved && typeof saved === "object" ? { ...defaults, ...saved } : defaults;
+    return saved && typeof saved === "object" ? { ...defaults, ...saved, bombKind: resolveBombKind(saved.bombKind) } : defaults;
   } catch { return defaults; }
 }
 
@@ -98,6 +108,7 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
   const calmForced = !ui.visualEffects || !motionAllowed;
   const settingsId = useId();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("loadout");
   const settingsPanel = useRef<HTMLElement>(null);
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
@@ -366,12 +377,15 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
   const showGuidance = stage !== "flight" && choice.kind === "chat" && !chatReady;
   const review = result && recessReviewDraft(result);
   const missed = result ? result.gates.some(check => !check.ok) || Boolean(result.wind && !result.wind.ok) : false;
+  const winLabel = result?.bossName ? `Defeated ${result.bossName}` : "Flight complete";
   const reviewIsPrimary = stage === "log" && Boolean(review) && missed;
   const title = choice.kind === "demo" ? pack?.title : chatPlayable ? chatPack?.title : readiness.topic ?? "Nothing to fly through yet";
 
   return <section ref={strip} className="recess-root recess-strip" tabIndex={-1} aria-label="Recess" data-stage={stage} data-theme={dark ? "term" : "paper"} data-settings={settingsOpen ? "open" : undefined}
     onKeyDown={event => {
       if (event.key !== "Escape" || stage === "flight") return;
+      // An open dropdown menu is portalled but still bubbles here through React; let it close itself first.
+      if ((event.target as Element).closest?.(".keating-select-menu, .keating-select[data-state='open']")) return;
       event.stopPropagation();
       if (settingsOpen) closeSettings(); else onClose();
     }}>
@@ -392,32 +406,40 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
       </span>
     </header>
 
-    {settingsOpen && <section id={settingsId} ref={settingsPanel} className="recess-panel" aria-label="Flight settings" tabIndex={-1}>
+    {settingsOpen && <section id={settingsId} ref={settingsPanel} className="recess-panel" aria-label="Flight settings" tabIndex={-1} data-tab={settingsTab}>
       <header className="recess-panel-head">
         <h3>Flight settings</h3>
         <button type="button" className="recess-panel-done" onClick={closeSettings}>Done</button>
       </header>
+      <div className="recess-panel-body">
 
-      <div className="recess-panel-group" role="group" aria-labelledby={`${settingsId}-loadout`}>
+      <div className="recess-panel-group" data-section="loadout" role="group" aria-labelledby={`${settingsId}-loadout`}>
         <h4 id={`${settingsId}-loadout`}>Loadout</h4>
-        <label className="recess-row">
-          <span className="recess-row-label">Weapon</span>
-          <select value={activeWeaponId} onChange={event => equipKit("blaster", event.target.value)}>
+        <div className="recess-row">
+          <span className="recess-row-label" id={`${settingsId}-weapon`}>Weapon</span>
+          <Select aria-labelledby={`${settingsId}-weapon`} value={activeWeaponId} onValueChange={value => equipKit("blaster", value)}>
             {ownedWeapons.map(piece => <option key={piece.id} value={piece.id}>{piece.name}</option>)}
-          </select>
-        </label>
-        <label className="recess-row">
-          <span className="recess-row-label">Companion<small>Joins at power 2</small></span>
-          <select value={activeHelperId} onChange={event => equipKit("helper", event.target.value)}>
+          </Select>
+        </div>
+        <div className="recess-row">
+          <span className="recess-row-label" id={`${settingsId}-helper`}>Companion<small>Joins at power 2</small></span>
+          <Select aria-labelledby={`${settingsId}-helper`} value={activeHelperId} onValueChange={value => equipKit("helper", value)}>
             {ownedHelpers.map(piece => <option key={piece.id} value={piece.id}>{piece.name}</option>)}
-          </select>
-        </label>
+          </Select>
+        </div>
+        <div className="recess-row">
+          <span className="recess-row-label" id={`${settingsId}-bomb`}>Bomb</span>
+          <Select aria-labelledby={`${settingsId}-bomb`} value={settings.bombKind} onValueChange={value => setSettings(s => ({ ...s, bombKind: resolveBombKind(value) }))}>
+            {Object.entries(RECESS_BOMBS).map(([kind, bomb]) => <option key={kind} value={kind}>{bomb.name}</option>)}
+          </Select>
+        </div>
+        <p className="recess-fine" aria-live="polite">{RECESS_BOMBS[settings.bombKind].effect}</p>
         {mode !== "off" && lockedArsenalCount > 0 && <p className="recess-fine">
           {lockedArsenalCount} more to craft in Study progress, under Quests &amp; kit. Pods in a run let you try them early.
         </p>}
       </div>
 
-      <div className="recess-panel-group" role="group" aria-labelledby={`${settingsId}-controls`}>
+      <div className="recess-panel-group" data-section="controls" role="group" aria-labelledby={`${settingsId}-controls`}>
         <h4 id={`${settingsId}-controls`}>Controls</h4>
         <div className="recess-segments" role="radiogroup" aria-labelledby={`${settingsId}-controls`}>
           {CONTROL_MODES.map(option => <label key={option.id} data-checked={settings.control === option.id || undefined}>
@@ -426,10 +448,11 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
             {option.label}
           </label>)}
         </div>
-        <p className="recess-fine" aria-live="polite">{CONTROL_MODES.find(option => option.id === settings.control)?.help} Space fires a Eureka. Escape lands.</p>
+        <p className="recess-fine" aria-live="polite">{CONTROL_MODES.find(option => option.id === settings.control)?.help} Auto-aim is tighter up close. Hold Shift to steady a distant shot.</p>
+        <p className="recess-fine">On touch, hold still to focus, then drag to weave. Drag a second finger to aim or tap with two fingers to use your bomb. Space also uses your bomb. Escape lands.</p>
       </div>
 
-      <div className="recess-panel-group" role="group" aria-labelledby={`${settingsId}-look`}>
+      <div className="recess-panel-group" data-section="look" role="group" aria-labelledby={`${settingsId}-look`}>
         <h4 id={`${settingsId}-look`}>Look and sound</h4>
         <div className="recess-row">
           <span className="recess-row-label" id={`${settingsId}-art`}>Artwork</span>
@@ -453,6 +476,11 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
             onChange={event => setSettings(s => ({ ...s, calm: event.target.checked }))} />
         </label>
         <label className="recess-row">
+          <span className="recess-row-label">Boss introductions</span>
+          <input type="checkbox" role="switch" className="recess-switch" checked={settings.bossScenes !== false}
+            onChange={event => setSettings(s => ({ ...s, bossScenes: event.target.checked }))} />
+        </label>
+        <label className="recess-row">
           <span className="recess-row-label">Sound</span>
           <input type="checkbox" role="switch" className="recess-switch" checked={settings.sound}
             onChange={event => setSettings(s => ({ ...s, sound: event.target.checked }))} />
@@ -464,17 +492,29 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
         <div><dt>Shine</dt><dd>{percent(condition.shine)}</dd></div>
         {wornNames.length > 0 && <div className="recess-panel-worn"><dt>Wearing</dt><dd>{wornNames.join(", ")}</dd></div>}
       </dl>}
+      </div>
+      <nav className="recess-panel-nav" aria-label="Settings sections">
+        {SETTINGS_TABS.map(tab => <button key={tab.id} type="button" aria-pressed={settingsTab === tab.id}
+          onClick={() => setSettingsTab(tab.id)}>
+          <KeatingGlyph name={tab.glyph} size={18} />
+          <span>{tab.label}</span>
+        </button>)}
+      </nav>
     </section>}
 
     {stage === "log" && result && <div className="recess-log" aria-label="Flight log" data-outcome={result.won ? "won" : result.quit ? "quit" : "lost"}>
       <div className="recess-log-head">
-        <strong>{result.won ? "Wall cleared" : result.quit ? "Landed early" : "Out of hearts"}</strong>
+        <strong>{result.won ? winLabel : result.quit ? "Landed early" : "Out of hearts"}</strong>
         <span className="recess-log-stats">
           <span>{result.score.toLocaleString()} points</span>
           <span aria-hidden="true">·</span>
           <span>{result.kills} cleared</span>
           <span aria-hidden="true">·</span>
           <span>{result.grazes} close calls</span>
+          {!!result.minibosses?.length && <>
+            <span aria-hidden="true">·</span>
+            <span>Miniboss cleared · {result.minibosses.join(", ")}</span>
+          </>}
           {mode !== "off" && settlement && <>
             <span aria-hidden="true">·</span>
             <span data-settlement={settlement.status}>

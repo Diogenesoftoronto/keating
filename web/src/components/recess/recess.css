@@ -450,19 +450,69 @@
 .recess-strip[data-settings="open"] > :not(.recess-strip-head, .recess-panel) { display: none; }
 .recess-panel {
   display: grid;
-  gap: 20px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
   min-width: 0;
-  max-height: min(64dvh, 34rem);
-  margin-inline: -4px;
-  padding: 0 4px 4px;
+  max-height: min(70dvh, 36rem);
+  outline: none;
+}
+.recess-panel-body {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-height: 0;
+  margin-inline: -4px -12px;
+  padding: 0 12px 4px 4px; /* end padding keeps the scrollbar off the controls */
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  outline: none;
-  /* The last rows fade at the scroll edge so it is clear there is more below. */
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
 }
-.recess-panel:not(:has(.recess-panel-stats)) { mask-image: none; }
+
+/* Bottom bar: picks the section on a narrow strip; hidden once two columns fit. */
+.recess-panel-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 -12px -12px; /* sits on the strip's bottom edge */
+  padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--recess-line-soft);
+  background: var(--recess-card);
+}
+.recess-panel-nav > button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--recess-soft);
+  background: transparent;
+  font: 500 12px/1.2 var(--recess-ui);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+.recess-panel-nav > button[aria-pressed="true"] {
+  color: var(--recess-green);
+  background: var(--recess-wash);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .recess-panel-nav > button[aria-pressed="false"]:hover { color: var(--recess-ink); }
+}
+@container recess-strip (max-width: 639px) {
+  .recess-panel[data-tab="loadout"] .recess-panel-group:not([data-section="loadout"]),
+  .recess-panel[data-tab="controls"] .recess-panel-group:not([data-section="controls"]),
+  .recess-panel[data-tab="look"] .recess-panel-group:not([data-section="look"]),
+  .recess-panel:not([data-tab="loadout"]) .recess-panel-stats { display: none; }
+  /* Hold one height across sections so the strip's top edge does not jump between tabs. */
+  .recess-panel-body { min-height: 210px; }
+  /* The tab bar names the section, so the group's own heading would repeat it. */
+  .recess-panel-group > h4 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .recess-panel { animation: recess-panel-in 200ms ease-out both; }
 }
@@ -470,12 +520,6 @@
   from { opacity: 0; transform: translateY(4px); }
 }
 .recess-panel-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  margin-inline: -4px;
-  padding: 0 4px 8px;
-  background: var(--recess-card);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -532,14 +576,19 @@
   font: 400 13px/1.35 var(--recess-ui);
   text-wrap: pretty;
 }
-.recess-row > select {
+/* The app's own Select (Radix): only size and the Recess field tokens change here. */
+body .recess-row > button.keating-select.keating-select {
   flex: 0 1 12.5rem;
+  width: auto;
   min-width: 0;
   max-width: 60%;
   min-height: 40px;
-  font-size: 15px;
   border-color: var(--recess-field-line);
-  background-color: var(--recess-paper);
+  background: var(--recess-paper);
+  color: var(--recess-ink);
+}
+@media (pointer: coarse) {
+  body .recess-row > button.keating-select.keating-select { min-height: 44px; }
 }
 .recess-panel .recess-fine { font-size: 13px; line-height: 1.45; }
 
@@ -658,7 +707,7 @@
 [dir="rtl"] .recess-switch:checked::before { translate: -16px 0; }
 .recess-switch:disabled { opacity: 0.55; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
-  .recess-switch, .recess-switch::before, .recess-segments > label { transition: none; }
+  .recess-switch, .recess-switch::before, .recess-segments > label, .recess-panel-nav > button { transition: none; }
 }
 /* A 24px switch still gets a 44px target: the whole row is its label. */
 
@@ -681,15 +730,29 @@
 .recess-panel-stats .recess-panel-worn { flex-basis: 100%; }
 .recess-panel-stats .recess-panel-worn dd { font-family: var(--recess-ui); }
 
+/* Wide strip: two columns keep each label near its control instead of across a 46rem row. */
+@container recess-strip (min-width: 640px) {
+  .recess-panel-nav { display: none; }
+  .recess-panel-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 40px;
+  }
+  .recess-panel-stats { grid-column: 1 / -1; }
+  .recess-panel-group[data-section="loadout"] { grid-column: 1; grid-row: 1; }
+  .recess-panel-group[data-section="controls"] { grid-column: 1; grid-row: 2; }
+  .recess-panel-group[data-section="look"] { grid-column: 2; grid-row: 1 / span 2; }
+}
+
 /* Narrow strip: rows stack label over control so nothing squeezes below a readable width. */
 @container recess-strip (max-width: 299px) {
-  .recess-row:has(> select, > .recess-segments, > .recess-range-field) {
+  .recess-row:has(> .keating-select, > .recess-segments, > .recess-range-field) {
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
     min-height: 0;
   }
-  .recess-row > :is(select, .recess-segments, .recess-range-field) {
+  body .recess-row > :is(button.keating-select.keating-select, .recess-segments, .recess-range-field) {
     width: 100%;
     max-width: none;
     flex-basis: auto;

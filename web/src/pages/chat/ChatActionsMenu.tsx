@@ -3,13 +3,15 @@
  * learning, account, about Keating). Every entry closes the menu before it acts.
  * Arrow keys, Home and End move between entries; Escape and leaving the menu
  * close it. Sharing leads the list and says where the link will go before the
- * share sheet asks for consent.
+ * share sheet asks for consent. On phones it opens upward from the bottom tab
+ * bar, drops the entries the bar already shows, and carries the light/dark switch.
  */
 import { useEffect, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { usePostHog } from "@posthog/react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppLink as Link } from "../../components/AppLink";
 import { NotOrganicAccountMenuItem } from "../../components/NotOrganicAccountMenuItem";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import { KeatingGlyph } from "../../design-system/glyphs";
 import { applicationRootHref, WEBSITE_ORIGIN } from "../../lib/hosted-navigation";
 import { DOCUMENTATION_URL } from "../../lib/tutorial-links";
@@ -55,6 +57,8 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 
 export interface ChatActionsMenuProps {
   compact: boolean;
+  /** Opened from the phone tab bar, which already shows Review and New. */
+  tabBar?: boolean;
   reviewHref: string;
   modelLabel: string;
   menuRef: RefObject<HTMLDivElement | null>;
@@ -73,7 +77,7 @@ export interface ChatActionsMenuProps {
 }
 
 export function ChatActionsMenu({
-  compact, reviewHref, modelLabel, menuRef, buttonRef, isPending, speechEnabled, shareState,
+  compact, tabBar = false, reviewHref, modelLabel, menuRef, buttonRef, isPending, speechEnabled, shareState,
   onClose, openModelSelector, openSettings, newSession, handleShare, toggleSpeech, onOpenOriginal, onOpenNodePod,
 }: ChatActionsMenuProps) {
   const posthog = usePostHog();
@@ -119,15 +123,15 @@ export function ChatActionsMenu({
           <KeatingGlyph name="share" size={15} />
           <span className="ch-menu-text">Share session<small>{shareMenuDetail(shareState, local)}</small></span>
         </button>
-        {compact && <Link to={reviewHref} className={itemClass} onClick={() => onClose(false)}>
+        {compact && !tabBar && <Link to={reviewHref} className={itemClass} onClick={() => onClose(false)}>
           <KeatingGlyph name="pen" size={15} /><span className="ch-menu-text">Review session</span>
         </Link>}
         {compact && <button type="button" className={itemClass} onClick={() => { onClose(false); openModelSelector(); }}>
           <KeatingGlyph name="chip" size={15} /><span className="ch-menu-text">Change model<small>{modelLabel}</small></span>
         </button>}
-        <button type="button" className={itemClass} disabled={isPending} onClick={() => { onClose(); newSession(); }}>
+        {!tabBar && <button type="button" className={itemClass} disabled={isPending} onClick={() => { onClose(); newSession(); }}>
           <KeatingGlyph name="plus" size={15} /><span className="ch-menu-text">New session</span>
-        </button>
+        </button>}
         {onOpenOriginal && <button type="button" className={itemClass} onClick={() => { onClose(false); onOpenOriginal(); }}>
           <KeatingGlyph name="fork" size={15} /><span className="ch-menu-text">Open original</span>
         </button>}
@@ -144,6 +148,7 @@ export function ChatActionsMenu({
           <KeatingGlyph name={speechEnabled ? "speaker" : "mute"} size={15} />
           <span className="ch-menu-text">Read replies aloud<small>{speechEnabled ? "On" : "Off"}</small></span>
         </button>
+        {tabBar && <ThemeToggle variant="menu" className={`${itemClass} ch-menu-theme`} />}
       </Group>
       <hr />
       <Group label="Learn">

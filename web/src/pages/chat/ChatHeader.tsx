@@ -4,18 +4,19 @@ import { KeatingGlyph } from "../../design-system/glyphs";
 import { categorize } from "../../components/session-card-visuals";
 /**
  * Chat page header: session panel toggle, brand, title, model trigger, then
- * Materials, Review, Share, the light/dark control and the More menu. The menu's
- * open state lives here; everything it acts on (sessions, sharing, speech,
- * artifacts) is passed in by the page. On phones the title block is the model
- * trigger. Knowledge sources live in Settings › Connections.
+ * Materials, Review, Share, the light/dark control and the More menu. Everything
+ * the menu acts on (sessions, sharing, speech, artifacts) is passed in by the page.
+ * On phones this is a thin bar with only the title block (the model trigger) and
+ * Share; navigation lives in the bottom ChatTabBar. Knowledge sources live in
+ * Settings › Connections.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
 import { css, cx } from "../../../styled-system/css";
 import { AppLink as Link } from "../../components/AppLink";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { applicationRootHref } from "../../lib/hosted-navigation";
 import { ChatActionsMenu } from "./ChatActionsMenu";
 import type { ShareState } from "./session-sharing";
+import { useChatMenu } from "./use-chat-menu";
 
 const actionButtonPandaClass = css({
   display: "inline-flex",
@@ -89,36 +90,7 @@ export function ChatHeader({
   const subject = categorize(sessionTitle);
   const compact = useMediaQuery("(max-width: 780px)");
   const reviewHref = activeSessionId ? `/review/sessions/${encodeURIComponent(activeSessionId)}` : "/review";
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  const closeMenu = useCallback((restoreFocus = true) => {
-    setMobileMenuOpen(false);
-    if (restoreFocus) menuButtonRef.current?.focus();
-  }, []);
-
-  // Close the menu on click outside or Escape
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !mobileMenuRef.current?.querySelector("dialog[open]")) closeMenu();
-    };
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(e.target as Node) && !menuButtonRef.current?.contains(e.target as Node)
-      ) {
-        setMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [mobileMenuOpen, closeMenu]);
+  const { open: mobileMenuOpen, setOpen: setMobileMenuOpen, close: closeMenu, buttonRef: menuButtonRef, menuRef: mobileMenuRef } = useChatMenu();
 
   // Panda globalCss drives responsive visibility via `.chat-only-desktop` (header icons,
   // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
@@ -142,9 +114,10 @@ export function ChatHeader({
           sm: { paddingInline: "1rem" },
         }),
       )}
-      aria-label="Chat navigation"
+      aria-label={compact ? "Session" : "Chat navigation"}
+      data-compact={compact || undefined}
     >
-      <button
+      {!compact && <button
         type="button"
         className={cx(
           actionButtonClass,
@@ -159,12 +132,8 @@ export function ChatHeader({
         aria-pressed={mobileSidebarOpen}
         onClick={toggleMobileSidebar}
       >
-        {mobileSidebarOpen ? (
-          <KeatingGlyph name={compact ? "menu" : "panel"} active />
-        ) : (
-          <KeatingGlyph name={compact ? "menu" : "panel"} />
-        )}
-      </button>
+        <KeatingGlyph name="panel" active={mobileSidebarOpen} />
+      </button>}
       {!compact && <Link
         to={applicationRootHref(globalThis.location?.hostname ?? "", import.meta.env.KEATING_WEB_BUILD_TARGET === "app")}
         className={cx(
@@ -262,7 +231,7 @@ export function ChatHeader({
           }),
         )}
       >
-        {canvasEnabled && <button
+        {canvasEnabled && !compact && <button
           className={cx(actionButtonClass, css({ position: "relative" }))}
           aria-label={`${artifactBrowserOpen ? "Close materials" : "Open materials"}${materialCount ? `, ${materialCount} in this session` : ""}`}
           title={materialCount ? `Materials (${materialCount} in this session)` : "Materials"}
@@ -286,8 +255,8 @@ export function ChatHeader({
         >
           <KeatingGlyph name="share" /><span className="ch-label">Share</span>
         </button>
-        <ThemeToggle className="ch-theme" />
-        <button
+        {!compact && <ThemeToggle className="ch-theme" />}
+        {!compact && <button
           type="button"
           className={actionButtonClass}
           ref={menuButtonRef}
@@ -298,13 +267,13 @@ export function ChatHeader({
           onClick={() => mobileMenuOpen ? closeMenu() : setMobileMenuOpen(true)}
         >
           <KeatingGlyph name={mobileMenuOpen ? "x" : "more"} />
-        </button>
+        </button>}
       </div>
 
       {/* Overflow menu */}
-      {mobileMenuOpen && (
+      {mobileMenuOpen && !compact && (
         <ChatActionsMenu
-          compact={compact} reviewHref={reviewHref} modelLabel={modelText}
+          compact={false} reviewHref={reviewHref} modelLabel={modelText}
           menuRef={mobileMenuRef} buttonRef={menuButtonRef}
           isPending={isPending}
           speechEnabled={speechEnabled}

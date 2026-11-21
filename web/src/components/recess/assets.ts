@@ -52,6 +52,15 @@ async function loadToy(key: string): Promise<RecessBotArt["toy"]> {
 
 const kitSheets = { blasters, packs, toppers };
 
+async function loadRivalSheets(): Promise<RecessBotArt["rivalSheets"]> {
+  const entries = await Promise.all(Object.entries(manifest.rivals).map(async ([id, path]) => {
+    const src = url(path);
+    const image = src && await loadImage(src).catch(() => null);
+    return image ? [[id, image] as const] : [];
+  }));
+  return Object.fromEntries(entries.flat());
+}
+
 async function loadEquipment(ids: readonly string[]): Promise<RecessBotArt["equipment"]> {
   const selected = HABIT_KIT.filter(piece =>
     piece.parts > 0 && piece.art && ids.includes(piece.id)
@@ -65,11 +74,12 @@ async function loadEquipment(ids: readonly string[]): Promise<RecessBotArt["equi
 }
 
 export async function loadRecessArt(cast: string, toy: boolean, kit: readonly string[]): Promise<RecessBotArt> {
-  const [sheet, flip, selectedToy, equipment] = await Promise.all([
+  const [sheet, flip, selectedToy, equipment, rivalSheets] = await Promise.all([
     loadImage(url(manifest.sheet)),
     loadImage(url(manifest.fx.src)).then(img => ({ img, rows: manifest.fx.rows, cell: manifest.fx.cell })).catch(() => null),
     toy ? loadToy(cast) : Promise.resolve(null),
     loadEquipment(kit),
+    toy ? loadRivalSheets() : undefined,
   ]);
-  return { sheet, flip, toy: selectedToy, equipment, keycapBoots: kit.includes("keyboots"), rows: manifest.rows, hasJetpack: manifest.hasJetpack };
+  return { sheet, flip, toy: selectedToy, equipment, rivalSheets, keycapBoots: kit.includes("keyboots"), rows: manifest.rows, hasJetpack: manifest.hasJetpack };
 }

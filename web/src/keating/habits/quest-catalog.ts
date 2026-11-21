@@ -1,4 +1,4 @@
-export type RecessWeaponId = "pulse" | "gavel" | "scatter" | "beam" | "wave" | "burst";
+export type RecessWeaponId = "pulse" | "gavel" | "scatter" | "beam" | "wave" | "burst" | "ricochet" | "boomerang";
 export type RecessHelperId = "drone" | "scribe" | "sentinel" | "aegis";
 
 export interface RecessLoadout {
@@ -66,6 +66,10 @@ export const HABIT_KIT: readonly HabitKitPiece[] = [
     weapon: "wave", recessEffect: "Braided sine-wave bolts that sweep wide lanes." },
   { id: "pipette", name: "Pipette burst", slot: "blaster", subject: "workshop", blueprints: 0, parts: 4, art: { sheet: "blasters", cell: 6 },
     weapon: "burst", recessEffect: "Rapid-fire droplet stream with fast cadence." },
+  { id: "bankbrush", name: "Bank-shot brush", slot: "blaster", subject: "workshop", blueprints: 0, parts: 5, art: { sheet: "blasters", cell: 4 },
+    weapon: "ricochet", recessEffect: "Ink skips off the side walls. Hold Shift for a narrower angle." },
+  { id: "returnstamp", name: "Return stamp", slot: "blaster", subject: "workshop", blueprints: 0, parts: 5, art: { sheet: "blasters", cell: 7 },
+    weapon: "boomerang", recessEffect: "Stamps arc back to you. Move sideways to tag a new row on the return." },
   { id: "scribe", name: "Magnet scribe", slot: "helper", subject: "workshop", blueprints: 0, parts: 4, art: { sheet: "packs", cell: 7 },
     helper: "scribe", recessEffect: "Companion at Power 2+ that pulls sparks and cells from 2× farther." },
   { id: "sentinel", name: "Sentinel pod", slot: "helper", subject: "workshop", blueprints: 0, parts: 6, art: { sheet: "toppers", cell: 4 },
@@ -81,7 +85,7 @@ export const HABIT_KIT: readonly HabitKitPiece[] = [
   { id: "keyboots", name: "Keycap boots", slot: "boots", subject: "coding", blueprints: 2, parts: 5,
     recessEffect: "15% faster movement while holding Shift to focus." },
   { id: "hourglass", name: "Hourglass pack", slot: "pack", subject: "history", blueprints: 2, parts: 6, art: { sheet: "packs", cell: 2 },
-    recessEffect: "Wider close-call graze radius for faster Eureka refills." },
+    recessEffect: "Wider close-call graze radius for faster bomb refills." },
   { id: "quill", name: "Quill topper", slot: "topper", subject: "literature", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 3 },
     recessEffect: "Head start toward Power 2 and your first helper." },
   { id: "metronome", name: "Metronome topper", slot: "topper", subject: "music", blueprints: 2, parts: 5, art: { sheet: "toppers", cell: 1 },

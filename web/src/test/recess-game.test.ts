@@ -137,6 +137,25 @@ function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playf
 const touch = (type: string, pointerId: number, clientX = 0, clientY = 0) =>
   Object.assign(new Event(type, { cancelable: true }), { pointerId, pointerType: "touch", button: 0, clientX, clientY });
 
+test("a dock button keeps its pointer and Space activation inside the flight arena", () => {
+  touchRun("follow", (run, field) => {
+    run.state = "play";
+    const button = { closest: () => true };
+    const press = touch("pointerdown", 2, 250, 270);
+    Object.defineProperty(press, "target", { value: button });
+    field.dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(false);
+    expect(run.inp.pid).toBeNull();
+
+    const reserve = run.P.bombs;
+    const space = Object.assign(new Event("keydown", { cancelable: true }), { key: " " });
+    Object.defineProperty(space, "target", { value: button });
+    field.dispatchEvent(space);
+    expect(space.defaultPrevented).toBe(false);
+    expect(run.P.bombs).toBe(reserve);
+  });
+});
+
 test("on touch the first finger flies, a second aims, and either can lift alone", () => {
   touchRun("follow", (run, field, win) => {
     const bombs = run.P.bombs;
@@ -178,6 +197,48 @@ test("in twin controls a touch flight starts from where Keating is", () => {
     run.state = "play";
     field.dispatchEvent(touch("pointermove", 7, 390, 40));
     expect(run.inp.tx).toBeCloseTo(153);
+  });
+});
+
+test("a two-finger tap spends one flight reserve and works with either lift order", () => {
+  for (const [first, second] of [[1, 2], [2, 1]]) {
+    touchRun("follow", (run, field) => {
+      run.state = "play";
+      const bombs = run.P.bombs;
+      const send = (event: string, finger: number) => field.dispatchEvent(
+        finger === 1 ? touch(event, finger, 190, 230) : touch(event, finger, 230, 160),
+      );
+      send("pointerdown", 1);
+      send("pointerdown", 2);
+      send("pointerup", first);
+      expect(run.P.bombs).toBe(bombs);
+      send("pointerup", second);
+      expect(run.P.bombs).toBe(bombs - 1);
+      expect([run.inp.pid, run.inp.aid]).toEqual([null, null]);
+    });
+  }
+});
+
+test("manual aim, a lesson gate and window blur discard tap bombing", () => {
+  touchRun("twin", (run, field, win) => {
+    run.state = "play";
+    const bombs = run.P.bombs;
+    for (const action of [
+      () => {
+        field.dispatchEvent(touch("pointermove", 2, 260, 137));
+        expect([run.inp.ax, run.inp.ay]).toEqual([260, 137]);
+      },
+      () => win.dispatchEvent(new Event("blur")),
+      () => field.dispatchEvent(Object.assign(new Event("lostpointercapture"), { pointerId: 2 })),
+      () => Object.assign(run, { gates: { st: 0 } }),
+    ]) {
+      field.dispatchEvent(touch("pointerdown", 1, 190, 230));
+      field.dispatchEvent(touch("pointerdown", 2, 230, 160));
+      action();
+      field.dispatchEvent(touch("pointerup", 1, 190, 230));
+      field.dispatchEvent(touch("pointerup", 2, 230, 160));
+      expect(run.P.bombs).toBe(bombs);
+    }
   });
 });
 

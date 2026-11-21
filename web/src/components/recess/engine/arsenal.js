@@ -10,6 +10,8 @@ export const WEAPON_LABELS = {
   beam: "Lens Beam",
   wave: "Harmonic",
   burst: "Pipette",
+  ricochet: "Bank-shot brush",
+  boomerang: "Return stamp",
 };
 
 export const HELPER_LABELS = {
@@ -19,7 +21,8 @@ export const HELPER_LABELS = {
   aegis: "Aegis Prism",
 };
 
-const DROP_WEAPONS = ["scatter", "gavel", "beam", "wave", "burst"];
+const DROP_WEAPONS = ["scatter", "gavel", "beam", "wave", "burst", "ricochet", "boomerang"];
+const CUSTOM_SHOT_SHAPES = new Set(["gavel", "beam", "wave", "burst", "helper", "ricochet", "boomerang"]);
 
 export function pickDropWeapon(current, rnd) {
   const pool = DROP_WEAPONS.filter((w) => w !== current);
@@ -46,6 +49,23 @@ function makeShot(x, y, ang, speed, d, extra) {
   );
 }
 
+function makeReturnStamp(G, mx, my, aim, sweep, reach, damage) {
+  const inset = 8;
+  const x = G.clamp(mx, inset, G.W - inset);
+  const y = G.clamp(my, inset, G.H - inset);
+  const forwardX = Math.cos(aim);
+  const forwardY = Math.sin(aim);
+  const tipX = G.clamp(x + forwardX * reach, inset, G.W - inset);
+  const tipY = G.clamp(y + forwardY * reach, inset, G.H - inset);
+  const length = Math.hypot(tipX - x, tipY - y);
+  return makeShot(x, y, aim, 0, damage, {
+    kind: "boomerang", r: 7, pierce: true, hit: new Set(),
+    originX: x, originY: y, tipX, tipY, nx: -forwardY, ny: forwardX,
+    sweep: Math.sign(sweep) * Math.min(Math.abs(sweep), length * 0.28),
+    duration: 0.54 + length / 650, returning: false,
+  });
+}
+
 /** Fire one volley for the active weapon; returns the cadence multiplier for P.shotT. */
 export function fireWeapon(G, weaponId, tier, drain, CHARGE) {
   const P = G.P;
@@ -59,8 +79,9 @@ export function fireWeapon(G, weaponId, tier, drain, CHARGE) {
   const mx = P.x + cs * 30;
   const my = P.y - 6 + sn * 30;
 
-  // Reserve tier: single modest shot at half cost regardless of weapon.
-  if (tier === 1) {
+  // The brush and stamp keep their trajectories even on the single reserve shot.
+  const reserve = tier === 1;
+  if (reserve && weaponId !== "ricochet" && weaponId !== "boomerang") {
     G.shots.push(makeShot(mx, my, a, 960, f ? 1.15 : 1, { kind: weaponId }));
     drain(CHARGE.cost * 0.5);
     P.fireT = 0;
@@ -142,6 +163,24 @@ export function fireWeapon(G, weaponId, tier, drain, CHARGE) {
         makeShot(P.x + nx * 18, P.y + ny * 18, a + 0.65, 520, 1.4, { hom: true, kind: "hom" }),
       );
     }
+  } else if (weaponId === "ricochet") {
+    cadence = 1.4;
+    const spread = f ? 0.44 : 1.06;
+    const offsets = reserve ? [++P.vol % 2 ? spread : -spread] : [-spread, spread];
+    if (pw >= 2) offsets.push(0);
+    const x = G.clamp(mx, 5, G.W - 5);
+    for (const offset of offsets) {
+      G.shots.push(makeShot(x, my, a + offset, 780, dmg * 0.9, {
+        kind: "ricochet", r: 5, banksLeft: pw >= 3 ? 3 : 2,
+      }));
+    }
+  } else if (weaponId === "boomerang") {
+    cadence = 2.25;
+    const reach = pw >= 3 ? 350 : 280;
+    const sweep = (++P.vol % 2 ? 1 : -1) * (f ? 24 : 60);
+    const stampDamage = dmg * (reserve ? 0.55 : 0.92);
+    G.shots.push(makeReturnStamp(G, mx, my, a, sweep, reach, stampDamage));
+    if (pw >= 2) G.shots.push(makeReturnStamp(G, mx, my, a, -sweep, reach, stampDamage));
   } else if (weaponId === "burst") {
     // Rapid-fire staggered droplet stream.
     cadence = 0.64;
@@ -178,15 +217,62 @@ export function fireWeapon(G, weaponId, tier, drain, CHARGE) {
     }
   }
 
-  drain(CHARGE.cost * costScale);
+  drain(CHARGE.cost * (reserve ? 0.5 : costScale));
   P.fireT = 0;
   G.emit("shot", { x: mx, y: my, aim: a, power: pw, focus: f, weapon: weaponId });
   return cadence;
 }
 
-/** Advance a single player shot (supports homing and oscillating harmonic wave bolts). */
+function advanceRicochet(G, s, dt) {
+  if (s.t >= 2) { s.dead = true; return; }
+  s.x = G.clamp(s.x, s.r, G.W - s.r);
+  let remaining = dt;
+  while (remaining > 0 && s.vx !== 0) {
+    const rail = s.vx < 0 ? s.r : G.W - s.r;
+    const toRail = (rail - s.x) / s.vx;
+    if (toRail > remaining) break;
+    s.x = rail;
+    s.y += s.vy * toRail;
+    remaining -= toRail;
+    if (s.banksLeft === 0) { s.dead = true; return; }
+    s.banksLeft--;
+    s.bankAt = s.t - remaining;
+    s.bankX = rail;
+    s.bankY = s.y;
+    s.vx = -s.vx;
+  }
+  s.x += s.vx * remaining;
+  s.y += s.vy * remaining;
+}
+
+function advanceReturnStamp(G, s, dt) {
+  const phase = Math.min(1, s.t / s.duration);
+  if (phase >= 0.5 && !s.returning) {
+    s.returning = true;
+    s.hit.clear(); // Each foe can be stamped once on each leg.
+  }
+  const reach = Math.sin(Math.PI * phase);
+  const curl = Math.sin(TAU * phase) * s.sweep;
+  const back = Math.max(0, phase * 2 - 1);
+  const catchUp = back * back * (3 - 2 * back);
+  const px = s.originX + (s.tipX - s.originX) * reach + s.nx * curl + (G.P.x - s.originX) * catchUp;
+  const py = s.originY + (s.tipY - s.originY) * reach + s.ny * curl + (G.P.y - s.originY) * catchUp;
+  const x = G.clamp(px, s.r, G.W - s.r);
+  const y = G.clamp(py, s.r, G.H - s.r);
+  if (dt > 0) {
+    s.vx = (x - s.x) / dt;
+    s.vy = (y - s.y) / dt;
+  }
+  s.x = x;
+  s.y = y;
+  if (phase === 1) s.dead = true;
+}
+
+/** Advance a single player or helper shot. */
 export function stepShot(G, s, dt) {
   s.t += dt;
+  if (s.kind === "ricochet") return advanceRicochet(G, s, dt);
+  if (s.kind === "boomerang") return advanceReturnStamp(G, s, dt);
   if (s.hom && G.foes.length) {
     let best = null;
     let bd = 1e9;
@@ -219,6 +305,61 @@ export function stepShot(G, s, dt) {
   s.y += s.vy * dt;
 }
 
+function drawBrushStroke(x, s, G, outer, core) {
+  x.save();
+  x.translate(s.x, s.y);
+  x.rotate(Math.atan2(s.vy, s.vx));
+  x.fillStyle = outer;
+  x.beginPath();
+  x.moveTo(7, -2.8);
+  x.lineTo(3, 2.8);
+  x.lineTo(-8, 2.8);
+  x.lineTo(-5, -2.8);
+  x.closePath();
+  x.fill();
+  x.strokeStyle = core;
+  x.lineWidth = 1.2;
+  x.beginPath();
+  x.moveTo(-9, -1);
+  x.lineTo(2, -1);
+  x.moveTo(-12, 1.4);
+  x.lineTo(-4, 1.4);
+  x.stroke();
+  x.restore();
+
+  if (G.calm || s.bankAt === undefined || s.t - s.bankAt >= 0.16) return;
+  const sinceBank = s.t - s.bankAt;
+  const inward = s.bankX < G.W / 2 ? 1 : -1;
+  x.save();
+  x.globalAlpha *= 1 - sinceBank / 0.16;
+  x.strokeStyle = outer;
+  x.lineWidth = 2;
+  x.beginPath();
+  x.moveTo(s.bankX + inward * 13, s.bankY - 7);
+  x.lineTo(s.bankX, s.bankY);
+  x.lineTo(s.bankX + inward * 13, s.bankY + 7);
+  x.stroke();
+  x.restore();
+}
+
+function drawReturnStamp(x, s, G, outer, core) {
+  const turn = G.calm ? s.ang : s.ang + s.t * Math.sign(s.sweep) * 13;
+  x.strokeStyle = outer;
+  x.lineWidth = 3.3;
+  x.beginPath();
+  x.arc(s.x, s.y, 6.6, turn, turn + Math.PI * 1.67);
+  x.stroke();
+  x.strokeStyle = core;
+  x.lineWidth = 1.3;
+  x.beginPath();
+  x.arc(s.x, s.y, 6.6, turn + 0.1, turn + Math.PI);
+  x.stroke();
+  if (s.returning) {
+    x.fillStyle = outer;
+    x.fillRect(s.x - 1.7, s.y - 1.7, 3.4, 3.4);
+  }
+}
+
 /** Draw all active player and helper shots on both crisp and glow layers. */
 export function drawShots(c, em, G, pal) {
   if (!G.shots.length) return;
@@ -229,11 +370,11 @@ export function drawShots(c, em, G, pal) {
   for (const x of [c, em]) {
     x.lineCap = "round";
 
-    // Standard pulse + scatter + burst line streaks
+    // Standard pulse and scatter line streaks
     for (const pass of [0, 1]) {
       x.beginPath();
       for (const s of G.shots) {
-        if (s.hom || s.kind === "gavel" || s.kind === "beam" || s.kind === "wave" || s.kind === "burst" || s.kind === "helper") continue;
+        if (s.hom || CUSTOM_SHOT_SHAPES.has(s.kind)) continue;
         const len = s.kind === "scatter" ? 0.013 : 0.017;
         x.moveTo(s.x, s.y);
         x.lineTo(s.x - s.vx * len, s.y - s.vy * len);
@@ -290,6 +431,11 @@ export function drawShots(c, em, G, pal) {
       x.closePath();
       x.fill();
       x.stroke();
+    }
+
+    for (const s of G.shots) {
+      if (s.kind === "ricochet") drawBrushStroke(x, s, G, outerCol, coreCol);
+      if (s.kind === "boomerang") drawReturnStamp(x, s, G, outerCol, coreCol);
     }
 
     // Pipette burst & helper mini-orbs: crisp rounded beads
