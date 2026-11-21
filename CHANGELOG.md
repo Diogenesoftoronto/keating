@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.9
+
+- The place-value model fits on a 375px phone screen: each column's count sits above its add and take-away buttons, which stay full-size touch targets.
+
 ## 4.2.8
 
 - Tool-using turns plan once. When the tutor searches or uses a tool, the next round reuses the turn's plan instead of asking Jev to plan again, and still reviews the new reply against what the tool returned.
