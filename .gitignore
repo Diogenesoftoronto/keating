@@ -70,3 +70,17 @@ web/storybook-static/
 # Outreach & Private Drafts
 docs/outreach-email.md
 docs/drafts/
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/docs/assets/doctor.mp4
+/docs/assets/feedback-flow.mp4
+/docs/assets/improve-flow.mp4
+/docs/assets/intro.mp4
+/docs/assets/learning-flow.mp4
+/docs/assets/session-flow.mp4
+/docs/assets/teacher-flow.mp4
+/docs/assets/tests.mp4
+/docs/assets/web-landing.mp4
+/docs/assets/web-paper.mp4
+/docs/assets/web-tutorial.mp4
+# <<< keating-media

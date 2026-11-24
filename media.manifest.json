@@ -1,0 +1,91 @@
+{
+ "version": 1,
+ "bucket": "keating-media",
+ "objects": "objects/",
+ "files": {
+  "docs/assets/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "docs/assets/feedback-flow.mp4": {
+   "oid": "8da25995e4f61b440a47ee4c2cf070a2a6631238",
+   "size": 85194
+  },
+  "docs/assets/improve-flow.mp4": {
+   "oid": "f04f6bedfbe8ec5c28dd0f929b27ae2df38aa98f",
+   "size": 916541
+  },
+  "docs/assets/intro.mp4": {
+   "oid": "db62f45f6262ea60ddd5b561818266c1f1c0260b",
+   "size": 255321
+  },
+  "docs/assets/learning-flow.mp4": {
+   "oid": "eba171787401850510b2fe22a372362f24f24a69",
+   "size": 376642
+  },
+  "docs/assets/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "docs/assets/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "docs/assets/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  },
+  "docs/assets/web-landing.mp4": {
+   "oid": "3ba073a0885295b968a3daf3453156fc88774a54",
+   "size": 3929543
+  },
+  "docs/assets/web-paper.mp4": {
+   "oid": "e7fdc5577062f7f9250ca6162147aa613de56b59",
+   "size": 2580103
+  },
+  "docs/assets/web-tutorial.mp4": {
+   "oid": "ab08d7dd092c5a1bccd13e2e84ed701328f40446",
+   "size": 5794637
+  },
+  "web/public/brand/crt-monitor.png": {
+   "oid": "53cdd5ffd23cb5fa402bac63ee2f5c356a60306c",
+   "size": 216956
+  },
+  "web/public/og-image.png": {
+   "oid": "ccf75998c9d1e24142a347b50a18e7a355a3e81b",
+   "size": 487218
+  },
+  "web/public/tapes/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "web/public/tapes/feedback-flow.mp4": {
+   "oid": "8266b7f9f954ce7b8872365e828f1a463fecb0e5",
+   "size": 84536
+  },
+  "web/public/tapes/improve-flow.mp4": {
+   "oid": "bf469ef5b6992c2e442a5eb90ea466d9220ca72f",
+   "size": 1030495
+  },
+  "web/public/tapes/intro.mp4": {
+   "oid": "e815617f82425d30add8da0e6fb10cb6b5b42243",
+   "size": 324034
+  },
+  "web/public/tapes/learning-flow.mp4": {
+   "oid": "c35c11242907283f00835d36d3fc1eb0a6be8f73",
+   "size": 375896
+  },
+  "web/public/tapes/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "web/public/tapes/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "web/public/tapes/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  }
+ }
+}

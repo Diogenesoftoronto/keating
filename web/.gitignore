@@ -1,3 +1,16 @@
 .env.local
 styled-system/
 storybook-static/
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/public/brand/crt-monitor.png
+/public/og-image.png
+/public/tapes/doctor.mp4
+/public/tapes/feedback-flow.mp4
+/public/tapes/improve-flow.mp4
+/public/tapes/intro.mp4
+/public/tapes/learning-flow.mp4
+/public/tapes/session-flow.mp4
+/public/tapes/teacher-flow.mp4
+/public/tapes/tests.mp4
+# <<< keating-media
