@@ -105,3 +105,41 @@ docs/drafts/
 # HyperFrames render artifacts
 video/*/snapshots/
 video/*/.thumbnails/
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/docs/assets/cli-artifacts.mp4
+/docs/assets/doctor.mp4
+/docs/assets/feedback-flow.mp4
+/docs/assets/improve-flow.mp4
+/docs/assets/intro.mp4
+/docs/assets/learning-flow.mp4
+/docs/assets/screenshots/landing-review-feature.png
+/docs/assets/screenshots/landing-sacred-deck.png
+/docs/assets/screenshots/landing-tui-onboarding.png
+/docs/assets/screenshots/tui-onboarding-avatar.png
+/docs/assets/screenshots/tui-onboarding-complete.png
+/docs/assets/screenshots/tui-onboarding-custom-avatar.png
+/docs/assets/screenshots/tui-onboarding-name.png
+/docs/assets/screenshots/tui-sacred-messages.png
+/docs/assets/screenshots/tui-sacred-session-tree.png
+/docs/assets/screenshots/tutorial-direct-overview.png
+/docs/assets/screenshots/tutorial-review-model-pools.png
+/docs/assets/screenshots/tutorial-review-selection.png
+/docs/assets/screenshots/tutorial-surface-atlas.png
+/docs/assets/screenshots/tutorial-training-export.png
+/docs/assets/screenshots/tutorial-tui-onboarding-mobile.png
+/docs/assets/screenshots/tutorial-tui-onboarding.png
+/docs/assets/session-flow.mp4
+/docs/assets/teacher-flow.mp4
+/docs/assets/tests.mp4
+/docs/assets/tui-collaborative.mp4
+/docs/assets/tui-onboarding.mp4
+/docs/assets/web-landing.mp4
+/docs/assets/web-paper.mp4
+/docs/assets/web-tutorial.mp4
+/video/keating-surface-tour/assets/cli-artifacts.mp4
+/video/keating-surface-tour/assets/tui-collaborative.mp4
+/video/keating-surface-tour/assets/tui-tour.mp4
+/video/keating-surface-tour/assets/web-classroom.mp4
+/video/keating-surface-tour/renders/video.mp4
+# <<< keating-media

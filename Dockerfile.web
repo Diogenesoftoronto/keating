@@ -21,6 +21,16 @@ COPY packages/p2p-core/src ./src
 WORKDIR /app
 COPY shared/ ./shared/
 COPY web/ ./web/
+# Media (videos, audio, large images) lives in the keating-media bucket, not git.
+# Railway forwards these service variables as build args; the pull fails the
+# build if any file can't be fetched or doesn't match media.manifest.json.
+ARG KEATING_MEDIA_ENDPOINT
+ARG KEATING_MEDIA_BUCKET
+ARG KEATING_MEDIA_ACCESS_KEY_ID
+ARG KEATING_MEDIA_SECRET_ACCESS_KEY
+COPY media.manifest.json /app/media.manifest.json
+COPY scripts/media.ts /app/scripts/media.ts
+RUN cd /app && bun scripts/media.ts pull web/
 WORKDIR /app/web
 # Vite inlines VITE_* env vars at build time. `web/.env.local` is gitignored and
 # not present in CI/Railway builds, so these must be supplied as build args

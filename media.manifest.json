@@ -1,0 +1,299 @@
+{
+ "version": 1,
+ "bucket": "keating-media",
+ "objects": "objects/",
+ "files": {
+  "docs/assets/cli-artifacts.mp4": {
+   "oid": "1dfc882f5d53c81a2bc5b9866f9c307a05b69995",
+   "size": 678541
+  },
+  "docs/assets/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "docs/assets/feedback-flow.mp4": {
+   "oid": "8da25995e4f61b440a47ee4c2cf070a2a6631238",
+   "size": 85194
+  },
+  "docs/assets/improve-flow.mp4": {
+   "oid": "f04f6bedfbe8ec5c28dd0f929b27ae2df38aa98f",
+   "size": 916541
+  },
+  "docs/assets/intro.mp4": {
+   "oid": "db62f45f6262ea60ddd5b561818266c1f1c0260b",
+   "size": 255321
+  },
+  "docs/assets/learning-flow.mp4": {
+   "oid": "eba171787401850510b2fe22a372362f24f24a69",
+   "size": 376642
+  },
+  "docs/assets/screenshots/landing-review-feature.png": {
+   "oid": "8507c2f359dcb83481929a214e7733322f758f2c",
+   "size": 262153
+  },
+  "docs/assets/screenshots/landing-sacred-deck.png": {
+   "oid": "e04883a744e1747ad5c8f4282f5a05072580636a",
+   "size": 629953
+  },
+  "docs/assets/screenshots/landing-tui-onboarding.png": {
+   "oid": "570b06b7e36f273b36465df77fd26e7ec149a90c",
+   "size": 580992
+  },
+  "docs/assets/screenshots/tui-onboarding-avatar.png": {
+   "oid": "ee02065999ec8b7ab4b87340404524aac277baa8",
+   "size": 328095
+  },
+  "docs/assets/screenshots/tui-onboarding-complete.png": {
+   "oid": "3b494bc704a7c4033ac36d5dae11d7c53ba6ea48",
+   "size": 337532
+  },
+  "docs/assets/screenshots/tui-onboarding-custom-avatar.png": {
+   "oid": "f6da4cefb839214a272d243f9c9fc1fc859e0e55",
+   "size": 320911
+  },
+  "docs/assets/screenshots/tui-onboarding-name.png": {
+   "oid": "2b66a186e109e48b91d3f66dd79a42c135f20c74",
+   "size": 317693
+  },
+  "docs/assets/screenshots/tui-sacred-messages.png": {
+   "oid": "57ee595d375a8a7fa4477c7a596d6c62814d82c3",
+   "size": 333060
+  },
+  "docs/assets/screenshots/tui-sacred-session-tree.png": {
+   "oid": "9571b9f908a81f0b383a9444744b878f5619ea17",
+   "size": 352710
+  },
+  "docs/assets/screenshots/tutorial-direct-overview.png": {
+   "oid": "7e9f145c6634f7c56864f5022c07fbebc5f93351",
+   "size": 785725
+  },
+  "docs/assets/screenshots/tutorial-review-model-pools.png": {
+   "oid": "5992f9f9eda71a3cb052c568f1c59940ed19d384",
+   "size": 213407
+  },
+  "docs/assets/screenshots/tutorial-review-selection.png": {
+   "oid": "436144f6f64a6bb9a80966c4f63abdfe0bb29333",
+   "size": 222853
+  },
+  "docs/assets/screenshots/tutorial-surface-atlas.png": {
+   "oid": "300b4527ce66a4ec00ff5c35801ed46a1ae708b6",
+   "size": 427353
+  },
+  "docs/assets/screenshots/tutorial-training-export.png": {
+   "oid": "5f40304357d1a69fba8f003055eba07b372e5b40",
+   "size": 324808
+  },
+  "docs/assets/screenshots/tutorial-tui-onboarding-mobile.png": {
+   "oid": "53280e81b7cd2845c46162436650a8375a4c2f55",
+   "size": 234081
+  },
+  "docs/assets/screenshots/tutorial-tui-onboarding.png": {
+   "oid": "01c24e0468c3820a767b5f796130e0e58dcf7bad",
+   "size": 654733
+  },
+  "docs/assets/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "docs/assets/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "docs/assets/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  },
+  "docs/assets/tui-collaborative.mp4": {
+   "oid": "d10d32d949ac2a6377d32860c9b93cea8872b61f",
+   "size": 1061619
+  },
+  "docs/assets/tui-onboarding.mp4": {
+   "oid": "27e04dd963bfe7e9bdc0dd46ac4e0d131af22341",
+   "size": 1338493
+  },
+  "docs/assets/web-landing.mp4": {
+   "oid": "3ba073a0885295b968a3daf3453156fc88774a54",
+   "size": 3929543
+  },
+  "docs/assets/web-paper.mp4": {
+   "oid": "e7fdc5577062f7f9250ca6162147aa613de56b59",
+   "size": 2580103
+  },
+  "docs/assets/web-tutorial.mp4": {
+   "oid": "ab08d7dd092c5a1bccd13e2e84ed701328f40446",
+   "size": 5794637
+  },
+  "video/keating-surface-tour/assets/cli-artifacts.mp4": {
+   "oid": "2e9614fa2adc017751cef142df9d76c3e9bf1e05",
+   "size": 678541
+  },
+  "video/keating-surface-tour/assets/tui-collaborative.mp4": {
+   "oid": "c9f0c1c9f5386386761954f26f8e719e72f29efe",
+   "size": 88020
+  },
+  "video/keating-surface-tour/assets/tui-tour.mp4": {
+   "oid": "91a28197cba379339ba82b4c712a160783841298",
+   "size": 48185
+  },
+  "video/keating-surface-tour/assets/web-classroom.mp4": {
+   "oid": "d0bd4a119e2332717a05405c59dadefe6d201cfc",
+   "size": 346257
+  },
+  "video/keating-surface-tour/renders/video.mp4": {
+   "oid": "36534de4ce3c149fccacd13064cf4a100a0164da",
+   "size": 9382917
+  },
+  "web/public/avatars/keatingbot-newsprint.png": {
+   "oid": "85846ee17cf9c339c32b0d26afab3243811d192a",
+   "size": 264522
+  },
+  "web/public/avatars/learner-newsprint.png": {
+   "oid": "3e0b88f398394730d92bb12ecbde2adacf705a79",
+   "size": 273026
+  },
+  "web/public/avatars/tutor-newsprint.png": {
+   "oid": "4715cfe1e3cc63bb3413af14457b15e7bb3b3845",
+   "size": 262096
+  },
+  "web/public/brand/crt-monitor.png": {
+   "oid": "53cdd5ffd23cb5fa402bac63ee2f5c356a60306c",
+   "size": 216956
+  },
+  "web/public/brand/masters/cap-evolutionary-master.png": {
+   "oid": "a4308df8a7a9f9b4deaf5a9ed8512ce8660c5397",
+   "size": 1755995
+  },
+  "web/public/og-image.png": {
+   "oid": "ccf75998c9d1e24142a347b50a18e7a355a3e81b",
+   "size": 487218
+  },
+  "web/public/tapes/cli-artifacts.mp4": {
+   "oid": "2e9614fa2adc017751cef142df9d76c3e9bf1e05",
+   "size": 678541
+  },
+  "web/public/tapes/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "web/public/tapes/feedback-flow.mp4": {
+   "oid": "8266b7f9f954ce7b8872365e828f1a463fecb0e5",
+   "size": 84536
+  },
+  "web/public/tapes/improve-flow.mp4": {
+   "oid": "bf469ef5b6992c2e442a5eb90ea466d9220ca72f",
+   "size": 1030495
+  },
+  "web/public/tapes/intro.mp4": {
+   "oid": "e815617f82425d30add8da0e6fb10cb6b5b42243",
+   "size": 324034
+  },
+  "web/public/tapes/keating-surface-tour.mp4": {
+   "oid": "36534de4ce3c149fccacd13064cf4a100a0164da",
+   "size": 9382917
+  },
+  "web/public/tapes/learning-flow.mp4": {
+   "oid": "c35c11242907283f00835d36d3fc1eb0a6be8f73",
+   "size": 375896
+  },
+  "web/public/tapes/posters/tui-onboarding.jpg": {
+   "oid": "c2e4af8ec107c98d33eecf6eb560a0b78977bb80",
+   "size": 224308
+  },
+  "web/public/tapes/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "web/public/tapes/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "web/public/tapes/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  },
+  "web/public/tapes/tui-collaborative.mp4": {
+   "oid": "d10d32d949ac2a6377d32860c9b93cea8872b61f",
+   "size": 1061619
+  },
+  "web/public/tapes/tui-onboarding.mp4": {
+   "oid": "27e04dd963bfe7e9bdc0dd46ac4e0d131af22341",
+   "size": 1338493
+  },
+  "web/public/tapes/web-classroom.mp4": {
+   "oid": "4ca583bb333cd0e1927f66797ceaa44ce9cf740b",
+   "size": 346257
+  },
+  "web/public/tutorial/review-annotation.png": {
+   "oid": "de6f5d4c240ad31aab3134d41fabcd59de82826f",
+   "size": 242077
+  },
+  "web/public/tutorial/review-export.png": {
+   "oid": "937a940bdb0f36fb16d7bf0bb17e81c45b48c191",
+   "size": 257049
+  },
+  "web/public/tutorial/review-model-pools.png": {
+   "oid": "88e35b9f78d2604cbd1318a591e9c9460b70bc1e",
+   "size": 248550
+  },
+  "web/public/tutorial/review-reading.png": {
+   "oid": "a55ec5020b970c6abef55d83a31dc85adee0d775",
+   "size": 211385
+  },
+  "web/public/tutorial/review-rubric.png": {
+   "oid": "fbb0fe17dd5ca2f505b066d0a9bae0f8247d26db",
+   "size": 246514
+  },
+  "web/public/tutorial/review-socratic-pass.png": {
+   "oid": "4a63a3c1581a64fa0c80168d5934c46c7563b8dc",
+   "size": 237662
+  },
+  "web/public/tutorial/review-workspace.png": {
+   "oid": "2eec2f66a3d272b129b39425c26a9c7b1ab999d1",
+   "size": 284724
+  },
+  "web/public/tutorial/settings-privacy-diagnostics.png": {
+   "oid": "90a8cca1dc5f6bb49c40f8d0864e0f4147642285",
+   "size": 232909
+  },
+  "web/public/tutorial/surface-bench.png": {
+   "oid": "d91b1be8938260dc521535bd3cd4f735dcb41e99",
+   "size": 731168
+  },
+  "web/public/tutorial/surface-coming-up.png": {
+   "oid": "123c4ec2715324fb2269a54ab766fcf2711a99b2",
+   "size": 633823
+  },
+  "web/public/tutorial/surface-course-builder.png": {
+   "oid": "343c38795af847341b76a073b5c6b7971b39e15b",
+   "size": 215180
+  },
+  "web/public/tutorial/surface-publishing.png": {
+   "oid": "48a8f565892e65141c3dec336a2587c0faaab013",
+   "size": 533403
+  },
+  "web/public/tutorial/surface-usage.png": {
+   "oid": "3e6f34098134975ed8f7a907c20b432f421deacd",
+   "size": 626620
+  },
+  "web/public/tutorial/tui-onboarding-avatar.png": {
+   "oid": "ee02065999ec8b7ab4b87340404524aac277baa8",
+   "size": 328095
+  },
+  "web/public/tutorial/tui-onboarding-complete.png": {
+   "oid": "3b494bc704a7c4033ac36d5dae11d7c53ba6ea48",
+   "size": 337532
+  },
+  "web/public/tutorial/tui-onboarding-custom-avatar.png": {
+   "oid": "f6da4cefb839214a272d243f9c9fc1fc859e0e55",
+   "size": 320911
+  },
+  "web/public/tutorial/tui-onboarding-name.png": {
+   "oid": "2b66a186e109e48b91d3f66dd79a42c135f20c74",
+   "size": 317693
+  },
+  "web/public/tutorial/usage-training-export.png": {
+   "oid": "ce15c208bbf24edc03bcc2936213ba965a0dc057",
+   "size": 201550
+  }
+ }
+}
