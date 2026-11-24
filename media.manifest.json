@@ -1,0 +1,887 @@
+{
+ "version": 1,
+ "bucket": "keating-media",
+ "objects": "objects/",
+ "files": {
+  "docs/assets/cli-artifacts.mp4": {
+   "oid": "1dfc882f5d53c81a2bc5b9866f9c307a05b69995",
+   "size": 678541
+  },
+  "docs/assets/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "docs/assets/feedback-flow.mp4": {
+   "oid": "8da25995e4f61b440a47ee4c2cf070a2a6631238",
+   "size": 85194
+  },
+  "docs/assets/improve-flow.mp4": {
+   "oid": "f04f6bedfbe8ec5c28dd0f929b27ae2df38aa98f",
+   "size": 916541
+  },
+  "docs/assets/intro.mp4": {
+   "oid": "db62f45f6262ea60ddd5b561818266c1f1c0260b",
+   "size": 255321
+  },
+  "docs/assets/learning-flow.mp4": {
+   "oid": "eba171787401850510b2fe22a372362f24f24a69",
+   "size": 376642
+  },
+  "docs/assets/screenshots/landing-review-feature.png": {
+   "oid": "8507c2f359dcb83481929a214e7733322f758f2c",
+   "size": 262153
+  },
+  "docs/assets/screenshots/landing-sacred-deck.png": {
+   "oid": "e04883a744e1747ad5c8f4282f5a05072580636a",
+   "size": 629953
+  },
+  "docs/assets/screenshots/landing-tui-onboarding.png": {
+   "oid": "570b06b7e36f273b36465df77fd26e7ec149a90c",
+   "size": 580992
+  },
+  "docs/assets/screenshots/tui-onboarding-avatar.png": {
+   "oid": "ee02065999ec8b7ab4b87340404524aac277baa8",
+   "size": 328095
+  },
+  "docs/assets/screenshots/tui-onboarding-complete.png": {
+   "oid": "3b494bc704a7c4033ac36d5dae11d7c53ba6ea48",
+   "size": 337532
+  },
+  "docs/assets/screenshots/tui-onboarding-custom-avatar.png": {
+   "oid": "f6da4cefb839214a272d243f9c9fc1fc859e0e55",
+   "size": 320911
+  },
+  "docs/assets/screenshots/tui-onboarding-name.png": {
+   "oid": "2b66a186e109e48b91d3f66dd79a42c135f20c74",
+   "size": 317693
+  },
+  "docs/assets/screenshots/tui-sacred-messages.png": {
+   "oid": "57ee595d375a8a7fa4477c7a596d6c62814d82c3",
+   "size": 333060
+  },
+  "docs/assets/screenshots/tui-sacred-session-tree.png": {
+   "oid": "9571b9f908a81f0b383a9444744b878f5619ea17",
+   "size": 352710
+  },
+  "docs/assets/screenshots/tutorial-direct-overview.png": {
+   "oid": "7e9f145c6634f7c56864f5022c07fbebc5f93351",
+   "size": 785725
+  },
+  "docs/assets/screenshots/tutorial-review-model-pools.png": {
+   "oid": "5992f9f9eda71a3cb052c568f1c59940ed19d384",
+   "size": 213407
+  },
+  "docs/assets/screenshots/tutorial-review-selection.png": {
+   "oid": "436144f6f64a6bb9a80966c4f63abdfe0bb29333",
+   "size": 222853
+  },
+  "docs/assets/screenshots/tutorial-surface-atlas.png": {
+   "oid": "300b4527ce66a4ec00ff5c35801ed46a1ae708b6",
+   "size": 427353
+  },
+  "docs/assets/screenshots/tutorial-training-export.png": {
+   "oid": "5f40304357d1a69fba8f003055eba07b372e5b40",
+   "size": 324808
+  },
+  "docs/assets/screenshots/tutorial-tui-onboarding-mobile.png": {
+   "oid": "53280e81b7cd2845c46162436650a8375a4c2f55",
+   "size": 234081
+  },
+  "docs/assets/screenshots/tutorial-tui-onboarding.png": {
+   "oid": "01c24e0468c3820a767b5f796130e0e58dcf7bad",
+   "size": 654733
+  },
+  "docs/assets/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "docs/assets/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "docs/assets/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  },
+  "docs/assets/tui-collaborative.mp4": {
+   "oid": "d10d32d949ac2a6377d32860c9b93cea8872b61f",
+   "size": 1061619
+  },
+  "docs/assets/tui-onboarding.mp4": {
+   "oid": "27e04dd963bfe7e9bdc0dd46ac4e0d131af22341",
+   "size": 1338493
+  },
+  "docs/assets/web-landing.mp4": {
+   "oid": "3ba073a0885295b968a3daf3453156fc88774a54",
+   "size": 3929543
+  },
+  "docs/assets/web-paper.mp4": {
+   "oid": "e7fdc5577062f7f9250ca6162147aa613de56b59",
+   "size": 2580103
+  },
+  "docs/assets/web-tutorial.mp4": {
+   "oid": "ab08d7dd092c5a1bccd13e2e84ed701328f40446",
+   "size": 5794637
+  },
+  "docs/marketing/keating-ads/01-information-overload/storyboard.png": {
+   "oid": "e8348b20f9973eaf343a5de18e2ee6a3fb9e9dfd",
+   "size": 1389358
+  },
+  "docs/marketing/keating-ads/02-direct-your-learning/storyboard.png": {
+   "oid": "362b9662118bf8d4673473ec42c3760554add7f9",
+   "size": 1428347
+  },
+  "docs/marketing/keating-ads/03-keep-the-thread/storyboard.png": {
+   "oid": "0f0820164f70b063c09e418206f0b559559c292e",
+   "size": 1450565
+  },
+  "docs/marketing/keating-ads/04-share-what-you-learned/storyboard.png": {
+   "oid": "3f82b594105d0d25481760b53671d3ab9cd92cde",
+   "size": 1598914
+  },
+  "docs/marketing/keating-ads/05-learn-together/storyboard.png": {
+   "oid": "8debd511af61e6d0e937c6533fd5b60efa1ff339",
+   "size": 1461330
+  },
+  "scripts/docs-site/assets/screenshots/review-annotation.png": {
+   "oid": "de6f5d4c240ad31aab3134d41fabcd59de82826f",
+   "size": 242077
+  },
+  "scripts/docs-site/assets/screenshots/review-socratic-pass.png": {
+   "oid": "4a63a3c1581a64fa0c80168d5934c46c7563b8dc",
+   "size": 237662
+  },
+  "scripts/docs-site/assets/screenshots/review-workspace.png": {
+   "oid": "2eec2f66a3d272b129b39425c26a9c7b1ab999d1",
+   "size": 284724
+  },
+  "scripts/docs-site/assets/screenshots/settings-privacy-diagnostics.png": {
+   "oid": "90a8cca1dc5f6bb49c40f8d0864e0f4147642285",
+   "size": 232909
+  },
+  "scripts/docs-site/assets/screenshots/surface-coming-up.png": {
+   "oid": "123c4ec2715324fb2269a54ab766fcf2711a99b2",
+   "size": 633823
+  },
+  "scripts/docs-site/assets/screenshots/surface-course-builder.png": {
+   "oid": "343c38795af847341b76a073b5c6b7971b39e15b",
+   "size": 215180
+  },
+  "scripts/docs-site/assets/screenshots/usage-training-export.png": {
+   "oid": "ce15c208bbf24edc03bcc2936213ba965a0dc057",
+   "size": 201550
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/chime.mp3": {
+   "oid": "12da953a356a49458d03e09185336d81f4b92f81",
+   "size": 27309
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/click-soft.mp3": {
+   "oid": "2706b1d2ea64721d1888d15fee2fcc98f0609570",
+   "size": 11702
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/click.mp3": {
+   "oid": "2706b1d2ea64721d1888d15fee2fcc98f0609570",
+   "size": 11702
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/error.mp3": {
+   "oid": "6b4487ff46c03a883ded41b2ad0bb2830b2dbde6",
+   "size": 51827
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/glitch-1.mp3": {
+   "oid": "124f4501948aafd03ae655bf11570bfbe47fa704",
+   "size": 84427
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/glitch-2.mp3": {
+   "oid": "580b6fdc4f665660b2c74872a0bcdccf826222be",
+   "size": 112128
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/glitch-3.mp3": {
+   "oid": "5a8adc2442314cf79e6e1fb25598d0149afbd421",
+   "size": 99072
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/impact-bass-1.mp3": {
+   "oid": "ecfe0c48a672e77c98afac6810fd4c446dde94b0",
+   "size": 67709
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/impact-bass-2.mp3": {
+   "oid": "4ae448b58a5011e4aaeeab3cbcaf0e4a0d59cd86",
+   "size": 82944
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/key-press.mp3": {
+   "oid": "d669006e01071d57b3ee7c8ada064a2bf6b7dddc",
+   "size": 3909
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/notification.mp3": {
+   "oid": "d3f0d1fa22dde07ae601b20cbafb9cc1274dafeb",
+   "size": 78576
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/ping.mp3": {
+   "oid": "99808c8b6399ffa82a074ffeb0f180ec9afd3920",
+   "size": 26400
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/pop.mp3": {
+   "oid": "e3ed16fef09641bbd7c0d53f508c71d6af863efb",
+   "size": 23040
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/riser.mp3": {
+   "oid": "0cea32c08dc8524cd592d6779165157115cb6dc2",
+   "size": 321024
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/sparkle.mp3": {
+   "oid": "dae37802ff423cfb82a259a60812a83e5397a520",
+   "size": 57678
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/typing.mp3": {
+   "oid": "ff69cc04200bb1af6e0785a801ca4d77281b4fce",
+   "size": 26852
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/whoosh-cinematic.mp3": {
+   "oid": "93b721800780ac4fe5e1847bb58dc60248db2402",
+   "size": 177408
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/whoosh-short.mp3": {
+   "oid": "e23e513d273009fbf48e8bcd44f65953e38bc3b0",
+   "size": 18390
+  },
+  "video/keating-surface-tour/.agents/skills/media-use/audio/assets/sfx/whoosh.mp3": {
+   "oid": "e23e513d273009fbf48e8bcd44f65953e38bc3b0",
+   "size": 18390
+  },
+  "video/keating-surface-tour/assets/cli-artifacts.mp4": {
+   "oid": "2e9614fa2adc017751cef142df9d76c3e9bf1e05",
+   "size": 678541
+  },
+  "video/keating-surface-tour/assets/tui-collaborative.mp4": {
+   "oid": "c9f0c1c9f5386386761954f26f8e719e72f29efe",
+   "size": 88020
+  },
+  "video/keating-surface-tour/assets/tui-tour.mp4": {
+   "oid": "91a28197cba379339ba82b4c712a160783841298",
+   "size": 48185
+  },
+  "video/keating-surface-tour/assets/web-classroom.mp4": {
+   "oid": "d0bd4a119e2332717a05405c59dadefe6d201cfc",
+   "size": 346257
+  },
+  "video/keating-surface-tour/renders/video.mp4": {
+   "oid": "36534de4ce3c149fccacd13064cf4a100a0164da",
+   "size": 9382917
+  },
+  "web/artwork/keatingbot-v1/body-cheer.png": {
+   "oid": "c66b77e086477a3e6aa6a014e21dbe34084d010a",
+   "size": 1104948
+  },
+  "web/artwork/keatingbot-v1/body-hop.png": {
+   "oid": "c3c706c1179bad9f9131b0f4c94e4a67e77071c4",
+   "size": 1058721
+  },
+  "web/artwork/keatingbot-v1/body-listen.png": {
+   "oid": "eee37687ab1efeb61e2ec90637a21ea581e73167",
+   "size": 1059455
+  },
+  "web/artwork/keatingbot-v1/body-rest.png": {
+   "oid": "8bee12677d1aa9e0f0ebe0e22ff00ae2ec1ac699",
+   "size": 1082760
+  },
+  "web/artwork/keatingbot-v1/body-speaking-sequence.png": {
+   "oid": "fe67183d94758b515f3d26667863498bf9918070",
+   "size": 1382184
+  },
+  "web/artwork/keatingbot-v1/body-thinking-sequence.png": {
+   "oid": "3094fc9310589b3f5ed5cd77b27340c601710dc1",
+   "size": 1276373
+  },
+  "web/artwork/keatingbot-v1/body-wave-sequence.png": {
+   "oid": "d6a100fd6d19fb026d69c167f21a6955675bfef8",
+   "size": 1517255
+  },
+  "web/artwork/keatingbot-v1/body-wave.png": {
+   "oid": "2303e62bcfb5f32fda72e54aea1d31998ba23b18",
+   "size": 1101833
+  },
+  "web/artwork/keatingbot-v1/body-work.png": {
+   "oid": "603ba63b5d6b2d9d79304a690ae79bb1748b9936",
+   "size": 1133391
+  },
+  "web/artwork/keatingbot-v1/head-blink.png": {
+   "oid": "fc897f0786c57f3ee6aa9b793a45a24990e44598",
+   "size": 894478
+  },
+  "web/artwork/keatingbot-v1/head-listening.png": {
+   "oid": "8bed572eb174fa206bc0413d690bdc6dc16e8e00",
+   "size": 892381
+  },
+  "web/artwork/keatingbot-v1/head-speaking-sequence.png": {
+   "oid": "fadbc35c413eb75804713958a43f7c248f6426a9",
+   "size": 1282026
+  },
+  "web/artwork/keatingbot-v1/head-speaking.png": {
+   "oid": "618b2dda527bc299c6cf1355a786bbe48fe39181",
+   "size": 904394
+  },
+  "web/artwork/keatingbot-v1/head-success.png": {
+   "oid": "851646e05d0e7cc80b387e4731f66a841dbabd98",
+   "size": 874037
+  },
+  "web/artwork/keatingbot-v1/head-thinking-sequence.png": {
+   "oid": "7b553bf22fe0127b066fa9eb4d8b526127561d68",
+   "size": 1287827
+  },
+  "web/artwork/keatingbot-v1/head-thinking.png": {
+   "oid": "915f6d3554a5e8d303d98bf3630a76d6575c9baf",
+   "size": 915685
+  },
+  "web/artwork/keatingbot-v1/status-403.png": {
+   "oid": "88cff3cfd99b31d298b8ec7ecbacf066a6eea479",
+   "size": 691851
+  },
+  "web/artwork/keatingbot-v1/status-404.png": {
+   "oid": "a45fb7d2dcd70ad901a9a7dc2b82f4ccdfe47c98",
+   "size": 719784
+  },
+  "web/artwork/keatingbot-v1/status-500.png": {
+   "oid": "8244d23dd1108033430774a10844cce952a717d6",
+   "size": 726819
+  },
+  "web/artwork/keatingbot-v1/status-loading.png": {
+   "oid": "cd570856a255f4f518b7e54ccca7dd56346f463b",
+   "size": 740903
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-astronomy.png": {
+   "oid": "6b40aa728b3b740e8e6f0e71f94f505e7f2c2e9e",
+   "size": 519609
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-biology.png": {
+   "oid": "d892ec60871a868081f5e098ba07e5236deea805",
+   "size": 467307
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-chemistry.png": {
+   "oid": "a43069f801b17a32ab0bae69ce1f9fd567d1ebc3",
+   "size": 409531
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-coding.png": {
+   "oid": "549d608882b8aefc5779e487cb195d4a6307971c",
+   "size": 414586
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-connecting.png": {
+   "oid": "a6f31b9edf47b033a1006a0ee9d29e6c3389ff63",
+   "size": 473713
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-electronics.png": {
+   "oid": "1029d44f5e58bf5e7835b1165f98c75cdca1d1f9",
+   "size": 495425
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-flipping.png": {
+   "oid": "3a89d156320245baba2028a47fa072b2288699e6",
+   "size": 329263
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-idle.png": {
+   "oid": "8526074fa7de64fc0cb89ab768f036aa18decc76",
+   "size": 386736
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-listening.png": {
+   "oid": "961ed43c3fa20d3bad447e896ac80bfa62288c42",
+   "size": 382049
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-loading.png": {
+   "oid": "8da3ae5abf045a6d3c68953aeb1073e7727e6ca5",
+   "size": 356987
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-lotus.png": {
+   "oid": "1695eb40ff73b3f49ce8140a512f2e14873ce4cc",
+   "size": 526653
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-maths.png": {
+   "oid": "56db1bc89f3cc43315de2e9700d5802d988b670d",
+   "size": 480562
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-music.png": {
+   "oid": "2a81d612cf8ab52e857902dfe60e3e3a9e3d5270",
+   "size": 392856
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-mycology.png": {
+   "oid": "3e6ef033c0bdbe9222c04600fc7f6fb5ad0f3bc7",
+   "size": 499048
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-palaeontology.png": {
+   "oid": "dba55ba5e3e26a0d6385dd9744d5089cb739f117",
+   "size": 518052
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-physics.png": {
+   "oid": "2109a49e934757e498e68fdd39757fe0f9234aac",
+   "size": 387843
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-reading.png": {
+   "oid": "20df2823f2a2314fc1a54713b172cc6cab2844e3",
+   "size": 416318
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-science.png": {
+   "oid": "fcf69805a674c18ec54b3575363a59c8470ed94f",
+   "size": 420699
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-sitting.png": {
+   "oid": "3ee4db44e8c28f56403e74eab72f21074ab10308",
+   "size": 372019
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-speaking.png": {
+   "oid": "850df03325a83dfb8605bebf089e4ecb1d5f4ebf",
+   "size": 387594
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-success.png": {
+   "oid": "70a32895f5b47f4f7ea9c33b984c527c0d5ab8b4",
+   "size": 368495
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-thinking.png": {
+   "oid": "26eea5bd491d2401eeebf07299950eaafbf7b252",
+   "size": 361103
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-understanding.png": {
+   "oid": "5e074316fcbebf2503bd738f513ddad47debef4c",
+   "size": 436181
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-walking.png": {
+   "oid": "ad6be8cf69514aa820431db5eceb0e9dc67fef61",
+   "size": 325158
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-body-waving.png": {
+   "oid": "df85f5c2d876cdebf39b38fdfafe72dea0ef9d34",
+   "size": 375468
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-astronomy.png": {
+   "oid": "d32627e34f5e39e6616c6dde642207a5f35053b1",
+   "size": 279992
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-biology.png": {
+   "oid": "ca10078c9303c5daef8e1aff0cbdcfe0bc0cc59f",
+   "size": 234375
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-chemistry.png": {
+   "oid": "4b92bb7d23929d73573771428f19f176ac3cb6dc",
+   "size": 241948
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-coding.png": {
+   "oid": "bb9ccda8c632c5354c7ec76bc10231939c2978ff",
+   "size": 236304
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-connecting.png": {
+   "oid": "b4767186228c708458a62da0fad81303ba591534",
+   "size": 278880
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-electronics.png": {
+   "oid": "cdd59096590bce6dd6889e8321b6d2928ecd81c3",
+   "size": 257144
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-flipping.png": {
+   "oid": "f0b3f388399bb1e455659eef2d4a30e8ce4836b0",
+   "size": 215961
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-idle.png": {
+   "oid": "91667509011e79a07df4bcbaab5af6d18acfd7d0",
+   "size": 229612
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-listening.png": {
+   "oid": "bdce5086f742477878a5b25cf57904c832186731",
+   "size": 226037
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-loading.png": {
+   "oid": "b95a01cced529862a5d9782b9a78223ead5106ff",
+   "size": 212957
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-lotus.png": {
+   "oid": "ae07c6a40b5db1b00b593a5c6e7595fa936888b8",
+   "size": 296189
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-maths.png": {
+   "oid": "2e0fee0971d8cdedf38c05f4804a50f4cf80184e",
+   "size": 272571
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-music.png": {
+   "oid": "07ef18b066b508f272cd434a15c7053731bd510b",
+   "size": 252190
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-mycology.png": {
+   "oid": "6cb37aa0f997273937864c1d61f0b5b3ed03b7d2",
+   "size": 261706
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-palaeontology.png": {
+   "oid": "4fb4de8e447c5729345e8348deeb63422c3897e9",
+   "size": 241279
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-reading.png": {
+   "oid": "4395b257537bb17e7862a67b701fe2348cddde31",
+   "size": 252606
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-science.png": {
+   "oid": "11ceb1aeb079416094994ac44b7e8bf92868ac6e",
+   "size": 225734
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-sitting.png": {
+   "oid": "de81532ed8eab4a768d4707e6a638facc8cdfd2a",
+   "size": 204019
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-speaking.png": {
+   "oid": "80619ac4dcb0977eda747d8a71391e7c417af8e9",
+   "size": 228067
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-success.png": {
+   "oid": "217de5861d676435fa50ab3e4fe7fb175a60de93",
+   "size": 244452
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-thinking.png": {
+   "oid": "c98b8b850e420fd41555a4f224b2768498657cdb",
+   "size": 232262
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-understanding.png": {
+   "oid": "0066c8f9a9071ddef8bafcdd385e03a1b496a84c",
+   "size": 250160
+  },
+  "web/artwork/stop-motion-v1/prepared/keatingbot-head-waving.png": {
+   "oid": "97546cac88e655faeb986136c591423d6e731fa8",
+   "size": 245599
+  },
+  "web/artwork/stop-motion-v1/raw/astronomy.png": {
+   "oid": "8d54f1184c0b0dc8c41c0cf394980eecf729e0a4",
+   "size": 1808154
+  },
+  "web/artwork/stop-motion-v1/raw/biology.png": {
+   "oid": "2f77c9695185e4f99fd61f8645b25774a3e9d997",
+   "size": 1761781
+  },
+  "web/artwork/stop-motion-v1/raw/chemistry.png": {
+   "oid": "785f67c0e6841391abd49da348fd2fd0b21581b1",
+   "size": 1628357
+  },
+  "web/artwork/stop-motion-v1/raw/coding.png": {
+   "oid": "a5b3bb367d9f561d2552e98e141b4f70dc6093c0",
+   "size": 1577590
+  },
+  "web/artwork/stop-motion-v1/raw/connecting-v1.png": {
+   "oid": "3c513c3d0dc8fdb276fdf31c6e613060a530b47b",
+   "size": 1586835
+  },
+  "web/artwork/stop-motion-v1/raw/connecting.png": {
+   "oid": "6df8a28346129e07c736efdc71d2964632de09ac",
+   "size": 1665659
+  },
+  "web/artwork/stop-motion-v1/raw/electronics.png": {
+   "oid": "b4dd1e57df873eb16316b6731c3f00ca3d864e54",
+   "size": 1678976
+  },
+  "web/artwork/stop-motion-v1/raw/flipping.png": {
+   "oid": "d35201bbcd8df60d0bd2bd75e36e1f3961f3be2f",
+   "size": 1496300
+  },
+  "web/artwork/stop-motion-v1/raw/idle.png": {
+   "oid": "fd9db7e26456b0c96dd1e9ac9633273ccdb35c64",
+   "size": 1554436
+  },
+  "web/artwork/stop-motion-v1/raw/listening.png": {
+   "oid": "6d17a2c56c0c729fe68094d7f02a29b127be2a36",
+   "size": 1552536
+  },
+  "web/artwork/stop-motion-v1/raw/loading.png": {
+   "oid": "65b88551e72bdb4445d7f6c72a8f108aa425530c",
+   "size": 1517369
+  },
+  "web/artwork/stop-motion-v1/raw/lotus.png": {
+   "oid": "8823ace49418fb568581ffe18a974e6e2ffae913",
+   "size": 1762756
+  },
+  "web/artwork/stop-motion-v1/raw/maths.png": {
+   "oid": "b09a9b633a69264e2866629950af9939180ecf25",
+   "size": 1748775
+  },
+  "web/artwork/stop-motion-v1/raw/music.png": {
+   "oid": "e457c94fdebeaecc100c91966260a7c02fc9ced8",
+   "size": 1581947
+  },
+  "web/artwork/stop-motion-v1/raw/mycology.png": {
+   "oid": "2a80c5fb5b2efa0c5ac30ab66a1aa457740c354b",
+   "size": 1752624
+  },
+  "web/artwork/stop-motion-v1/raw/palaeontology.png": {
+   "oid": "5b3798db16ff7a48861ee5601866a634411da5ec",
+   "size": 1846679
+  },
+  "web/artwork/stop-motion-v1/raw/physics.png": {
+   "oid": "371209756f3e328e4d1a540fe1ba84d4399a703d",
+   "size": 1559730
+  },
+  "web/artwork/stop-motion-v1/raw/reading.png": {
+   "oid": "d3aa740ccdbc8449738c32e5984173959b8d17b4",
+   "size": 1584219
+  },
+  "web/artwork/stop-motion-v1/raw/science.png": {
+   "oid": "8ef33280099b5b2040c4c8cfa909015671f75a71",
+   "size": 1638487
+  },
+  "web/artwork/stop-motion-v1/raw/sitting.png": {
+   "oid": "5e74eba21dc51ac3945e3d38761a13eb3ff933ad",
+   "size": 1549984
+  },
+  "web/artwork/stop-motion-v1/raw/speaking.png": {
+   "oid": "9d1cbf852c48ae97b9ea28125238cdd35e78373c",
+   "size": 1552082
+  },
+  "web/artwork/stop-motion-v1/raw/success.png": {
+   "oid": "0a9383d9e952613d4ec40b988a3a4b9169565dd2",
+   "size": 1523003
+  },
+  "web/artwork/stop-motion-v1/raw/thinking.png": {
+   "oid": "ac069876efbc50129fe9bdb65e5de5f60105c6e1",
+   "size": 1523710
+  },
+  "web/artwork/stop-motion-v1/raw/understanding.png": {
+   "oid": "79212e7cced9c9c178aaa43609a6a81e7e130a85",
+   "size": 1661857
+  },
+  "web/artwork/stop-motion-v1/raw/walking.png": {
+   "oid": "a0cc60405c2cdda3d2c938c62356e7f6dffe8229",
+   "size": 1468106
+  },
+  "web/artwork/stop-motion-v1/raw/waving.png": {
+   "oid": "a7163215cb30eb83416e3652149bdd639f6c6427",
+   "size": 1535429
+  },
+  "web/public/audio/language/es-gracias.mp3": {
+   "oid": "24097daa9c6a7f07f6a12f1975cdcbeaa01b3636",
+   "size": 8706
+  },
+  "web/public/audio/language/es-hola.mp3": {
+   "oid": "df67f110598827416c88f3c9ff2e0e6ef6fdf3f5",
+   "size": 10575
+  },
+  "web/public/avatars/keatingbot-newsprint.png": {
+   "oid": "85846ee17cf9c339c32b0d26afab3243811d192a",
+   "size": 264522
+  },
+  "web/public/avatars/learner-newsprint.png": {
+   "oid": "3e0b88f398394730d92bb12ecbde2adacf705a79",
+   "size": 273026
+  },
+  "web/public/avatars/tutor-newsprint.png": {
+   "oid": "4715cfe1e3cc63bb3413af14457b15e7bb3b3845",
+   "size": 262096
+  },
+  "web/public/brand/bot-status-v1/403.png": {
+   "oid": "4e6ac8b82b6cf0a9552c8ad09d99a0acd46f5cdd",
+   "size": 214604
+  },
+  "web/public/brand/bot-status-v1/404.png": {
+   "oid": "d37f92b8014ff1fb6667ca2831ef215a61545ba1",
+   "size": 218064
+  },
+  "web/public/brand/bot-status-v1/500.png": {
+   "oid": "e19fb1fff0a67417786433939fe5053f2e771272",
+   "size": 234219
+  },
+  "web/public/brand/bot-status-v1/loading.png": {
+   "oid": "3041085d09f4dd8b4e40cb083d3c89bbe387ae25",
+   "size": 225013
+  },
+  "web/public/brand/crt-monitor.png": {
+   "oid": "53cdd5ffd23cb5fa402bac63ee2f5c356a60306c",
+   "size": 216956
+  },
+  "web/public/brand/keatingbot-body-speaking-v2.png": {
+   "oid": "4be151e990334e96292cbd8513de5e6570eed433",
+   "size": 471644
+  },
+  "web/public/brand/keatingbot-body-sprites-v1.avif": {
+   "oid": "5e84e5f4088bd1ad2e81acab791cb7add65d285c",
+   "size": 292385
+  },
+  "web/public/brand/keatingbot-body-sprites-v1.png": {
+   "oid": "fa67550e335e9f46bf4c1f44036aae6b501f38ae",
+   "size": 464694
+  },
+  "web/public/brand/keatingbot-body-thinking-v2.png": {
+   "oid": "b0559ee74418dfce9477712af420f9969d7f5334",
+   "size": 221008
+  },
+  "web/public/brand/keatingbot-body-waving-v3.avif": {
+   "oid": "bb500080c77698a1e8357d32a8a68c57857073b0",
+   "size": 214355
+  },
+  "web/public/brand/keatingbot-body-waving-v3.png": {
+   "oid": "a3a623cad202bc56911338a60d92d95d21f784e6",
+   "size": 701855
+  },
+  "web/public/brand/keatingbot-credits-ready-v1.png": {
+   "oid": "fcaf00cc54afbab02751e16fdf596f171ea5c990",
+   "size": 1819437
+  },
+  "web/public/brand/keatingbot-head-speaking-v2.png": {
+   "oid": "b148fa75c2b8adb6357ff0c6d5e8c057d4dabb31",
+   "size": 513148
+  },
+  "web/public/brand/keatingbot-head-thinking-v2.png": {
+   "oid": "c00049aac05266bd8e98f9e9848448cf9b258151",
+   "size": 268873
+  },
+  "web/public/brand/keatingbot-insufficient-funds-v1.png": {
+   "oid": "184d67114443b064915068453d2dc9175ed6a4f2",
+   "size": 1681515
+  },
+  "web/public/brand/keatingbot-insufficient-funds-v2.png": {
+   "oid": "033284a1db1a903870aab16bc604e104602a4e45",
+   "size": 1713435
+  },
+  "web/public/brand/keatingbot-sprites-v1.avif": {
+   "oid": "436aeef02b169c4c23f5a71f566887906e49104c",
+   "size": 207680
+  },
+  "web/public/brand/keatingbot-sprites-v1.png": {
+   "oid": "4062846ae4a3d71bc16ea403f61e0f43b0ce3e91",
+   "size": 448917
+  },
+  "web/public/brand/keatingbot-wallet-refresh-v1.png": {
+   "oid": "ac940bf3132ac59453e96330c2629d0014fbf427",
+   "size": 1744430
+  },
+  "web/public/brand/masters/cap-evolutionary-master.png": {
+   "oid": "a4308df8a7a9f9b4deaf5a9ed8512ce8660c5397",
+   "size": 1755995
+  },
+  "web/public/landing/clips/moss-rage.mp4": {
+   "oid": "a572f6e20a4dca961ce4177795a174e08ae43dae",
+   "size": 236849
+  },
+  "web/public/landing/clips/office-rage.mp4": {
+   "oid": "42cd525aebb505acf7784b5163cd20af5753cb14",
+   "size": 213058
+  },
+  "web/public/og-image.png": {
+   "oid": "ccf75998c9d1e24142a347b50a18e7a355a3e81b",
+   "size": 487218
+  },
+  "web/public/tapes/cli-artifacts.mp4": {
+   "oid": "2e9614fa2adc017751cef142df9d76c3e9bf1e05",
+   "size": 678541
+  },
+  "web/public/tapes/doctor.mp4": {
+   "oid": "646c0355b90faa64206e03ca46c094365c0249cc",
+   "size": 85351
+  },
+  "web/public/tapes/feedback-flow.mp4": {
+   "oid": "8266b7f9f954ce7b8872365e828f1a463fecb0e5",
+   "size": 84536
+  },
+  "web/public/tapes/improve-flow.mp4": {
+   "oid": "bf469ef5b6992c2e442a5eb90ea466d9220ca72f",
+   "size": 1030495
+  },
+  "web/public/tapes/intro.mp4": {
+   "oid": "e815617f82425d30add8da0e6fb10cb6b5b42243",
+   "size": 324034
+  },
+  "web/public/tapes/keating-surface-tour.mp4": {
+   "oid": "36534de4ce3c149fccacd13064cf4a100a0164da",
+   "size": 9382917
+  },
+  "web/public/tapes/learning-flow.mp4": {
+   "oid": "c35c11242907283f00835d36d3fc1eb0a6be8f73",
+   "size": 375896
+  },
+  "web/public/tapes/posters/tui-onboarding.jpg": {
+   "oid": "c2e4af8ec107c98d33eecf6eb560a0b78977bb80",
+   "size": 224308
+  },
+  "web/public/tapes/session-flow.mp4": {
+   "oid": "afd6cb413b81f3aba87478a86751ffed0778ae4a",
+   "size": 431639
+  },
+  "web/public/tapes/teacher-flow.mp4": {
+   "oid": "e3f3c55cce6ed0eebf40c95cd092859a6dde7977",
+   "size": 299320
+  },
+  "web/public/tapes/tests.mp4": {
+   "oid": "a0f41a75a458835ce453b73c4b51367f5b034bff",
+   "size": 553006
+  },
+  "web/public/tapes/tui-collaborative.mp4": {
+   "oid": "d10d32d949ac2a6377d32860c9b93cea8872b61f",
+   "size": 1061619
+  },
+  "web/public/tapes/tui-onboarding.mp4": {
+   "oid": "27e04dd963bfe7e9bdc0dd46ac4e0d131af22341",
+   "size": 1338493
+  },
+  "web/public/tapes/web-classroom.mp4": {
+   "oid": "4ca583bb333cd0e1927f66797ceaa44ce9cf740b",
+   "size": 346257
+  },
+  "web/public/tutorial/review-annotation.png": {
+   "oid": "de6f5d4c240ad31aab3134d41fabcd59de82826f",
+   "size": 242077
+  },
+  "web/public/tutorial/review-export.png": {
+   "oid": "937a940bdb0f36fb16d7bf0bb17e81c45b48c191",
+   "size": 257049
+  },
+  "web/public/tutorial/review-model-pools.png": {
+   "oid": "88e35b9f78d2604cbd1318a591e9c9460b70bc1e",
+   "size": 248550
+  },
+  "web/public/tutorial/review-reading.png": {
+   "oid": "a55ec5020b970c6abef55d83a31dc85adee0d775",
+   "size": 211385
+  },
+  "web/public/tutorial/review-rubric.png": {
+   "oid": "fbb0fe17dd5ca2f505b066d0a9bae0f8247d26db",
+   "size": 246514
+  },
+  "web/public/tutorial/review-socratic-pass.png": {
+   "oid": "4a63a3c1581a64fa0c80168d5934c46c7563b8dc",
+   "size": 237662
+  },
+  "web/public/tutorial/review-workspace.png": {
+   "oid": "2eec2f66a3d272b129b39425c26a9c7b1ab999d1",
+   "size": 284724
+  },
+  "web/public/tutorial/settings-privacy-diagnostics.png": {
+   "oid": "90a8cca1dc5f6bb49c40f8d0864e0f4147642285",
+   "size": 232909
+  },
+  "web/public/tutorial/surface-bench.png": {
+   "oid": "d91b1be8938260dc521535bd3cd4f735dcb41e99",
+   "size": 731168
+  },
+  "web/public/tutorial/surface-coming-up.png": {
+   "oid": "123c4ec2715324fb2269a54ab766fcf2711a99b2",
+   "size": 633823
+  },
+  "web/public/tutorial/surface-course-builder.png": {
+   "oid": "343c38795af847341b76a073b5c6b7971b39e15b",
+   "size": 215180
+  },
+  "web/public/tutorial/surface-publishing.png": {
+   "oid": "48a8f565892e65141c3dec336a2587c0faaab013",
+   "size": 533403
+  },
+  "web/public/tutorial/surface-usage.png": {
+   "oid": "3e6f34098134975ed8f7a907c20b432f421deacd",
+   "size": 626620
+  },
+  "web/public/tutorial/tui-onboarding-avatar.png": {
+   "oid": "ee02065999ec8b7ab4b87340404524aac277baa8",
+   "size": 328095
+  },
+  "web/public/tutorial/tui-onboarding-complete.png": {
+   "oid": "3b494bc704a7c4033ac36d5dae11d7c53ba6ea48",
+   "size": 337532
+  },
+  "web/public/tutorial/tui-onboarding-custom-avatar.png": {
+   "oid": "f6da4cefb839214a272d243f9c9fc1fc859e0e55",
+   "size": 320911
+  },
+  "web/public/tutorial/tui-onboarding-name.png": {
+   "oid": "2b66a186e109e48b91d3f66dd79a42c135f20c74",
+   "size": 317693
+  },
+  "web/public/tutorial/usage-training-export.png": {
+   "oid": "ce15c208bbf24edc03bcc2936213ba965a0dc057",
+   "size": 201550
+  }
+ }
+}
