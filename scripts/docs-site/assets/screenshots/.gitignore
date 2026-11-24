@@ -1,2 +1,26 @@
 # Keep the original tutorial captures addable despite the repository PNG rule.
 !*.png
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/classroom-openui.png
+/current-classroom-desktop.png
+/current-classroom-mobile.png
+/current-flashcard-mobile.png
+/current-flashcard-review.png
+/current-learner-response.png
+/current-model-access.png
+/current-model-picker.png
+/current-onboarding-desktop.png
+/current-onboarding-mobile.png
+/current-public-profile-preview.png
+/current-tui-session-tree.png
+/review-annotation.png
+/review-selection-menu.png
+/review-socratic-pass.png
+/review-workspace.png
+/settings-learning-about-you.png
+/settings-privacy-diagnostics.png
+/surface-coming-up.png
+/surface-course-builder.png
+/usage-training-export.png
+# <<< keating-media

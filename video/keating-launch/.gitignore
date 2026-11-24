@@ -5,3 +5,18 @@ snapshots/
 renders/
 node_modules/
 .hyperframes/
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/assets/audio/mix.wav
+/assets/audio/music-bed.wav
+/assets/audio/narration.wav
+/assets/clips/classroom-current-original.mp4
+/assets/clips/classroom-current.mp4
+/assets/clips/classroom.mp4
+/assets/clips/cli.mp4
+/assets/clips/tui.mp4
+/capture/assets/og-image.jpg
+/capture/assets/videos/moss-rage.mp4
+/capture/assets/videos/office-rage.mp4
+/capture/screenshots/contact-sheet-1.jpg
+# <<< keating-media

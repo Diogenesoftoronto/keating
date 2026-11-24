@@ -264,7 +264,7 @@ owns deployment and the `docs.keating.help` domain, targeting port 8080.
 Deploy the documentation independently from the application:
 
 ```sh
-rtk railway up scripts/docs-site --path-as-root --service keating-docs --environment production
+rtk railway up "$(bun scripts/media.ts stage scripts/docs-site)" --path-as-root --no-gitignore --service keating-docs --environment production
 ```
 
 `Staticfile`, `railpack.json`, and `railway.toml` match the developer site's
