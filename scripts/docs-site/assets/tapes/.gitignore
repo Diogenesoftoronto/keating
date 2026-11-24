@@ -4,3 +4,27 @@
 !*.png
 !posters/
 !posters/*
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/cli-artifacts.mp4
+/cli-workflow.mp4
+/keating-4-launch.mp4
+/keating-changelog.mp4
+/keating-intro.mp4
+/keating-lesson.mp4
+/keating-manifesto.mp4
+/keating-spotlight-judgements.mp4
+/keating-spotlight-live.mp4
+/keating-spotlight-onboarding.mp4
+/keating-spotlight-recall.mp4
+/keating-surface-tour.mp4
+/lesson-elena-raft.mp4
+/posters/keating-lesson.jpg
+/tui-collaborative.mp4
+/tui-elena-session.mp4
+/tui-onboarding.mp4
+/web-classroom.mp4
+/web-landing.mp4
+/web-paper.mp4
+/web-tutorial.mp4
+# <<< keating-media

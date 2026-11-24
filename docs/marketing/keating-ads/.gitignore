@@ -1,1 +1,9 @@
 !*/storyboard.png
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/01-information-overload/storyboard.png
+/02-direct-your-learning/storyboard.png
+/03-keep-the-thread/storyboard.png
+/04-share-what-you-learned/storyboard.png
+/05-learn-together/storyboard.png
+# <<< keating-media

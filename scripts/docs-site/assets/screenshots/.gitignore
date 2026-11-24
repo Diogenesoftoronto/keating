@@ -1,2 +1,13 @@
 # Keep the original tutorial captures addable despite the repository PNG rule.
 !*.png
+
+# >>> keating-media: paths stored in the keating-media bucket (managed by scripts/media.ts)
+/current-tui-session-tree.png
+/review-annotation.png
+/review-socratic-pass.png
+/review-workspace.png
+/settings-privacy-diagnostics.png
+/surface-coming-up.png
+/surface-course-builder.png
+/usage-training-export.png
+# <<< keating-media
