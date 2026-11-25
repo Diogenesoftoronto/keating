@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.21
+
+- New hands-on replies for heavy-learning fields: a 3D heart and chest you can turn, pull apart, label and slice like CT; a pharmacology lab for dosing, loading doses, receptor antagonism and chemotherapy cycles; a research-methods lab for causal diagrams, diagnostic tests, survival curves and forest plots; and a physics lab for electric fields, interference and quantum wells.
+- Every clinical and scientific claim was checked against sources by two independent reviewers. Clinical models are labelled educational and are never offered for a real patient's care.
+
 ## 4.2.20
 
 - Staging deploys build again: the media manifest and download script now upload with the staging snapshot.
