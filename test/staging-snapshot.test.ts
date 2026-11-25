@@ -152,7 +152,7 @@ describe("staging upload snapshots", () => {
   });
 
   test("source allowlist covers Docker inputs and rejects traversal", () => {
-    for (const path of ["Dockerfile.web", "railway.toml", ".dockerignore", "web/package.json", "shared/policy.ts", "packages/learner-contracts/src/index.ts", "packages/agent-runtime/package.json", "packages/p2p-core/src/index.ts", "spikes/flue-host/src/index.ts", "spikes/flue-host/bun.lock", "desktop/src/navigation.ts"]) expect(stagingSourcePath(path), path).toBe(true);
-    for (const path of ["web/../secret.ts", "web/.env.local", "web/node_modules/file.js", "src/cli/main.ts", "desktop/src/secret.ts", "spikes/flue-host/.private", "/web/src/absolute.ts"]) expect(stagingSourcePath(path), path).toBe(false);
+    for (const path of ["Dockerfile.web", "railway.toml", ".dockerignore", "web/package.json", "shared/policy.ts", "packages/learner-contracts/src/index.ts", "packages/agent-runtime/package.json", "packages/p2p-core/src/index.ts", "spikes/flue-host/src/index.ts", "spikes/flue-host/bun.lock", "desktop/src/navigation.ts", "media.manifest.json", "scripts/media.ts"]) expect(stagingSourcePath(path), path).toBe(true);
+    for (const path of ["web/../secret.ts", "web/.env.local", "web/node_modules/file.js", "src/cli/main.ts", "desktop/src/secret.ts", "spikes/flue-host/.private", "/web/src/absolute.ts", "scripts/staging.ts", "scripts/media-old.ts"]) expect(stagingSourcePath(path), path).toBe(false);
   });
 });
