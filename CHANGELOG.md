@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.20
+
+- Staging deploys build again: the media manifest and download script now upload with the staging snapshot.
+
 ## 4.2.19
 
 - Tutor replies can now include a hands-on activity where you drag the subject itself: build a state machine, construct with a compass, compare fractions on a number line, solve an equation by moving its terms, compose permutations, explore a linked simulation, sort and label, regroup a dataset, rework a study plan, or link a passage's sentences to its claims.
