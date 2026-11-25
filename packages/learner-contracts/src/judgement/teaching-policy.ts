@@ -4,6 +4,7 @@ import { validateUiDocument, type UiDocument } from "../ui.js";
 import { type JudgementOutcome, type JudgementRequest, judgementRequestProblem } from "./contracts.js";
 import { decodeAnswer } from "./wire.js";
 import { interactionDirectives, recommendInteraction } from "./interaction-affordances.js";
+import { interactiveReplyCue, isInteractiveReplyFeature } from "./interactive-reply-cues.js";
 import { planReviewDirectives, projectPlanReview, type PlanChangeMode, type PlanReviewHostTrigger } from "./plan-review.js";
 import { projectResourceReview, resourceReviewDirectives, type SessionResources } from "./resource-review.js";
 import { SUBMITTED_PREFERENCE_GRADE_QUESTION, TEACHING_INTERACTION_FEATURES, TEACHING_PLAN_REVIEW_QUESTIONS, TEACHING_POLICY_DECISIONS, TEACHING_POLICY_RULES, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_PERMISSION_THRESHOLD, TEACHING_POLICY_THRESHOLDS, TEACHING_POLICY_VERSION, type TeachingPolicyRule } from "./teaching-policy-catalog.js";
@@ -55,7 +56,9 @@ export function teachingPolicyState(turn: TeachingPolicyTurn): { turn: TeachingP
 /** Interaction features asked on this turn. A gated feature is asked only when its code-owned cue holds. */
 export function askedInteractionFeatures(turn: TeachingPolicyTurn): typeof TEACHING_INTERACTION_FEATURES {
   let early: boolean | undefined;
-  return TEACHING_INTERACTION_FEATURES.filter(({ askWhen }) => askWhen === undefined || (early ??= earlyLearningCue(turn)));
+  return TEACHING_INTERACTION_FEATURES.filter(({ id, askWhen }) => askWhen === undefined
+    || askWhen === "early_learning_cue" && (early ??= earlyLearningCue(turn))
+    || askWhen === "interactive_reply_cue" && isInteractiveReplyFeature(id) && interactiveReplyCue(turn, id));
 }
 
 /**
@@ -108,6 +111,7 @@ export function projectTeachingPolicyDecision(turn: TeachingPolicyTurn, outcome:
     followsTutorTurn: turn.conversation.at(-1)?.role === "assistant",
     codePracticeLanguage: requestedCodePracticeLanguage(turn.learnerMessage), assessment: turn.assessment,
     inlineLabAvailable: turn.inlineLabAvailable,
+    interactiveRepliesAvailable: turn.interactiveRepliesAvailable,
   });
   const active = recommended.continueInteraction;
   const link = turn.previousQuestionPresentation;

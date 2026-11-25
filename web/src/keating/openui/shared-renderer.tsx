@@ -36,6 +36,7 @@ import { CodingChallenge } from "../../components/CodingChallenge";
 import { TeachingLab } from "../../components/TeachingLab";
 import { MusicLab } from "../../components/MusicLab";
 import { ManipulativeRenderer } from "../../components/manipulatives/ManipulativeRenderer";
+import { InteractiveReplyRenderer } from "../../components/interactive-replies/InteractiveReplyRenderer";
 import { LanguagePractice } from "../../components/LanguagePractice";
 import { MarkdownBlock } from "../../components/MarkdownBlock";
 import { parseQuestionTemplate } from "../../components/question-template";
@@ -94,6 +95,7 @@ function SharedNode({ documentId, documentRevision, persistent = true, node, rec
 	if (node.type === "lab") return <TeachingLab documentId={documentId} documentRevision={documentRevision} node={node} receipts={receipts} disabled={disabled} onAction={onAction} />;
 	if (node.type === "music-lab") return <MusicLab node={node} disabled={disabled} />;
 	if (node.type === "manipulative") return <ManipulativeRenderer node={node} documentId={persistent ? documentId : undefined} receipt={completedNodeReceipt(receipts, node.id, ["share-manipulative"])} disabled={disabled} onAction={onAction} />;
+	if (node.type === "interactive") return <InteractiveReplyRenderer node={node} receipt={completedNodeReceipt(receipts, node.id, ["share-interactive"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "language-practice") return <LanguagePractice node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-language-practice"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "task" && node.diagram) return <SystemDesignWorkbench documentId={documentId} documentRevision={documentRevision} node={{ ...node, diagram: node.diagram }} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "task") return <Task documentId={documentId} node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} receipts={receipts} disabled={disabled} onAction={onAction} />;

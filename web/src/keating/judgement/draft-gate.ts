@@ -62,6 +62,7 @@ import { previousQuestionPresentation } from "./previous-question-presentation";
 import { projectWebSearchEvidence } from "./search-evidence";
 import { attachModelRequestPayload, loggingJudge, recordModelRequest } from "../model-request-log";
 import { DESKTOP_OFFLINE_PROVIDER } from "../../lib/desktop-offline";
+import { withInteractiveSchemas } from "../../components/interactive-replies/catalogue";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
@@ -204,6 +205,7 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
     }]),
     learnerEvidence: (evidence.learnerEvidence ?? []).map(({ kind, content }) => ({ kind, content })),
     inlineLabAvailable: true,
+    interactiveRepliesAvailable: true,
     availableTools: (context.tools ?? []).map((tool) => tool.name),
     toolResults: [...(evidence.toolResults ?? []).map(({ name, status, content }) => ({ name, status, content })), ...results, ...search.toolResults],
     sources: search.sources,
@@ -716,7 +718,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           // These candidates work entirely inside the visible reply. Keep the full OpenUI grammar for authored Questions.
           const omitToolSchemas = feedbackOnly || predictionQuestionOnly;
           const promptParts = omitToolSchemas || gradeOnly ? [activeWork, layers, systemPrompt] : [systemPrompt, activeWork, layers];
-          privateContext.systemPrompt = promptParts.filter(Boolean).join("\n\n");
+          // An offered interactive reply component brings its config schema with it; nothing is added otherwise.
+          privateContext.systemPrompt = await withInteractiveSchemas(promptParts.filter(Boolean).join("\n\n"));
           if (omitToolSchemas) privateContext.tools = [];
           else if (gradeOnly) privateContext.tools = privateContext.tools?.filter(tool => tool.name === "grade_question_checks");
           if (feedback.length) privateContext.messages.push({ role: "user", timestamp: Date.now(), content:

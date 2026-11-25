@@ -18,6 +18,8 @@ export interface TeachingPolicyTurn {
   readonly availableTools: readonly string[];
   /** The conversation host renders the interactive Lab adapter and delivers checkpoint observations. */
   readonly inlineLabAvailable?: boolean;
+  /** The conversation host renders interactive reply components and appends the offered one's config schema. */
+  readonly interactiveRepliesAvailable?: boolean;
   readonly toolResults: readonly { readonly name: string; readonly status: "success" | "error"; readonly content: string }[];
   readonly sources: readonly { readonly id: string; readonly url: string; readonly text: string }[];
   readonly assessment: "none" | "practice" | "assessed" | "unknown";

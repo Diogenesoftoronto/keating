@@ -22,7 +22,7 @@ const NON_INTERACTIVE = new Set(["markdown", "text", "callout", "rows"]);
  */
 const SNAPSHOT_COMPONENTS = new Set([
 	"study-plan", "concept-map", "quiz", "deck", "task", "notes", "goal",
-	"simulation", "coding-challenge", "language-practice", "music-lab", "lab", "manipulative", "image", "media",
+	"simulation", "coding-challenge", "language-practice", "music-lab", "lab", "manipulative", "interactive", "image", "media",
 ]);
 
 export interface ActiveWorkSource {

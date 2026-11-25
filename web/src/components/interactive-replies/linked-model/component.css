@@ -1,0 +1,157 @@
+/* LinkedLab. Colours come from host tokens with fallbacks; tones are data colours, not alerts. */
+.linked {
+  --ll-ink: var(--mock-ink, var(--foreground, #e9efe9));
+  --ll-muted: var(--mock-muted, var(--muted-foreground, #adbdb1));
+  --ll-line: var(--mock-line, var(--border, #415147));
+  --ll-surface: var(--mock-surface, var(--card, #202b24));
+  --ll-well: var(--mock-canvas, color-mix(in srgb, var(--ll-surface) 92%, var(--ll-ink)));
+  --ll-run-fb: #7fb0f2; --ll-ok-fb: #6cc790; --ll-warn-fb: #e3a64e; --ll-bad-fb: #ec8a6f; --ll-info-fb: #a9a3e8;
+  --ll-run: var(--chart-1, var(--ll-run-fb));
+  --ll-ok: var(--success, var(--ll-ok-fb));
+  --ll-warn: var(--warning, var(--ll-warn-fb));
+  --ll-bad: var(--destructive, var(--ll-bad-fb));
+  --ll-info: var(--chart-4, var(--ll-info-fb));
+  --ll-ref: color-mix(in srgb, var(--ll-muted) 70%, transparent);
+  --ll-pin: color-mix(in srgb, var(--ll-ink) 55%, transparent);
+  display: grid; gap: 9px;
+}
+.ll-toggles { display: flex; flex-wrap: wrap; gap: 0 14px; margin-top: -2px; }
+.ll-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 2px; border: 0; background: transparent; color: var(--ll-muted); font-size: calc(.81 * var(--ir-rem)); }
+.ll-chev { display: inline-block; font-size: calc(1 * var(--ir-rem)); line-height: 1; transition: transform 145ms; }
+.ll-toggle[aria-expanded=true] .ll-chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .ll-chev { transition: none; } }
+.ll-toggle:hover { color: var(--ll-ink); }
+  :root:not(.dark) .linked { --ll-run-fb: #2f6fc6; --ll-ok-fb: #2b8a57; --ll-warn-fb: #b8741a; --ll-bad-fb: #c4502f; --ll-info-fb: #6a5fc4; }
+.linked .ll-tone-ok { --ll-tone: var(--ll-ok); }
+.linked .ll-tone-warn { --ll-tone: var(--ll-warn); }
+.linked .ll-tone-bad { --ll-tone: var(--ll-bad); }
+.linked .ll-tone-info { --ll-tone: var(--ll-info); }
+.linked.ll-tone-ok, .ll-readout.ll-tone-ok { --ll-tone: var(--ll-ok); }
+
+.ll-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.ll-title { margin: 0; font-size: calc(1 * var(--ir-rem)); font-weight: 700; }
+.ll-count { color: var(--ll-muted); font-size: calc(.78 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.ll-goal { margin: 0; color: var(--ll-muted); font-size: calc(.86 * var(--ir-rem)); line-height: 1.5; max-width: 66ch; }
+.ll-fallback { margin: 0; color: var(--ll-muted); font-size: calc(.88 * var(--ir-rem)); }
+
+/* ---------- Equation: the numbers are the controls ---------- */
+.ll-equation { display: grid; gap: 4px; padding: 2px 0 2px 12px; border-inline-start: 2px solid var(--ll-line); }
+.ll-eq-line { margin: 0; white-space: pre-wrap; font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; font-size: calc(1.06 * var(--ir-rem)); line-height: 1.75; overflow-wrap: anywhere; }
+.ll-eq-line sub, .ll-eq-live sub { font-size: .7em; }
+.ll-eq-line sup, .ll-eq-live sup { font-size: .72em; }
+.ll-eq-live { margin: 0; color: var(--ll-muted); font-size: calc(.82 * var(--ir-rem)); font-variant-numeric: tabular-nums; line-height: 1.6; overflow-wrap: anywhere; }
+.ll-live-num { color: var(--ll-ink); font-variant-numeric: tabular-nums; }
+.ll-eq-extra, .ll-param-row { display: flex; flex-wrap: wrap; gap: 2px 18px; font-size: calc(.9 * var(--ir-rem)); }
+.ll-param-row { font-family: inherit; }
+.ll-extra { white-space: nowrap; }
+.ll-scrub {
+  display: inline-block; padding: 0 3px; margin: 0 1px; border-radius: 4px; cursor: ew-resize; touch-action: none; user-select: none;
+  font-family: var(--font-sans, system-ui, sans-serif); font-size: .9em; font-weight: 650; font-variant-numeric: tabular-nums;
+  color: var(--ll-run); border-bottom: 1.5px dashed color-mix(in srgb, var(--ll-run) 70%, transparent);
+}
+.ll-scrub:hover, .ll-scrub.is-active { border-bottom-style: solid; color: color-mix(in srgb, var(--ll-run) 80%, var(--ll-ink)); }
+.ll-scrub-sym { display: none; }
+.ll-param-row .ll-scrub-sym { display: none; }
+.ll-scrub-unit { font-weight: 500; color: var(--ll-muted); }
+
+/* ---------- Canvas well ---------- */
+.ll-canvas { min-width: 0; border-radius: 9px; background: var(--ll-well); padding: 6px 8px 4px; overflow: hidden; touch-action: none; }
+.ll-canvas > svg, .ll-canvas svg { display: block; max-width: 100%; overflow: visible; }
+.ll-plot-bg { fill: color-mix(in srgb, var(--ll-surface) 55%, var(--ll-well)); }
+.ll-grid { stroke: color-mix(in srgb, var(--ll-line) 70%, transparent); stroke-width: 1; }
+.ll-grid-strong { stroke: var(--ll-line); stroke-dasharray: 3 3; }
+.ll-tick { fill: var(--ll-muted); font-size: 10px; font-variant-numeric: tabular-nums; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-panel-title { fill: var(--ll-ink); font-size: 11.5px; font-weight: 650; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-found-count { fill: var(--ll-muted); font-size: 10.5px; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-axis-label { fill: var(--ll-muted); font-size: 10px; font-style: italic; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-curve { fill: none; stroke: color-mix(in srgb, var(--ll-ink) 55%, transparent); stroke-width: 2; stroke-linejoin: round; }
+.ll-fcurve { fill: none; stroke: var(--ll-run); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ll-diagonal { fill: none; stroke: var(--ll-line); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.ll-run .ll-arrow, .ll-run .ll-step-arrow, .ll-run .ll-web, .ll-run .ll-trace { fill: none; stroke: var(--ll-tone); stroke-linecap: round; stroke-linejoin: round; }
+.ll-run .ll-arrow { stroke-width: 1.8; }
+.ll-run .ll-step-arrow { stroke-width: 2.8; }
+.ll-run .ll-web { stroke-width: 1.4; opacity: .85; }
+.ll-run .ll-trace { stroke-width: 2; }
+.ll-run .ll-dots { fill: none; stroke: var(--ll-tone); stroke-linecap: round; }
+.ll-ref { fill: none; stroke: var(--ll-ref); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: .45; }
+.ll-pin-line { fill: none; stroke: var(--ll-pin); stroke-width: 1.6; stroke-dasharray: 5 4; stroke-linecap: round; }
+.ll-offchart text { fill: var(--ll-tone); font-size: 10.5px; font-weight: 650; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-cursor-mark circle { fill: none; stroke: var(--ll-ink); stroke-width: 1.6; }
+.ll-row-tick { stroke: var(--ll-muted); stroke-width: 1; }
+.ll-ruler-line { stroke: var(--ll-ink); stroke-width: 2; opacity: .7; }
+.ll-ruler-ticks { stroke: var(--ll-ink); stroke-width: 1; opacity: .55; }
+.ll-guide { fill: none; stroke: var(--ll-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* handles: white knob with an ink ring, a big invisible hit area */
+.ll-hit { fill: transparent; }
+.ll-knob { fill: var(--ll-surface); stroke: var(--ll-ink); stroke-width: 2; }
+.ll-knob-dot { fill: var(--ll-ink); }
+.ll-handle-label, .ll-marker-label, .ll-probe-label { fill: var(--ll-ink); font-size: 10.5px; font-weight: 650; font-family: var(--font-sans, system-ui, sans-serif); paint-order: stroke; stroke: var(--ll-well); stroke-width: 3px; stroke-linejoin: round; }
+.ll-handle:hover .ll-knob, .ll-sweep-marker:hover .ll-knob { stroke-width: 3; }
+.is-dragging .ll-handle-label { opacity: .55; }
+.ll-probe-dot { fill: var(--ll-run); stroke: var(--ll-surface); stroke-width: 2; }
+.ll-probe-drop { stroke: var(--ll-run); stroke-width: 1; stroke-dasharray: 2 3; opacity: .7; }
+.ll-cursor-line { stroke: var(--ll-ink); stroke-width: 1; opacity: .45; }
+.ll-cursor-cap { fill: var(--ll-ink); }
+
+/* regime strip: the parameter axis */
+.ll-band rect { fill: transparent; }
+.ll-band.is-found rect { fill: color-mix(in srgb, var(--ll-tone) 16%, transparent); }
+.ll-band text { fill: color-mix(in srgb, var(--ll-tone) 75%, var(--ll-ink)); font-size: 10px; font-weight: 650; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-cut line { stroke: var(--ll-ink); stroke-width: 1.2; stroke-dasharray: 2 3; }
+.ll-cut text { fill: var(--ll-ink); font-size: 10px; font-variant-numeric: tabular-nums; font-family: var(--font-sans, system-ui, sans-serif); }
+.ll-tried circle { fill: var(--ll-tone); stroke: var(--ll-well); stroke-width: 1; }
+path.ll-tried { fill: none; stroke: var(--ll-tone); stroke-linecap: round; }
+.ll-sweep-line { fill: none; stroke: var(--ll-ink); stroke-width: 1.4; opacity: .7; }
+.ll-sweep-dots { fill: none; stroke: var(--ll-ink); stroke-linecap: round; opacity: .55; }
+.ll-sweep-pin line { stroke: var(--ll-pin); stroke-width: 1.4; stroke-dasharray: 4 3; }
+.ll-marker-line { stroke: var(--ll-ink); stroke-width: 1.6; }
+
+/* ---------- Readout ---------- */
+.ll-readout { display: grid; gap: 4px; padding-inline-start: 11px; border-inline-start: 2px solid var(--ll-tone, var(--ll-line)); min-height: 44px; }
+.ll-readout p { margin: 0; font-size: calc(.86 * var(--ir-rem)); line-height: 1.5; max-width: 68ch; }
+.ll-regime { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.ll-regime-chip { font-weight: 700; color: color-mix(in srgb, var(--ll-tone) 78%, var(--ll-ink)); }
+.ll-outcome, .ll-hint { color: var(--ll-muted); font-variant-numeric: tabular-nums; }
+.ll-note { color: var(--ll-ink); }
+.ll-compare { display: flex; align-items: center; gap: 7px; color: var(--ll-muted); }
+.ll-pin-swatch { flex: none; width: 18px; height: 0; border-top: 2px dashed var(--ll-pin); }
+
+/* ---------- Table: flat rows ---------- */
+.ll-table-wrap { display: grid; gap: 4px; min-width: 0; overflow-x: auto; }
+.ll-table { justify-self: start; width: auto; min-width: min(100%, 380px); border-collapse: collapse; font-size: calc(.82 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.ll-table th { text-align: end; color: var(--ll-muted); font-weight: 600; font-size: calc(.76 * var(--ir-rem)); padding: 4px 14px; border-bottom: 1px solid var(--ll-line); white-space: nowrap; }
+.ll-table td { text-align: end; padding: 0 14px; height: 30px; border-bottom: 1px solid color-mix(in srgb, var(--ll-line) 45%, transparent); }
+.ll-table th:first-child, .ll-table td:first-child { text-align: start; padding-inline-start: 2px; }
+.ll-table tr.is-current td { font-weight: 700; color: var(--ll-ink); }
+.ll-table tr.is-current td:first-child { box-shadow: inset 2px 0 0 var(--ll-run); }
+.ll-table .ll-pin-col { color: var(--ll-muted); }
+.ll-row-pick { border: 0; background: transparent; color: inherit; padding: 4px 8px 4px 6px; min-height: 30px; min-width: 40px; text-align: start; border-radius: 4px; font: inherit; }
+.ll-row-pick:hover { text-decoration: underline; }
+.ll-table-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ll-muted); font-size: calc(.78 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.ll-table-nav .quiet { min-height: 34px; padding: 4px 8px; font-size: calc(.78 * var(--ir-rem)); }
+
+.ll-actions { margin-top: 0; row-gap: 6px; }
+.ll-more { margin: 0; }
+.ll-more > summary { color: var(--ll-muted); }
+.ll-more[open] > summary { margin-bottom: 4px; }
+.ll-table-note { margin: 6px 0 0; color: var(--ll-muted); font-size: calc(.8 * var(--ir-rem)); line-height: 1.5; max-width: 62ch; }
+.ll-button-rows { display: grid; gap: 2px; padding-left: 13px; }
+.ll-button-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-height: 38px; font-size: calc(.84 * var(--ir-rem)); color: var(--ll-ink); }
+.ll-button-row .quiet { min-width: 38px; min-height: 36px; padding: 4px 8px; font-size: calc(1 * var(--ir-rem)); line-height: 1; }
+.ll-button-label { flex: 1 1 130px; color: var(--ll-muted); }
+.ll-button-value { min-width: 78px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 650; }
+.ll-actions .quiet { display: inline-flex; align-items: center; gap: 6px; }
+
+@media (max-width: 480px) {
+  .ll-table { font-size: calc(.74 * var(--ir-rem)); min-width: 0; width: 100%; }
+  .ll-table th { white-space: normal; font-size: calc(.7 * var(--ir-rem)); line-height: 1.25; vertical-align: bottom; }
+  .ll-table td, .ll-table th { padding-inline: 4px; }
+  .ll-row-pick { min-width: 30px; padding-inline: 4px; }
+  .ll-eq-line { font-size: calc(.98 * var(--ir-rem)); }
+  .ll-canvas { padding: 4px 4px 2px; }
+  .ll-table td, .ll-table th { padding-inline: 5px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ll-scrub { transition: background-color 120ms; }
+}

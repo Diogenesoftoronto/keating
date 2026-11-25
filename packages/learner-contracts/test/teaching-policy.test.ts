@@ -23,7 +23,8 @@ describe("teaching policy composition", () => {
     // A cue opens the gated questions; the request stays within bounds with all of them.
     const cued = teachingPolicyDecisionRequest({ ...turn, learnerMessage: "My son is six. How do I explain 12 divided by 3?" });
     expect(judgementRequestProblem(cued)).toBeNull();
-    expect(Object.keys(cued.questions)).toHaveLength(TEACHING_POLICY_DECISIONS.length + TEACHING_INTERACTION_FEATURES.length);
+    const early = TEACHING_INTERACTION_FEATURES.filter(({ askWhen }) => askWhen === "early_learning_cue");
+    expect(Object.keys(cued.questions)).toHaveLength(TEACHING_POLICY_DECISIONS.length + ungated.length + early.length);
     expect(new Set(TEACHING_POLICY_RULES.map(({ id }) => id)).size).toBe(TEACHING_POLICY_RULES.length);
     expect(TEACHING_POLICY_RULES.every(({ question }) => question.type === "noul")).toBe(true);
   });

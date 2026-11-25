@@ -13,6 +13,7 @@ export * from "./openui-source.js";
 export * from "./openui-diagnostics.js";
 export * from "./simulation-expression.js";
 export * from "./manipulatives.js";
+export * from "./interactive-replies.js";
 export * from "./portable.js";
 export * from "./pursuit.js";
 export * from "./rendering.js";

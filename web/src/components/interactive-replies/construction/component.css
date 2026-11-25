@@ -1,0 +1,210 @@
+/* Compass-and-straightedge construction.
+   Colours come from the host theme (T3 tokens) and fall back per colour scheme, so the
+   component reads correctly in light and dark even when no host tokens are present. */
+.compass {
+  --cx-ink: var(--foreground, #1e2822);
+  --cx-muted: var(--muted-foreground, #5d6c62);
+  --cx-line: var(--border, #d6dcd4);
+  --cx-surface: var(--card, #fbfbf8);
+  --cx-input: var(--secondary, #eff2ec);
+  --cx-accent: var(--chart-2, #2b8a57);
+  --cx-warn: var(--warning, #b8741a);
+  --cx-ring: var(--ring, #2b8a57);
+  --cx-paper: color-mix(in srgb, var(--cx-surface) 92%, #a99f80);
+  --cx-on-accent: #ffffff;
+  --cx-graphite: color-mix(in srgb, var(--cx-ink) 62%, var(--cx-paper));
+  --cx-steel: color-mix(in srgb, var(--cx-muted) 70%, var(--cx-surface));
+  --cx-steel-edge: color-mix(in srgb, var(--cx-ink) 55%, var(--cx-surface));
+  --cx-lead: color-mix(in srgb, var(--cx-ink) 82%, var(--cx-paper));
+  --cx-wood: #d9a75f;
+  container-type: inline-size;
+  display: grid;
+  gap: 12px;
+  color: var(--cx-ink);
+}
+  :root.dark .compass {
+    --cx-ink: var(--foreground, #e9efe9);
+    --cx-muted: var(--muted-foreground, #adbdb1);
+    --cx-line: var(--border, #415147);
+    --cx-surface: var(--card, #202b24);
+    --cx-input: var(--secondary, #26332b);
+    --cx-accent: var(--chart-2, #8dd8ae);
+    --cx-warn: var(--warning, #e0a145);
+    --cx-ring: var(--ring, #8dd8ae);
+    --cx-paper: color-mix(in srgb, var(--cx-surface) 84%, #000);
+    --cx-on-accent: #10170f;
+    --cx-wood: #c8964f;
+  }
+
+/* Header */
+.cx-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.cx-header h3 { margin: 0; font-size: calc(1 * var(--ir-rem)); font-weight: 700; letter-spacing: -.005em; }
+.cx-count { color: var(--cx-muted); font-size: calc(.77 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.compass.cx-ok .cx-count { color: color-mix(in srgb, var(--cx-accent) 75%, var(--cx-ink)); font-weight: 600; }
+
+/* Body: canvas with the step rail beside it when there is room, below it otherwise */
+.cx-body { display: grid; gap: 10px 16px; min-width: 0; }
+@container (min-width: 590px) {
+  .cx-body { grid-template-columns: minmax(0, 1fr) 176px; align-items: start; }
+}
+
+/* The canvas is a well: recessed paper, no frame */
+.cx-canvas {
+  position: relative; min-width: 0; border-radius: 10px; overflow: clip;
+  background-color: var(--cx-paper);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--cx-muted) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--cx-muted) 9%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+  box-shadow: inset 0 1px 3px color-mix(in srgb, #000 10%, transparent);
+}
+.cx-canvas > svg { display: block; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+/* Steps: flat rows */
+.cx-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; align-content: start; counter-reset: none; }
+.cx-step { display: flex; gap: 9px; align-items: flex-start; padding: 6px 4px; color: var(--cx-muted); font-size: calc(.82 * var(--ir-rem)); line-height: 1.4; }
+.cx-step-mark {
+  display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; margin-top: -1px; border-radius: 999px;
+  font-size: calc(.7 * var(--ir-rem)); font-weight: 700; font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1px var(--cx-line); color: var(--cx-muted);
+  transition: background-color 180ms, box-shadow 180ms, color 180ms;
+}
+.cx-step-text { display: grid; gap: 1px; min-width: 0; }
+.cx-step-title { font-weight: 560; }
+.cx-step-partial { font-weight: 500; color: var(--cx-muted); font-variant-numeric: tabular-nums; }
+.cx-step-how { font-size: calc(.76 * var(--ir-rem)); color: var(--cx-muted); line-height: 1.4; }
+.cx-step.is-current { color: var(--cx-ink); }
+.cx-step.is-current .cx-step-title { font-weight: 650; }
+.cx-step.is-current .cx-step-mark { box-shadow: inset 0 0 0 1.5px var(--cx-accent); color: var(--cx-ink); }
+.cx-step.is-done { color: var(--cx-ink); }
+.cx-step.is-done .cx-step-mark { background: var(--cx-accent); box-shadow: none; color: var(--cx-on-accent); }
+.cx-step.is-off { color: var(--cx-ink); }
+.cx-step.is-off .cx-step-mark { background: color-mix(in srgb, var(--cx-warn) 18%, transparent); box-shadow: inset 0 0 0 1.5px var(--cx-warn); color: color-mix(in srgb, var(--cx-warn) 80%, var(--cx-ink)); font-size: calc(.8 * var(--ir-rem)); }
+.cx-step.is-off .cx-step-how { color: color-mix(in srgb, var(--cx-warn) 70%, var(--cx-ink)); }
+@container (max-width: 589px) {
+  .cx-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 10px; }
+  .cx-step-how { display: none; }
+}
+@container (max-width: 380px) {
+  .cx-step { padding: 4px 2px; gap: 7px; font-size: calc(.78 * var(--ir-rem)); }
+}
+
+/* Instruction: plain text, a 2px rule at most */
+.cx-goal { margin: -4px 0 0; color: var(--cx-muted); font-size: calc(.84 * var(--ir-rem)); line-height: 1.45; }
+.cx-instruction { margin: 0; padding: 1px 0 1px 11px; font-size: calc(.86 * var(--ir-rem)); line-height: 1.5; color: var(--cx-ink); border-left: 2px solid color-mix(in srgb, var(--cx-muted) 45%, transparent); }
+.cx-instruction:empty { display: none; }
+.cx-instruction-ok { border-left-color: var(--cx-accent); }
+.cx-instruction-off { border-left-color: var(--cx-warn); }
+.cx-fallback { margin: 0; color: var(--cx-muted); font-size: calc(.9 * var(--ir-rem)); line-height: 1.5; }
+.cx-fallback strong { color: var(--cx-ink); }
+.cx-body-solo { grid-template-columns: minmax(0, 1fr) !important; }
+
+/* Button construction */
+.cx-controls { margin: 0; }
+.cx-control-rows { display: grid; gap: 8px; padding: 8px 0 2px 13px; border-left: 1px solid var(--cx-line); margin-left: 3px; }
+.cx-control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cx-control-label { flex: 0 0 92px; color: var(--cx-muted); font-size: calc(.78 * var(--ir-rem)); }
+.cx-chip, .cx-select select {
+  min-height: 36px; border: 1px solid var(--cx-line); border-radius: 7px; background: var(--cx-input);
+  padding: 5px 10px; color: var(--cx-ink); font-size: calc(.82 * var(--ir-rem));
+}
+.cx-chip:hover:not(:disabled) { border-color: var(--cx-muted); }
+.cx-chip:disabled { opacity: .45; cursor: default; }
+.cx-select { display: inline-flex; align-items: center; gap: 6px; color: var(--cx-muted); font-size: calc(.78 * var(--ir-rem)); }
+.cx-select select { padding-inline: 7px; }
+@container (max-width: 420px) {
+  .cx-control-label { flex-basis: 100%; }
+}
+.cx-actions { margin: 0; }
+.cx-actions:empty { display: none; }
+.cx-icon-btn { display: inline-flex; align-items: center; gap: 6px; }
+.compass .primary:disabled { opacity: .55; cursor: default; filter: none; }
+
+/* ---------- SVG ----------
+   Elements with an id become their own layer, so each carries its own class (no parent selectors). */
+.compass svg text { font-family: var(--font-sans, system-ui, sans-serif); }
+.cx-given-seg { stroke: var(--cx-ink); stroke-width: 2.2; stroke-linecap: round; }
+.cx-given-ray { stroke: var(--cx-ink); stroke-width: 1.8; stroke-linecap: round; opacity: .85; }
+.cx-given-circle { fill: none; stroke: var(--cx-ink); stroke-width: 1.6; opacity: .8; }
+
+.cx-point-dot { fill: var(--cx-ink); stroke: var(--cx-paper); stroke-width: 1.5; }
+.cx-point-found .cx-point-dot { fill: var(--cx-accent); }
+.cx-point-name text { fill: var(--cx-ink); font-size: 14px; font-style: italic; font-weight: 600; font-family: Georgia, "Times New Roman", serif !important; paint-order: stroke; stroke: var(--cx-paper); stroke-width: 3; stroke-linejoin: round; }
+.cx-target-ring circle { fill: color-mix(in srgb, var(--cx-accent) 18%, transparent); stroke: var(--cx-accent); stroke-width: 2; }
+
+.cx-nib { cursor: grab; }
+.cx-nib:active { cursor: grabbing; }
+.cx-nib-hit { fill: transparent; }
+.cx-nib-ring { fill: none; stroke: var(--cx-ink); stroke-opacity: 0; stroke-width: 1.4; transition: stroke-opacity 140ms; }
+.cx-nib:hover .cx-nib-ring { stroke-opacity: .45; }
+.cx-nib-tip circle { fill: var(--cx-ink); }
+
+.cx-side line { stroke: var(--cx-ink); stroke-width: 2.2; stroke-linecap: round; }
+.cx-side-off line { stroke: var(--cx-warn); }
+.cx-draft-line { stroke: var(--cx-ink); stroke-width: 1.6; stroke-dasharray: 5 5; stroke-linecap: round; opacity: .7; }
+.cx-draft-snapped .cx-draft-line { stroke-dasharray: none; stroke-width: 2.2; opacity: .55; }
+.cx-ruler rect { fill: color-mix(in srgb, var(--cx-surface) 55%, transparent); stroke: color-mix(in srgb, var(--cx-ink) 30%, transparent); stroke-width: 1; }
+.cx-ruler-tick { stroke: color-mix(in srgb, var(--cx-ink) 35%, transparent); stroke-width: 1; fill: none; }
+
+.cx-arc-line { fill: none; stroke: var(--cx-graphite); stroke-width: 1.5; stroke-linecap: round; }
+
+.cx-preview circle { fill: none; stroke: var(--cx-accent); stroke-width: 1.2; stroke-dasharray: 3 5; opacity: .75; }
+.cx-ghost circle { fill: color-mix(in srgb, var(--cx-accent) 14%, transparent); stroke: var(--cx-accent); stroke-width: 1.2; stroke-dasharray: 2 2; }
+.cx-ghost path { stroke: var(--cx-accent); stroke-width: 1.4; stroke-linecap: round; }
+.cx-readout-line { stroke: var(--cx-muted); stroke-width: 1; stroke-dasharray: 2 3; }
+.cx-readout text, .cx-sweep text { fill: var(--cx-muted); font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--cx-paper); stroke-width: 4; stroke-linejoin: round; }
+.cx-readout-hit text { fill: color-mix(in srgb, var(--cx-accent) 80%, var(--cx-ink)); }
+.cx-readout-hit .cx-readout-line { stroke: var(--cx-accent); }
+
+.cx-fill path { stroke: none; }
+.cx-fill-ok path { fill: color-mix(in srgb, var(--cx-accent) 16%, transparent); }
+.cx-fill-off path { fill: color-mix(in srgb, var(--cx-warn) 11%, transparent); }
+.cx-mark text { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--cx-paper); stroke-width: 4; stroke-linejoin: round; }
+.cx-mark-plain text { fill: var(--cx-muted); }
+.cx-mark-ok text { fill: color-mix(in srgb, var(--cx-accent) 70%, var(--cx-ink)); }
+.cx-mark-off text { fill: color-mix(in srgb, var(--cx-warn) 85%, var(--cx-ink)); }
+.cx-tick { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.cx-mark-ok .cx-tick, .cx-mark-plain .cx-tick { stroke: var(--cx-accent); }
+.cx-mark-off .cx-tick { stroke: var(--cx-warn); }
+.cx-angle, .cx-right { fill: none; stroke-width: 1.4; }
+.cx-mark-plain .cx-angle { stroke: var(--cx-muted); }
+.cx-mark-ok .cx-angle, .cx-mark-ok .cx-right { stroke: color-mix(in srgb, var(--cx-accent) 80%, var(--cx-ink)); }
+.cx-mark-off .cx-angle { stroke: var(--cx-warn); }
+@media (prefers-reduced-motion: no-preference) {
+  .cx-fill path { animation: cx-fade 420ms ease-out both; }
+  .cx-tick, .cx-angle, .cx-right { animation: cx-fade 300ms 200ms ease-out both; }
+  .cx-point-found .cx-point-dot { animation: cx-pop 360ms cubic-bezier(.2, 1.6, .4, 1) both; transform-box: fill-box; transform-origin: center; }
+}
+
+/* The compass */
+.cx-compass { cursor: grab; }
+.cx-compass:active { cursor: grabbing; }
+.cx-compass-hit { fill: none; stroke: transparent; stroke-width: 18; stroke-linejoin: round; stroke-linecap: round; }
+.cx-compass-shadow path { fill: none; stroke: color-mix(in srgb, #000 16%, transparent); stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; transform: translate(2px, 3px); }
+.cx-leg { fill: var(--cx-steel); stroke: var(--cx-steel-edge); stroke-width: .9; stroke-linejoin: round; }
+.cx-needle { fill: none; stroke: var(--cx-steel-edge); stroke-width: 1.4; stroke-linecap: round; }
+.cx-pencil-body { fill: var(--cx-wood); stroke: color-mix(in srgb, var(--cx-wood) 60%, #000); stroke-width: .8; }
+.cx-lead { fill: var(--cx-lead); }
+.cx-hinge { fill: var(--cx-steel); stroke: var(--cx-steel-edge); stroke-width: 1.1; }
+.cx-hinge-pin { fill: var(--cx-steel-edge); }
+.cx-stem { stroke: var(--cx-steel-edge); stroke-width: 2.4; stroke-linecap: round; }
+.cx-knob, .cx-pencil { cursor: grab; }
+.cx-knob:active, .cx-pencil:active { cursor: grabbing; }
+.cx-handle-hit { fill: transparent; }
+.cx-knob-grip { fill: color-mix(in srgb, var(--cx-ink) 78%, var(--cx-surface)); stroke: var(--cx-steel-edge); stroke-width: .8; }
+.cx-knurl { fill: none; stroke: var(--cx-surface); stroke-opacity: .55; stroke-width: 1; stroke-linecap: round; }
+.cx-pencil-tip { fill: var(--cx-lead); }
+.cx-knob:hover .cx-knob-grip, .cx-pencil:hover .cx-pencil-tip { stroke: var(--cx-accent); stroke-width: 1.5; }
+.cx-cue circle { fill: none; stroke: var(--cx-accent); stroke-width: 1.6; }
+.cx-cue-dashed circle { stroke-dasharray: 3 3; }
+.compass.is-dragging .cx-cue { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cx-cue circle { animation: cx-breathe 1.9s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+}
+@keyframes cx-breathe { 50% { transform: scale(1.22); stroke-opacity: .35; } }
+@keyframes cx-fade { from { opacity: 0; } }
+@keyframes cx-pop { from { transform: scale(.2); } }
+@media (prefers-reduced-motion: reduce) {
+  .cx-step-mark, .cx-nib-ring { transition: none; }
+}

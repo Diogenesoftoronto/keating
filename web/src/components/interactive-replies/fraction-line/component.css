@@ -1,0 +1,178 @@
+/* Number line: theme comes from the host's tokens (T3 Code sets --foreground, --card, …; the
+   reply mock maps them to --mock-*). The fallbacks follow prefers-color-scheme so the component
+   still reads correctly when nothing is set. Hues are mid-tones mixed toward the surface or ink,
+   so one value works on light and dark surfaces. */
+.number-line {
+  --nl-ink: var(--mock-ink, var(--foreground, #e9efe9));
+  --nl-muted: var(--mock-muted, var(--muted-foreground, #adbdb1));
+  --nl-line: var(--mock-line, var(--border, #415147));
+  --nl-surface: var(--mock-surface, var(--card, #202b24));
+  --nl-a: #df8f45;   /* quarters */
+  --nl-b: #3fa9c9;   /* eighths */
+  --nl-c: #9b84de;
+  --nl-well: color-mix(in srgb, var(--nl-surface) 93%, var(--nl-ink));
+  --nl-bar-fill: color-mix(in srgb, var(--nl-surface) 82%, var(--nl-well));
+  display: grid; gap: 10px;
+}
+  :root:not(.dark) .number-line {
+    --nl-ink: var(--mock-ink, var(--foreground, #1d2620));
+    --nl-muted: var(--mock-muted, var(--muted-foreground, #5c6a61));
+    --nl-line: var(--mock-line, var(--border, #d3dbd5));
+    --nl-surface: var(--mock-surface, var(--card, #ffffff));
+    --nl-a: #d27a2c;
+    --nl-b: #2593b6;
+    --nl-c: #7a62c4;
+  }
+.number-line .nl-tone-a { --nl-hue: var(--nl-a); }
+.number-line .nl-tone-b { --nl-hue: var(--nl-b); }
+.number-line .nl-tone-c { --nl-hue: var(--nl-c); }
+.number-line .nl-tone-plain { --nl-hue: var(--nl-ink); }
+
+/* ---------- Header and instruction ---------- */
+.nl-head h3 { margin: 0; font-size: calc(1 * var(--ir-rem)); font-weight: 700; line-height: 1.9; }
+.nl-head h3 .nl-frac { margin: 0 3px; }
+.nl-instruction {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 0; min-height: 34px;
+  color: var(--nl-muted); font-size: calc(.85 * var(--ir-rem)); line-height: 1.5;
+}
+.nl-instruction > span { flex: 1 1 200px; min-width: 0; }
+.nl-instruction strong { color: var(--nl-ink); font-weight: 650; }
+.nl-instruction-icon { display: inline-block; vertical-align: -3px; margin-right: 7px; color: color-mix(in srgb, var(--nl-a) 80%, var(--nl-ink)); }
+.nl-instruction .nl-instruction-do { min-height: 32px; padding: 4px 10px; color: var(--nl-ink); border-color: var(--nl-line); }
+
+/* ---------- Typeset fractions ---------- */
+.nl-frac {
+  display: inline-grid; justify-items: center; line-height: 1.05; font-variant-numeric: tabular-nums;
+  font-weight: 700; color: color-mix(in srgb, var(--nl-hue, var(--nl-ink)) 78%, var(--nl-ink)); vertical-align: middle;
+}
+.nl-frac > span:first-child { padding: 0 3px 1px; border-bottom: 1.6px solid currentColor; }
+.nl-frac > span:last-child { padding-top: 1px; }
+.nl-head .nl-frac { font-size: calc(.8 * var(--ir-rem)); }
+
+/* ---------- Canvas: a well, not a box ---------- */
+.nl-canvas {
+  min-width: 0; border-radius: 10px; overflow: clip; background: var(--nl-well);
+  user-select: none; -webkit-user-select: none;
+}
+.nl-canvas > svg { display: block; max-width: 100%; touch-action: none; overflow: visible; }
+
+/* Bars */
+.nl-bar-body { fill: var(--nl-bar-fill); stroke: color-mix(in srgb, var(--nl-hue) 30%, var(--nl-line)); stroke-width: 1.2; }
+.nl-cell-line { stroke: color-mix(in srgb, var(--nl-hue) 34%, var(--nl-line)); stroke-width: 1.2; }
+.nl-cell-line.is-whole { stroke-width: 2; stroke: color-mix(in srgb, var(--nl-hue) 45%, var(--nl-ink)); }
+.nl-cut-line { stroke: color-mix(in srgb, var(--nl-hue) 55%, var(--nl-line)); stroke-width: 1.3; stroke-dasharray: 3 3; }
+.nl-piece-text {
+  fill: var(--nl-ink); font-size: 10.5px; font-weight: 650; font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.nl-piece-text--whole { font-size: 12.5px; font-weight: 720; }
+
+/* Pieces */
+.nl-piece.is-draggable { cursor: grab; }
+.nl-piece.is-draggable:active { cursor: grabbing; }
+.nl-piece-body { fill: color-mix(in srgb, var(--nl-hue) 62%, var(--nl-surface)); transition: fill 140ms; }
+.nl-piece-edge { fill: none; stroke: color-mix(in srgb, var(--nl-hue) 82%, var(--nl-ink)); stroke-width: 1.3; }
+.nl-piece.is-draggable:hover .nl-piece-body { fill: color-mix(in srgb, var(--nl-hue) 72%, var(--nl-surface)); }
+.nl-canvas.is-holding-piece .nl-piece-body { filter: drop-shadow(0 4px 6px color-mix(in srgb, #000 28%, transparent)); }
+.nl-ghost { fill: none; stroke: color-mix(in srgb, var(--nl-hue) 55%, var(--nl-line)); stroke-width: 1.2; stroke-dasharray: 4 3; }
+
+/* Labels beside the bars */
+.nl-label-num, .nl-label-den {
+  fill: color-mix(in srgb, var(--nl-hue) 78%, var(--nl-ink)); font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums;
+}
+.nl-label-rule { stroke: color-mix(in srgb, var(--nl-hue) 78%, var(--nl-ink)); stroke-width: 1.7; stroke-linecap: round; }
+
+/* The difference */
+.nl-diff-glow { fill: none; stroke: color-mix(in srgb, var(--nl-hue) 85%, var(--nl-ink)); stroke-width: 2; }
+.nl-diff-bracket { fill: none; stroke: color-mix(in srgb, var(--nl-hue) 80%, var(--nl-ink)); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.nl-diff-text { fill: color-mix(in srgb, var(--nl-hue) 70%, var(--nl-ink)); font-size: 11.5px; font-weight: 700; }
+.nl-tone-plain .nl-diff-bracket { stroke-dasharray: 3 3; }
+.nl-tone-plain .nl-diff-text { fill: var(--nl-ink); }
+
+/* Hint */
+.nl-hint path { fill: none; stroke: color-mix(in srgb, var(--nl-hue) 70%, var(--nl-ink)); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nl-hint path + path { opacity: .5; }
+
+/* Scissors */
+.nl-knife-track line, .nl-knife-track path {
+  fill: none; stroke: color-mix(in srgb, var(--nl-muted) 55%, transparent); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round;
+}
+.nl-knife-track line { stroke-dasharray: 1 4; }
+.nl-knife { cursor: grab; color: var(--nl-ink); }
+.nl-knife:active { cursor: grabbing; }
+.nl-knife-hit { fill: transparent; }
+.nl-knife-body { fill: var(--nl-surface); stroke: color-mix(in srgb, var(--nl-ink) 40%, var(--nl-line)); stroke-width: 1.3; transition: stroke 120ms; }
+.nl-knife:hover .nl-knife-body, .is-holding-knife .nl-knife-body { stroke: var(--nl-ink); }
+.nl-knife-icon { pointer-events: none; }
+.nl-blade { stroke: var(--nl-ink); stroke-width: 1.5; stroke-linecap: round; opacity: .7; }
+.is-holding-knife .nl-blade { stroke-dasharray: 3 2; opacity: .9; }
+
+/* Number line */
+.nl-axis { stroke: color-mix(in srgb, var(--nl-ink) 45%, var(--nl-line)); stroke-width: 1.5; }
+.nl-tick { stroke: color-mix(in srgb, var(--nl-ink) 45%, var(--nl-line)); stroke-width: 1.3; }
+.nl-tick { opacity: .75; }
+.nl-tick.is-whole { opacity: 1; stroke-width: 1.6; }
+.nl-axis-text { fill: var(--nl-muted); font-size: 11px; font-weight: 600; }
+.nl-line-diff { fill: color-mix(in srgb, var(--nl-hue) 70%, var(--nl-surface)); }
+.nl-guide { stroke: color-mix(in srgb, var(--nl-hue) 50%, transparent); stroke-width: 1; stroke-dasharray: 2 3; }
+.nl-pin.is-draggable { cursor: grab; }
+.nl-pin.is-draggable:active { cursor: grabbing; }
+.nl-pin-hit { fill: transparent; }
+.nl-pin-mark { fill: color-mix(in srgb, var(--nl-hue) 80%, var(--nl-surface)); stroke: color-mix(in srgb, var(--nl-hue) 70%, var(--nl-ink)); stroke-width: 1.2; stroke-linejoin: round; }
+.nl-pin-text { fill: color-mix(in srgb, var(--nl-hue) 70%, var(--nl-ink)); font-size: 11.5px; font-weight: 720; font-variant-numeric: tabular-nums; }
+.nl-pin.is-draggable:hover .nl-pin-mark { fill: var(--nl-hue); }
+
+/* ---------- Readout: plain text under the well ---------- */
+.nl-readout { display: grid; gap: 4px; }
+.nl-equation { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 0; font-size: calc(1.05 * var(--ir-rem)); }
+.nl-op { color: var(--nl-muted); font-weight: 600; font-size: calc(1.1 * var(--ir-rem)); min-width: .8em; text-align: center; }
+.nl-op.is-known { color: var(--nl-ink); }
+.nl-why { margin: 0; max-width: 62ch; color: var(--nl-ink); font-size: calc(.88 * var(--ir-rem)); line-height: 1.55; }
+
+/* ---------- Button path: flat rows ---------- */
+.nl-controls { margin: 0; }
+.nl-rows { display: grid; gap: 2px; padding: 4px 0 0 13px; border-left: 1px solid var(--nl-line); margin-left: 3px; }
+.nl-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; min-height: 42px; }
+.nl-row-label { flex: 0 0 82px; color: var(--nl-muted); font-size: calc(.8 * var(--ir-rem)); }
+.nl-row-buttons { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.nl-button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 5px 11px;
+  border: 1px solid var(--nl-line); border-radius: 7px; background: transparent; color: var(--nl-ink); font-size: calc(.8 * var(--ir-rem)); font-weight: 560;
+}
+.nl-button:hover:not(:disabled) { background: color-mix(in srgb, var(--nl-ink) 6%, transparent); }
+.nl-button[aria-pressed=true] { border-color: color-mix(in srgb, var(--nl-ink) 55%, var(--nl-line)); background: color-mix(in srgb, var(--nl-ink) 7%, transparent); }
+.nl-button:disabled { opacity: .4; cursor: default; }
+.nl-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.nl-step { justify-content: center; width: 36px; padding: 0; font-size: calc(1 * var(--ir-rem)); }
+.nl-step-value { min-width: 3.2em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--nl-hue) 78%, var(--nl-ink)); }
+.nl-actions { margin: 0; }
+.nl-actions .quiet { display: inline-flex; align-items: center; gap: 6px; }
+
+@media (max-width: 460px) {
+  .nl-row-label { flex-basis: 100%; }
+  .nl-row { min-height: 0; padding-block: 3px; }
+  .nl-piece-text { font-size: 9.5px; }
+  .nl-label-num, .nl-label-den { font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nl-hint-bob { animation: nl-bob 1.6s ease-in-out infinite; }
+  .nl-diff-glow { animation: nl-glow 1.8s ease-in-out 2; }
+}
+@keyframes nl-bob { 50% { transform: translateY(3px); } }
+@keyframes nl-glow { 50% { stroke-opacity: .35; } }
+@media (prefers-reduced-motion: reduce) {
+  .nl-piece-body, .nl-knife-body { transition: none; }
+}
+
+/* Additions for the general component */
+.nl-knife-text { fill: var(--nl-ink); font-size: 11px; font-weight: 720; font-variant-numeric: tabular-nums; pointer-events: none; }
+.nl-target circle { fill: none; stroke: var(--nl-ink); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
+.nl-mixed { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: calc(1.15 * var(--ir-rem)); }
+.nl-factor { display: inline-flex; gap: 4px; }
+.nl-chip { min-width: 40px; justify-content: center; padding-inline: 8px; font-variant-numeric: tabular-nums; }
+.nl-row-label { flex-basis: 96px; }
+
+/* Calm fallback for a config that fails validation, or a move that failed: plain text, no box. */
+.nl-fallback { gap: 6px; }
+.nl-fallback-line { margin: 0; color: var(--nl-ink); font-size: calc(.9 * var(--ir-rem)); line-height: 1.55; }
+.nl-fallback-errors { margin: 4px 0 0; padding-left: 18px; color: var(--nl-muted); font-size: calc(.8 * var(--ir-rem)); line-height: 1.5; }
+.nl-actions .quiet:disabled { opacity: .45; }

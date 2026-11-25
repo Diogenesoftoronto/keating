@@ -2,13 +2,15 @@ import { LANGUAGE_PRACTICE_ROUNDS_FIXTURE } from "./language-fixture.js";
 export { LANGUAGE_PRACTICE_ROUNDS_FIXTURE } from "./language-fixture.js";
 import type { UiDocument } from "./ui.js";
 import { EXAM_SOURCE_QUESTIONS_FIXTURE } from "./exam-fixture.js";
+import { INTERACTIVE_REPLY_CONFIG_FIXTURE } from "./interactive-fixture.js";
+export { INTERACTIVE_REPLY_CONFIG_FIXTURE } from "./interactive-fixture.js";
 export { EXAM_SOURCE_QUESTIONS_FIXTURE } from "./exam-fixture.js";
 
 /**
  * Increment when a fixture's semantics change so downstream renderers can
  * deliberately refresh their recovery and visual-regression snapshots.
  */
-export const RENDERING_FIXTURE_PACK_VERSION = 7 as const;
+export const RENDERING_FIXTURE_PACK_VERSION = 8 as const;
 
 export const RENDERING_FIXTURE_MARKDOWN_LIMIT = 65_536 as const;
 export const RENDERING_FIXTURE_DOCUMENT_NODE_LIMIT = 64 as const;
@@ -86,6 +88,8 @@ export const WEB_OPENUI_COMPONENTS = [
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
   "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice", "Lab",
   "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
+  "StateMachine", "Construction", "FractionLine", "EquationWorkbench", "PermutationLab",
+  "LinkedModel", "SortBoard", "DataExplorer", "PlanTimeline", "EvidenceBoard",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -148,7 +152,7 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video, numberline, tenframe, placevalue, fractions, counting, clock], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video, numberline, tenframe, placevalue, fractions, counting, clock, statemachine, construction, fractionline, equation, permutation, linked, sortboard, dataexplorer, timeline, evidence], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
   'diagram = Diagram("rendering-diagram", "Trace a water cycle", "Connect the processes and explain what drives them.", [{id: "water", label: "Surface water", kind: "resource"}], [], [{id: "cycle-process", label: "Include a transformation", type: "component", kind: "process"}], ["Explain the role of energy in the cycle."], "resumable", ["resource", "process"] )',
   'design = SystemDesign("rendering-design", "Design a URL shortener", "Build a read path and explain the consistency trade-off.", [{ id: "client", label: "Browser", kind: "client" }], [], [{ id: "storage-path", label: "Client can reach storage", type: "path", fromKind: "client", toKind: "database" }], ["Explain workload assumptions and failure handling."], "resumable")',
   'audio = AudioResponse("rendering-audio", "Animal recall", "Name ten animals in Mandarin, then replay and reflect.", ["Distinct animal names", "Notice uncertain words"], 30, "resumable")',
@@ -180,6 +184,16 @@ export const OPENUI_SOURCE_PARITY_FIXTURE = [
   'fractions = FractionBars("rendering-fractions", "Compare halves and quarters", [{ parts: 2, shaded: 1, label: "1/2" }, { parts: 4, shaded: 0, label: "quarters" }], "Shade the quarters bar to match one half.", "ephemeral")',
   'counting = CountingArray("rendering-counting", "Rows of apples", 3, 4, "apple", "How many apples? Tap each one as you count.", "ephemeral")',
   'clock = Clock("rendering-clock", "Half past three", 3, 0, "Set the clock to half past three.", "ephemeral")',
+  `statemachine = StateMachine("Match abc", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["state-machine"])}, "Build the machine, then trace a string through it.")`,
+  `construction = Construction("An equilateral triangle", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.construction)}, "Use only the straightedge and compass.")`,
+  `fractionline = FractionLine("Where does 5/4 go?", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["fraction-line"])})`,
+  `equation = EquationWorkbench("Factor it", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.equation)}, "Move one term at a time.")`,
+  `permutation = PermutationLab("Sort the shelf", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.permutation)})`,
+  `linked = LinkedModel("Caffeine over a day", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["linked-model"])})`,
+  `sortboard = SortBoard("The water cycle", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["sort-board"])}, "Put the stages in order.")`,
+  `dataexplorer = DataExplorer("Kidney stone treatments", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["data-explorer"])})`,
+  `timeline = PlanTimeline("A spaced test week", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["plan-timeline"])})`,
+  `evidence = EvidenceBoard("Read the letter closely", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["evidence-board"])})`,
 ].join("\n");
 
 /** Canonical JSON interchange fixture containing every current shared node kind. */
@@ -223,6 +237,7 @@ export const OPENUI_JSON_PARITY_FIXTURE: UiDocument = {
     { type: "media", id: "video", kind: "video", resource: { id: "video-resource", title: "Bayes video", format: "uri", uri: "https://example.com/bayes.mp4", mimeType: "video/mp4" } },
     { type: "media", id: "animation", kind: "animation", resource: { id: "animation-resource", title: "Bayes animation", format: "uri", uri: "https://example.com/bayes-animation.html", mimeType: "text/html" } },
     { type: "handoff", id: "handoff", target: "web", reason: "Continue in the full workspace", context: "Preserve the rendering parity fixture and learner state." },
+    { type: "interactive", id: "interactive", title: "The water cycle", kind: "sort-board", brief: "Put the stages in order.", config: INTERACTIVE_REPLY_CONFIG_FIXTURE["sort-board"] },
   ],
   createdAt: "2026-08-10T00:00:00.000Z",
   updatedAt: "2026-08-10T00:00:00.000Z",
@@ -231,7 +246,7 @@ export const OPENUI_JSON_PARITY_FIXTURE: UiDocument = {
 /** Keep this explicit so a new node discriminant updates the fixture pack. */
 export const UI_DOCUMENT_NODE_TYPES = [
   "markdown", "callout", "question", "question-group", "quiz", "language-practice", "goal", "deck", "study-plan",
-  "artifact", "concept-map", "notes", "image", "media", "handoff",
+  "artifact", "concept-map", "notes", "image", "media", "handoff", "interactive",
 ] as const;
 
 const FIXTURE_TIMESTAMP = "2026-08-10T00:00:00.000Z";

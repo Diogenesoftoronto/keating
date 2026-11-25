@@ -38,6 +38,10 @@ interface AffordanceRow {
   /** During practice some surfaces need evidence the learner wants to operate them. */
   readonly practice?: true | "hands_on_requested";
   readonly needsInlineLab?: boolean;
+  /** An interactive reply component: offered only where the host renders and injects its schema. */
+  readonly interactiveReply?: true;
+  /** Every listed decision must also be true, e.g. a quiz board only when practice was asked for. */
+  readonly decisions?: readonly string[];
   readonly note?: string;
 }
 
@@ -64,7 +68,25 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "workspace", components: ["LearningImage"], features: ["visual_reference"] },
   { family: "away", components: ["Assignment", "Draft"], features: ["extended_production"], practice: "hands_on_requested" },
   { family: "away", components: ["Fieldwork"], features: ["outside_observation"], practice: "hands_on_requested" },
+  // Interactive replies (web/src/components/interactive-replies). The judge features
+  // are narrow and cue-gated, so a definition, a fact or a formula still gets prose.
+  { family: "manipulable", components: ["StateMachine"], features: ["state_transitions"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["Construction"], features: ["geometric_construction"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["FractionLine"], features: ["fraction_magnitude"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["EquationWorkbench"], features: ["symbolic_manipulation"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["PermutationLab"], features: ["permutation_structure"], practice: true, interactiveReply: true },
+  // A formula asked for is a fact; a parameter worth predicting is worth moving.
+  { family: "manipulable", components: ["LinkedModel"], features: ["variable_relationship", "prediction_opportunity"], practice: true, interactiveReply: true },
+  { family: "retrieval", components: ["SortBoard"], features: ["ordered_procedure"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
+  { family: "retrieval", components: ["SortBoard"], features: ["category_distinction"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
+  { family: "retrieval", components: ["SortBoard"], features: ["discrete_recall", "visual_reference"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["DataExplorer"], features: ["data_grouping"], practice: true, interactiveReply: true },
+  { family: "workspace", components: ["PlanTimeline"], features: ["plan_revision"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["EvidenceBoard"], features: ["source_evaluation"], practice: true, interactiveReply: true },
 ];
+
+/** OpenUI names of the interactive reply components, from the rows above. */
+export const INTERACTIVE_REPLY_COMPONENTS: readonly string[] = [...new Set(INTERACTION_AFFORDANCES.filter((row) => row.interactiveReply).flatMap((row) => row.components))];
 
 /**
  * UI node types that can be continued, by the family that would create them.
@@ -85,6 +107,8 @@ export interface InteractionContext {
   readonly followsTutorTurn?: boolean;
   readonly codePracticeLanguage?: CodePracticeLanguage | null;
   readonly inlineLabAvailable?: boolean;
+  /** The host renders interactive reply components and supplies their per-turn schema. */
+  readonly interactiveRepliesAvailable?: boolean;
   readonly assessment?: TeachingPolicyTurn["assessment"];
 }
 
@@ -119,6 +143,8 @@ export function recommendInteraction(features: Flags, decisions: Flags, context:
   let assessmentSuppressed = false;
   for (const row of INTERACTION_AFFORDANCES) {
     if (row.needsInlineLab && (!context.inlineLabAvailable || context.codePracticeLanguage)) continue;
+    if (row.interactiveReply && !context.interactiveRepliesAvailable) continue;
+    if (row.decisions && !row.decisions.every((id) => decisions[id] === true)) continue;
     if (simulationOnly && !row.components.includes("Simulation")) continue;
     if (!row.features.every((id) => features[id] === true)) continue;
     if (decisions.assessment_declined === true && !row.components.some(component => explanationComponents.has(component))) {
@@ -201,6 +227,10 @@ export function interactionDirectives(recommendation: InteractionRecommendation,
   }
   if (recommendation.families.some(({ components }) => components.includes("Lab"))) {
     directives.push("Use Lab when you can check a systems program's output, a sequence of MIDI notes, or a numeric sensor reading. Supply the adapter, observable checkpoints and a hint for each tricky step. For a physical skill outside these capabilities choose an appropriate recording or fieldwork action.");
+  }
+  const interactive = recommendation.families.flatMap(({ components }) => components).filter((component) => INTERACTIVE_REPLY_COMPONENTS.includes(component));
+  if (interactive.length) {
+    directives.push(`${[...new Set(interactive)].join(" or ")} is an interactive reply component; its config schema follows this prompt. Use it only for the learner's own case and only if moving it teaches more than a paragraph; otherwise answer in prose. Write it positionally, Name(title, config, brief), keep the prose to what to drag and what to watch, then end the reply after the fence.`);
   }
   if (recommendation.families.some(({ family }) => family === "early")) {
     directives.push("For an Early learning model, pick the one that matches the idea: NumberLine for counting on or back and adding or subtracting as hops; TenFrame for numbers to 20 and making ten; PlaceValue for hundreds, tens and ones; FractionBars for equal parts and comparing fractions; CountingArray for counting a set, equal groups and multiplication; Clock for telling time. Give it a prompt only when the learner should work the model and share where they ended; then end the reply after it and do not give the answer. Without a prompt it is a picture to talk over.");

@@ -1,0 +1,119 @@
+/* Equation workbench. Colours come from the host theme (T3 tokens) with per-scheme fallbacks. */
+.algebra {
+  --alg-ink: var(--foreground, #1e2822);
+  --alg-muted: var(--muted-foreground, #5d6c62);
+  --alg-line: var(--border, #d6dcd4);
+  --alg-surface: var(--card, #fbfbf8);
+  --alg-input: var(--secondary, #eff2ec);
+  --alg-accent: var(--chart-2, #2b8a57);
+  --alg-warn: var(--warning, #b8741a);
+  --alg-paper: color-mix(in srgb, var(--alg-surface) 93%, var(--alg-ink));
+  --alg-glow: color-mix(in srgb, var(--alg-accent) 22%, transparent);
+  container-type: inline-size;
+  display: grid;
+  gap: 10px;
+  color: var(--alg-ink);
+}
+  :root.dark .algebra {
+    --alg-ink: var(--foreground, #e9efe9);
+    --alg-muted: var(--muted-foreground, #adbdb1);
+    --alg-line: var(--border, #415147);
+    --alg-surface: var(--card, #202b24);
+    --alg-input: var(--secondary, #26332b);
+    --alg-accent: var(--chart-2, #8dd8ae);
+    --alg-warn: var(--warning, #e0a145);
+    --alg-paper: color-mix(in srgb, var(--alg-surface) 82%, #000);
+  }
+.alg-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 12px; }
+.alg-header h3 { margin: 0; font-size: calc(1 * var(--ir-rem)); font-weight: 700; letter-spacing: -.005em; }
+.alg-count { color: var(--alg-muted); font-size: calc(.77 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.algebra.is-done .alg-count { color: color-mix(in srgb, var(--alg-accent) 78%, var(--alg-ink)); font-weight: 650; }
+.alg-goal { margin: -4px 0 0; color: var(--alg-muted); font-size: calc(.86 * var(--ir-rem)); line-height: 1.45; }
+
+/* The canvas is a well: recessed paper with a faint rule at the baseline, no frame. */
+.alg-canvas {
+  position: relative; min-width: 0; overflow-x: clip; overflow-y: visible; border-radius: 10px;
+  background-color: var(--alg-paper);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, #000 14%, transparent);
+  touch-action: none;
+  transition: background-color 160ms;
+}
+.alg-canvas > svg, .alg-canvas svg { display: block; max-width: none; overflow: visible; }
+.alg-canvas.is-slip { background-color: color-mix(in srgb, var(--alg-paper) 92%, var(--alg-warn)); }
+.alg-glyph { fill: var(--alg-ink); user-select: none; }
+.alg-bar { fill: var(--alg-ink); }
+.alg-hit { fill: transparent; cursor: grab; }
+.alg-hit[pointer-events="none"] { cursor: default; }
+.alg-canvas:not(.is-dragging) .alg-hit[pointer-events="all"]:hover { fill: color-mix(in srgb, var(--alg-accent) 13%, transparent); }
+.alg-canvas.is-dragging, .alg-canvas.is-dragging .alg-hit { cursor: grabbing; }
+.algebra.is-done .alg-canvas:not(.is-dragging) .alg-hit[pointer-events="all"]:hover { fill: transparent; }
+.alg-ask { fill: color-mix(in srgb, var(--alg-warn) 22%, transparent); stroke: var(--alg-warn); stroke-width: 1.4; stroke-dasharray: 3 3; }
+.alg-ask-glyph { fill: color-mix(in srgb, var(--alg-warn) 80%, var(--alg-ink)); font-weight: 700; }
+.alg-glow { fill: var(--alg-glow); }
+.alg-poof-line { fill: none; stroke: color-mix(in srgb, var(--alg-accent) 70%, var(--alg-muted)); }
+.alg-poof-slip { stroke: var(--alg-warn); }
+.alg-poof-fill { fill: var(--alg-paper); }
+.alg-poof-wisp { fill: var(--alg-paper); }
+.alg-ring { fill: none; stroke: color-mix(in srgb, var(--alg-accent) 60%, transparent); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.alg-slot { fill: color-mix(in srgb, var(--alg-accent) 7%, transparent); stroke: color-mix(in srgb, var(--alg-accent) 60%, transparent); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.alg-grip { stroke: color-mix(in srgb, var(--alg-muted) 75%, transparent); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 0.01 5; }
+.alg-beam { fill: color-mix(in srgb, var(--alg-muted) 38%, transparent); }
+.alg-fulcrum { fill: color-mix(in srgb, var(--alg-muted) 45%, transparent); }
+.alg-ring-slip { stroke: color-mix(in srgb, var(--alg-warn) 70%, transparent); }
+
+/* Live line under the canvas: what the drop would make. */
+.alg-ghost { margin: -2px 0 0; display: none; min-height: 2.9em; gap: 1px; align-content: start; font-size: calc(.84 * var(--ir-rem)); line-height: 1.4; color: var(--alg-muted); }
+.alg-ghost.is-on { display: grid; }
+.alg-ghost-line { font-family: "STIX Two Text", "Cambria Math", Cambria, "Times New Roman", serif; font-size: calc(1.08 * var(--ir-rem)); color: var(--alg-ink); overflow-wrap: anywhere; }
+.alg-ghost-arrow { font-family: var(--font-sans, system-ui, sans-serif); font-size: .85em; color: var(--alg-muted); margin-right: .45em; }
+.alg-ghost.is-slip .alg-ghost-line { color: color-mix(in srgb, var(--alg-warn) 80%, var(--alg-ink)); text-decoration: underline wavy color-mix(in srgb, var(--alg-warn) 60%, transparent); text-underline-offset: 4px; }
+.alg-ghost.is-slip .alg-ghost-does { color: color-mix(in srgb, var(--alg-warn) 75%, var(--alg-ink)); }
+
+.alg-ask-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.alg-ask-q { flex: 1 1 220px; font-size: calc(.9 * var(--ir-rem)); font-weight: 620; line-height: 1.4; }
+.alg-chip {
+  min-height: 40px; min-width: 52px; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--alg-line);
+  background: var(--alg-input); color: var(--alg-ink); font-weight: 650; font-variant-numeric: tabular-nums;
+}
+.alg-ask-row .alg-chip { font-family: "STIX Two Text", "Cambria Math", Cambria, "Times New Roman", serif; font-size: calc(1.05 * var(--ir-rem)); }
+.alg-chip:hover:not(:disabled) { border-color: var(--alg-muted); }
+.alg-chip:disabled { opacity: .5; }
+
+/* Feedback: plain text with a coloured lead word, never a box. */
+.alg-note { margin: 0; font-size: calc(.88 * var(--ir-rem)); line-height: 1.5; max-width: 64ch; }
+.alg-note strong { font-weight: 680; }
+.alg-note.is-ok strong { color: color-mix(in srgb, var(--alg-accent) 75%, var(--alg-ink)); }
+.alg-note.is-done strong { color: color-mix(in srgb, var(--alg-accent) 82%, var(--alg-ink)); }
+.alg-note.is-slip { padding-left: 11px; border-left: 2px solid var(--alg-warn); }
+.alg-note.is-slip strong { color: color-mix(in srgb, var(--alg-warn) 82%, var(--alg-ink)); }
+.alg-note.is-info strong { color: var(--alg-ink); }
+
+/* Step history: flat rows, click to rewind. */
+.alg-steps { list-style: none; margin: 2px 0 0; padding: 0; display: grid; border-top: 1px solid var(--alg-line); }
+.alg-steps li { border-bottom: 1px solid color-mix(in srgb, var(--alg-line) 70%, transparent); }
+.alg-step {
+  display: grid; grid-template-columns: 1.6em minmax(0, auto) minmax(0, 1fr); align-items: baseline; column-gap: 10px;
+  width: 100%; min-height: 38px; padding: 6px 4px; border: 0; background: transparent; color: var(--alg-ink); text-align: left; border-radius: 4px;
+}
+.alg-step:hover { background: color-mix(in srgb, var(--alg-input) 70%, transparent); }
+.alg-step-n { color: var(--alg-muted); font-size: calc(.75 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.alg-step-eq { font-family: "STIX Two Text", "Cambria Math", Cambria, "Times New Roman", serif; font-size: calc(1.02 * var(--ir-rem)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alg-step-how { color: var(--alg-muted); font-size: calc(.78 * var(--ir-rem)); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alg-steps li.is-current .alg-step-n { color: var(--alg-accent); font-weight: 700; }
+.alg-steps li.is-current .alg-step-eq { font-weight: 600; }
+.alg-steps li.is-ahead { opacity: .5; }
+@container (max-width: 420px) {
+  .alg-step { grid-template-columns: 1.6em minmax(0, 1fr); }
+  .alg-step-how { grid-column: 2; text-align: left; }
+}
+
+.alg-keys .alg-key-row { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin: 8px 0 4px; }
+.alg-select { display: grid; gap: 4px; min-width: 0; flex: 1 1 240px; color: var(--alg-muted); font-size: calc(.8 * var(--ir-rem)); }
+.alg-select select {
+  min-height: 40px; min-width: 0; width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--alg-line);
+  background: var(--alg-input); color: var(--alg-ink); font-size: calc(.86 * var(--ir-rem));
+}
+.alg-actions { margin-top: 2px; }
+.alg-fallback { margin: 0; color: var(--alg-muted); font-size: calc(.9 * var(--ir-rem)); line-height: 1.5; }
+.alg-fallback strong { color: var(--alg-ink); }
+@media (prefers-reduced-motion: reduce) { .alg-canvas { transition: none; } }

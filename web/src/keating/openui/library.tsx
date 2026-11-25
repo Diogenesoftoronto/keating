@@ -864,6 +864,72 @@ export const Clock = defineComponent({
 	component: ({ props }) => <OpenUIManipulative props={props} component="Clock" />,
 });
 
+// Interactive replies. Ten components share one contract node (`interactive`);
+// key order is the positional order Name(title, config, brief); the OpenUI Lang
+// parser takes arguments positionally, so that is the form the prompt teaches. The full config
+// schema for a component joins the turn prompt only when the turn offers it
+// (components/interactive-replies/catalogue); here each carries one line.
+const interactivePropsSchema = z.object({
+	title: z.string().describe("Card heading"),
+	config: z.record(z.string(), z.unknown()).describe("The component config; its schema arrives with the turn that offers it"),
+	brief: z.string().optional().describe("Optional one-line framing; Markdown"),
+});
+
+function slug(text: string): string {
+	return text.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 48) || "reply";
+}
+
+function OpenUIInteractive({ props, component }: { props: z.infer<typeof interactivePropsSchema>; component: string }) {
+	const streaming = useIsStreaming();
+	const trigger = useTriggerAction();
+	const documentId = `interactive-${slug(props.title)}`;
+	const document = useMemo(() => compileOpenUISourceToSharedDocument(`reply = ${component}(${JSON.stringify(props)})\nroot = LearningSurface([reply])`, { documentId, retention: "ephemeral" }), [props, component, documentId]);
+	return <SharedUiDocumentRenderer document={{ ...document, lifecycle: streaming ? "streaming" : "ready" }} onAction={(event) => {
+		void trigger(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "interactive", ...event.intent } });
+		return true;
+	}} />;
+}
+
+function interactiveComponent(name: string, description: string) {
+	return defineComponent({
+		name,
+		description,
+		// A fresh schema object per component: the JSON schema keeps one component per shared schema object.
+		props: interactivePropsSchema.extend({}),
+		component: ({ props }) => <OpenUIInteractive props={props} component={name} />,
+	});
+}
+
+export const StateMachine = interactiveComponent("StateMachine", "Build, trace or fix a state machine of up to 8 states: a protocol, a device, an automaton or regular expression.");
+export const Construction = interactiveComponent("Construction", "One of six compass-and-straightedge constructions done with the tools, with each step checked.");
+export const FractionLine = interactiveComponent("FractionLine", "Fraction bars on a 0-to-max number line: lay bars on each other, cut pieces to rename, place a fraction.");
+export const EquationWorkbench = interactiveComponent("EquationWorkbench", "Drag terms of one linear equation or expression: solve, expand, factor a number out, simplify, compare.");
+export const PermutationLab = interactiveComponent("PermutationLab", "A rearrangement as a rule on places: compose two, sort by fewest swaps, or repeat one until it returns.");
+export const LinkedModel = interactiveComponent("LinkedModel", "One parameterised model (iteration, ODE or function) drawn as linked curve, trace, phase plot and table.");
+export const SortBoard = interactiveComponent("SortBoard", "Retrieval practice: order steps, sort items into 2–4 bins, or label a diagram, with feedback per miss.");
+export const DataExplorer = interactiveComponent("DataExplorer", "Regroup a small dataset to see whether a gap between two groups survives (confounding, Simpson's paradox).");
+export const PlanTimeline = interactiveComponent("PlanTimeline", "A plan of dependent tasks on a 5–21 day grid with capacity, a deadline and an optional proposal.");
+export const EvidenceBoard = interactiveComponent("EvidenceBoard", "Link sentences of one passage to a claim (backs, partly, undercuts), or rebuild a draft against a rubric.");
+
+const INTERACTIVE_REPLY_COMPONENTS = [StateMachine, Construction, FractionLine, EquationWorkbench, PermutationLab, LinkedModel, SortBoard, DataExplorer, PlanTimeline, EvidenceBoard] as const;
+
+/** Selection policy and one line per component. Full schemas arrive with the turn that offers one. */
+export const keatingOpenUIInteractiveRepliesGuide = [
+	"## Interactive replies",
+	"A reply is prose. It may embed one interactive reply component when moving the subject itself (terms, fraction pieces, tiles, a parameter, sentences) teaches more than reading. Prose is the default. Never use one for a definition, a quick fact, a yes/no question, a formula asked for, or an emotional or conversational message, and give the answer when the learner asks for the answer. The config must be the learner's own case: their numbers, equation, text or plan. Write one or two sentences on what to drag and what to watch, then stop and wait for the share. Author one only on a turn whose decisions offer it; that turn supplies its config schema. A config that breaks the schema shows a fallback line, which is worse than a good paragraph.",
+	"- `StateMachine`: what happens next depends on an input (TCP, a vending machine, a regex). A fixed order with no branches is a `SortBoard` sequence.",
+	"- `Construction`: only equilateral triangle, perpendicular bisector, angle bisector, copy a segment, copy an angle, hexagon. Any other construction or measuring: prose.",
+	"- `FractionLine`: compare, rename or place fractions as lengths. Not decimals, percentages or fraction arithmetic.",
+	"- `EquationWorkbench`: one linear equation in one letter, or one expression to expand, factor or simplify. Not quadratics, systems, inequalities or multi-letter formulas.",
+	"- `PermutationLab`: composing, sorting by swaps, repeating a rearrangement. Not counting arrangements.",
+	"- `LinkedModel`: how a parameter changes a run or a curve. Not solving an equation or evaluating a formula once.",
+	"- `SortBoard`: a requested quiz on an order, categories or diagram labels. Not an explanation.",
+	"- `DataExplorer`: whether a group gap survives regrouping, with real or labelled made-up data. Not one-number statistics.",
+	"- `PlanTimeline`: re-plan dated tasks around a deadline or lost day, at most 21 days. Not general study advice.",
+	"- `EvidenceBoard`: which sentences of one text back or undercut a claim, or two drafts against a rubric. Standalone statements into categories are a `SortBoard`.",
+	'Syntax is positional: `reply = SortBoard("Chemical or physical change?", { layout: "bins", … }, "optional brief")`. A share arrives as a learner response with what the learner did and the component\'s own analysis. Respond to what they did; the analysis is advisory, so confirm or correct it rather than repeating it.',
+].join("\n");
+
 const learningBlock = z.union([
 	AudioResponse.ref,
 	VideoResponse.ref,
@@ -896,6 +962,16 @@ const learningBlock = z.union([
 	FractionBars.ref,
 	CountingArray.ref,
 	Clock.ref,
+	StateMachine.ref,
+	Construction.ref,
+	FractionLine.ref,
+	EquationWorkbench.ref,
+	PermutationLab.ref,
+	LinkedModel.ref,
+	SortBoard.ref,
+	DataExplorer.ref,
+	PlanTimeline.ref,
+	EvidenceBoard.ref,
 ]);
 
 export const LearningSurface = defineComponent({
@@ -956,6 +1032,7 @@ export const keatingOpenUILibrary = createLibrary({
 		FractionBars,
 		CountingArray,
 		Clock,
+		...INTERACTIVE_REPLY_COMPONENTS,
 	],
 	componentGroups: [
 		{ name: "Perform and reflect", components: ["AudioResponse", "VideoResponse"] },
@@ -965,6 +1042,7 @@ export const keatingOpenUILibrary = createLibrary({
 		{ name: "People and community", components: ["PersonBrief", "Connect"] },
 		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "Lab"] },
 		{ name: "Early learning", components: ["NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock"] },
+		{ name: "Interactive replies", components: INTERACTIVE_REPLY_COMPONENTS.map((component) => component.name) },
 	],
 });
 
@@ -1106,6 +1184,7 @@ export const keatingOpenUIPrompt = [
 	"- `Connect(id, title, idea, actions, lifecycle, estimatedMinutes, dueAt)`: when an idea would grow by being discussed, taught, or tested with others — a lone learner, a project that needs feedback, a lesson worth passing on. `idea` states the one idea in the learner's words. `actions` are two to four concrete, low-stakes ways to share it, mixing online (a named kind of community or forum, a post they could write) and offline (a friend, a colleague, a meetup, a class). Prefer asking people a question over broadcasting an answer. Never post, message, or contact anyone on the learner's behalf, and never invent specific groups, events, or people — name a kind of place, or search for real ones and cite them.",
 	"When a Keating study room fits — the learner wants to talk the idea through with a particular person — offer to create an invite with `room_invite`; the learner sends the link themselves.",
 	keatingOpenUIEarlyLearningGuide,
+	keatingOpenUIInteractiveRepliesGuide,
 	"## Manipulable models",
 	"When a relationship is more convincing moved than described, stream a `Simulation` instead of explaining it. The learner drags a parameter and the readouts recompute instantly with no turn spent, so they can try twenty variations while their attention is still on the question.",
 	"`expr` is arithmetic only: `+ - * / % ^`, parentheses, numeric literals, and the parameter ids you declared on the same node. There are no function calls, no `Math.`, no conditionals, and no identifiers you did not declare — a readout that reaches for anything else is dropped. Build percentages and ratios from the arithmetic you have.",

@@ -1,0 +1,1211 @@
+{
+ "about": "Copy of web/.keating-mockups/eval/selection.json (80 learner questions, expected component or prose), with ids renamed to OpenUI names. `judge` lists the decisions and features a careful judge would answer true for each question; everything unlisted is answered false. These judge answers are authored by hand, so agreement over this file measures the affordance table under those answers, not the judge itself.",
+ "items": [
+  {
+   "id": "s01",
+   "question": "What actually happens, step by step, when I click an HTTPS link?",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "ordered_procedure",
+     "structure_relations",
+     "state_transitions"
+    ]
+   }
+  },
+  {
+   "id": "s02",
+   "question": "What does HTTPS stand for?",
+   "expected": "prose",
+   "pair": "statemachine-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s03",
+   "question": "Why can't the browser start the TLS handshake before the DNS answer comes back?",
+   "expected": "StateMachine",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "ordered_procedure",
+     "structure_relations",
+     "state_transitions",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s04",
+   "question": "Can you help me practise constructing an equilateral triangle with a compass?",
+   "expected": "Construction",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "hands_on_requested",
+     "geometric_construction",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s05",
+   "question": "How do I bisect an angle with a compass?",
+   "expected": "Construction",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s06",
+   "question": "Why does the compass construction guarantee all three sides are equal?",
+   "expected": "Construction",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s07",
+   "question": "Which is bigger, 3/4 or 5/8?",
+   "expected": "FractionLine",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "fraction_magnitude",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s08",
+   "question": "Where does 7/4 go on a number line?",
+   "expected": "FractionLine",
+   "pair": "numberline-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "fraction_magnitude",
+     "visual_reference"
+    ]
+   }
+  },
+  {
+   "id": "s09",
+   "question": "My teacher says 2/4 and 1/2 are the same. How can that be if the numbers are different?",
+   "expected": "FractionLine",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "fraction_magnitude",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s10",
+   "question": "Why is 5/6 bigger than 4/5 when both are one piece short of a whole?",
+   "expected": "FractionLine",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "fraction_magnitude",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s11",
+   "question": "What's 3/4 as a decimal?",
+   "expected": "prose",
+   "pair": "numberline-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s12",
+   "question": "Why is 3/8 less than 1/2? I keep thinking 8 is bigger than 2.",
+   "expected": "FractionLine",
+   "pair": "numberline-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested",
+     "misconception_visible"
+    ],
+    "features": [
+     "fraction_magnitude",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s13",
+   "question": "How do I solve 5 − 2x = 11?",
+   "expected": "EquationWorkbench",
+   "pair": "algebra-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "symbolic_manipulation",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s14",
+   "question": "Why do I flip the sign when I move a term to the other side?",
+   "expected": "EquationWorkbench",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "symbolic_manipulation",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s15",
+   "question": "Is (x + 3)² the same as x² + 9?",
+   "expected": "EquationWorkbench",
+   "pair": "algebra-vs-linked-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested",
+     "misconception_visible"
+    ],
+    "features": [
+     "symbolic_manipulation",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s16",
+   "question": "How do I factor 12y + 18?",
+   "expected": "EquationWorkbench",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "symbolic_manipulation",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s17",
+   "question": "Just tell me what x is in 3x = 12, I'm checking my homework.",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested",
+     "plain_reply_requested"
+    ],
+    "features": [
+     "symbolic_manipulation"
+    ]
+   }
+  },
+  {
+   "id": "s18",
+   "question": "Solve x² − 5x + 6 = 0.",
+   "expected": "prose",
+   "pair": "algebra-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s19",
+   "question": "Rearrange v = u + at to make t the subject.",
+   "expected": "prose",
+   "pair": "algebra-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s20",
+   "question": "Why does the order matter when I compose two permutations?",
+   "expected": "PermutationLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "permutation_structure",
+     "structure_relations",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s21",
+   "question": "Our relay team rotates legs every race. How many races until we're back in the original order?",
+   "expected": "PermutationLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "permutation_structure",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s22",
+   "question": "What's the fewest number of swaps to put 4 2 5 1 3 back in order, and how would I know it's the fewest?",
+   "expected": "PermutationLab",
+   "pair": "permutations-vs-sortboard",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested",
+     "explanation_requested"
+    ],
+    "features": [
+     "permutation_structure",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s23",
+   "question": "Quiz me on the order of the planets from the Sun.",
+   "expected": "SortBoard",
+   "pair": "permutations-vs-sortboard",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s24",
+   "question": "How many different ways can I arrange 5 books on a shelf?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s25",
+   "question": "Why does Newton's method sometimes jump away from the root instead of closing in?",
+   "expected": "LinkedModel",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s26",
+   "question": "How does air resistance change how high a ball thrown straight up goes?",
+   "expected": "LinkedModel",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s27",
+   "question": "How does the height h = 20t − 5t² change if I throw the ball faster?",
+   "expected": "LinkedModel",
+   "pair": "algebra-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s28",
+   "question": "What does changing m do to the line y = mx + c?",
+   "expected": "LinkedModel",
+   "pair": "algebra-vs-linked-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s29",
+   "question": "If I keep walking half of the remaining distance to the wall, how does the gap shrink step by step?",
+   "expected": "LinkedModel",
+   "pair": "numberline-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s30",
+   "question": "When does an epidemic peak, and how does lowering the contact rate change that?",
+   "expected": "LinkedModel",
+   "pair": "numberline-vs-linked-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s31",
+   "question": "Is 0.4 of a pizza more than 3/8 of it?",
+   "expected": "prose",
+   "pair": "numberline-vs-linked-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s32",
+   "question": "What's the formula for compound interest?",
+   "expected": "prose",
+   "pair": "linked-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s33",
+   "question": "How much difference does it make to my savings if the interest rate goes from 3% to 5% over 20 years?",
+   "expected": "LinkedModel",
+   "pair": "linked-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s34",
+   "question": "Can you quiz me on the stages of the cell cycle in order?",
+   "expected": "SortBoard",
+   "pair": "sequence-vs-timeline-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s35",
+   "question": "I have ten days to revise the cell cycle, genetics and ecology before my biology exam. Can you lay out a plan?",
+   "expected": "PlanTimeline",
+   "pair": "sequence-vs-timeline-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "project_goal_requested"
+    ],
+    "features": [
+     "plan_revision",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s36",
+   "question": "Put the steps of writing a lab report in the right order for me to learn them.",
+   "expected": "SortBoard",
+   "pair": "sequence-vs-timeline-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s37",
+   "question": "My lab is on Tuesday and the report is due Friday. When should I do the analysis and the write-up?",
+   "expected": "PlanTimeline",
+   "pair": "sequence-vs-timeline-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "project_goal_requested"
+    ],
+    "features": [
+     "plan_revision",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s38",
+   "question": "Help me remember which rocks are igneous, sedimentary or metamorphic.",
+   "expected": "SortBoard",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "category_distinction"
+    ]
+   }
+  },
+  {
+   "id": "s39",
+   "question": "Quiz me on the parts of a neuron.",
+   "expected": "SortBoard",
+   "pair": "sortboard-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "visual_reference"
+    ]
+   }
+  },
+  {
+   "id": "s40",
+   "question": "Test me: are these sentences claims, evidence or reasoning?",
+   "expected": "SortBoard",
+   "pair": "evidence-vs-bins-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "category_distinction"
+    ]
+   }
+  },
+  {
+   "id": "s41",
+   "question": "Here's the article about phones and teen sleep. Which sentences actually back up its headline?",
+   "expected": "EvidenceBoard",
+   "pair": "evidence-vs-bins-a",
+   "judge": {
+    "decisions": [
+     "learning_task"
+    ],
+    "features": [
+     "source_evaluation",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s42",
+   "question": "Sort these statements about climate into fact or opinion.",
+   "expected": "SortBoard",
+   "pair": "evidence-vs-bins-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "category_distinction"
+    ]
+   }
+  },
+  {
+   "id": "s43",
+   "question": "Does this op-ed paragraph actually support its argument that the city should ban cars downtown? I'll paste it.",
+   "expected": "EvidenceBoard",
+   "pair": "evidence-vs-bins-b",
+   "judge": {
+    "decisions": [
+     "learning_task"
+    ],
+    "features": [
+     "source_evaluation",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s44",
+   "question": "Can you explain what mitochondria actually do?",
+   "expected": "prose",
+   "pair": "sortboard-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "structure_relations",
+     "visual_reference"
+    ]
+   }
+  },
+  {
+   "id": "s45",
+   "question": "The new treatment has a lower success rate overall. Does that mean it's worse?",
+   "expected": "DataExplorer",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "data_grouping",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s46",
+   "question": "Alaska Airlines has more delays overall than America West, but I heard it's on time more at every airport. How?",
+   "expected": "DataExplorer",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "data_grouping",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s47",
+   "question": "What is Simpson's paradox?",
+   "expected": "prose",
+   "pair": "data-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s48",
+   "question": "Students who sleep more get better grades in our survey. Is it the sleep, or something else? Here are the numbers by year group.",
+   "expected": "DataExplorer",
+   "pair": "data-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "data_grouping",
+     "variable_relationship",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s49",
+   "question": "What's the mean of 4, 7 and 10?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s50",
+   "question": "I lost Wednesday to a shift. Can you move my study plan?",
+   "expected": "PlanTimeline",
+   "judge": {
+    "decisions": [
+     "learning_task"
+    ],
+    "features": [
+     "plan_revision"
+    ]
+   }
+  },
+  {
+   "id": "s51",
+   "question": "Help me plan my thesis chapters before the hand-in in three weeks.",
+   "expected": "PlanTimeline",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "project_goal_requested"
+    ],
+    "features": [
+     "plan_revision",
+     "extended_production",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s52",
+   "question": "Is it better to study in the morning or at night?",
+   "expected": "prose",
+   "pair": "timeline-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s53",
+   "question": "I'm so behind and overwhelmed. I don't even know where to start.",
+   "expected": "prose",
+   "pair": "timeline-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "learner_stuck"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s54",
+   "question": "My revised conclusion is better than my first draft, right? Can you show me why against the rubric?",
+   "expected": "EvidenceBoard",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "source_evaluation",
+     "extended_production"
+    ]
+   }
+  },
+  {
+   "id": "s55",
+   "question": "This ad says nine out of ten dentists recommend it. Does that actually support 'whitens teeth in a week'?",
+   "expected": "EvidenceBoard",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "source_evaluation"
+    ]
+   }
+  },
+  {
+   "id": "s56",
+   "question": "Thanks, that really helped!",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "explicit_feedback"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s57",
+   "question": "I failed my maths test and I feel stupid.",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learner_stuck"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s58",
+   "question": "What year did the First World War start?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s59",
+   "question": "Hi Keating, how's your day going?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [],
+    "features": []
+   }
+  },
+  {
+   "id": "s60",
+   "question": "Can you summarise my notes on photosynthesis in three bullet points?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task"
+    ],
+    "features": [
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s61",
+   "question": "What's the formula for the area of a circle?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall",
+     "variable_relationship"
+    ]
+   }
+  },
+  {
+   "id": "s62",
+   "question": "Who wrote Pride and Prejudice?",
+   "expected": "prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s63",
+   "question": "How does the TCP three-way handshake work?",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-sequence-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "state_transitions",
+     "ordered_procedure",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s64",
+   "question": "Put the steps of the TCP handshake in order for my networking quiz.",
+   "expected": "SortBoard",
+   "pair": "statemachine-vs-sequence-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "state_transitions",
+     "ordered_procedure",
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s65",
+   "question": "Which of these strings does the regex ab*c accept: ac, abbc, abcb?",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-prose-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "state_transitions",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s66",
+   "question": "What does the * mean in a regular expression?",
+   "expected": "prose",
+   "pair": "statemachine-vs-prose-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s67",
+   "question": "My traffic-light controller lets the pedestrian light go green while cars still have green. Can you help me find the bug?",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-timeline",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "attempt_present"
+    ],
+    "features": [
+     "state_transitions",
+     "executable_code"
+    ]
+   }
+  },
+  {
+   "id": "s68",
+   "question": "The traffic lights on our street change every 90 seconds. How long do I wait on average if I arrive at a random time?",
+   "expected": "prose",
+   "pair": "statemachine-vs-timeline",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s69",
+   "question": "Walk me through what a vending machine does when I put in 25¢, then 50¢, then press the button.",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-linked",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "state_transitions",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s70",
+   "question": "How does the price of a vending-machine snack change with inflation over ten years?",
+   "expected": "LinkedModel",
+   "pair": "statemachine-vs-linked",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship"
+    ]
+   }
+  },
+  {
+   "id": "s71",
+   "question": "Draw me a DFA that accepts binary strings with an even number of 1s.",
+   "expected": "StateMachine",
+   "pair": "statemachine-vs-permutations",
+   "judge": {
+    "decisions": [
+     "learning_task"
+    ],
+    "features": [
+     "state_transitions"
+    ]
+   }
+  },
+  {
+   "id": "s72",
+   "question": "If I keep swapping the first two cards of a three-card hand, when is it back to the start?",
+   "expected": "PermutationLab",
+   "pair": "statemachine-vs-permutations",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "permutation_structure",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s73",
+   "question": "How do I find the exact middle of a line using only a compass and a ruler?",
+   "expected": "Construction",
+   "pair": "compass-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s74",
+   "question": "How do I construct a regular pentagon with a compass?",
+   "expected": "prose",
+   "pair": "compass-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s75",
+   "question": "Why does the radius step round a circle exactly six times?",
+   "expected": "Construction",
+   "pair": "compass-vs-prose-d",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s76",
+   "question": "How do I copy an angle onto another line without a protractor?",
+   "expected": "Construction",
+   "pair": "compass-vs-prose-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s77",
+   "question": "How do I measure an angle with a protractor?",
+   "expected": "prose",
+   "pair": "compass-vs-prose-b",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "ordered_procedure"
+    ]
+   }
+  },
+  {
+   "id": "s78",
+   "question": "What's the difference between a perpendicular bisector and an angle bisector?",
+   "expected": "prose",
+   "pair": "compass-vs-prose-c",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "category_distinction"
+    ]
+   }
+  },
+  {
+   "id": "s79",
+   "question": "Test me: can I bisect a 120° angle without any hints?",
+   "expected": "Construction",
+   "pair": "compass-vs-prose-c",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "geometric_construction",
+     "hands_on_requested"
+    ]
+   }
+  },
+  {
+   "id": "s80",
+   "question": "How long is the third side of a triangle with sides 3 and 4 and a right angle between them?",
+   "expected": "prose",
+   "pair": "compass-vs-prose-d",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  }
+ ]
+}

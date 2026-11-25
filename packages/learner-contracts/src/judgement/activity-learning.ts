@@ -148,7 +148,7 @@ export function descriptor(reply: TeachingPolicyReply): ActivityDescriptor | nul
     else if (node.type === "deck") kinds.add("recall");
     else if (node.type === "simulation") kinds.add("simulation");
     else if (["image", "concept-map", "media"].includes(node.type)) kinds.add("visual");
-    else if (["language-practice", "coding-challenge", "music-lab", "lab", "task", "manipulative"].includes(node.type)) kinds.add("practice");
+    else if (["language-practice", "coding-challenge", "music-lab", "lab", "task", "manipulative", "interactive"].includes(node.type)) kinds.add("practice");
     else kinds.add("mixed");
   }
   const kind = kinds.size > 1 ? "mixed" : [...kinds][0] ?? "prose";

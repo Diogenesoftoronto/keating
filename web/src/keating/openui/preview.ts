@@ -1,5 +1,5 @@
 import type { UiDocument, UiDocumentNode, UiStudyPlanItem } from "@keating/learner-contracts";
-import { MANIPULATIVE_TITLES, tryCompileOpenUISourceToSharedDocument } from "@keating/learner-contracts";
+import { INTERACTIVE_TITLES, MANIPULATIVE_TITLES, tryCompileOpenUISourceToSharedDocument } from "@keating/learner-contracts";
 import { parseOpenUIMessageSegments } from "./segments";
 import type { OpenUIDocumentScope, OpenUIMessageSegment } from "./types";
 
@@ -47,6 +47,7 @@ export type OpenUIPreviewArtifactKind =
 	| "music"
 	| "language"
 	| "manipulative"
+	| "interactive"
 	| "unavailable";
 
 function countPlanItems(items: readonly UiStudyPlanItem[] | undefined): number {
@@ -133,6 +134,8 @@ function blockForNode(node: UiDocumentNode, prefix: string): OpenUIPreviewBlock 
 			return { type: "artifact", id, kind: "music", label: node.title, detail: `Music lab${node.controls?.length ? ` · ${plural(node.controls.length, "control")}` : ""}` };
 		case "manipulative":
 			return { type: "artifact", id, kind: "manipulative", label: node.title, detail: `${MANIPULATIVE_TITLES[node.model.kind]}${node.prompt ? " · to try" : ""}` };
+		case "interactive":
+			return { type: "artifact", id, kind: "interactive", label: node.title, detail: `${INTERACTIVE_TITLES[node.kind]} · to try` };
 		case "language-practice":
 			return { type: "artifact", id, kind: "language", label: node.title, detail: `Language practice · ${node.language} · ${plural(node.rounds.length, "round")}` };
 		default:

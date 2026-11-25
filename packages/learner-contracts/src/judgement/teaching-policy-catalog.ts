@@ -1,7 +1,7 @@
 import type { NoulQuestion } from "./contracts.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
-export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.5.1";
+export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.6.0";
 export const CHECKPOINT_FEEDBACK_ISSUE = "checkpoint_feedback_unsupported";
 export const POLICY_PROTOCOL_SOURCE = "web/src/keating/prompts/operational-protocol.md";
 const persona = "web/src/keating/persona.ts#DEFAULT_TEACHER_PERSONA";
@@ -55,7 +55,7 @@ export interface TeachingInteractionFeatureDefinition {
    * cue sends the same planning request as before the feature existed, so
    * recorded evidence for such turns stays replayable. Unasked means unknown.
    */
-  readonly askWhen?: "early_learning_cue";
+  readonly askWhen?: "early_learning_cue" | "interactive_reply_cue";
 }
 
 const featureContext = "Considering `turn.learnerMessage`, only the relevant part of `turn.conversation`, and `turn.activeWork.focus` when present: ";
@@ -85,6 +85,15 @@ export const TEACHING_INTERACTION_FEATURES: readonly TeachingInteractionFeatureD
   feature("outside_observation", "Does the question require observing or collecting information outside the chat?", "send the learner to observe or collect evidence"),
   feature("concrete_quantity", "Is the learner a young child or just starting with number, working on counting, adding or taking away, place value, equal groups, simple fractions, or telling time, where a picture of the actual quantities would help more than symbols? Arithmetic used as a step in more advanced work is insufficient.", "let the learner see and work the quantities in a concrete model", "early_learning_cue"),
   feature("untested_coverage", "Does the relevant conversation, active work, or the learner's account identify material already studied whose recall or application they now want to check, or that they have not yet been asked to practise? A topic mentioned for the first time without evidence of study is insufficient.", "check recall of material already studied"),
+  // Interactive reply features. Each is asked only when its wording cue (interactive-reply-cues.ts) holds.
+  feature("state_transitions", "Is the material a process that moves between a few discrete states, where what happens next depends on an input or event, such as a protocol, a machine, an automaton or regular expression, or a controller? A fixed sequence with no branching, rejection or loop is insufficient.", "let the learner build, trace or fix the machine themselves", "interactive_reply_cue"),
+  feature("geometric_construction", "Does the learner want to carry out or understand a compass-and-straightedge construction: an equilateral triangle, a perpendicular bisector or midpoint, an angle bisector, copying a segment or an angle, or a hexagon in a circle? Other constructions, measuring with a ruler or protractor, and definitions are insufficient.", "let the learner do the construction with the tools", "interactive_reply_cue"),
+  feature("fraction_magnitude", "Does the material hinge on the size of specific fractions as lengths: comparing them, renaming one as an equivalent fraction, or placing one on a number line? Converting to decimals or percentages, fraction arithmetic procedures, and definitions are insufficient.", "let the learner compare fractions as lengths", "interactive_reply_cue"),
+  feature("symbolic_manipulation", "Does the learner want to solve, expand, factor, simplify or check one specific linear equation or expression in a single letter, step by step? Quadratics, systems, inequalities, rearranging a formula with several letters, and wanting only the final value are insufficient.", "let the learner move the terms of the equation themselves", "interactive_reply_cue"),
+  feature("permutation_structure", "Is the material a rearrangement treated as a rule on positions: composing two rearrangements, the fewest swaps to restore an order, or how many repeats return everything to the start? Counting the number of possible arrangements and recalling a fixed order are insufficient.", "let the learner apply and compose the rearrangement", "interactive_reply_cue"),
+  feature("data_grouping", "Does the learner's question turn on whether a difference between two groups survives when the cases are split by another factor, such as confounding, base rates or Simpson's paradox, with data supplied or described? A one-number statistic and a definition are insufficient.", "let the learner regroup the data and see whether the gap holds", "interactive_reply_cue"),
+  feature("plan_revision", "Does the learner want to lay out or change a schedule of their own dated tasks around a deadline, a fixed event or a lost day, within about three weeks? General study advice and feelings about workload are insufficient.", "let the learner move the tasks on a day grid", "interactive_reply_cue"),
+  feature("source_evaluation", "Does the learner want to judge how particular sentences of one supplied or described text back or undercut a claim, or to compare two drafts of their writing against criteria? Sorting standalone statements into categories and asking what a source type is are insufficient.", "let the learner link the sentences to the claim themselves", "interactive_reply_cue"),
 ];
 
 export interface TeachingPlanReviewDefinition {

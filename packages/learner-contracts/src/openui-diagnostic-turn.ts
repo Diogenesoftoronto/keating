@@ -107,7 +107,7 @@ const COMPONENTS = [
   "question", "question-group", "quiz", "exam", "deck", "study-plan", "concept-map", "diagram",
   "notes", "simulation", "lab", "coding-challenge", "music-lab", "language-practice", "markdown", "callout",
   "goal", "image", "media", "artifact", "handoff", "task", "assignment", "practice", "draft",
-  "fieldwork", "connect", "person", "audio-response", "video-response", "manipulative",
+  "fieldwork", "connect", "person", "audio-response", "video-response", "manipulative", "interactive",
 ];
 const componentMap = new Map(COMPONENTS.map(kind => [kind.replaceAll("-", ""), kind]));
 export function isOpenUiDiagnosticInterface(component: string): boolean {
@@ -118,6 +118,9 @@ for (const [alias, kind] of Object.entries({
   learninganimation: "handoff", sharednotes: "notes", systemdesign: "diagram", personbrief: "person",
   numberline: "manipulative", tenframe: "manipulative", placevalue: "manipulative", fractionbars: "manipulative",
   countingarray: "manipulative", clock: "manipulative",
+  statemachine: "interactive", construction: "interactive", fractionline: "interactive", equationworkbench: "interactive",
+  permutationlab: "interactive", linkedmodel: "interactive", sortboard: "interactive", dataexplorer: "interactive",
+  plantimeline: "interactive", evidenceboard: "interactive",
 })) componentMap.set(alias, kind);
 
 export function normalizeOpenUiComponent(name: string): string | null {

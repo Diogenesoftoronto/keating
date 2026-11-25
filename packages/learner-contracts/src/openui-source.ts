@@ -26,6 +26,7 @@ import {
 import { WEB_OPENUI_COMPONENTS } from "./rendering.js";
 import { isValidSimulationExpression } from "./simulation-expression.js";
 import { MANIPULATIVE_TITLES, manipulativeModelFromProps } from "./manipulatives.js";
+import { INTERACTIVE_TITLES, interactiveKindForComponent, isInteractiveConfig } from "./interactive-replies.js";
 import type { SystemDesignSpec } from "./system-design.js";
 import { SYSTEM_DESIGN_KINDS } from "./system-design.js";
 
@@ -48,6 +49,8 @@ export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
   "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice", "Lab",
   "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
+  "StateMachine", "Construction", "FractionLine", "EquationWorkbench", "PermutationLab",
+  "LinkedModel", "SortBoard", "DataExplorer", "PlanTimeline", "EvidenceBoard",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -270,6 +273,9 @@ class SourceParser {
   private fail(kind: OpenUISourceFailureKind, message: string): never { throw new OpenUISourceError(kind, message); }
 }
 
+/** Interactive replies take `Name(title, config, brief?)`; the object form adds an optional `id`. */
+const INTERACTIVE_POSITIONAL = ["title", "config", "brief"] as const;
+
 const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   LearningSurface: ["content", "title", "description", "lifecycle"],
   Explanation: ["markdown", "title"],
@@ -304,6 +310,16 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   FractionBars: ["id", "title", "bars", "prompt", "lifecycle", "brief"],
   CountingArray: ["id", "title", "rows", "columns", "symbol", "prompt", "lifecycle", "brief"],
   Clock: ["id", "title", "hour", "minute", "prompt", "lifecycle", "brief"],
+  StateMachine: INTERACTIVE_POSITIONAL,
+  Construction: INTERACTIVE_POSITIONAL,
+  FractionLine: INTERACTIVE_POSITIONAL,
+  EquationWorkbench: INTERACTIVE_POSITIONAL,
+  PermutationLab: INTERACTIVE_POSITIONAL,
+  LinkedModel: INTERACTIVE_POSITIONAL,
+  SortBoard: INTERACTIVE_POSITIONAL,
+  DataExplorer: INTERACTIVE_POSITIONAL,
+  PlanTimeline: INTERACTIVE_POSITIONAL,
+  EvidenceBoard: INTERACTIVE_POSITIONAL,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -674,6 +690,26 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       return [{
         type: "manipulative", id: contractId(text(props.id, id), id), title: text(props.title, MANIPULATIVE_TITLES[model.kind]),
         ...(brief ? { brief } : {}), ...(prompt ? { prompt } : {}), model,
+      }];
+    }
+    case "StateMachine":
+    case "Construction":
+    case "FractionLine":
+    case "EquationWorkbench":
+    case "PermutationLab":
+    case "LinkedModel":
+    case "SortBoard":
+    case "DataExplorer":
+    case "PlanTimeline":
+    case "EvidenceBoard": {
+      const kind = interactiveKindForComponent(element.typeName)!;
+      // Structural bounds only; each component's semantic validator runs in the web renderer.
+      if (!isInteractiveConfig(props.config)) throw new OpenUISourceError("invalid", `${element.typeName} needs a JSON config object within the shared bounds.`);
+      const brief = optionalText(props.brief)?.trim();
+      return [{
+        type: "interactive", id: contractId(text(props.id, id), id), kind,
+        title: optionalText(props.title)?.trim() || INTERACTIVE_TITLES[kind],
+        ...(brief ? { brief } : {}), config: props.config,
       }];
     }
     case "AudioResponse":

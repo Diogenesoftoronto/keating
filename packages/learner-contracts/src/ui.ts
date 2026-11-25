@@ -1,4 +1,5 @@
 import { evaluateSimulationExpression, isValidSimulationExpression, parseSimulationExpression } from "./simulation-expression.js";
+import { isInteractiveKind, validateInteractiveNode, validateInteractiveShare, type InteractiveKind, type UiInteractiveNode, type UiInteractiveShare } from "./interactive-replies.js";
 import { manipulativeStateFitsNode, validateManipulativeNode, validateManipulativeStateShape, type UiManipulativeNode, type UiManipulativeState } from "./manipulatives.js";
 import { checkedMathQuestion } from "./math-question.js";
 import { systemDesignSubmissionIsComplete, validateSystemDesignSpec, type SystemDesignSpec } from "./system-design.js";
@@ -417,6 +418,7 @@ export type UiDocumentNode =
   | UiCodingChallengeNode
   | UiMusicLabNode
   | UiManipulativeNode
+  | UiInteractiveNode
   | UiLabNode
   | UiLanguagePracticeNode
   | { type: "image"; id: string; alt: string; resource: UiArtifactResource }
@@ -490,7 +492,9 @@ export type UiAction =
    */
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "share-simulation"; documentId: string; documentRevision: number; nodeId: string; parameters: UiSimulationSharedParameter[]; readouts: UiSimulationSharedReadout[]; changedParameterIds: string[]; selectedParameterId?: string; selectedReadoutId?: string; idempotencyKey: string }
   /** An explicit learner share of the state an early-learning manipulative ended on. */
-  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "share-manipulative"; documentId: string; documentRevision: number; nodeId: string; state: UiManipulativeState; idempotencyKey: string };
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "share-manipulative"; documentId: string; documentRevision: number; nodeId: string; state: UiManipulativeState; idempotencyKey: string }
+  /** An explicit learner share of what they did in an interactive reply component. `kind` must match the node. */
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "share-interactive"; documentId: string; documentRevision: number; nodeId: string; kind: InteractiveKind; share: UiInteractiveShare; idempotencyKey: string };
 
 export interface UiActionResult {
   schemaVersion: typeof UI_CONTRACT_VERSION;
@@ -541,7 +545,7 @@ const LIFECYCLES = new Set<DocumentLifecycle>(["draft", "streaming", "ready", "s
 const RETENTION_POLICIES = new Set<UiDocumentRetention>(["ephemeral", "resumable", "workspace"]);
 const GOAL_STEP_STATUSES = new Set<UiGoalStepStatus>(["not_started", "in_progress", "done"]);
 const ARTIFACT_FORMATS = new Set<UiArtifactFormat>(["markdown", "text", "json", "uri"]);
-const ACTION_TYPES = new Set<UiAction["type"]>(["observe-lab", "run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task", "share-simulation", "share-manipulative"]);
+const ACTION_TYPES = new Set<UiAction["type"]>(["observe-lab", "run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task", "share-simulation", "share-manipulative", "share-interactive"]);
 const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted", "completed", "rejected", "retryable"]);
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
@@ -602,6 +606,7 @@ const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
   "submit-task": new Set([...ACTION_BASE_KEYS, "submission", "round", "attachments"]),
   "share-simulation": new Set([...ACTION_BASE_KEYS, "parameters", "readouts", "changedParameterIds", "selectedParameterId", "selectedReadoutId"]),
   "share-manipulative": new Set([...ACTION_BASE_KEYS, "state"]),
+  "share-interactive": new Set([...ACTION_BASE_KEYS, "kind", "share"]),
 };
 const RESULT_KEYS = new Set(["schemaVersion", "documentId", "sourceRevision", "actionIdempotencyKey", "status", "documentLifecycle", "resultingDocument", "message", "retryAfterMs"]);
 const RECEIPT_KEYS = new Set(["schemaVersion", "action", "actionFingerprint", "state", "createdAt", "updatedAt", "result"]);
@@ -991,6 +996,7 @@ function validateUiDocumentNode(value: unknown): value is UiDocumentNode {
       && (value.hint === undefined || boundedString(value.hint, 4096, true));
     case "lab": return validateLabNode(value);
     case "manipulative": return validateManipulativeNode(value);
+    case "interactive": return validateInteractiveNode(value);
     case "music-lab": return hasOnlyKeys(value, MUSIC_LAB_KEYS) && boundedString(value.title, 512)
       && boundedString(value.code, 32768) && (value.brief === undefined || boundedString(value.brief, 4096, true))
       && (value.visualization === undefined || value.visualization === "pianoroll" || value.visualization === "scope")
@@ -1117,6 +1123,7 @@ export function validateUiAction(value: unknown): value is UiAction {
       && (value.selectedParameterId === undefined || (value.parameters as UiSimulationSharedParameter[]).some((item) => item.parameterId === value.selectedParameterId))
       && (value.selectedReadoutId === undefined || (value.readouts as UiSimulationSharedReadout[]).some((item) => item.readoutId === value.selectedReadoutId));
     case "share-manipulative": return validateManipulativeStateShape(value.state);
+    case "share-interactive": return isInteractiveKind(value.kind) && validateInteractiveShare(value.share);
     case "save-artifact": case "retry": case "open-handoff": return true;
   }
 }
@@ -1297,6 +1304,7 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     case "open-handoff": return target.node.type === "handoff";
     case "share-simulation": return target.node.type === "simulation" && validateSimulationShareAgainstNode(action, target.node);
     case "share-manipulative": return target.node.type === "manipulative" && manipulativeStateFitsNode(target.node, action.state);
+    case "share-interactive": return target.node.type === "interactive" && target.node.kind === action.kind;
   }
 }
 

@@ -434,3 +434,61 @@ describe("gated early-learning feature", () => {
     expect(rec.families.map(({ family }) => family)).toEqual(["early"]);
   });
 });
+
+describe("interactive reply rows", () => {
+  const host = { interactiveRepliesAvailable: true } as const;
+  const components = (recommendation: ReturnType<typeof recommendInteraction>) => recommendation.families.flatMap((family) => family.components);
+  const cases: [string[], Record<string, boolean>, string][] = [
+    [["state_transitions"], teaching, "StateMachine"],
+    [["geometric_construction"], teaching, "Construction"],
+    [["fraction_magnitude"], teaching, "FractionLine"],
+    [["symbolic_manipulation"], teaching, "EquationWorkbench"],
+    [["permutation_structure"], teaching, "PermutationLab"],
+    [["variable_relationship", "prediction_opportunity"], teaching, "LinkedModel"],
+    [["ordered_procedure"], { ...teaching, practice_requested: true }, "SortBoard"],
+    [["category_distinction"], { ...teaching, practice_requested: true }, "SortBoard"],
+    [["discrete_recall", "visual_reference"], { ...teaching, practice_requested: true }, "SortBoard"],
+    [["data_grouping"], teaching, "DataExplorer"],
+    [["plan_revision"], teaching, "PlanTimeline"],
+    [["source_evaluation"], teaching, "EvidenceBoard"],
+  ];
+
+  test.each(cases)("%p offers its component only on a host that renders it", (ids, decisions, component) => {
+    expect(components(recommendInteraction(features(...ids), decisions, host))).toContain(component);
+    expect(components(recommendInteraction(features(...ids), decisions))).not.toContain(component);
+  });
+
+  test("prose stays the default: no material feature, a plain reply, or a formula asked for offers none", () => {
+    expect(components(recommendInteraction(allFalse, teaching, host))).toEqual([]);
+    expect(recommendInteraction(features("symbolic_manipulation"), { ...teaching, plain_reply_requested: true }, host).action).toBe("none");
+    expect(components(recommendInteraction(features("variable_relationship"), teaching, host))).not.toContain("LinkedModel");
+  });
+
+  test("a sort board is a quiz: it needs a practice request", () => {
+    expect(components(recommendInteraction(features("ordered_procedure"), teaching, host))).not.toContain("SortBoard");
+    expect(components(recommendInteraction(features("category_distinction"), teaching, host))).not.toContain("SortBoard");
+  });
+
+  test("an assessment opt-out suppresses the activity", () => {
+    const recommendation = recommendInteraction(features("symbolic_manipulation"), { ...teaching, assessment_declined: true }, host);
+    expect(components(recommendation)).not.toContain("EquationWorkbench");
+  });
+
+  test("the directive names the component so the host can attach its schema", () => {
+    const offer = interactionDirectives(recommendInteraction(features("state_transitions"), teaching, host)).join("\n");
+    expect(offer).toContain("StateMachine is an interactive reply component; its config schema follows this prompt.");
+    expect(offer).toContain("Name(title, config, brief)");
+    const required = interactionDirectives(recommendInteraction(features("state_transitions"), teaching, host), "require").join("\n");
+    expect(required).toContain("Include exactly one OpenUI activity this turn: StateMachine");
+    // A turn without one keeps the directives it had before the rows existed.
+    const before = interactionDirectives(recommendInteraction(features("ordered_procedure"), teaching));
+    expect(interactionDirectives(recommendInteraction(features("ordered_procedure"), teaching, host))).toEqual(before);
+  });
+
+  test("an un-cued turn asks the judge exactly what it asked before", () => {
+    const turn = { learnerMessage: "Explain photosynthesis.", conversation: [], learnerEvidence: [], availableTools: [], toolResults: [], sources: [], assessment: "none", improvementRuns: 0, domain: "general" } as TeachingPolicyTurn;
+    const gated = TEACHING_INTERACTION_FEATURES.filter(({ askWhen }) => askWhen === "interactive_reply_cue").map(({ id }) => id);
+    expect(gated).toHaveLength(8);
+    expect(Object.keys(teachingPolicyDecisionRequest(turn).questions).filter((id) => gated.includes(id))).toEqual([]);
+  });
+});

@@ -1,5 +1,5 @@
 import type { UiActionReceipt, UiDocument, UiDocumentNode, UiStudyPlanItem, UiTaskKind } from "@keating/learner-contracts";
-import { MANIPULATIVE_TITLES } from "@keating/learner-contracts";
+import { INTERACTIVE_TITLES, MANIPULATIVE_TITLES } from "@keating/learner-contracts";
 import type { StorageLike } from "./event-store";
 import { journalOnly, readTaskRecords, replyProse } from "./homework/load-assignments";
 import { projectAssignments, type AssignmentEntry, type AssignmentEvidence, type AssignmentFeedback } from "./homework/open-assignments";
@@ -27,7 +27,7 @@ type Readable = Pick<StorageLike, "getItem">;
 
 export type SessionMaterialKind =
 	| "plan" | "concept-map" | "quiz" | "flashcards" | "task" | "notes" | "goal"
-	| "simulation" | "lab" | "coding-challenge" | "language-practice" | "music-lab" | "manipulative" | "image" | "media" | "saved";
+	| "simulation" | "lab" | "coding-challenge" | "language-practice" | "music-lab" | "manipulative" | "interactive" | "image" | "media" | "saved";
 
 /** Section order in the panel. */
 export const SESSION_MATERIAL_GROUPS = ["plan", "maps", "practice", "assignments", "notes", "media", "saved"] as const;
@@ -105,7 +105,7 @@ interface NodeKind { kind: SessionMaterialKind; group: SessionMaterialGroup; lab
 
 /** Node types listed as materials; anything else (questions, prose, handoffs) is conversation. */
 export const MATERIAL_COMPONENTS: ReadonlySet<string> = new Set([
-	"quiz", "deck", "task", "notes", "goal", "simulation", "lab", "coding-challenge", "language-practice", "music-lab", "manipulative", "image", "media",
+	"quiz", "deck", "task", "notes", "goal", "simulation", "lab", "coding-challenge", "language-practice", "music-lab", "manipulative", "interactive", "image", "media",
 ]);
 
 const GENERIC_LABEL: Record<string, Omit<NodeKind, "title">> = {
@@ -120,6 +120,7 @@ const GENERIC_LABEL: Record<string, Omit<NodeKind, "title">> = {
 	lab: { kind: "lab", group: "practice", label: "Lab" },
 	"music-lab": { kind: "music-lab", group: "practice", label: "Music lab" },
 	manipulative: { kind: "manipulative", group: "practice", label: "Early learning" },
+	interactive: { kind: "interactive", group: "practice", label: "Interactive" },
 	image: { kind: "image", group: "media", label: "Image" },
 	media: { kind: "media", group: "media", label: "Media" },
 };
@@ -142,6 +143,7 @@ function nodeKind(node: UiDocumentNode): NodeKind | null {
 		case "lab": return { ...GENERIC_LABEL.lab!, title: node.title };
 		case "music-lab": return { ...GENERIC_LABEL["music-lab"]!, title: node.title || "Music lab" };
 		case "manipulative": return { ...GENERIC_LABEL.manipulative!, label: MANIPULATIVE_TITLES[node.model.kind], title: node.title || MANIPULATIVE_TITLES[node.model.kind] };
+		case "interactive": return { ...GENERIC_LABEL.interactive!, label: INTERACTIVE_TITLES[node.kind], title: node.title || INTERACTIVE_TITLES[node.kind] };
 		case "image": return { ...GENERIC_LABEL.image!, title: clip(node.resource?.title || node.alt || "Image") };
 		case "media": return { ...GENERIC_LABEL.media!, label: MEDIA_LABEL[node.kind] ?? "Media", title: node.resource?.title || MEDIA_LABEL[node.kind] || "Media" };
 		default: return null;
@@ -224,6 +226,7 @@ function nodeStatus(node: UiDocumentNode, presented: UiDocumentNode | undefined,
 		}
 		case "coding-challenge": return receiptsFor(receipts, node.id, "run-coding-challenge").length ? "Tried" : null;
 		case "manipulative": return node.prompt === undefined ? null : receiptsFor(receipts, node.id, "share-manipulative").length ? "Shared" : "To try";
+		case "interactive": return receiptsFor(receipts, node.id, "share-interactive").length ? "Shared" : "To try";
 		default: return null;
 	}
 }

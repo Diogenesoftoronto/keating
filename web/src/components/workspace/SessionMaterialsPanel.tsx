@@ -68,6 +68,7 @@ function MaterialIcon({ material, size = 16 }: { material: SessionMaterial; size
 		case "language-practice": return <KeatingGlyph name="globe" size={size} />;
 		case "lab": return <KeatingGlyph name="tool" size={size} />;
 		case "music-lab": return <KeatingGlyph name="music" size={size} />;
+		case "interactive": return <KeatingGlyph name="grip" size={size} />;
 		case "image": return <KeatingGlyph name="image" size={size} />;
 		case "media": return <KeatingGlyph name={material.label === "Audio" ? "wave" : "video"} size={size} />;
 		case "saved": {
@@ -103,7 +104,7 @@ function StatusChip({ status, pushed }: { status: string | null; pushed?: boolea
 }
 
 /** Kinds the learner works on in the chat card; the panel shows a copy. */
-const WORKED_IN_CHAT = new Set(["quiz", "flashcards", "task", "notes", "goal", "simulation", "coding-challenge", "language-practice", "music-lab", "lab"]);
+const WORKED_IN_CHAT = new Set(["quiz", "flashcards", "task", "notes", "goal", "simulation", "coding-challenge", "language-practice", "music-lab", "lab", "interactive"]);
 
 function sendSuggestion(sessionId: string, text: string) {
 	if (typeof window === "undefined") return;

@@ -26,7 +26,7 @@ test("Flue preserves the complete accepted input across the estimated boundary a
       expect(row.delivered.correct).toBe(true);
     }
     expect(read("current").requests.map((request: { questionCount: number; code: string }) => [request.questionCount, request.code]))
-      .toEqual([[39, "context-limit-exceeded"], [1, "context-limit-exceeded"]]);
+      .toEqual([[40, "context-limit-exceeded"], [1, "context-limit-exceeded"]]);
     expect(read("current").tutorResponses).toHaveLength(0);
     expect(read("current").final.reason).toBe("context-limit-exceeded");
     expect(read("current").delivered.suggestsShorterRequest).toBe(true);

@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
+  INTERACTIVE_TITLES,
   MANIPULATIVE_TITLES,
   UI_CONTRACT_VERSION,
   applyReview,
@@ -14,6 +15,7 @@ import {
   type UiStudyPlanItem,
   type UiTaskNode,
   evaluateSimulationExpression,
+  interactiveTextLines,
   manipulativeTextLines,
   parseSimulationExpression,
 } from "@keating/learner-contracts";
@@ -230,6 +232,12 @@ function UiNode({
     {manipulativeTextLines(node.model).map((line, i) => <Text key={i} selectable>{line}</Text>)}
     {node.prompt ? <Text>{node.prompt}</Text> : null}
     {node.prompt ? <Text style={styles.notice}>Open this conversation in the web app to work the {MANIPULATIVE_TITLES[node.model.kind].toLowerCase()}, or type your answer.</Text> : null}
+  </View>;
+  if (node.type === "interactive") return <View style={styles.node}>
+    <Text style={styles.nodeTitle}>{node.title}</Text>
+    {node.brief ? <MarkdownText content={node.brief} /> : null}
+    {interactiveTextLines(node).map((line, i) => <Text key={i} style={i === 0 ? styles.notice : undefined} selectable>{line}</Text>)}
+    <Text style={styles.notice}>Open this conversation in the web app to work the {INTERACTIVE_TITLES[node.kind].toLowerCase()} hands-on, or describe your answer.</Text>
   </View>;
   if (node.type === "language-practice") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.language} · {node.rounds.length} rounds</Text><Text style={styles.notice}>Open this practice in the web app for word tiles, listening, and pronunciation recording.</Text></View>;
   if (node.type === "task" && node.diagram) return <SystemDesignWorkbench

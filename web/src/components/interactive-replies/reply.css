@@ -1,0 +1,53 @@
+/* Interactive replies: shared base styles the components expect from the reply mock
+   (.activity card, .actions, .primary, .quiet, the screen-reader helper), scoped to .interactive-reply
+   and drawn in the lesson vocabulary: one bordered card, paper surface, ink primary button. */
+@import "./tokens.css";
+
+.interactive-reply { display: grid; gap: .34rem; min-width: 0; max-width: 100%; color: var(--ink); font-family: var(--font-ui); }
+.interactive-reply :where(*, *::before, *::after) { box-sizing: border-box; }
+.interactive-reply :where(button, select, input) { font: inherit; }
+.interactive-reply :where(button) { cursor: pointer; }
+.interactive-reply :where(button:disabled) { cursor: default; }
+.interactive-reply :focus-visible { outline: 2px solid var(--mock-ring); outline-offset: 3px; }
+
+.interactive-reply__brief { font-size: .625rem; line-height: 1.55; }
+.interactive-reply__brief > :first-child { margin-top: 0; }
+.interactive-reply__brief > :last-child { margin-bottom: 0; }
+
+.interactive-reply .activity {
+  --primary: var(--mock-accent);
+  --muted: color-mix(in srgb, var(--mock-surface) 88%, var(--mock-ink));
+  --ring: var(--mock-ring);
+  min-width: 0; max-width: 100%; border: 1px solid var(--line); border-radius: .1923rem;
+  background: var(--paper); padding: 16px; font-size: calc(.875 * var(--ir-rem)); line-height: 1.45;
+}
+.interactive-reply .eb { border-color: var(--line); border-radius: .1923rem; background: var(--paper); }
+.interactive-reply .actions { display: flex; flex-wrap: wrap; align-items: center; margin-top: 13px; column-gap: 8px; }
+.interactive-reply :is(.primary, .quiet) {
+  min-height: 40px; font-weight: 650; border: 1px solid transparent;
+  border-radius: .1923rem; padding: 7px 12px; font-size: calc(.84 * var(--ir-rem));
+}
+.interactive-reply .primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.interactive-reply .primary:hover:not(:disabled) { filter: brightness(.92); }
+.interactive-reply .primary:disabled { opacity: .54; }
+.interactive-reply .quiet { background: transparent; color: var(--mock-muted); }
+.interactive-reply .quiet:hover:not(:disabled) { background: var(--mock-input); color: var(--mock-ink); }
+.interactive-reply .quiet:disabled { opacity: .5; }
+.interactive-reply .learning-lab__sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.interactive-reply__status { margin: 0; font: .5rem/1.5 var(--font-mono); color: var(--ink-soft); }
+.interactive-reply__status[data-tone="warn"] { color: var(--warning); }
+.interactive-reply__status[data-tone="ok"]::before { content: "✓ "; color: var(--accent-green); }
+.interactive-reply__fallback, .interactive-reply__loading {
+  margin: 0; padding: .34rem .58rem; border: 1px solid var(--line-soft); border-radius: .1923rem;
+  font: .6rem/1.5 var(--font-ui); color: var(--ink-soft); background: var(--paper);
+}
+.interactive-reply__loading { min-height: 6rem; }
+.interactive-reply__locked { display: contents; }
+
+@media (max-width: 480px) {
+  .interactive-reply .activity { padding: 12px; }
+}

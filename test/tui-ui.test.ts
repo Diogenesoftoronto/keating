@@ -73,6 +73,7 @@ describe("shared terminal UI document adapter and presentation", () => {
       "Goal: Explain Bayesian updating", "Deck: Bayes cards", "Bayes plan",
       "Bayes note", "Bayes map", "Notes: Learner notes", "Image: Update diagram",
       "Audio: Bayes narration", "Video: Bayes video", "Animation: Bayes animation", "Continue on web",
+      "Sort board: The water cycle",
     ]);
     for (const heading of nodeHeadings) expect(output).toContain(`### ${heading}`);
     // Diagrams stay as fenced source; the transcript adds the web/desktop pointer once.

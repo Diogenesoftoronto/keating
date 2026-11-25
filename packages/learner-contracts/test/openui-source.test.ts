@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  INTERACTIVE_COMPONENTS,
+  INTERACTIVE_KINDS,
   OPENUI_SOURCE_PARITY_FIXTURE,
   SHARED_OPENUI_COMPONENT_MAPPERS,
   WEB_OPENUI_COMPONENTS,
@@ -24,7 +26,9 @@ describe("trusted OpenUI source compiler", () => {
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
       "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab", "lab",
       "task", "task", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative",
+      ...INTERACTIVE_KINDS.map(() => "interactive"),
     ]);
+    expect(document.nodes.flatMap((node) => node.type === "interactive" ? [node.kind] : [])).toEqual([...INTERACTIVE_KINDS]);
     expect(document.nodes.flatMap((node) => node.type === "manipulative" ? [node.model.kind] : []))
       .toEqual(["number-line", "ten-frame", "place-value", "fraction-bars", "array", "clock"]);
     expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))
@@ -94,6 +98,7 @@ describe("trusted OpenUI source compiler", () => {
       { component: "SystemDesign", props: { title: "DESIGN_TITLE", brief: "DESIGN_BRIEF", components: [{ id: "design-node", label: "DESIGN_COMPONENT", kind: "service" }], connections: [], checks: [] }, visible: ["DESIGN_TITLE", "DESIGN_BRIEF", "design-node", "DESIGN_COMPONENT"] },
       { component: "CodingChallenge", props: { title: "CODE_TITLE", prompt: "CODE_PROMPT", language: "javascript", starterCode: "function answer() {}", entrypoint: "answer", tests: [{ id: "case-1", label: "CODE_TEST", args: [], expected: null }] }, visible: ["CODE_TITLE", "CODE_PROMPT", "javascript", "function answer() {}", "answer", "case-1", "CODE_TEST"] },
       { component: "MusicLab", props: { title: "MUSIC_TITLE", code: "MUSIC_CODE", brief: "MUSIC_BRIEF" }, visible: ["MUSIC_TITLE", "MUSIC_CODE", "MUSIC_BRIEF"] },
+      ...INTERACTIVE_COMPONENTS.map((component) => ({ component, props: { title: `${component}_TITLE`, brief: `${component}_BRIEF`, config: { marker: `${component}_CONFIG` } }, visible: [`${component}_TITLE`, `${component}_BRIEF`, `${component}_CONFIG`] })),
     ];
     for (const [index, example] of examples.entries()) {
       const source = [
