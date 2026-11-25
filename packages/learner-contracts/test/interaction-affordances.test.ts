@@ -451,6 +451,10 @@ describe("interactive reply rows", () => {
     [["data_grouping"], teaching, "DataExplorer"],
     [["plan_revision"], teaching, "PlanTimeline"],
     [["source_evaluation"], teaching, "EvidenceBoard"],
+    [["spatial_anatomy"], teaching, "Anatomy3D"],
+    [["drug_dose_response"], teaching, "PharmLab"],
+    [["study_appraisal"], teaching, "MethodsLab"],
+    [["field_wave_quantum"], teaching, "PhysicsLab"],
   ];
 
   test.each(cases)("%p offers its component only on a host that renders it", (ids, decisions, component) => {
@@ -485,10 +489,20 @@ describe("interactive reply rows", () => {
     expect(interactionDirectives(recommendInteraction(features("ordered_procedure"), teaching, host))).toEqual(before);
   });
 
+  test("a specialist lab owns its material: a drug curve or a physical field is not a generic LinkedModel", () => {
+    const curve = ["variable_relationship", "prediction_opportunity"];
+    expect(components(recommendInteraction(features(...curve), teaching, host))).toContain("LinkedModel");
+    for (const specialist of [["drug_dose_response", "PharmLab"], ["field_wave_quantum", "PhysicsLab"]] as const) {
+      const offered = components(recommendInteraction(features(...curve, specialist[0]), teaching, host));
+      expect(offered).toContain(specialist[1]);
+      expect(offered).not.toContain("LinkedModel");
+    }
+  });
+
   test("an un-cued turn asks the judge exactly what it asked before", () => {
     const turn = { learnerMessage: "Explain photosynthesis.", conversation: [], learnerEvidence: [], availableTools: [], toolResults: [], sources: [], assessment: "none", improvementRuns: 0, domain: "general" } as TeachingPolicyTurn;
     const gated = TEACHING_INTERACTION_FEATURES.filter(({ askWhen }) => askWhen === "interactive_reply_cue").map(({ id }) => id);
-    expect(gated).toHaveLength(8);
+    expect(gated).toHaveLength(12);
     expect(Object.keys(teachingPolicyDecisionRequest(turn).questions).filter((id) => gated.includes(id))).toEqual([]);
   });
 });

@@ -10,7 +10,7 @@ export { EXAM_SOURCE_QUESTIONS_FIXTURE } from "./exam-fixture.js";
  * Increment when a fixture's semantics change so downstream renderers can
  * deliberately refresh their recovery and visual-regression snapshots.
  */
-export const RENDERING_FIXTURE_PACK_VERSION = 8 as const;
+export const RENDERING_FIXTURE_PACK_VERSION = 9 as const;
 
 export const RENDERING_FIXTURE_MARKDOWN_LIMIT = 65_536 as const;
 export const RENDERING_FIXTURE_DOCUMENT_NODE_LIMIT = 64 as const;
@@ -90,6 +90,7 @@ export const WEB_OPENUI_COMPONENTS = [
   "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
   "StateMachine", "Construction", "FractionLine", "EquationWorkbench", "PermutationLab",
   "LinkedModel", "SortBoard", "DataExplorer", "PlanTimeline", "EvidenceBoard",
+  "Anatomy3D", "PharmLab", "MethodsLab", "PhysicsLab",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -152,7 +153,7 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video, numberline, tenframe, placevalue, fractions, counting, clock, statemachine, construction, fractionline, equation, permutation, linked, sortboard, dataexplorer, timeline, evidence], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, connect, person, diagram, design, simulation, coding, music, lab, audio, video, numberline, tenframe, placevalue, fractions, counting, clock, statemachine, construction, fractionline, equation, permutation, linked, sortboard, dataexplorer, timeline, evidence, anatomy, pharm, methods, physics], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
   'diagram = Diagram("rendering-diagram", "Trace a water cycle", "Connect the processes and explain what drives them.", [{id: "water", label: "Surface water", kind: "resource"}], [], [{id: "cycle-process", label: "Include a transformation", type: "component", kind: "process"}], ["Explain the role of energy in the cycle."], "resumable", ["resource", "process"] )',
   'design = SystemDesign("rendering-design", "Design a URL shortener", "Build a read path and explain the consistency trade-off.", [{ id: "client", label: "Browser", kind: "client" }], [], [{ id: "storage-path", label: "Client can reach storage", type: "path", fromKind: "client", toKind: "database" }], ["Explain workload assumptions and failure handling."], "resumable")',
   'audio = AudioResponse("rendering-audio", "Animal recall", "Name ten animals in Mandarin, then replay and reflect.", ["Distinct animal names", "Notice uncertain words"], 30, "resumable")',
@@ -194,6 +195,10 @@ export const OPENUI_SOURCE_PARITY_FIXTURE = [
   `dataexplorer = DataExplorer("Kidney stone treatments", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["data-explorer"])})`,
   `timeline = PlanTimeline("A spaced test week", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["plan-timeline"])})`,
   `evidence = EvidenceBoard("Read the letter closely", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE["evidence-board"])})`,
+  `anatomy = Anatomy3D("What lies in front of the esophagus?", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.anatomy)}, "Turn the model and pull the heart aside.")`,
+  `pharm = PharmLab("A therapeutic index", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.pharmacology)})`,
+  `methods = MethodsLab("Where should the cut-off go?", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.methods)})`,
+  `physics = PhysicsLab("A particle in a box", ${JSON.stringify(INTERACTIVE_REPLY_CONFIG_FIXTURE.physics)})`,
 ].join("\n");
 
 /** Canonical JSON interchange fixture containing every current shared node kind. */

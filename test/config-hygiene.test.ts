@@ -74,6 +74,8 @@ function sourceFiles(directory: string): string[] {
 
 // file + literal + reason, never a path glob or a blanket model-prefix exemption.
 const ALLOWLIST: readonly [file: string, literal: string, reason: string][] = [
+  ["web/src/components/interactive-replies/anatomy/engine.ts", "MODEL_IDS.includes", "anatomical 3D model ids (heart, thoracic cross-section), not AI model identities"],
+  ["web/src/components/interactive-replies/anatomy/engine.ts", "MODEL_IDS.join", "anatomical 3D model ids (heart, thoracic cross-section), not AI model identities"],
   ["src/core/notorganic-auth.ts", "balanced", "Frozen legacy account grant accepted alongside the current default; never expands existing authority."],
   ["web/src/notorganic-provider/index.ts", "balanced", "Frozen explicit model ID retained for persisted sessions and the legacy picker choice."],
   ["src/pi/notorganic-provider.ts", "image", "Input modality discriminator; not an upstream inference model choice."],

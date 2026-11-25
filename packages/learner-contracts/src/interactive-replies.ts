@@ -1,6 +1,7 @@
 /**
- * Interactive replies: ten draggable reply components (state machines,
- * constructions, equation workbenches, sort boards, ...).
+ * Interactive replies: draggable reply components (state machines,
+ * constructions, equation workbenches, sort boards, ...) and four specialist
+ * labs (anatomy, pharmacology, research methods, physics).
  *
  * They share one contract node (`interactive`) and differ by `kind`. The
  * contract guarantees only bounded, JSON-safe structure for `config`; each
@@ -15,6 +16,7 @@ import { hasOnlyKeys, isContractId, isRecord } from "./validation.js";
 export const INTERACTIVE_KINDS = [
   "state-machine", "construction", "fraction-line", "equation", "permutation",
   "linked-model", "sort-board", "data-explorer", "plan-timeline", "evidence-board",
+  "anatomy", "pharmacology", "methods", "physics",
 ] as const;
 export type InteractiveKind = typeof INTERACTIVE_KINDS[number];
 
@@ -30,12 +32,17 @@ export const INTERACTIVE_COMPONENT_NAMES: Readonly<Record<InteractiveKind, strin
   "data-explorer": "DataExplorer",
   "plan-timeline": "PlanTimeline",
   "evidence-board": "EvidenceBoard",
+  anatomy: "Anatomy3D",
+  pharmacology: "PharmLab",
+  methods: "MethodsLab",
+  physics: "PhysicsLab",
 };
 
 /** The OpenUI component names, in `INTERACTIVE_KINDS` order. */
 export const INTERACTIVE_COMPONENTS = [
   "StateMachine", "Construction", "FractionLine", "EquationWorkbench", "PermutationLab",
   "LinkedModel", "SortBoard", "DataExplorer", "PlanTimeline", "EvidenceBoard",
+  "Anatomy3D", "PharmLab", "MethodsLab", "PhysicsLab",
 ] as const;
 export type InteractiveComponentName = typeof INTERACTIVE_COMPONENTS[number];
 
@@ -51,6 +58,10 @@ export const INTERACTIVE_TITLES: Readonly<Record<InteractiveKind, string>> = {
   "data-explorer": "Data explorer",
   "plan-timeline": "Plan timeline",
   "evidence-board": "Evidence board",
+  anatomy: "Anatomy model",
+  pharmacology: "Pharmacology lab",
+  methods: "Methods lab",
+  physics: "Physics lab",
 };
 
 const KIND_SET = new Set<string>(INTERACTIVE_KINDS);

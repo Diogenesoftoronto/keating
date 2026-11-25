@@ -1,0 +1,139 @@
+/* PharmLab. Host tokens with fallbacks; tones are data colours, not alerts. One card, one canvas well. */
+.pharm {
+  --ph-ink: var(--mock-ink, var(--foreground, #e9efe9));
+  --ph-muted: var(--mock-muted, var(--muted-foreground, #adbdb1));
+  --ph-line: var(--mock-line, var(--border, #415147));
+  --ph-surface: var(--mock-surface, var(--card, #202b24));
+  --ph-well: var(--mock-canvas, color-mix(in srgb, var(--ph-surface) 92%, var(--ph-ink)));
+  --ph-run-fb: #7fb0f2; --ph-ok-fb: #6cc790; --ph-warn-fb: #e3a64e; --ph-bad-fb: #ec8a6f; --ph-info-fb: #a9a3e8;
+  --ph-run: var(--chart-1, var(--ph-run-fb));
+  --ph-ok: var(--success, var(--ph-ok-fb));
+  --ph-warn: var(--warning, var(--ph-warn-fb));
+  --ph-bad: var(--destructive, var(--ph-bad-fb));
+  --ph-info: var(--chart-4, var(--ph-info-fb));
+  --ph-ghost: color-mix(in srgb, var(--ph-ink) 42%, transparent);
+  display: grid; gap: 9px; min-width: 0;
+}
+:root:not(.dark) .pharm { --ph-run-fb: #2f6fc6; --ph-ok-fb: #2b8a57; --ph-warn-fb: #b8741a; --ph-bad-fb: #c4502f; --ph-info-fb: #6a5fc4; }
+.ph-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.ph-title { margin: 0; font-size: calc(1 * var(--ir-rem)); font-weight: 700; }
+.ph-warning { margin: 0; color: var(--ph-warn); font-size: calc(.76 * var(--ir-rem)); font-weight: 650; letter-spacing: .01em; }
+.ph-goal { margin: 0; color: var(--ph-muted); font-size: calc(.86 * var(--ir-rem)); line-height: 1.5; max-width: 66ch; }
+.ph-fallback { margin: 0; color: var(--ph-muted); font-size: calc(.88 * var(--ir-rem)); }
+.ph-problems { margin: 6px 0 0; padding-left: 18px; color: var(--ph-muted); font-size: calc(.8 * var(--ir-rem)); }
+
+/* ---------- canvas well ---------- */
+.ph-canvas { min-width: 0; border-radius: 9px; background: var(--ph-well); padding: 4px 0 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ph-canvas svg { display: block; max-width: 100%; overflow: visible; font-family: var(--font-sans, system-ui, sans-serif); }
+.ph-plot-bg { fill: color-mix(in srgb, var(--ph-surface) 55%, var(--ph-well)); }
+.ph-grid { stroke: color-mix(in srgb, var(--ph-line) 70%, transparent); stroke-width: 1; }
+.ph-grid-strong { stroke: var(--ph-line); stroke-dasharray: 3 3; }
+.ph-tick { fill: var(--ph-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.ph-axis-label, .ph-lane-label { fill: var(--ph-muted); font-size: 10px; }
+.ph-axis-label { font-style: italic; }
+.ph-lane-label { font-size: 10.5px; }
+.ph-band { opacity: .14; }
+.ph-band-ok { fill: var(--ph-ok); }
+.ph-band-bad { fill: var(--ph-bad); }
+.ph-band-label { fill: var(--ph-muted); font-size: 10px; font-weight: 600; }
+.ph-band-label.ph-tone-ok { fill: var(--ph-ok); }
+.ph-band-label.ph-tone-bad { fill: var(--ph-bad); }
+.ph-target { stroke: var(--ph-warn); stroke-width: 1.3; stroke-dasharray: 5 4; }
+.ph-ss line { stroke: var(--ph-info); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.ph-ss text { fill: var(--ph-info); font-size: 10px; font-weight: 600; }
+.ph-css line { stroke: var(--ph-muted); stroke-width: 1; stroke-dasharray: 6 4; opacity: .8; }
+.ph-css text { fill: var(--ph-muted); font-size: 10px; }
+.ph-curve { fill: none; stroke: var(--ph-run); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ph-curve-anc { stroke: var(--ph-info); }
+.ph-curve-tox { fill: none; stroke: var(--ph-bad); stroke-width: 2.4; stroke-linejoin: round; }
+.ph-partial { fill: none; stroke: var(--ph-info); stroke-width: 1.6; stroke-dasharray: 3 3; }
+.ph-ghost { fill: none; stroke: var(--ph-ghost); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.ph-mark circle, .ph-nadir { fill: var(--ph-well); stroke: var(--ph-ink); stroke-width: 1.6; }
+.ph-mark text, .ph-mark-text { fill: var(--ph-ink); font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--ph-well); stroke-width: 3px; stroke-linejoin: round; }
+.ph-ec { stroke: var(--ph-muted); stroke-dasharray: 2 3; }
+.ph-shift path { fill: none; stroke: var(--ph-warn); stroke-width: 1.6; stroke-linecap: round; }
+.ph-shift text { fill: var(--ph-warn); font-size: 10.5px; font-weight: 700; }
+.ph-topline line { stroke: var(--ph-bad); stroke-dasharray: 4 3; }
+.ph-topline text { fill: var(--ph-bad); font-size: 10px; font-weight: 600; }
+.ph-gap { fill: var(--ph-ok); opacity: .25; }
+.ph-offchart { fill: var(--ph-bad); font-size: 10px; font-weight: 700; }
+
+/* ---------- handles: the drug itself ---------- */
+.ph-hit { fill: transparent; stroke: none; }
+[data-handle] { cursor: grab; outline: none; }
+.is-dragging [data-handle] { cursor: grabbing; }
+[data-handle]:focus-visible > :nth-child(2) { stroke: var(--mock-ring, var(--ph-run)); stroke-width: 3; }
+.ph-lane-base { stroke: var(--ph-muted); stroke-width: 1.3; }
+.ph-stem { stroke: var(--ph-run); stroke-width: 2.2; stroke-linecap: round; }
+.ph-dose-block { fill: color-mix(in srgb, var(--ph-run) 30%, transparent); stroke: var(--ph-run); stroke-width: 1.2; }
+.ph-head circle:not(.ph-hit) { fill: var(--ph-run); stroke: var(--ph-well); stroke-width: 1.5; }
+.ph-head circle.ph-head-alt { fill: var(--ph-warn); }
+.ph-head text { fill: var(--ph-ink); font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--ph-well); stroke-width: 3px; }
+.ph-foot path { fill: var(--ph-muted); }
+.ph-foot:hover path, .ph-foot:focus-visible path { fill: var(--ph-ink); }
+.ph-dose.is-removing { opacity: .3; }
+.ph-remove-zone rect { fill: none; stroke: var(--ph-bad); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.ph-remove-zone text { fill: var(--ph-bad); font-size: 10.5px; font-weight: 600; }
+.ph-add circle:not(.ph-hit) { fill: none; stroke: var(--ph-run); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.ph-add path { stroke: var(--ph-run); stroke-width: 1.8; stroke-linecap: round; }
+.ph-add text { fill: var(--ph-run); font-size: 9.5px; font-weight: 650; }
+.ph-interval .ph-bracket { fill: none; stroke: var(--ph-muted); stroke-width: 1.1; }
+.ph-interval circle { fill: var(--ph-well); stroke: var(--ph-muted); stroke-width: 1.6; }
+.ph-interval text { fill: var(--ph-muted); font-size: 10px; font-weight: 600; }
+.ph-interval:hover circle, .ph-interval:focus-visible circle { stroke: var(--ph-ink); }
+.ph-knob circle:not(.ph-hit), .ph-knob rect:not(.ph-hit) { fill: var(--ph-well); stroke: var(--ph-ink); stroke-width: 2; }
+.ph-knob-tox circle:not(.ph-hit) { stroke: var(--ph-bad); }
+.ph-knob text { fill: var(--ph-ink); font-size: 10.5px; font-weight: 650; paint-order: stroke; stroke: var(--ph-well); stroke-width: 3px; }
+.ph-probe circle:not(.ph-hit), .ph-probe path { fill: var(--ph-ink); }
+.ph-probe .ph-dot-ok { fill: var(--ph-run); }
+.ph-probe .ph-dot-bad { fill: var(--ph-bad); }
+.ph-probe-line { stroke: var(--ph-ink); stroke-width: 1; stroke-dasharray: 2 3; opacity: .6; }
+.ph-probe text { fill: var(--ph-ink); font-size: 10.5px; font-weight: 650; paint-order: stroke; stroke: var(--ph-well); stroke-width: 3px; }
+.ph-k line { stroke: var(--ph-muted); }
+.ph-k text { fill: var(--ph-muted); font-size: 9.5px; }
+.ph-tray { stroke: var(--ph-line); stroke-dasharray: 3 4; }
+.ph-mol path, .ph-mol circle:not(.ph-hit) { stroke: var(--ph-well); stroke-width: 1.5; }
+.ph-lig-competitive path, .ph-lig-competitive line { fill: var(--ph-warn); }
+.ph-lig-noncompetitive path { fill: var(--ph-bad); }
+.ph-lig-partial circle:not(.ph-hit) { fill: var(--ph-info); }
+.ph-mol text { fill: var(--ph-ink); font-size: 10.5px; font-weight: 650; paint-order: stroke; stroke: var(--ph-well); stroke-width: 3px; }
+.ph-delay path { fill: none; stroke: var(--ph-bad); stroke-width: 1.5; }
+.ph-delay circle { fill: none; stroke: var(--ph-bad); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.ph-delay text { fill: var(--ph-bad); font-size: 10px; font-weight: 700; }
+
+/* ---------- readout: plain text with a 2px rule ---------- */
+.ph-readout { display: grid; gap: 4px; padding: 1px 0 1px 11px; border-inline-start: 2px solid var(--ph-tone, var(--ph-line)); }
+.ph-readout.ph-tone-ok { --ph-tone: var(--ph-ok); } .ph-readout.ph-tone-warn { --ph-tone: var(--ph-warn); }
+.ph-readout.ph-tone-bad { --ph-tone: var(--ph-bad); } .ph-readout.ph-tone-info { --ph-tone: var(--ph-info); }
+.ph-line { margin: 0; font-size: calc(.88 * var(--ir-rem)); line-height: 1.5; font-variant-numeric: tabular-nums; }
+.ph-line.ph-tone-bad { color: color-mix(in srgb, var(--ph-bad) 75%, var(--ph-ink)); }
+.ph-why { margin: 0; color: var(--ph-muted); font-size: calc(.82 * var(--ir-rem)); line-height: 1.5; max-width: 70ch; }
+.ph-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ph-stats { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; font-size: calc(.8 * var(--ir-rem)); }
+.ph-stats div { display: flex; gap: 6px; align-items: baseline; }
+.ph-stats dt { color: var(--ph-muted); }
+.ph-stats dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+/* ---------- disclosures, rows, actions ---------- */
+.ph-disclosure { display: grid; gap: 4px; }
+.ph-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 2px; border: 0; background: transparent; color: var(--ph-muted); font-size: calc(.81 * var(--ir-rem)); justify-self: start; }
+.ph-toggle:hover { color: var(--ph-ink); }
+.ph-chev { display: inline-block; font-size: calc(1 * var(--ir-rem)); line-height: 1; transition: transform 145ms; }
+.ph-toggle[aria-expanded=true] .ph-chev { transform: rotate(90deg); }
+.ph-disclosed { padding-left: 14px; }
+.ph-eq p { margin: 0 0 5px; font-size: calc(.82 * var(--ir-rem)); line-height: 1.55; overflow-wrap: anywhere; }
+.ph-source { color: var(--ph-muted); font-style: italic; }
+.ph-rows { display: grid; }
+.ph-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 10px; padding: 3px 0; border-bottom: 1px solid color-mix(in srgb, var(--ph-line) 55%, transparent); font-size: calc(.82 * var(--ir-rem)); font-variant-numeric: tabular-nums; }
+.ph-row:last-child { border-bottom: 0; }
+.ph-row-btns { display: flex; flex-wrap: wrap; gap: 2px; }
+.ph-row-btns button, .ph-quiet { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ph-run); font-size: calc(.8 * var(--ir-rem)); font-weight: 600; }
+.ph-row-btns button:hover, .ph-quiet:hover { background: color-mix(in srgb, var(--ph-run) 10%, transparent); }
+.ph-row-btns button:disabled, .ph-quiet:disabled { color: var(--ph-muted); opacity: .55; background: transparent; }
+.ph-quiet { color: var(--ph-muted); }
+.ph-gcsf[aria-pressed=true] { color: var(--ph-ok); }
+.ph-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.ph-spacer { flex: 1; }
+.ph-share { min-height: 36px; padding: 0 14px; border: 1px solid color-mix(in srgb, var(--mock-accent, var(--ph-ok)) 45%, var(--ph-line)); border-radius: 8px; background: color-mix(in srgb, var(--mock-accent, var(--ph-ok)) 14%, var(--ph-surface)); color: var(--ph-ink); font-size: calc(.84 * var(--ir-rem)); font-weight: 650; }
+@media (prefers-reduced-motion: reduce) { .ph-chev { transition: none; } }
+@media (max-width: 420px) { .ph-row { font-size: calc(.78 * var(--ir-rem)); } .ph-row-btns button { padding: 0 6px; } }

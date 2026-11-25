@@ -34,7 +34,7 @@ describe("mobile OpenUI document wire", () => {
       "After",
     ].join("\n"));
 
-    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(8);
+    expect(RENDERING_FIXTURE_PACK_VERSION).toBe(9);
     expect(parsed.errors).toEqual([]);
     expect(parsed.documents).toEqual([OPENUI_JSON_PARITY_FIXTURE, NESTED_RENDERING_DOCUMENT_FIXTURE]);
     expect(parsed.content).toBe("Before\nAfter");
@@ -79,7 +79,7 @@ describe("mobile OpenUI document wire", () => {
       "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation",
       "coding-challenge", "music-lab", "lab", "task", "task",
       "manipulative", "manipulative", "manipulative", "manipulative", "manipulative", "manipulative",
-      ...Array.from({ length: 10 }, () => "interactive"),
+      ...Array.from({ length: 14 }, () => "interactive" as const),
     ]);
     expect(parsed.content).toBe("Before\nAfter");
     expect(parsed.content).not.toContain("LearningSurface");

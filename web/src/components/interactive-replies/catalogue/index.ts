@@ -22,6 +22,10 @@ const LOADERS: Readonly<Record<InteractiveKind, Loader>> = {
 	"data-explorer": () => import("./data-explorer.md?raw"),
 	"plan-timeline": () => import("./plan-timeline.md?raw"),
 	"evidence-board": () => import("./evidence-board.md?raw"),
+	anatomy: () => import("./anatomy.md?raw"),
+	pharmacology: () => import("./pharmacology.md?raw"),
+	methods: () => import("./methods.md?raw"),
+	physics: () => import("./physics.md?raw"),
 };
 
 const loadShared: Loader = () => import("./_shared.md?raw");

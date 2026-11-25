@@ -121,6 +121,7 @@ for (const [alias, kind] of Object.entries({
   statemachine: "interactive", construction: "interactive", fractionline: "interactive", equationworkbench: "interactive",
   permutationlab: "interactive", linkedmodel: "interactive", sortboard: "interactive", dataexplorer: "interactive",
   plantimeline: "interactive", evidenceboard: "interactive",
+  anatomy3d: "interactive", pharmlab: "interactive", methodslab: "interactive", physicslab: "interactive",
 })) componentMap.set(alias, kind);
 
 export function normalizeOpenUiComponent(name: string): string | null {

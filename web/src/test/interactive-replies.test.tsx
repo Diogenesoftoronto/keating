@@ -1,14 +1,16 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { prerender } from "react-dom/static";
 import {
+	compileOpenUISourceToSharedDocument,
 	INTERACTIVE_KINDS,
 	INTERACTIVE_LIMITS,
+	INTERACTIVE_REPLY_CONFIG_FIXTURE,
 	UI_CONTRACT_VERSION,
 	validateUiActionAgainstDocument,
 	type InteractiveKind,
@@ -62,6 +64,19 @@ describe("interactive reply registry", () => {
 			const names = Object.keys(module.presets);
 			expect(names.length).toBeGreaterThan(0);
 			for (const name of names) expect({ name, problems: interactiveConfigProblems(module, roundTrip(module.presets[name])) }).toEqual({ name, problems: [] });
+		});
+
+		/* A lane re-sync can change a preset; the contract fixture and the model-facing examples must still render. */
+		test(`${kind}: the contract fixture and every catalogue example pass its validator`, async () => {
+			const module = await loadInteractiveReply(kind);
+			expect(interactiveConfigProblems(module, roundTrip(INTERACTIVE_REPLY_CONFIG_FIXTURE[kind]))).toEqual([]);
+			const section = readFileSync(join(import.meta.dir, "../components/interactive-replies/catalogue", `${kind}.md`), "utf8");
+			const programs = [...section.matchAll(/```openui[^\n]*\n([\s\S]*?)\n```/gu)].map((match) => match[1]!);
+			expect(programs.length).toBeGreaterThan(0);
+			for (const [index, program] of programs.entries()) {
+				const node = compileOpenUISourceToSharedDocument(program, { documentId: `catalogue-${kind}-${index}`, retention: "ephemeral" }).nodes.find((entry) => entry.type === "interactive");
+				expect({ index, problems: node?.type === "interactive" ? interactiveConfigProblems(module, node.config) : ["no interactive node"] }).toEqual({ index, problems: [] });
+			}
 		});
 	}
 
@@ -261,6 +276,40 @@ describe("interactive replies render through the shared document renderer", () =
 			await live.close();
 		}
 	}, 180000);
+
+	/* Anatomy3D draws three.js only where WebGL exists; elsewhere every preset must work in the flat SVG view. */
+	test("without WebGL every anatomy preset renders the flat view, with no fallback and no error", async () => {
+		const flatErrors: string[] = [];
+		const flat = await browser.newPage({ viewport: { width: 420, height: 900 }, reducedMotion: "reduce" });
+		flat.on("pageerror", (error: Error) => flatErrors.push(`pageerror: ${error.message}`));
+		flat.on("console", (message: { type(): string; text(): string }) => { if (message.type() === "error") flatErrors.push(`console: ${message.text()}`); });
+		await flat.addInitScript(() => {
+			const original = HTMLCanvasElement.prototype.getContext;
+			HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+				return /webgl/i.test(kind) ? null : (original as (...args: unknown[]) => unknown).call(this, kind, ...rest);
+			} as typeof original;
+		});
+		await flat.route("**/*", serve);
+		try {
+			await flat.goto(fixture);
+			await mounted(flat);
+			await flat.waitForFunction(() => !document.querySelector(".an-loading"), null, { timeout: 30000 });
+			const result = await flat.evaluate(() => {
+				const replies = [...document.querySelectorAll<HTMLElement>('.interactive-reply[data-interactive-kind="anatomy"]')];
+				return {
+					count: replies.length,
+					flat: replies.filter((reply) => reply.querySelector(".an-flat-note") && reply.querySelector("svg [data-sid]")).length,
+					canvases: replies.filter((reply) => reply.querySelector("canvas")).length,
+					fallbacks: replies.filter((reply) => reply.querySelector("[data-interactive-fallback], .an-fallback")).map((reply) => reply.dataset.interactiveNode),
+				};
+			});
+			expect(result.count).toBeGreaterThan(0);
+			expect(result).toEqual({ count: result.count, flat: result.count, canvases: 0, fallbacks: [] });
+			expect(flatErrors).toEqual([]);
+		} finally {
+			await flat.close();
+		}
+	}, 60000);
 
 	for (const theme of ["light", "dark"] as const) {
 		test(`every preset of every kind mounts with no fallback and no error (${theme})`, async () => {

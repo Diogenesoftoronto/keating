@@ -35,6 +35,8 @@ interface AffordanceRow {
   readonly components: readonly string[];
   /** Every listed feature must be true. */
   readonly features: readonly string[];
+  /** A row is skipped when any of these features is true: a specialist component owns that material. */
+  readonly unless?: readonly string[];
   /** During practice some surfaces need evidence the learner wants to operate them. */
   readonly practice?: true | "hands_on_requested";
   readonly needsInlineLab?: boolean;
@@ -76,13 +78,18 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "manipulable", components: ["EquationWorkbench"], features: ["symbolic_manipulation"], practice: true, interactiveReply: true },
   { family: "manipulable", components: ["PermutationLab"], features: ["permutation_structure"], practice: true, interactiveReply: true },
   // A formula asked for is a fact; a parameter worth predicting is worth moving.
-  { family: "manipulable", components: ["LinkedModel"], features: ["variable_relationship", "prediction_opportunity"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["LinkedModel"], features: ["variable_relationship", "prediction_opportunity"], unless: ["drug_dose_response", "field_wave_quantum"], practice: true, interactiveReply: true },
   { family: "retrieval", components: ["SortBoard"], features: ["ordered_procedure"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
   { family: "retrieval", components: ["SortBoard"], features: ["category_distinction"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
   { family: "retrieval", components: ["SortBoard"], features: ["discrete_recall", "visual_reference"], decisions: ["practice_requested"], practice: true, interactiveReply: true },
   { family: "manipulable", components: ["DataExplorer"], features: ["data_grouping"], practice: true, interactiveReply: true },
   { family: "workspace", components: ["PlanTimeline"], features: ["plan_revision"], practice: true, interactiveReply: true },
   { family: "manipulable", components: ["EvidenceBoard"], features: ["source_evaluation"], practice: true, interactiveReply: true },
+  // Specialist labs: educational models, never patient-specific advice (the feature questions exclude it).
+  { family: "manipulable", components: ["Anatomy3D"], features: ["spatial_anatomy"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["PharmLab"], features: ["drug_dose_response"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["MethodsLab"], features: ["study_appraisal"], practice: true, interactiveReply: true },
+  { family: "manipulable", components: ["PhysicsLab"], features: ["field_wave_quantum"], practice: true, interactiveReply: true },
 ];
 
 /** OpenUI names of the interactive reply components, from the rows above. */
@@ -147,6 +154,7 @@ export function recommendInteraction(features: Flags, decisions: Flags, context:
     if (row.decisions && !row.decisions.every((id) => decisions[id] === true)) continue;
     if (simulationOnly && !row.components.includes("Simulation")) continue;
     if (!row.features.every((id) => features[id] === true)) continue;
+    if (row.unless?.some((id) => features[id] === true)) continue;
     if (decisions.assessment_declined === true && !row.components.some(component => explanationComponents.has(component))) {
       assessmentSuppressed = true;
       continue;

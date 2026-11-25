@@ -864,7 +864,7 @@ export const Clock = defineComponent({
 	component: ({ props }) => <OpenUIManipulative props={props} component="Clock" />,
 });
 
-// Interactive replies. Ten components share one contract node (`interactive`);
+// Interactive replies. Fourteen components share one contract node (`interactive`);
 // key order is the positional order Name(title, config, brief); the OpenUI Lang
 // parser takes arguments positionally, so that is the form the prompt teaches. The full config
 // schema for a component joins the turn prompt only when the turn offers it
@@ -910,8 +910,12 @@ export const SortBoard = interactiveComponent("SortBoard", "Retrieval practice: 
 export const DataExplorer = interactiveComponent("DataExplorer", "Regroup a small dataset to see whether a gap between two groups survives (confounding, Simpson's paradox).");
 export const PlanTimeline = interactiveComponent("PlanTimeline", "A plan of dependent tasks on a 5–21 day grid with capacity, a deadline and an optional proposal.");
 export const EvidenceBoard = interactiveComponent("EvidenceBoard", "Link sentences of one passage to a claim (backs, partly, undercuts), or rebuild a draft against a rubric.");
+export const Anatomy3D = interactiveComponent("Anatomy3D", "A schematic 3D heart or thorax to turn, label, slice at a vertebral level, or trace blood through. Educational, not to scale.");
+export const PharmLab = interactiveComponent("PharmLab", "Drag doses, clearance or receptor ligands and watch the concentration or effect curve. Educational, not for clinical dosing.");
+export const MethodsLab = interactiveComponent("MethodsLab", "Work a study's machinery: a causal diagram, 1,000 tested people, survival timelines or a forest plot.");
+export const PhysicsLab = interactiveComponent("PhysicsLab", "Drag charges, slits or a well's walls and watch the field, the fringes or the quantum levels respond.");
 
-const INTERACTIVE_REPLY_COMPONENTS = [StateMachine, Construction, FractionLine, EquationWorkbench, PermutationLab, LinkedModel, SortBoard, DataExplorer, PlanTimeline, EvidenceBoard] as const;
+const INTERACTIVE_REPLY_COMPONENTS = [StateMachine, Construction, FractionLine, EquationWorkbench, PermutationLab, LinkedModel, SortBoard, DataExplorer, PlanTimeline, EvidenceBoard, Anatomy3D, PharmLab, MethodsLab, PhysicsLab] as const;
 
 /** Selection policy and one line per component. Full schemas arrive with the turn that offers one. */
 export const keatingOpenUIInteractiveRepliesGuide = [
@@ -927,6 +931,11 @@ export const keatingOpenUIInteractiveRepliesGuide = [
 	"- `DataExplorer`: whether a group gap survives regrouping, with real or labelled made-up data. Not one-number statistics.",
 	"- `PlanTimeline`: re-plan dated tasks around a deadline or lost day, at most 21 days. Not general study advice.",
 	"- `EvidenceBoard`: which sentences of one text back or undercut a claim, or two drafts against a rubric. Standalone statements into categories are a `SortBoard`.",
+	"- `Anatomy3D`: heart and thorax structures in 3D, a CT-style slice at a vertebral level, the path of blood. Not other regions, disease or real scans.",
+	"- `PharmLab`: a drug's concentration or effect curve over dose or time. Not a mechanism alone; generic decay is a `LinkedModel`.",
+	"- `MethodsLab`: how a study's design makes its number (confounding, test accuracy, survival, meta-analysis). Regrouping counts: `DataExplorer`; a passage's words: `EvidenceBoard`.",
+	"- `PhysicsLab`: fields of charges, interference and diffraction, 1-D quantum wells. A generic formula or ODE is a `LinkedModel`.",
+	"`Anatomy3D`, `PharmLab` and `MethodsLab` are educational models: never present one as a patient's anatomy, dose, result or care, nor build one from a real patient's numbers.",
 	'Syntax is positional: `reply = SortBoard("Chemical or physical change?", { layout: "bins", … }, "optional brief")`. A share arrives as a learner response with what the learner did and the component\'s own analysis. Respond to what they did; the analysis is advisory, so confirm or correct it rather than repeating it.',
 ].join("\n");
 
@@ -972,6 +981,10 @@ const learningBlock = z.union([
 	DataExplorer.ref,
 	PlanTimeline.ref,
 	EvidenceBoard.ref,
+	Anatomy3D.ref,
+	PharmLab.ref,
+	MethodsLab.ref,
+	PhysicsLab.ref,
 ]);
 
 export const LearningSurface = defineComponent({

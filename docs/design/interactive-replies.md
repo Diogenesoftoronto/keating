@@ -113,3 +113,67 @@ No shape in the Contract section changed. These are additions and clarifications
 - `RENDERING_FIXTURE_PACK_VERSION` is now 8; `UI_DOCUMENT_NODE_TYPES` includes `"interactive"`.
 - Helper lists: `openui-diagnostic-turn.ts` knows `interactive` plus the ten aliases; `activity-learning.ts` counts the node
   as `practice`; `background-activity-guidance.ts` maps the ten components to `practice`, except `LinkedModel` -> `simulation`.
+
+## Specialist components
+Four specialist labs join the ten, on the same contract node, action, registry, catalogue injection and
+tests. Sources: `web/.keating-mockups/lanes/<lane>/` in the main checkout (git-excluded).
+
+| kind (contract) | OpenUI Lang name | lane dir | learner-facing title |
+|---|---|---|---|
+| `anatomy` | `Anatomy3D` | anatomy3d | Anatomy model |
+| `pharmacology` | `PharmLab` | pharm | Pharmacology lab |
+| `methods` | `MethodsLab` | methods | Methods lab |
+| `physics` | `PhysicsLab` | physics | Physics lab |
+
+### Port transforms (exact)
+`scripts/port-interactive-lane.py <lane|all>` performs the whole port; re-run it after a lane fix. It
+copies the files in its `MANIFEST` verbatim into `web/src/components/interactive-replies/<kind>/` (lane
+harnesses, tests, `peek.mjs`, HTML and notes stay behind) and applies only these transforms:
+
+1. CSS: every `Nrem` becomes `calc(N * var(--ir-rem))`.
+2. CSS: each `@media (prefers-color-scheme: dark) { … }` (or `light`) block is unwrapped and every selector
+   inside it is prefixed with `:root.dark ` (or `:root:not(.dark) `). Other media queries are unchanged.
+3. Test hooks behind `import.meta.env.DEV`: `window.keatingAnatomy` (an early return at the top of its
+   effect), `window.keatingPharm` (same), `window.keatingPhysics` (`useTestApi`), and the test-only flags
+   `__keatingNoWebGL` (view3d) and `keatingPhysicsNoGL` (waves), which are read only in development.
+4. `physics/common.tsx` `useScheme()`: `matchMedia("(prefers-color-scheme: light)")` becomes the `dark` class on
+   `<html>` with a `MutationObserver`, the JS form of transform 2 (it keys the potential-map colour cache).
+
+Every TS edit must match exactly once, so a lane change that moves a hook fails the script rather than
+shipping it ungated. No import or strict-mode fixes were needed: the lanes import only React,
+`lucide-react` and `three`, and type-check under the web `tsconfig` as they are.
+
+After a re-sync: the web test `the contract fixture and every catalogue example pass its validator` catches
+a preset or schema change. If it fails, refresh `INTERACTIVE_REPLY_CONFIG_FIXTURE` (the smallest preset that
+validates, per kind) and the examples at the end of `catalogue/<kind>.md`, which are presets verbatim.
+
+### three.js
+`three@0.184.0` and `@types/three@0.184.1` (the versions already in the main checkout's `node_modules`).
+`anatomy/component.tsx` imports `./view3d` (the only module that imports `three`) in an effect after mount,
+so three.js is its own chunk behind the anatomy chunk, which is itself lazy, and server rendering never
+touches it. `webglAvailable()` lives in `view3d.ts`, so a device without WebGL still downloads the chunk
+before it falls back to the flat anterior SVG projection (every mode still works there). Moving that check
+into `engine.ts` in the lane would spare those devices the download; the port leaves it as the lane has it.
+
+### Model-facing
+- `catalogue/<kind>.md`: the lane's `CATALOGUE-DELTA.md` reduced to the model-facing parts (teaches, choose
+  for, not for, schema, authoring rules) in the same positional `Name(title, config, brief?)` form as the
+  other sections, with two presets as examples.
+- Base prompt: one line per component plus one safety line, inside the existing guide (now ≤ 3,200 chars).
+- Clinical safety: the guide line, the `PharmLab`, `Anatomy3D` and `MethodsLab` schemas, and the feature
+  questions all say these are educational models: never a patient's anatomy, dose, result or care plan,
+  never built from a real patient's numbers. A patient-specific question fails the feature question, so
+  it gets prose. The lanes' on-canvas labels ("Educational model, not for clinical dosing.", "schematic,
+  not to scale", …) are unchanged.
+
+### Policy (teaching policy v2.7.0)
+- Features, each cue-gated (`interactive-reply-cues.ts`): `spatial_anatomy`, `drug_dose_response`,
+  `study_appraisal`, `field_wave_quantum`. An un-cued turn asks the judge exactly what it asked before.
+- Affordance rows: one `manipulable` row per lab, `practice: true`, `interactiveReply: true`.
+- New optional row field `unless`: the row is skipped when any listed feature is true. `LinkedModel` has
+  `unless: ["drug_dose_response", "field_wave_quantum"]`, so a drug curve or a physical field goes to the
+  specialist rather than the generic model. `DataExplorer` and `EvidenceBoard` stay additive with
+  `MethodsLab`; the feature questions separate them (regrouping counts and a passage's wording are
+  "insufficient" for `study_appraisal`).
+- Fixtures: 16 development and 16 holdout cases (three positives and a near miss per feature), and 19
+  selection items, including near misses against `LinkedModel`, `DataExplorer` and `EvidenceBoard`.

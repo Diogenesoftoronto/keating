@@ -1,5 +1,5 @@
 {
- "about": "Copy of web/.keating-mockups/eval/selection.json (80 learner questions, expected component or prose), with ids renamed to OpenUI names. `judge` lists the decisions and features a careful judge would answer true for each question; everything unlisted is answered false. These judge answers are authored by hand, so agreement over this file measures the affordance table under those answers, not the judge itself.",
+ "about": "Copy of web/.keating-mockups/eval/selection.json (80 learner questions, expected component or prose), with ids renamed to OpenUI names. `judge` lists the decisions and features a careful judge would answer true for each question; everything unlisted is answered false. These judge answers are authored by hand, so agreement over this file measures the affordance table under those answers, not the judge itself. Items s81–s99 were added for the four specialist labs (Anatomy3D, PharmLab, MethodsLab, PhysicsLab), including near misses against LinkedModel, DataExplorer and EvidenceBoard.",
  "items": [
   {
    "id": "s01",
@@ -1205,6 +1205,304 @@
      "direct_answer_requested"
     ],
     "features": []
+   }
+  },
+  {
+   "id": "s81",
+   "question": "I keep mixing up the heart's chambers and valves. Can you quiz me?",
+   "expected": "Anatomy3D",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "practice_requested"
+    ],
+    "features": [
+     "spatial_anatomy",
+     "discrete_recall",
+     "hands_on_requested"
+    ]
+   }
+  },
+  {
+   "id": "s82",
+   "question": "What does a CT slice at T8 show, and how do I find the descending aorta on it?",
+   "expected": "Anatomy3D",
+   "pair": "anatomy-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "spatial_anatomy",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s83",
+   "question": "What do the chordae tendineae of the heart do?",
+   "expected": "prose",
+   "pair": "anatomy-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s84",
+   "question": "Why does a gentamicin trough rise when the dosing interval gets shorter?",
+   "expected": "PharmLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "drug_dose_response",
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s85",
+   "question": "How does a competitive antagonist shift the agonist's dose-response curve, compared with a non-competitive one?",
+   "expected": "PharmLab",
+   "pair": "pharm-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "drug_dose_response",
+     "variable_relationship",
+     "prediction_opportunity",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s86",
+   "question": "How does the half-life of a radioactive sample change how much is left after a day?",
+   "expected": "LinkedModel",
+   "pair": "pharm-vs-linked-a",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s87",
+   "question": "What vancomycin dose should my 70 kg patient get tonight?",
+   "expected": "prose",
+   "pair": "pharm-vs-prose",
+   "judge": {
+    "decisions": [
+     "direct_answer_requested"
+    ],
+    "features": []
+   }
+  },
+  {
+   "id": "s88",
+   "question": "Why does a loading dose get a drug with a long half-life into range faster?",
+   "expected": "PharmLab",
+   "pair": "pharm-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "drug_dose_response",
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s89",
+   "question": "This paper says coffee drinkers have less heart disease. How do I tell if that's confounding?",
+   "expected": "MethodsLab",
+   "pair": "methods-vs-data",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "study_appraisal",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s90",
+   "question": "Here are pass counts by school and family income. Why does the overall gap between the schools flip when I split them?",
+   "expected": "DataExplorer",
+   "pair": "methods-vs-data",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "data_grouping",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s91",
+   "question": "Does this abstract's sentence really back the claim that coffee helps you live longer?",
+   "expected": "EvidenceBoard",
+   "pair": "methods-vs-evidence",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "source_evaluation"
+    ]
+   }
+  },
+  {
+   "id": "s92",
+   "question": "My mammogram came back positive and the test is 90% sensitive. Does that mean I probably have cancer?",
+   "expected": "MethodsLab",
+   "pair": "methods-vs-evidence",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "study_appraisal",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s93",
+   "question": "Why does one huge trial dominate the pooled estimate in a meta-analysis?",
+   "expected": "MethodsLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "study_appraisal",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s94",
+   "question": "What does a hazard ratio of 0.7 mean on a Kaplan-Meier plot?",
+   "expected": "MethodsLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "study_appraisal"
+    ]
+   }
+  },
+  {
+   "id": "s95",
+   "question": "Why do electric field lines never cross?",
+   "expected": "PhysicsLab",
+   "pair": "physics-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "field_wave_quantum",
+     "structure_relations"
+    ]
+   }
+  },
+  {
+   "id": "s96",
+   "question": "What is the SI unit of electric charge?",
+   "expected": "prose",
+   "pair": "physics-vs-prose",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "direct_answer_requested"
+    ],
+    "features": [
+     "discrete_recall"
+    ]
+   }
+  },
+  {
+   "id": "s97",
+   "question": "Why do the fringes get closer together when the two slits move apart?",
+   "expected": "PhysicsLab",
+   "pair": "physics-vs-linked",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "field_wave_quantum",
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s98",
+   "question": "How does the damping constant change how fast a damped harmonic oscillator dies away?",
+   "expected": "LinkedModel",
+   "pair": "physics-vs-linked",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
+   }
+  },
+  {
+   "id": "s99",
+   "question": "Why does an electron tunnel through a barrier higher than its energy, and why does width matter so much?",
+   "expected": "PhysicsLab",
+   "judge": {
+    "decisions": [
+     "learning_task",
+     "explanation_requested"
+    ],
+    "features": [
+     "field_wave_quantum",
+     "variable_relationship",
+     "prediction_opportunity"
+    ]
    }
   }
  ]

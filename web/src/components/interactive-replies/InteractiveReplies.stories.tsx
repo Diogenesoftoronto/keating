@@ -13,6 +13,10 @@ import { presets as sortBoard } from "./sort-board/component";
 import { presets as dataExplorer } from "./data-explorer/component";
 import { presets as planTimeline } from "./plan-timeline/component";
 import { presets as evidenceBoard } from "./evidence-board/component";
+import { presets as anatomy } from "./anatomy/component";
+import { presets as pharmacology } from "./pharmacology/component";
+import { presets as methods } from "./methods/component";
+import { presets as physics } from "./physics/component";
 
 const PRESETS: Record<InteractiveKind, Record<string, unknown>> = {
 	"state-machine": stateMachine,
@@ -25,6 +29,10 @@ const PRESETS: Record<InteractiveKind, Record<string, unknown>> = {
 	"data-explorer": dataExplorer,
 	"plan-timeline": planTimeline,
 	"evidence-board": evidenceBoard,
+	anatomy,
+	pharmacology,
+	methods,
+	physics,
 };
 
 /* Configs reach the renderer as JSON from the model, so every preset makes a JSON round trip. */
@@ -65,6 +73,10 @@ export const SortBoard: Story = { args: { kind: "sort-board" } };
 export const DataExplorer: Story = { args: { kind: "data-explorer" } };
 export const PlanTimeline: Story = { args: { kind: "plan-timeline" } };
 export const EvidenceBoard: Story = { args: { kind: "evidence-board" } };
+export const Anatomy3D: Story = { args: { kind: "anatomy" } };
+export const PharmLab: Story = { args: { kind: "pharmacology" } };
+export const MethodsLab: Story = { args: { kind: "methods" } };
+export const PhysicsLab: Story = { args: { kind: "physics" } };
 
 const shareReceipt: UiActionReceipt = {
 	state: "completed",

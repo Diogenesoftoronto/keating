@@ -11,7 +11,7 @@ import { judgementRequestProblem, MAX_QUESTIONS_PER_REQUEST } from "../src/judge
 import { INTERACTION_FEATURE_CASES } from "./fixtures/interaction-features/cases.js";
 
 /**
- * 80 labelled learner questions (web/.keating-mockups/eval/selection.json) with
+ * 99 labelled learner questions (80 from web/.keating-mockups/eval/selection.json, 19 for the specialist labs) with
  * hand-written judge answers. The answers are authored, not measured, so this
  * checks the affordance table and the cues, not the judge.
  */
@@ -43,8 +43,8 @@ function offered(item: SelectionItem): string[] {
 }
 
 describe("interactive reply selection over the labelled set", () => {
-  test("the fixture covers all 80 questions and only known flags", () => {
-    expect(items).toHaveLength(80);
+  test("the fixture covers all 99 questions and only known flags", () => {
+    expect(items).toHaveLength(99);
     const known = new Set([...TEACHING_POLICY_DECISIONS, ...TEACHING_INTERACTION_FEATURES].map(({ id }) => id));
     for (const item of items) for (const id of [...item.judge.decisions, ...item.judge.features]) expect(known.has(id)).toBe(true);
   });
@@ -62,8 +62,8 @@ describe("interactive reply selection over the labelled set", () => {
     const misses = rows.filter((row) => !correct.includes(row)).map(({ item, components }) => `${item.id} expected ${item.expected}, offered ${components.join("+") || "none"}`);
     const prose = rows.filter(({ item }) => item.expected === "prose");
     const proseKept = prose.filter(({ components }) => components.length === 0).length;
-    console.log(`interactive reply selection: ${correct.length}/80 agree (expected component offered, or none for prose); `
-      + `${exact.length}/80 offer exactly the expected one; prose kept ${proseKept}/${prose.length}.\n  misses: ${misses.join("; ") || "none"}`);
+    console.log(`interactive reply selection: ${correct.length}/${items.length} agree (expected component offered, or none for prose); `
+      + `${exact.length}/${items.length} offer exactly the expected one; prose kept ${proseKept}/${prose.length}.\n  misses: ${misses.join("; ") || "none"}`);
     // Known miss, recorded so a regression is visible: LinkedModel also needs prediction_opportunity
     // (so a formula request stays prose), and the inflation question was labelled without it.
     expect(misses).toEqual(["s70 expected LinkedModel, offered none"]);
@@ -86,7 +86,7 @@ describe("interactive reply selection over the labelled set", () => {
   });
 
   test("a turn that trips every cue stays within the request bounds", () => {
-    const turn = { ...turnFor("Plan my week around the exam: solve 2x = 4, compare 3/4 with a compass construction, swap the state machine's data groups and check the article's claim."), conversation: [] } as TeachingPolicyTurn;
+    const turn = { ...turnFor("Plan my week around the exam: solve 2x = 4, compare 3/4 with a compass construction, swap the state machine's data groups and check the article's claim. Then the heart's valves, a loading dose, a confounded cohort and the fringes from two slits."), conversation: [] } as TeachingPolicyTurn;
     const request = teachingPolicyDecisionRequest(turn);
     for (const id of INTERACTIVE_REPLY_FEATURE_IDS) expect(Object.keys(request.questions)).toContain(id);
     expect(Object.keys(request.questions).length).toBeLessThanOrEqual(MAX_QUESTIONS_PER_REQUEST);

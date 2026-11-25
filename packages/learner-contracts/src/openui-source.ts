@@ -51,6 +51,7 @@ export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "NumberLine", "TenFrame", "PlaceValue", "FractionBars", "CountingArray", "Clock",
   "StateMachine", "Construction", "FractionLine", "EquationWorkbench", "PermutationLab",
   "LinkedModel", "SortBoard", "DataExplorer", "PlanTimeline", "EvidenceBoard",
+  "Anatomy3D", "PharmLab", "MethodsLab", "PhysicsLab",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -320,6 +321,10 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   DataExplorer: INTERACTIVE_POSITIONAL,
   PlanTimeline: INTERACTIVE_POSITIONAL,
   EvidenceBoard: INTERACTIVE_POSITIONAL,
+  Anatomy3D: INTERACTIVE_POSITIONAL,
+  PharmLab: INTERACTIVE_POSITIONAL,
+  MethodsLab: INTERACTIVE_POSITIONAL,
+  PhysicsLab: INTERACTIVE_POSITIONAL,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -701,7 +706,11 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
     case "SortBoard":
     case "DataExplorer":
     case "PlanTimeline":
-    case "EvidenceBoard": {
+    case "EvidenceBoard":
+    case "Anatomy3D":
+    case "PharmLab":
+    case "MethodsLab":
+    case "PhysicsLab": {
       const kind = interactiveKindForComponent(element.typeName)!;
       // Structural bounds only; each component's semantic validator runs in the web renderer.
       if (!isInteractiveConfig(props.config)) throw new OpenUISourceError("invalid", `${element.typeName} needs a JSON config object within the shared bounds.`);

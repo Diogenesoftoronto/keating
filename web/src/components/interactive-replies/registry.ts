@@ -2,8 +2,9 @@
  * Interactive replies: kind → lazily loaded component, validator and presets.
  *
  * Every component (and dragology, which only they use) sits in its own chunk, so the boot
- * chunk does not grow. The contract guarantees only bounded JSON for `config`; each module's
- * own validator decides whether the config fits the component.
+ * chunk does not grow; three.js is a further chunk that Anatomy3D imports after mount. The
+ * contract guarantees only bounded JSON for `config`; each module's own validator decides
+ * whether the config fits the component.
  */
 import type { ComponentType } from "react";
 import type { InteractiveKind } from "@keating/learner-contracts";
@@ -40,6 +41,11 @@ export const INTERACTIVE_REPLY_LOADERS: Readonly<Record<InteractiveKind, Loader>
 	"data-explorer": () => import("./data-explorer/component").then((m) => ({ Component: as(m.DataExplorer), validate: m.validateDataExplorer, presets: m.presets })),
 	"plan-timeline": () => import("./plan-timeline/component").then((m) => ({ Component: as(m.PlanTimeline), validate: m.validatePlanTimeline, presets: m.presets })),
 	"evidence-board": () => import("./evidence-board/component").then((m) => ({ Component: as(m.EvidenceBoard), validate: m.validateEvidenceBoard, presets: m.presets })),
+	// Specialist labs. Anatomy3D loads three.js in a further chunk after mount, only when WebGL is available.
+	anatomy: () => import("./anatomy/component").then((m) => ({ Component: as(m.Anatomy3D), validate: m.validateAnatomy3D, presets: m.presets })),
+	pharmacology: () => import("./pharmacology/component").then((m) => ({ Component: as(m.PharmLab), validate: m.validatePharmLab, presets: m.presets })),
+	methods: () => import("./methods/component").then((m) => ({ Component: as(m.MethodsLab), validate: m.validateMethodsLab, presets: m.presets })),
+	physics: () => import("./physics/component").then((m) => ({ Component: as(m.PhysicsLab), validate: m.validatePhysicsLab, presets: m.presets })),
 };
 
 const loaded = new Map<InteractiveKind, Promise<InteractiveReplyModule>>();
