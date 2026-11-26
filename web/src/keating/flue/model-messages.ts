@@ -1,6 +1,6 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { AssistantMessage, ImageContent, Message, TextContent } from "@earendil-works/pi-ai";
-import { stripReviewNotice } from "../judgement/review-notice";
+import { parseReviewNotice, stripReviewNotice } from "../judgement/review-notice";
 
 /** Persisted formats from older Keating sessions, independent of any UI kit. */
 export interface SavedAttachment {
@@ -34,10 +34,43 @@ declare module "@earendil-works/pi-agent-core" {
   }
 }
 
+/**
+ * A withheld reply is Keating's own failure notice ("couldn't verify a reply… Blocking
+ * checks: …"), never tutor speech. Sent to a model it reads as something the tutor said,
+ * leaks review internals into drafting and review, and makes a resent answer appear to
+ * follow that notice instead of the question it answers.
+ */
+function isWithheldNotice(message: AgentMessage): boolean {
+  if (message.role !== "assistant") return false;
+  const content = message.content as AssistantMessage["content"] | string;
+  if (typeof content === "string") return parseReviewNotice(content)?.kind === "withheld";
+  if (content.some(part => part.type === "toolCall")) return false;
+  const first = content.find(part => part.type === "text");
+  return first?.type === "text" && parseReviewNotice(first.text)?.kind === "withheld";
+}
+
+/** The learner's own words, without the host's generated timing note. */
+function learnerContentKey(message: Message): string | null {
+  if (message.role !== "user") return null;
+  const parts = typeof message.content === "string" ? [{ type: "text" as const, text: message.content }] : message.content;
+  return JSON.stringify(parts.filter(part => part.type !== "text" || !generatedTimeNotes.has(part)));
+}
+
 /** Prepare a provider request without modifying the saved conversation. */
 export function toModelMessages(messages: AgentMessage[]): Message[] {
   const result: Message[] = [];
+  // After a withheld notice, the same learner message sent again is a retry of one turn.
+  let retried: { index: number; key: string } | null = null;
   for (const message of messages) {
+    if (isWithheldNotice(message)) {
+      const previous = result.length - 1;
+      const key = previous >= 0 ? learnerContentKey(result[previous]!) : null;
+      retried = key === null ? null : { index: previous, key };
+      continue;
+    }
+    const resent = retried;
+    retried = null;
+    const before = result.length;
     if (message.role === "user-with-attachments") {
       const content: (TextContent | ImageContent)[] = typeof message.content === "string"
         ? [{ type: "text", text: message.content }]
@@ -60,6 +93,9 @@ export function toModelMessages(messages: AgentMessage[]): Message[] {
       result.push(message);
     }
     // Artifacts and other UI-only records never become provider messages.
+    // A resend directly after a withheld notice replaces the identical learner turn it retried.
+    const added = result.length > before ? result[result.length - 1]! : null;
+    if (resent && added && resent.index === before - 1 && learnerContentKey(added) === resent.key) result.splice(resent.index, 1);
   }
   return result;
 }

@@ -10,7 +10,7 @@ import { liveModels, MAX_CALLS, MAX_MICROUSD, MAX_TUTOR_OUTPUT, offlineModels, o
 const sealedPayload = (content: string) => ({ model: TUTOR_MODEL, stream: true, stream_options: { include_usage: true },
   max_tokens: MAX_TUTOR_OUTPUT, messages: [{ role: "user", content }] });
 
-test("Flue preserves the complete accepted input across the estimated boundary and withholds only genuine provider or wire overflow", async () => {
+test("Flue preserves the complete accepted input across the estimated boundary and answers unverified only on genuine provider or wire overflow", async () => {
   const dir = mkdtempSync(join(tmpdir(), "jev-boundary-proof-"));
   try {
     expect(await main(["--out", dir])).toBe(true);
@@ -27,11 +27,11 @@ test("Flue preserves the complete accepted input across the estimated boundary a
     }
     expect(read("current").requests.map((request: { questionCount: number; code: string }) => [request.questionCount, request.code]))
       .toEqual([[40, "context-limit-exceeded"], [1, "context-limit-exceeded"]]);
-    expect(read("current").tutorResponses).toHaveLength(0);
+    expect(read("current").tutorResponses).toHaveLength(1);
     expect(read("current").final.reason).toBe("context-limit-exceeded");
-    expect(read("current").delivered.suggestsShorterRequest).toBe(true);
+    expect(read("current").delivered.notice).toBe("unverified");
     expect(read("wire").requests).toHaveLength(0);
-    expect(read("wire").tutorResponses).toHaveLength(0);
+    expect(read("wire").tutorResponses).toHaveLength(1);
     for (const kind of CASES) {
       const receipt = read(kind);
       expect(receipt.delivered.textHash).toBe(receipt.returned.textHash);

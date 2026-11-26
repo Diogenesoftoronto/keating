@@ -100,6 +100,8 @@ async function collect(stream: Awaited<ReturnType<StreamFn>>) {
   return { events, result: await stream.result() };
 }
 const text = (value: AssistantMessage) => value.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
+/** What the learner sees: a failed turn shows its error message; nothing is withheld behind a notice. */
+const shown = (value: AssistantMessage) => value.stopReason === "error" ? value.errorMessage ?? "" : text(value);
 
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
@@ -120,13 +122,13 @@ describe("private teaching draft stream", () => {
       }, { sessionId: "explicit-off", basePrompt: () => BASE, onProgress: item => progress.push(item),
         onReceipt: item => receipts.push(item), evidence: async () => ({pendingSubmissions:[]}) })(MODEL, input, {signal});
       const good = await collect(await run(message("Four factorial is 24.")));
-      expect(text(good.result)).toBe("Four factorial is 24.");
+      expect(shown(good.result)).toBe("Four factorial is 24.");
       expect(seen).toEqual([["workspace_inspect"]]);
       expect(good.result.content.some(part => part.type === "thinking")).toBe(false);
       const unintended = message("", true);
       for (const part of unintended.content) if (part.type === "toolCall") part.name = "grade_question_checks";
       const rejected = await collect(await run(unintended));
-      expect(text(rejected.result)).toContain("unavailable tool");
+      expect(shown(rejected.result)).toContain("unavailable tool");
       expect(rejected.events.some(e => e.type === "toolcall_end")).toBe(false);
       const stopped = await collect(await run(message("Should not start"), AbortSignal.abort()));
       expect(stopped.result.stopReason).toBe("aborted");
@@ -144,7 +146,7 @@ describe("private teaching draft stream", () => {
       onReleasedReply: release => checked.push(release),
     })(MODEL, context("My guess is four layers. Did I get that right?"));
     const { result } = await collect(output);
-    expect(text(result)).toBe("Four layers is correct.");
+    expect(shown(result)).toBe("Four layers is correct.");
     expect(checked).toEqual([{
       messageTimestamp: result.timestamp,
       text: "Four layers is correct.",
@@ -207,7 +209,7 @@ describe("private teaching draft stream", () => {
         pendingSubmissions, learnerEvidence:[{kind:"note",content:"A learner said there is a pending quiz."}],
       })})(MODEL,input)).result();
       expect(received).toEqual([expected, expected]);
-      expect(text(result)).toBe("Four layers is correct.");
+      expect(shown(result)).toBe("Four layers is correct.");
       expect(input.tools.map(tool => tool.name)).toEqual(names);
     }
   });
@@ -221,7 +223,10 @@ describe("private teaching draft stream", () => {
     const receipts: TeachingDraftSnapshot[] = [];
     const result = await (await gate(() => streamOf(proposed), {maxAttempts:2, onProgress:s => receipts.push(s)})(MODEL,input)).result();
     const receipt = receipts.at(-1)!;
-    expect(receipt.phase).toBe("withheld");
+    // Never withheld: the text is shown with the warning, and the unapproved grading call never runs.
+    expect(receipt.phase).toBe("released");
+    expect(parseReviewNotice(text(result))?.kind).toBe("unverified");
+    expect(result.content.some(part => part.type === "toolCall")).toBe(false);
     expect(receipt.attempts[0]!.checks).toEqual(expect.arrayContaining([
       expect.objectContaining({id:"grading_requires_submission",status:"fail"}),
       expect.objectContaining({id:"runtime_tool_schema",status:"fail"}),
@@ -299,7 +304,7 @@ describe("private teaching draft stream", () => {
     await finished;
     expect(events.filter(event => event.type === "text_delta").map(event => event.delta)).toEqual(["Approved opening."]);
     expect(events.at(-1)?.type).toBe("error");
-    expect(text(await output.result())).toBe("Approved opening.");
+    expect(shown(await output.result())).toBe("Approved opening.");
     if (mode === "abort") {
       expect(receipts).toHaveLength(1);
       expect(receipts[0]).toMatchObject({ messageTimestamp: 2, snapshot: { phase: "cancelled", selectedAttempt: 1 } });
@@ -336,7 +341,7 @@ describe("private teaching draft stream", () => {
 					return stream;
 				};
 				const { events, result } = await collect(await gate(generate)(MODEL, context()));
-				expect(text(result)).toBe(candidate);
+				expect(shown(result)).toBe(candidate);
 				expect(JSON.stringify(events)).not.toContain("PRIVATE THINKING");
 			},
 		), { numRuns: 12 });
@@ -358,7 +363,7 @@ describe("private teaching draft stream", () => {
           return streamOf({ ...message(expected), model: model.id, provider: model.provider, api: model.api, timestamp: index * 2 + 2 });
         });
         const { events, result } = await collect(await replay(model, conversation));
-        expect(text(result)).toBe(expected);
+        expect(shown(result)).toBe(expected);
         expect(JSON.stringify(events)).not.toMatch(/PRIVATE THINKING|PRIVATE SIGNATURE|PRIVATE STREAM FRAGMENT/);
         conversation.messages.push(result);
       }
@@ -380,7 +385,7 @@ describe("private teaching draft stream", () => {
       },
     })(MODEL, context()));
     expect(calls).toBe(2);
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
     expect(updates.every(update => update.maxAttempts === 10)).toBe(true);
     expect(updates.at(-1)?.phase).toBe("released");
   });
@@ -395,7 +400,7 @@ describe("private teaching draft stream", () => {
     expect(updates.at(-1)?.phase).toBe("released");
     expect(updates.at(-1)?.attempts).toHaveLength(3);
     expect(updates.at(-1)?.reason).toBe("best-effort-draft");
-    expect(text(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
+    expect(shown(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
     expect(JSON.stringify(events)).toContain("REJECTED PRIVATE DRAFT");
   });
 
@@ -436,7 +441,7 @@ describe("private teaching draft stream", () => {
     expect(privateInput).toContain("untrusted data");
     expect(privateInput).not.toContain("No rejected draft is included");
     expect(reviewed).toContain("4 factorial is 24.");
-    expect(text(result)).toBe("4 factorial is 24.");
+    expect(shown(result)).toBe("4 factorial is 24.");
     expect(JSON.stringify({ updates, events })).not.toContain("PRIVATE SOURCE");
     expect(original).toEqual(before);
   });
@@ -451,11 +456,11 @@ describe("private teaching draft stream", () => {
       return streamOf(message("24"));
     })(MODEL, actual));
     expect(called).toBe(true);
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
     expect(actual.tools[0]!.execute).toBeFunction();
   });
 
-  test("unreviewable image or audio evidence cannot yield an approved response", async () => {
+  test("unreviewable image or audio evidence is answered directly, marked not fully verified", async () => {
     for (const input of [
       { ...context(), messages: [{ role: "user" as const, timestamp: 1, content: [{ type: "image" as const, data: "fixture", mimeType: "image/png" }] }] },
       context("[keating-audio-1234]"),
@@ -463,9 +468,9 @@ describe("private teaching draft stream", () => {
       let called = false;
       const updates: TeachingDraftSnapshot[] = [];
       const { result } = await collect(await gate(() => { called = true; return streamOf(message("UNVERIFIED")); }, { onProgress: value => updates.push(value) })(MODEL, input));
-      expect(called).toBe(false);
-      expect(text(result)).toContain("transcript");
-      expect(updates.at(-1)?.reason).toBe("unsupported-evidence");
+      expect(called).toBe(true);
+      expect(parseReviewNotice(text(result))).toEqual({ kind: "unverified", text: "UNVERIFIED" });
+      expect(result.content.some(part => part.type === "toolCall")).toBe(false);
     }
   });
 
@@ -473,11 +478,11 @@ describe("private teaching draft stream", () => {
     const updates: TeachingDraftSnapshot[] = [];
     const { result } = await collect(await gate(() => streamOf(message("UNVERIFIED")), { timeoutMs: 5,
       evidence: () => new Promise(() => {}), onProgress: value => updates.push(value) })(MODEL, context()));
-    expect(text(result)).not.toContain("UNVERIFIED");
+    expect(shown(result)).not.toContain("UNVERIFIED");
     expect(updates.at(-1)?.phase).toBe("withheld");
     expect(updates.at(-1)?.reason).toBe("time-budget");
-    expect(text(result)).toContain("ran out of time");
-    expect(text(result)).toContain("Failure: time-budget");
+    expect(shown(result)).toContain("ran out of time");
+    expect(shown(result)).toContain("Failure: time-budget");
   });
   test("emits no text, thinking, or proposed tool event before selection; only the approved terminal reply escapes", async () => {
     const checking = deferred();
@@ -498,7 +503,7 @@ describe("private teaching draft stream", () => {
     await finished;
     const result = await output.result();
     expect(events.map((event) => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
-    expect(text(result)).toBe("4 factorial is 24.");
+    expect(shown(result)).toBe("4 factorial is 24.");
     expect(result.content.map((part) => part.type)).toEqual(["text"]);
     expect(JSON.stringify(events)).not.toMatch(/PRIVATE|REJECTED|thinking/);
     expect(JSON.stringify(progress)).not.toMatch(/PRIVATE|REJECTED|factorial|notes\.md/);
@@ -531,7 +536,7 @@ describe("private teaching draft stream", () => {
     privateStream.end(complete);
     const { result } = await collect(output);
     expect(reviewed).toEqual(["4 factorial is 24."]);
-    expect(text(result)).toBe("4 factorial is 24.");
+    expect(shown(result)).toBe("4 factorial is 24.");
   });
 
   test.each(["length", "empty"] as const)("retries %s generations without reviewing them", async mode => {
@@ -552,14 +557,14 @@ describe("private teaching draft stream", () => {
     expect(reviewed).toEqual(["24"]);
     expect(updates.at(-1)?.attempts[0]?.status).toBe("generation-error");
     expect(updates.at(-1)?.attempts[0]?.checks).toEqual([]);
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
   });
 
   test("selection abstention still releases the best eligible completed draft", async () => {
     const { result } = await collect(await gate(() => streamOf(message("24")), {
       maxAttempts: 1, makeCaller: () => async request => answer(request, { noMatch: true }),
     })(MODEL, context()));
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
   });
 
   test.each(["deadline", "user-abort"] as const)("%s during a revision preserves the publication boundary", async mode => {
@@ -586,7 +591,7 @@ describe("private teaching draft stream", () => {
     const { result } = await collect(output);
     expect(calls).toBe(2);
     if (mode === "deadline") {
-      expect(text(result)).toBe("24");
+      expect(shown(result)).toBe("24");
       expect(updates.at(-1)?.phase).toBe("released");
       expect(updates.at(-1)?.selectedAttempt).toBe(1);
     } else {
@@ -603,31 +608,29 @@ describe("private teaching draft stream", () => {
     })(MODEL, context());
     const { events, result } = await collect(output);
     expect(events.map((event) => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
-    expect(text(result)).toBe(withReviewNotice("unverified", "NEVER DISPLAY THIS"));
+    expect(shown(result)).toBe(withReviewNotice("unverified", "NEVER DISPLAY THIS"));
     expect(JSON.stringify(events)).not.toMatch(/PRIVATE THINKING|PRIVATE STREAM/);
   });
 
-  test("unfunded judgement stops before generation and explains credit or spending limits", async () => {
+  test("unfunded judgement still answers, marked not fully verified", async () => {
     let calls = 0;
     const updates: TeachingDraftSnapshot[] = [];
     const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); }, {
       makeCaller: () => async () => ({ ok: false, error: { code: "backend-payment-required", retryable: false } }),
       onProgress: value => updates.push(value),
     })(MODEL, context()));
-    expect(calls).toBe(0);
-    expect(updates.at(-1)?.reason).toBe("backend-payment-required");
-    expect(text(result)).toContain("account credit and request spending limit");
-    expect(text(result)).not.toContain("Configure one");
+    expect(calls).toBe(1);
+    expect(updates.some(update => update.reason === "backend-payment-required")).toBe(true);
+    expect(parseReviewNotice(text(result))).toEqual({ kind: "unverified", text: "unreviewed" });
   });
 
-  test("missing judgement backend stops before generation and gives a setup action", async () => {
+  test("missing judgement backend still answers, marked not fully verified", async () => {
     let calls = 0;
     const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); }, {
       makeCaller: () => async () => ({ ok: false, error: { code: "backend-unavailable", retryable: false } }),
     })(MODEL, context()));
-    expect(calls).toBe(0);
-    expect(text(result)).toContain("Settings");
-    expect(text(result)).not.toContain("unreviewed");
+    expect(calls).toBe(1);
+    expect(parseReviewNotice(text(result))).toEqual({ kind: "unverified", text: "unreviewed" });
   });
 
   test.each([
@@ -648,16 +651,16 @@ describe("private teaching draft stream", () => {
     })(MODEL, context()));
     expect(updates.at(-1)?.reason).toBe("best-effort-draft");
     expect(updates.at(-1)?.attempts[0]?.status).not.toBe("pass");
-    expect(text(result)).toBe(withReviewNotice("unverified", "PRIVATE DRAFT"));
+    expect(shown(result)).toBe(withReviewNotice("unverified", "PRIVATE DRAFT"));
   });
 
   test("reports context loading failures without exposing exception text", async () => {
     const { result } = await collect(await gate(() => streamOf(message("unused")), {
       evidence: async () => { throw new Error("PRIVATE database contents"); },
     })(MODEL, context()));
-    expect(text(result)).toContain("couldn't load the context");
-    expect(text(result)).toContain("Failure: evidence-unavailable");
-    expect(text(result)).not.toContain("PRIVATE");
+    expect(shown(result)).toContain("couldn't load the context");
+    expect(shown(result)).toContain("Failure: evidence-unavailable");
+    expect(shown(result)).not.toContain("PRIVATE");
   });
 
   test("a completed review supersedes an earlier generation failure", async () => {
@@ -666,7 +669,7 @@ describe("private teaching draft stream", () => {
       if (++calls === 1) throw new Error("PRIVATE provider failure");
       return streamOf(message("REJECTED PRIVATE DRAFT"));
     }, { maxAttempts: 2 })(MODEL, context()));
-    expect(text(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
+    expect(shown(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
     expect(calls).toBe(2);
   });
 
@@ -680,9 +683,9 @@ describe("private teaching draft stream", () => {
     expect(calls).toBe(2);
     expect(updates.at(-1)?.phase).toBe("withheld");
     expect(updates.at(-1)?.reason).toBe("time-budget");
-    expect(text(result)).toContain("ran out of time");
-    expect(text(result)).not.toContain("generation-unavailable");
-    expect(text(result)).toContain("Draft attempts: 2; completed drafts: 0");
+    expect(shown(result)).toContain("ran out of time");
+    expect(shown(result)).not.toContain("generation-unavailable");
+    expect(shown(result)).toContain("Draft attempts: 2; completed drafts: 0");
   });
 
   test("abort and a stale learner turn cannot publish a previously generated draft", async () => {
@@ -718,8 +721,8 @@ describe("private teaching draft stream", () => {
     }, { maxAttempts: 2 })(MODEL, context());
     const { events, result } = await collect(output);
     expect(calls).toBe(2);
-    expect(text(result)).toContain("reply model failed");
-    expect(text(result)).toContain("Failure: generation-unavailable");
+    expect(shown(result)).toContain("reply model failed");
+    expect(shown(result)).toContain("Failure: generation-unavailable");
     expect(JSON.stringify(events)).not.toContain("PRIVATE");
   });
 
@@ -921,7 +924,7 @@ describe("private teaching draft stream", () => {
       else Reflect.deleteProperty(globalThis,"location");
     }
     expect(transportErrors).toEqual([]);
-    expect(text(result)).toBe("Red is more likely because three tiles are red.");
+    expect(shown(result)).toBe("Red is more likely because three tiles are red.");
     expect(bodies).toHaveLength(8);
     const marker = "Collect the learner's own answer in one OpenUI Question.";
     for (const [index,turnWires] of [bodies.slice(0,4),bodies.slice(4)].entries()) {
@@ -992,7 +995,7 @@ describe("private teaching draft stream", () => {
       expect(teachingDraftEvidence({ ...profile, evidence: { ...profile.evidence, questionChecks: profile.evidence.questionChecks.map(c => ({ ...c, answer: "Yellow" })) } }, sessionId, serialized).submittedComprehension).toBeUndefined();
       const published = result.content.filter(part => part.type === "toolCall");
       expect(published.map(c => c.name)).toEqual(["grade_question_checks"]);
-      expect(text(result)).toContain("two of the three socks");
+      expect(shown(result)).toContain("two of the three socks");
       expect((await storage.getQuestionChecks())[0]).toMatchObject({ grading: "pending" });
       const original = (await storage.getQuestionChecks())[0]!;
       const sibling = await storage.recordQuestionCheck({ topic: original.topic, question, answer: "Yellow", grading: "pending", sessionId, createdAt: original.createdAt + 1 });
@@ -1011,12 +1014,10 @@ describe("private teaching draft stream", () => {
         toolName: authorized.name, content: [{ type: "text", text: "Recorded one check." }], isError: false, timestamp: 3 }] };
       const feedback = await collect(await call(MODEL, continuation, { signal: new AbortController().signal }));
       if (withholdFeedback) {
-        const notice = parseReviewNotice(text(feedback.result))!;
-        expect(notice.kind).toBe("withheld");
-        expect(withheldSummary(notice.text)).toBe(SAVED_GRADE_EXPLANATION_NOTICE);
-        expect(notice.text).toContain("Failure:");
+        // The rejected feedback is shown with the warning rather than withheld; the grade stays saved.
+        expect(parseReviewNotice(text(feedback.result))).toEqual({ kind: "unverified", text: "REJECTED unrelated response." });
       } else {
-        expect(text(feedback.result)).toBe("Blue is correct because two of the three socks are blue.");
+        expect(shown(feedback.result)).toBe("Blue is correct because two of the three socks are blue.");
       }
       expect(feedbackWires.map(w => w.tools)).toEqual([[], []]);
       expect(feedbackWires.map(w => w.search)).toEqual([false, false]);
@@ -1085,7 +1086,7 @@ describe("private teaching draft stream", () => {
     const proposed = invalid.content.find((part) => part.type === "toolCall")!;
     proposed.arguments = { wrong: "PRIVATE INVALID ARGUMENT" };
     const withheld = await collect(await gate(() => streamOf(invalid), { maxAttempts: 1 })(MODEL, input));
-    expect(text(withheld.result)).toContain("Failure: generation-unavailable");
+    expect(shown(withheld.result)).toContain("Failure: generation-unavailable");
     expect(withheld.result.content.every((part) => part.type === "text")).toBe(true);
     expect(JSON.stringify(withheld.events)).not.toContain("PRIVATE INVALID ARGUMENT");
   });
@@ -1211,7 +1212,7 @@ describe("private teaching draft stream", () => {
     await generating.promise;
     captured.scope = "replacement-account";
     waiting.resolve();
-    expect(text((await result).result)).toBe("24");
+    expect(shown((await result).result)).toBe("24");
     expect(selected).toBe(0); expect(settingsRead).toBe(1);
     expect(publications[0]!.publicationContext).toEqual({ scope: "original-account", generation: 0 });
     expect(publications[0]!.activitySelection?.candidate.reply.text).toBe("24");
@@ -1231,13 +1232,12 @@ describe("private teaching draft stream", () => {
     expect(receipts.at(-1)!.snapshot.planReview).toEqual({ trigger: "stalled-focus", action: "continue" });
   });
 
-  test("oversized evidence abstains without silently clipping or calling the actor", async () => {
+  test("oversized evidence skips review without clipping and answers directly, marked not fully verified", async () => {
     let calls = 0;
     const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); })(MODEL, context("z".repeat(100_000))));
-    expect(calls).toBe(0);
-    expect(text(result)).toContain("valid review request");
-    expect(text(result)).toContain("Failure: request-invalid");
-    expect(text(result)).not.toContain("zzzz");
+    expect(calls).toBe(1);
+    expect(parseReviewNotice(text(result))).toEqual({ kind: "unverified", text: "unreviewed" });
+    expect(shown(result)).not.toContain("zzzz");
   });
 
   test("mutating a provider result during judgement cannot alter what was reviewed and released", async () => {
@@ -1247,7 +1247,7 @@ describe("private teaching draft stream", () => {
       return answer(request);
     };
     const { result } = await collect(await gate(() => streamOf(native), { makeCaller: () => judge })(MODEL, context()));
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
     expect(JSON.stringify(result)).not.toContain("UNREVIEWED MUTATION");
   });
 });
@@ -1292,7 +1292,7 @@ describe("private judgement transport boundary", () => {
     const stream = await gate(() => streamOf(message("Four factorial is 24.")), {
       makeCaller: undefined, makeRuntime: () => mixed, maxAttempts: 1,
     })(MODEL, input);
-    expect(text(await stream.result())).toBe("Four factorial is 24.");
+    expect(shown(await stream.result())).toBe("Four factorial is 24.");
     expect(hostedTurns.length).toBeGreaterThan(0);
     for (const turn of hostedTurns) expect(turn.conversation).toEqual(expected);
     if (hostedAvailable) {
@@ -1326,10 +1326,12 @@ describe("private judgement transport boundary", () => {
       makeCaller: undefined, makeRuntime: () => isolated, maxAttempts: 1,
     })(MODEL, input)).result();
     if (oversized) {
+      // The relay cannot carry the review, so the tutor answers directly with the warning.
       expect(requests).toHaveLength(0);
-      expect(actors).toBe(0);
+      expect(actors).toBe(1);
+      expect(parseReviewNotice(text(result))?.kind).toBe("unverified");
     } else {
-      expect(text(result)).toBe("Four factorial is 24.");
+      expect(shown(result)).toBe("Four factorial is 24.");
       expect(actors).toBe(1);
       expect(requests.every(request => reviewer.fitsWire!(request))).toBe(true);
       const planning = requests.filter(request => !(request.state as { reply?: unknown }).reply);
@@ -1522,15 +1524,17 @@ describe("draft checker sources", () => {
       },
     })(MODEL, input));
     expect(replies).toContain(text(result));
-    expect(planning[0]!.sources.map(source => source.url)).not.toContain(cited);
+    // Planning has no citations to prioritize, so the older cited page is not first there; each review puts it first.
+    expect(planning[0]!.sources[0]?.url).not.toBe(cited);
     expect(reviews.get(replies[0]!)!.sources[0]).toMatchObject({ url: cited, text: expect.stringContaining("The returned passage for the claim.") });
     expect(reviews.get(replies[1]!)!.sources[0]).toMatchObject({ url: other, text: "The independent standard." });
     expect(comparisons.length).toBeGreaterThan(0);
     expect(comparisons[0]!.sources.map(source => source.url)).toEqual(expect.arrayContaining([cited, other]));
     for (const turn of [...planning, ...reviews.values(), ...comparisons]) {
       expect(turn.learnerMessage).toBe(query);
-      expect(turn.sources).toHaveLength(16);
-      expect(JSON.stringify(turn.sources).length).toBeLessThanOrEqual(12_000);
+      // At least the smallest compact set; larger only while the reviewer's budget has room.
+      expect(turn.sources.length).toBeGreaterThanOrEqual(16);
+      expect(turn.sources.length).toBeLessThan(19);
       expect(turn.sources.some(source => source.url === failed || source.url === invented)).toBe(false);
     }
   });
@@ -1563,7 +1567,7 @@ describe("draft checker sources", () => {
         return answer(request);
       },
     })(MODEL, ctx));
-    expect(text(result)).toBe("24");
+    expect(shown(result)).toBe("24");
     expect(phases).toEqual(new Set(["planning", "review", "comparison"]));
     for (const turn of observed) {
       const urls = turn.sources.map(source => source.url);

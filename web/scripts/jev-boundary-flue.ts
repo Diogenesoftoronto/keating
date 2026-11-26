@@ -136,7 +136,8 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
     const selection = requests.find(request => request.phase === "selecting" && request.ok &&
       pair.every(candidate => request.candidateHashes["draft_" + candidate.call] === candidate.textHash) && request.choice === "draft_" + final?.selectedAttempt);
     const pinnedOverflow = fixture.kind === "current", wireOverflow = fixture.kind === "wire";
-    const withheld = pinnedOverflow || wireOverflow;
+    // Review cannot run on a genuine provider or wire overflow; the tutor then answers once, directly, marked unverified.
+    const reviewSkipped = pinnedOverflow || wireOverflow;
     const untouchedUntilRejected = requests.every((call, index) => {
       if (call.droppedMessages === 0 && call.prefixHashes.length === 0) return true;
       return requests.slice(0, index).some(prior => prior.phase === call.phase && prior.attempt === call.attempt
@@ -147,17 +148,17 @@ export async function runFlueCase(fixture: CaseFixture, engines: ProofModels) {
       actualPlanningMatchesCalibration: wireOverflow ? plans.length === 0 : rawPlanSize === fixture.full.estimatedStateQuestionTokens,
       historyInOrder: requests.every(call => call.suffixInOrder && call.currentIntact),
       untouchedUntilRejected,
-      planningBoundary: wireOverflow ? requests.length === 0 && tutorResponses.length === 0 && final?.reason === "request-invalid"
+      planningBoundary: wireOverflow ? requests.length === 0 && tutorResponses.length === 1 && final?.reason === "request-invalid"
         : pinnedOverflow ? requests.length === 2 && fullPlans.length === 2 && fullPlans.every(call => call.code === "context-limit-exceeded")
           && fullPlans[0]!.questionCount > 1 && fullPlans[1]!.questionCount === 1 && final?.reason === "context-limit-exceeded"
         : fixture.kind === "dense" ? fullPlans.some(call => call.code === "context-limit-exceeded")
           && slides.some(slide => slide.reason === "provider-context-limit" && slide.turnsDropped > 0)
           && plans.some(call => call.ok && call.droppedMessages > 0 && call.prefixHashes[0] === openingHash)
         : fullPlans.some(call => call.ok) && plans.every(call => call.stateHash === fixture.full.stateHash && call.prefixHashes.length === 0),
-      twoCandidatesReviewed: withheld ? tutorResponses.length === 0 : bothReviewed,
-      selectedBetweenBoth: withheld ? !selection : Boolean(selection && final?.parallelAttempts?.length === 2),
+      twoCandidatesReviewed: reviewSkipped ? tutorResponses.length === 1 : bothReviewed,
+      selectedBetweenBoth: reviewSkipped ? !selection : Boolean(selection && final?.parallelAttempts?.length === 2),
       flueDeliveredReturnedMessage: delivered.length > 0 && delivered === returned && delivered === result.text,
-      expectedOutcome: withheld ? final?.phase === "withheld" && visible.notice === "withheld" && (wireOverflow || visible.suggestsShorterRequest)
+      expectedOutcome: reviewSkipped ? final?.phase === "released" && visible.notice === "unverified" && visible.correct
         : final?.phase === "released" && visible.correct && visible.notice === null && (final.selectedAttempt ?? 0) > 0,
     };
     return { case: fixture.kind, mode: engines.mode, full: fixture.full, rawPlanSize, requests, tutorResponses,

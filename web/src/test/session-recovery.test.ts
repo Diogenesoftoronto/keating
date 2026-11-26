@@ -62,4 +62,16 @@ describe("session interruption recovery", () => {
 	it("does not continue an orphaned failed response without a user turn", () => {
 		expect(prepareMessagesForRetry([assistant("error")])).toBeNull();
 	});
+
+	it("retrying a withheld reply removes the notice and resumes from the same learner message", () => {
+		const learner = user("Explain it");
+		const withheld = assistant("stop", "<!--keating:review=withheld-->\nKeating couldn't verify a reply.");
+		const retried = prepareMessagesForRetry([learner, withheld]);
+		expect(retried).toEqual([learner]);
+		expect(retried?.[0]).toBe(learner);
+		// An ordinary or unverified reply is a finished answer, not a failure to retry.
+		expect(isRetryableAssistantMessage(assistant("stop", "<!--keating:review=unverified-->\nAn answer."))).toBe(false);
+		expect(isRetryableAssistantMessage(assistant("stop", "An answer."))).toBe(false);
+	});
 });
+

@@ -1,4 +1,5 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
+import { parseReviewNotice } from "../keating/judgement/review-notice";
 
 export const INTERRUPTED_RESPONSE_MESSAGE =
 	"The response was interrupted before it finished. Retry to generate it again.";
@@ -20,10 +21,19 @@ function cloneMessage(message: AgentMessage): AgentMessage {
 	} as AgentMessage;
 }
 
+/** A withheld reply is Keating's failure notice, so retrying replaces it like a failed reply. */
+function isWithheldNotice(entry: AssistantLike): boolean {
+	const content = entry.content;
+	const text = typeof content === "string" ? content
+		: Array.isArray(content) ? content.find((part) => part?.type === "text")?.text : undefined;
+	const hasToolCall = Array.isArray(content) && content.some((part) => part?.type === "toolCall");
+	return !hasToolCall && typeof text === "string" && parseReviewNotice(text)?.kind === "withheld";
+}
+
 export function isRetryableAssistantMessage(message: AgentMessage | undefined): boolean {
 	if (!message) return false;
 	const entry = message as AssistantLike;
-	return entry.role === "assistant" && (entry.stopReason === "error" || entry.stopReason === "aborted");
+	return entry.role === "assistant" && (entry.stopReason === "error" || entry.stopReason === "aborted" || isWithheldNotice(entry));
 }
 
 export function messagesForSessionSnapshot(

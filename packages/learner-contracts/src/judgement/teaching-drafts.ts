@@ -24,7 +24,7 @@ import type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 import type { DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
 
 export type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
-export { isTutorRateLimit, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "./teaching-drafts/generation-failure.js";
+export { isTutorEmptyResponse, isTutorRateLimit, TUTOR_EMPTY_ERROR, TUTOR_EMPTY_REASON, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "./teaching-drafts/generation-failure.js";
 export { DECISION_PLANNING_NOTICE, describeDecisionPlanningFailure, isDecisionPlanningFailure, type DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
@@ -41,7 +41,7 @@ export interface TeachingDraftFeedback {
 }
 export interface TeachingDraftAttempt {
   /** Present only on a failed tutor transport when the provider's rate limit was observed. */
-  readonly generationFailure?: "generation-rate-limited";
+  readonly generationFailure?: "generation-rate-limited" | "generation-empty";
   /** This candidate was explicitly written as a visible reply to the existing ungraded question. */
   readonly feedbackOnly?: true;
   /** This candidate was asked to collect the learner's next answer in one OpenUI Question. */
@@ -158,6 +158,8 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly selectorProbabilities: Readonly<Record<string, number>> | null;
   readonly selectionCandidateAttempts: readonly number[];
   readonly selectionOmittedForBudget: readonly number[];
+  /** No draft passed or was retained, so the host's `releaseLastResortDraft` released the best finished text. */
+  readonly lastResortDraft?: true;
 }
 export interface TeachingDraftGenerationInput {
   /** Already approved prose. Return only the missing addition, without tools. */
@@ -231,7 +233,8 @@ export interface TeachingDraftOptions<T> {
     readonly searchOnly: boolean;
   };
   /** Shorter observed search passages for an otherwise oversized review. Supplied evidence stays intact. */
-  readonly compactResearchSources?: (replies: readonly TeachingPolicyReply[]) => TeachingPolicyTurn["sources"];
+  /** `maxChars` is a character budget for the compacted evidence; omitted, the host uses its smallest set. */
+  readonly compactResearchSources?: (replies: readonly TeachingPolicyReply[], maxChars?: number) => TeachingPolicyTurn["sources"];
   readonly judge: JudgementCaller;
   /** The active judge's declared request and state-plus-longest-question budgets. */
   readonly judgementModel?: TeachingDraftReviewer["judgementModel"];
@@ -262,6 +265,12 @@ export interface TeachingDraftOptions<T> {
    * keeps the earlier wider comparison for research and evaluation.
    */
   readonly breadth?: "focused" | "broad";
+  /**
+   * Learner-facing hosts: rather than withhold, release the best-scored text of any finished draft
+   * (tool calls removed) with reason "best-effort-draft", so the host shows it with a warning.
+   * Evaluation and benchmark hosts leave this off so the strict gate outcome stays measurable.
+   */
+  readonly releaseLastResortDraft?: boolean;
   /** Longer comparison/synthesis is opt-in; response depth alone does not expand retries. */
   readonly refinement?: TeachingDraftRefinement;
   readonly maxReasoning?: TeachingDraftReasoning;

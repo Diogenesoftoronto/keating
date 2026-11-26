@@ -1,5 +1,5 @@
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
-import { MERCURY_2_PROFILE, MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
+import { MERCURY_2_PROFILE, MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS, catalogModelsFromModelsDev, familyPreferenceIds, type CatalogModel } from "@keating/runtime-config";
 
 const CACHE_KEY = "keating.models-dev.v1";
 export const MODEL_CATALOG_TTL = 60 * 60 * 1000;
@@ -122,6 +122,9 @@ export function createModelsDevCatalog(options: {
 }) {
 	const now = options.now ?? Date.now;
 	let overlay: Model<Api>[] = [];
+	// Family and release dates from the same payload rank curated choices without a code change.
+	let releases: CatalogModel[] = [];
+	const supportedProviders = () => [...new Set(options.baseline().map(model => model.provider))];
 	let updatedAt: number | null = null;
 	let error: string | null = null;
 	let retryAt = 0;
@@ -137,6 +140,7 @@ export function createModelsDevCatalog(options: {
 			const parsed = parseModelsDevCatalog(cached.catalog, options.baseline());
 			if (parsed.length && typeof cached.updatedAt === "number" && Number.isFinite(cached.updatedAt)) {
 				overlay = parsed;
+				releases = catalogModelsFromModelsDev(cached.catalog, supportedProviders());
 				updatedAt = cached.updatedAt <= now() ? cached.updatedAt : null;
 			}
 		} catch { /* Blocked or malformed storage must not prevent model selection. */ }
@@ -162,7 +166,8 @@ export function createModelsDevCatalog(options: {
 				const catalog = await response.json();
 				const parsed = parseModelsDevCatalog(catalog, options.baseline());
 				if (!parsed.length) throw new Error("No compatible chat models in the catalog");
-				overlay = parsed; updatedAt = now(); error = null; retryAt = 0;
+				overlay = parsed; releases = catalogModelsFromModelsDev(catalog, supportedProviders());
+				updatedAt = now(); error = null; retryAt = 0;
 				try {
 					// Keep only supported providers. Parse again on restore, so persisted URLs are never trusted.
 					const supported = new Set(options.baseline().map(model => model.provider));
@@ -176,7 +181,11 @@ export function createModelsDevCatalog(options: {
 		})().finally(() => { pending = undefined; });
 		return pending;
 	};
-	return { models, refresh, status: (): ModelCatalogStatus => { restore(); return { updatedAt, error }; } };
+	return {
+		models, refresh,
+		releases: (): CatalogModel[] => { restore(); return releases; },
+		status: (): ModelCatalogStatus => { restore(); return { updatedAt, error }; },
+	};
 }
 
 const catalog = createModelsDevCatalog({
@@ -184,6 +193,15 @@ const catalog = createModelsDevCatalog({
 	fetch: (input, init) => globalThis.fetch(input, init),
 	storage: () => typeof localStorage === "undefined" ? undefined : localStorage,
 });
+
+/**
+ * Curated model IDs for a provider: each family's newest releases in the fetched
+ * catalog, then the static list, which only matters before the first fetch.
+ */
+export function catalogPreferenceIds(provider: string, families: readonly string[] = [], fallback: readonly string[] = [],
+	releases: readonly CatalogModel[] = catalog.releases()): string[] {
+	return [...new Set([...familyPreferenceIds(releases, provider, families), ...fallback])];
+}
 /** Keating also supports the direct Inception route with a learner-provided API key. */
 export function getCloudProviderIds(): string[] {
 	return [...new Set([...getProviders(), "inception"])].sort();

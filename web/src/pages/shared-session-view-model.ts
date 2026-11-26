@@ -17,6 +17,34 @@ import {
 	type TrajectoryAnnotation,
 	type TrajectoryReviewTarget,
 } from "../keating/trajectory-review";
+import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
+import { learnerResponseReviewMarkdown } from "../keating/learner-response";
+
+/** A malformed answer envelope from a public link must not break the page; Raw keeps the source. */
+function learnerAnswerMarkdown(text: string): string {
+	try {
+		return learnerResponseReviewMarkdown(text);
+	} catch {
+		return /^\s*<keating-learner-response\b/.test(text) ? "*Submitted an answer.*" : text;
+	}
+}
+
+/**
+ * What a reader sees for one shared turn. The saved text stays the raw source; the rendered
+ * view hides review markers and internal failure counts, shows a learner's form answer as the
+ * answer they gave, and turns links whose address was removed for the public link into labels.
+ */
+export function sharedTurnMarkdown(role: string, text: string): string {
+	const notice = parseReviewNotice(text);
+	if (notice?.kind === "withheld") {
+		const summary = withheldSummary(notice.text);
+		return `> **Reply not shown.** ${summary || "Keating couldn't verify this reply."}`;
+	}
+	const visible = role === "user" ? learnerAnswerMarkdown(text) : stripReviewNotice(text);
+	return visible
+		.replace(/\[([^\]\n]+)\]\(\[remote URL omitted\]\)/g, "$1 *(link removed)*")
+		.replace(/\[remote URL omitted\]/g, "*(link removed)*");
+}
 
 function publicSessionId(session: SharedSession): string {
 	return `shared:${session.id}`;
@@ -256,11 +284,14 @@ export function sharedSessionWorkspaceData(session: SharedSession): SharedTrajec
 	if (!trajectory) return null;
 	if (trajectory.turns.length === 0 && trajectory.artifacts.length === 0) return null;
 	const sessionId = publicSessionId(session);
-	const messages: TrajectorySessionMessage[] = trajectory.turns.map((turn) => ({
+	const messages: TrajectorySessionMessage[] = trajectory.turns.map((turn, index) => ({
 		id: turn.id,
 		role: turn.role,
 		ordinal: turn.ordinal,
+		// Shared turns skip tool rounds, so ordinals jump; readers count the turns they can see.
+		turnNumber: index + 1,
 		text: turn.text,
+		markdown: sharedTurnMarkdown(turn.role, turn.text),
 		contentFingerprint: contentFingerprint(turn.text),
 		label: turn.role === "assistant" ? "Keating" : "Learner",
 		status: "complete",

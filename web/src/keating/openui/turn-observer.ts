@@ -1,4 +1,4 @@
-import { INTERACTION_REASONS, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_REASONS, TUTOR_EMPTY_REASON, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import {
   MAX_EARLIER_PAIR_ROUNDS, classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
 } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
@@ -131,6 +131,9 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
             check.status !== "pass" && !check.applicability && isOpenUiDiagnosticGateIssue(check.id) ? [check.id] : [])));
           if (snapshot.attempts.some(a => a.status === "generation-error" && a.generationFailure === TUTOR_RATE_LIMIT_REASON))
             row.gateIssues = union(row.gateIssues, [TUTOR_RATE_LIMIT_REASON]);
+          // A provider that "finishes" with nothing is an outage signal, not a quiet generic error.
+          if (snapshot.attempts.some(a => a.status === "generation-error" && a.generationFailure === TUTOR_EMPTY_REASON))
+            row.gateIssues = union(row.gateIssues, [TUTOR_EMPTY_REASON]);
           if (!snapshot.interaction || !reviewer) return;
           row.mode = "guided";
           row.decisionModel = identity(reviewer.model);

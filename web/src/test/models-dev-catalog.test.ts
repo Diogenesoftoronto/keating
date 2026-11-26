@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
-import { createModelsDevCatalog, MODEL_CATALOG_TTL, parseModelsDevCatalog } from "../lib/models-dev-catalog";
+import { catalogPreferenceIds, createModelsDevCatalog, MODEL_CATALOG_TTL, parseModelsDevCatalog } from "../lib/models-dev-catalog";
+import { selectAuxiliaryWebSearchModel } from "../hooks/keating-stream";
+import { MODEL_FAMILIES, MODEL_PREFERENCES } from "@keating/runtime-config";
 
 const model = (provider: string, api: Api, baseUrl: string, id = "old"): Model<Api> => ({
 	id, name: id, provider, api, baseUrl, reasoning: false, input: ["text"],
@@ -153,5 +155,42 @@ describe("catalog refresh and persistence", () => {
 	it("works even when storage is blocked or full", async () => {
 		const catalog = createModelsDevCatalog({ baseline: () => baseline, storage: () => { throw new Error("blocked"); }, fetch: fakeFetch(async () => Response.json(payload)) });
 		await catalog.refresh(); expect(catalog.models()).toHaveLength(4); expect(catalog.status().error).toBeNull();
+	});
+
+	it("ranks curated families against the fetched catalog, so new releases need no code change", async () => {
+		const values = new Map<string, string>();
+		const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
+		const released = (id: string, family: string, release_date: string, extra: Record<string, unknown> = {}) => entry(id, { family, release_date, ...extra });
+		const families = {
+			anthropic: { npm: "@ai-sdk/anthropic", models: {
+				"claude-sonnet-5-5": released("claude-sonnet-5-5", "claude-sonnet", "2026-09-28"),
+				"claude-sonnet-6": released("claude-sonnet-6", "claude-sonnet", "2027-01-10"),
+				"claude-haiku-6": released("claude-haiku-6", "claude-haiku", "2027-02-01"),
+				"claude-sonnet-4-5": released("claude-sonnet-4-5", "claude-sonnet", "2025-09-29", { status: "deprecated" }),
+			} },
+			openai: { npm: "@ai-sdk/openai", models: {
+				"gpt-6.2-sol": released("gpt-6.2-sol", "gpt-sol", "2026-11-17"),
+				"gpt-6.2-sol-healthcare": released("gpt-6.2-sol-healthcare", "gpt-sol", "2026-11-24"),
+			} },
+		};
+		const catalog = createModelsDevCatalog({ baseline: () => baseline, storage: () => storage, fetch: fakeFetch(async () => Response.json(families)) });
+		const fallback = MODEL_PREFERENCES.webChat.anthropic;
+		// Before the first fetch only the static list applies.
+		expect(catalogPreferenceIds("anthropic", MODEL_FAMILIES.webChat.anthropic, fallback, catalog.releases())).toEqual([...fallback]);
+		await catalog.refresh();
+		const ranked = catalogPreferenceIds("anthropic", MODEL_FAMILIES.webChat.anthropic, fallback, catalog.releases());
+		expect(ranked.slice(0, 3)).toEqual(["claude-sonnet-6", "claude-sonnet-5-5", "claude-haiku-6"]);
+		// Deprecated releases never rank; the static list only trails the live results.
+		expect(catalogPreferenceIds("anthropic", MODEL_FAMILIES.webChat.anthropic, [], catalog.releases()))
+			.toEqual(["claude-sonnet-6", "claude-sonnet-5-5", "claude-haiku-6"]);
+		expect(catalogPreferenceIds("openai", MODEL_FAMILIES.webChat.openai, [], catalog.releases())).toEqual(["gpt-6.2-sol"]);
+		// A reload ranks from the cached payload without a network request.
+		const reloaded = createModelsDevCatalog({ baseline: () => baseline, storage: () => storage, fetch: fakeFetch(async () => { throw new Error("offline"); }) });
+		expect(catalogPreferenceIds("anthropic", MODEL_FAMILIES.webChat.anthropic, fallback, reloaded.releases())[0]).toBe("claude-sonnet-6");
+		// Supporting web search tries the cheap tier's newest releases first, then keeps the
+		// first one the provider's web-search tool supports. Haiku 6 and Sonnet 6 outrun that
+		// version-pinned capability check, so Sonnet 5.5 is used.
+		const models = catalog.models().filter(model => model.provider === "anthropic");
+		expect(selectAuxiliaryWebSearchModel(models, new Set(["anthropic"]), catalog.releases())?.id).toBe("claude-sonnet-5-5");
 	});
 });

@@ -143,7 +143,7 @@ import { recordAssistantPresentations } from "../keating/judgement/active-work-h
 import { registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
 import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
 import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
-import { WithheldReplyRecovery } from "./WithheldReplyRecovery";
+import { RetryTurnContext, WithheldReplyRecovery } from "./WithheldReplyRecovery";
 import { ReviewNoticeCard, UnverifiedBadge, unsourcedClaimTip } from "./ReviewNoticeCard";
 import { getClaimCheck, subscribeClaimChecks } from "../keating/judgement/claim-citation-store";
 import {
@@ -4488,7 +4488,9 @@ function AssistantMessage({
               } : {})}
             >
               {!creditFailure && <>
-                <MessagePrimitive.Content components={components} />
+                <RetryTurnContext.Provider value={isLastMessage ? onRetry ?? null : null}>
+                  <MessagePrimitive.Content components={components} />
+                </RetryTurnContext.Provider>
                 <div data-quote-exclude=""><MessageSearchCitations /></div>
               </>}
             </div>

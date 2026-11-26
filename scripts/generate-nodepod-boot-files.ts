@@ -33,6 +33,7 @@ const REVIEW_SOURCE_FILES = [
   "packages/runtime-config/src/services.ts",
   "packages/runtime-config/src/oauth.ts",
   "packages/runtime-config/src/budgets.ts",
+  "packages/runtime-config/src/model-families.ts",
   "src/judgement/cli-readiness.ts",
   "src/judgement/calibration-artifact.ts",
   "src/judgement/cli-lesson-plan.ts",

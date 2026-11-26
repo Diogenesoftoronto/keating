@@ -1,8 +1,8 @@
-import { MODEL_CHOICES, SERVICE_ENDPOINTS, MODEL_PREFERENCES } from "@keating/runtime-config";
+import { MODEL_CHOICES, SERVICE_ENDPOINTS, MODEL_PREFERENCES, MODEL_FAMILIES } from "@keating/runtime-config";
 import { type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "../keating/app-storage";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
-import { getCloudProviderIds, getCloudProviderModels, refreshCloudModelCatalog } from "./models-dev-catalog";
+import { catalogPreferenceIds, getCloudProviderIds, getCloudProviderModels, refreshCloudModelCatalog } from "./models-dev-catalog";
 import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
@@ -404,13 +404,14 @@ export async function hasProviderCredential(providerName: string): Promise<boole
 	}
 }
 
-const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
-	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
-	"openai-codex": [...MODEL_PREFERENCES.webChat["openai-codex"]],
-	openai: [...MODEL_PREFERENCES.webChat["openai"]],
-	anthropic: [...MODEL_PREFERENCES.webChat["anthropic"]],
-	google: [...MODEL_PREFERENCES.webChat["google"]],
-};
+/** Newest releases of the curated families in the fetched catalog, then the static list. */
+export function fallbackChatModelIds(provider: string): string[] {
+	if (provider === NOTORGANIC_PROVIDER_ID) return [NOTORGANIC_DEFAULT_MODEL.id];
+	// Codex models are subscription entitlements, not a models.dev provider, so its list stays static.
+	const families = (MODEL_FAMILIES.webChat as Record<string, readonly string[]>)[provider];
+	const fallback = (MODEL_PREFERENCES.webChat as Record<string, readonly string[]>)[provider];
+	return catalogPreferenceIds(provider, families, fallback);
+}
 
 function providerNeedsKey(provider: string): boolean {
 	return provider !== "browser" && provider !== DESKTOP_OFFLINE_PROVIDER;
@@ -418,7 +419,7 @@ function providerNeedsKey(provider: string): boolean {
 
 function preferredModelForProvider(models: Array<Model<Api>>, provider: string): Model<Api> | undefined {
 	const providerModels = models.filter((model) => model.provider === provider);
-	const ids = FALLBACK_CHAT_MODEL_IDS[provider] ?? [];
+	const ids = fallbackChatModelIds(provider);
 	for (const id of ids) {
 		const found = providerModels.find((model) => model.id === id);
 		if (found) return found;

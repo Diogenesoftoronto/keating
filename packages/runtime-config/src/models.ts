@@ -38,7 +38,11 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, google: MODEL_IDS.gemini_decision_1, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.inkling_2_small, MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2] as const;
+/** Hosted chat aliases this client knows how to call. The gateway's /v1/models decides which are offered. */
+export const NOTORGANIC_CHAT_MODEL_IDS = [
+  DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.gpt_6_astra, MODEL_IDS.inkling_2_small, MODEL_IDS.inkling,
+  MODEL_IDS.flint, MODEL_IDS.balanced, MODEL_IDS.mercury_2, MODEL_IDS.mercury_3,
+] as const;
 /** The main tutor stays tool-capable; Ampersand Tutor is consulted separately. */
 export const TUTOR_CONSULTATION_MODEL_ID = MODEL_IDS.ampersand_tutor;
 /** Direct Inception Chat Completions. Costs are USD per million tokens. */
@@ -53,9 +57,24 @@ export const MERCURY_2_PROFILE = {
   thinkingLevelMap: { off: "instant", minimal: "low", xhigh: "high", max: "high" },
   compat: { supportsDeveloperRole: false, supportsStore: false, maxTokensField: "max_completion_tokens" as const },
 };
+/** Direct Inception metadata, verified 2026-11-26 against models.dev; hosted pricing belongs to the gateway. */
+export const MERCURY_3_PROFILE = {
+  ...MERCURY_2_PROFILE,
+  id: MODEL_IDS.mercury_3,
+  name: "Mercury 3",
+  contextWindow: 1_000_000,
+  maxTokens: 131_072,
+  cost: { input: 0.1, output: 0.35, cacheRead: 0.01, cacheWrite: 0 },
+};
 export const INKLING_2_SMALL_PROFILE = {
   id: MODEL_IDS.inkling_2_small, name: "Inkling 2 Small", contextWindow: 262_144, maxTokens: 16_384,
 } as const;
+/** Every hosted Inkling route is a 262,144-token checkpoint (Not Organic Portkey config). */
+export const INKLING_PROFILE = {
+  id: MODEL_IDS.inkling, name: "Inkling", contextWindow: 262_144, maxTokens: 16_384,
+} as const;
+/** Served through the gateway's Responses route alongside Luna and Sol. */
+export const GPT_6_ASTRA_PROFILE = { id: MODEL_IDS.gpt_6_astra, name: "GPT-6 Astra" } as const;
 /** Provisional native serving profile; not GPU-verified. Gateway enablement and fresh consent are required. */
 export const FLINT_PREVIEW_PROFILE = {
   id: MODEL_IDS.flint, name: "Flint (preview)", contextWindow: 12_288, maxTokens: 4_096,
@@ -97,13 +116,16 @@ export const MINIMAX_M31_FLASH_PROFILE = {
   },
 };
 
-/** Discovery preferences; provider catalogs still own availability and metadata. */
+/** Discovery preferences; provider catalogs still own availability and metadata.
+ * The browser ranks `MODEL_FAMILIES` against the models.dev catalog it fetches, so the
+ * webChat and auxiliarySearch IDs here only apply before that first fetch and need no
+ * update for new releases. */
 export const MODEL_PREFERENCES = {
   webChat: {
     "openai-codex": [MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_5_4_mini, MODEL_IDS.gpt_5_3_codex_spark],
-    openai: [MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_5_pro, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_5_3_chat_latest, MODEL_IDS.gpt_5_2, MODEL_IDS.gpt_5_1, MODEL_IDS.gpt_5],
-    anthropic: [MODEL_IDS.claude_sonnet_4_6, MODEL_IDS.claude_opus_4_8, MODEL_IDS.claude_opus_4_7, MODEL_IDS.claude_sonnet_4_5, MODEL_IDS.claude_haiku_4_5],
-    google: [MODEL_IDS.gemini_3_1_pro_preview, MODEL_IDS.gemini_3_5_flash, MODEL_IDS.gemini_3_pro_preview, MODEL_IDS.gemini_2_5_pro],
+    openai: [MODEL_IDS.gpt_6_2_sol, MODEL_IDS.gpt_6_2_astra, MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_5_pro, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_5_3_chat_latest, MODEL_IDS.gpt_5_2, MODEL_IDS.gpt_5_1, MODEL_IDS.gpt_5],
+    anthropic: [MODEL_IDS.claude_sonnet_5_5, MODEL_IDS.claude_opus_5_5, MODEL_IDS.claude_fable_5_2, MODEL_IDS.claude_haiku_5_5, MODEL_IDS.claude_sonnet_4_6, MODEL_IDS.claude_opus_4_8, MODEL_IDS.claude_opus_4_7, MODEL_IDS.claude_sonnet_4_5, MODEL_IDS.claude_haiku_4_5],
+    google: [MODEL_IDS.gemini_4_neon, MODEL_IDS.gemini_3_8_flash, MODEL_IDS.gemini_3_1_pro_preview, MODEL_IDS.gemini_3_5_flash, MODEL_IDS.gemini_3_pro_preview, MODEL_IDS.gemini_2_5_pro],
   },
   speech: { steerableTts: [MODEL_IDS.gpt_4o_mini_tts] },
   judgement: { aliases: [MODEL_IDS.jev_latest, MODEL_IDS.jev_preview] },
@@ -115,7 +137,7 @@ export const MODEL_PREFERENCES = {
   auxiliarySearch: {
     openai: [MODEL_IDS.gpt_6_luna, MODEL_IDS.gpt_5_6_sol, MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_4_1_mini],
     google: [MODEL_IDS.gemini_2_5_flash, MODEL_IDS.gemini_3_5_flash, MODEL_IDS.gemini_3_1_pro_preview],
-    anthropic: [MODEL_IDS.claude_haiku_4_5, MODEL_IDS.claude_sonnet_4_6, MODEL_IDS.claude_sonnet_5],
+    anthropic: [MODEL_IDS.claude_haiku_5_5, MODEL_IDS.claude_haiku_4_5, MODEL_IDS.claude_sonnet_4_6, MODEL_IDS.claude_sonnet_5],
   },
 } as const;
 
@@ -146,10 +168,18 @@ const SETUP_MODEL_LABELS: Record<string, string> = {
   [MODEL_IDS.moonshotai_kimi_k2_6_free]: "MoonshotAI Kimi K2.6 (free)",
   [MODEL_IDS.gemini_3_1_pro_preview]: "Gemini 3.1 Pro Preview",
   [MODEL_IDS.gemini_3_5_flash]: "Gemini 3.5 Flash",
+  [MODEL_IDS.gemini_3_8_flash]: "Gemini 3.8 Flash",
+  [MODEL_IDS.gemini_4_neon]: "Gemini 4 Neon",
   [MODEL_IDS.gemma_31b_it]: "Gemma 31b",
   [MODEL_IDS.gpt_5_5]: "GPT-5.5",
   [MODEL_IDS.gpt_5_5_pro]: "GPT-5.5 Pro",
   [MODEL_IDS.gpt_5_4]: "GPT-5.4",
+  [MODEL_IDS.gpt_6_2_sol]: "GPT-6.2 Sol",
+  [MODEL_IDS.gpt_6_2_astra]: "GPT-6.2 Astra",
+  [MODEL_IDS.claude_sonnet_5_5]: "Claude Sonnet 5.5",
+  [MODEL_IDS.claude_opus_5_5]: "Claude Opus 5.5",
+  [MODEL_IDS.claude_fable_5_2]: "Claude Fable 5.2",
+  [MODEL_IDS.claude_haiku_5_5]: "Claude Haiku 5.5",
   [MODEL_IDS.claude_sonnet_5]: "Claude Sonnet 5",
   [MODEL_IDS.claude_opus_4_8]: "Claude Opus 4.8",
   [MODEL_IDS.claude_fable_5]: "Claude Fable 5",
@@ -190,6 +220,8 @@ const NOTORGANIC_MODEL_LABELS: Record<string, string> = {
   [GPT_6_LUNA_PROFILE.id]: GPT_6_LUNA_PROFILE.name,
   [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.inkling_2_small]: "Inkling 2 Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
   [MODEL_IDS.flint]: FLINT_PREVIEW_PROFILE.name,
+  [GPT_6_ASTRA_PROFILE.id]: GPT_6_ASTRA_PROFILE.name, [INKLING_PROFILE.id]: INKLING_PROFILE.name,
+  [MERCURY_3_PROFILE.id]: MERCURY_3_PROFILE.name,
 };
 const TABULAR_MODEL_LABELS: Record<string, string> = { [MODEL_IDS.tabular]: "TabPFN 3.5" };
 const PI_PROVIDER_LABELS: Record<string, string> = {
@@ -235,9 +267,9 @@ export const MODEL_CHOICES = {
     ]),
     anthropic: menu([
       setupChoice(DEFAULT_MODELS.setup.cliAnthropic, "Recommended"),
-      setupChoice(MODEL_IDS.claude_opus_4_8),
-      setupChoice(MODEL_IDS.claude_fable_5),
-      setupChoice(MODEL_IDS.claude_haiku_4_5, "Faster"),
+      setupChoice(MODEL_IDS.claude_opus_5_5),
+      setupChoice(MODEL_IDS.claude_fable_5_2),
+      setupChoice(MODEL_IDS.claude_haiku_5_5, "Faster"),
       setupChoice("custom", "Type a model name"),
     ]),
     custom: menu([
@@ -274,8 +306,8 @@ export const MODEL_CHOICES = {
     ]),
     anthropic: menu([
       setupChoice(DEFAULT_MODELS.cli.anthropic, "Recommended"),
-      setupChoice(MODEL_IDS.claude_opus_4_8),
-      setupChoice(MODEL_IDS.claude_haiku_4_5, "Faster"),
+      setupChoice(MODEL_IDS.claude_opus_5_5),
+      setupChoice(MODEL_IDS.claude_haiku_5_5, "Faster"),
       setupChoice("custom", "Type a model name"),
     ]),
     custom: menu([

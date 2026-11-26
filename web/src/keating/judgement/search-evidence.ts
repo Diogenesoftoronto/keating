@@ -3,10 +3,25 @@ import type { TeachingPolicyReply, TeachingPolicyTurn } from "@keating/learner-c
 import { isWebSearchToolName, parseWebSearchResult, webUrlsInText, type WebSearchSite } from "../../components/web-search-result";
 
 const MAX_SEARCH_SOURCES = 16;
-const MAX_SEARCH_SOURCE_CHARS = 12_000;
+/** The smallest compact evidence set. A reviewer with more room is given more; see `compactSources`. */
+export const MAX_SEARCH_SOURCE_CHARS = 12_000;
 const COMPACT_SNIPPET_CHARS = 240;
-// A cited passage can expand this far in the compact fallback.
+// A cited passage can expand this far in the smallest compact set; larger sets scale it.
 const FULL_SNIPPET_CHARS = 2_000;
+
+/** One key per page, so a draft citing `…/post/` or `…/post?utm_source=x` still selects `…/post`. */
+function citationKey(value: string): string {
+  try {
+    const url = new URL(value);
+    url.hash = "";
+    for (const name of [...url.searchParams.keys()]) if (/^(utm_|ref$|ref_src$|fbclid$|gclid$)/i.test(name)) url.searchParams.delete(name);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : "";
+    return `${host}${path}${url.search}`;
+  } catch {
+    return value;
+  }
+}
 
 type ObservedSite = WebSearchSite & { id: string; passages: Set<string> };
 type Source = TeachingPolicyTurn["sources"][number];
@@ -30,19 +45,30 @@ function passage(site: WebSearchSite, snippetChars?: number): string {
   return [title, site.snippet?.slice(0, snippetChars)].filter(Boolean).join(" — ");
 }
 
+/** Every passage observed for a cited page: a supporting sentence may be in any of its results. */
+function citedPassage(site: ObservedSite, limit: number): string {
+  const passages = site.passages.size ? [...site.passages] : [passage(site, limit)];
+  return passages.join("\n\n").slice(0, limit);
+}
+
 /** Keep a compact passage per selected URL before spending spare space on cited evidence. */
-function searchSources(sites: ReadonlyMap<string, ObservedSite>, citedUrls: readonly string[]): Source[] {
+function searchSources(sites: ReadonlyMap<string, ObservedSite>, citedUrls: readonly string[], maxChars = MAX_SEARCH_SOURCE_CHARS): Source[] {
+  const byKey = new Map<string, ObservedSite>();
+  for (const site of sites.values()) if (!byKey.has(citationKey(site.url))) byKey.set(citationKey(site.url), site);
   const cited = new Set<ObservedSite>();
   for (const url of citedUrls) {
-    const site = sites.get(url);
+    const site = sites.get(url) ?? byKey.get(citationKey(url));
     if (site) cited.add(site);
   }
+  const scale = Math.max(1, maxChars / MAX_SEARCH_SOURCE_CHARS);
+  const maxSources = Math.ceil(MAX_SEARCH_SOURCES * scale);
+  const fullSnippetChars = Math.ceil(FULL_SNIPPET_CHARS * scale);
   const selected = new Map<string, { id: string; url: string; text: string }>();
   // Each entry pays for its comma or closing bracket below.
-  let remaining = MAX_SEARCH_SOURCE_CHARS - 1;
+  let remaining = maxChars - 1;
   for (const group of [cited.values(), sites.values()]) {
     for (const site of group) {
-      if (selected.size === MAX_SEARCH_SOURCES) break;
+      if (selected.size === maxSources) break;
       if (selected.has(site.url)) continue;
       const source = { id: site.id, url: site.url, text: passage(site, COMPACT_SNIPPET_CHARS) };
       const size = JSON.stringify(source).length + 1;
@@ -57,7 +83,7 @@ function searchSources(sites: ReadonlyMap<string, ObservedSite>, citedUrls: read
     const source = selected.get(site.url)!;
     const allowance = Math.floor(remaining / (citedSites.length - index));
     const originalSize = JSON.stringify(source.text).length;
-    let expanded = passage(site, FULL_SNIPPET_CHARS).slice(0, source.text.length + allowance);
+    let expanded = citedPassage(site, fullSnippetChars).slice(0, source.text.length + allowance);
     // Escaped characters also count against the serialized review budget.
     const overflow = JSON.stringify(expanded).length - originalSize - allowance;
     if (overflow > 0) expanded = expanded.slice(0, expanded.length - overflow);
@@ -127,8 +153,9 @@ export function projectWebSearchEvidence(messages: Context["messages"], supplied
   return {
     sources,
     toolResults: outcomes.reverse(),
-    compactSources(replies: readonly TeachingPolicyReply[]) {
-      return [...suppliedSources, ...searchSources(sites, replies.flatMap(reply => webUrlsInText(reply.text)))];
+    /** `maxChars` lets the reviewer's actual spare room decide how much evidence it keeps. */
+    compactSources(replies: readonly TeachingPolicyReply[], maxChars = MAX_SEARCH_SOURCE_CHARS) {
+      return [...suppliedSources, ...searchSources(sites, replies.flatMap(reply => webUrlsInText(reply.text)), maxChars)];
     },
     reviewResearch(reply: TeachingPolicyReply) {
       return {

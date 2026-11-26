@@ -117,7 +117,8 @@ describe("chat model fallback selection", () => {
 			const { hasProviderCredential } = await import("../lib/provider-models");
 			expect(await hasProviderCredential("notorganic")).toBe(false);
 			const models = (await discoverModels({})).filter(entry => entry.model.provider === "notorganic");
-			expect(models.map(entry => entry.model.id).sort()).toEqual(hidden ? [] : ["balanced", "gpt-6-luna", "gpt-6.1-sol", "inkling-2-small"]);
+			// Signed out, the gateway cannot be asked; only the default is offered, and it leads to sign-in.
+			expect(models.map(entry => entry.model.id)).toEqual(hidden ? [] : ["gpt-6-luna"]);
 			if (!hidden) expect(new Set(models.map(entry => entry.group))).toEqual(new Set(["cloud"]));
 			expect(displayModelProvider("notorganic")).toBe("Not Organic");
 		} finally {
@@ -127,7 +128,7 @@ describe("chat model fallback selection", () => {
 			else delete (globalThis as any).localStorage;
 		}
 	});
-	it("lists Luna first alongside Sol and both Inkling models when Not Organic is enabled", async () => {
+	it("offers only the default hosted model until the account gateway lists more", async () => {
 		const enabled = process.env.VITE_NOTORGANIC_ENABLED;
 		try {
 			const { getSelectableModels } = await import("../lib/provider-models");
@@ -135,9 +136,6 @@ describe("chat model fallback selection", () => {
 			const models = await getSelectableModels((provider) => provider === "notorganic");
 			expect(models.map(({ id, api, provider }) => ({ id, api, provider }))).toEqual([
 				{ id: "gpt-6-luna", api: "openai-responses", provider: "notorganic" },
-				{ id: "gpt-6.1-sol", api: "openai-responses", provider: "notorganic" },
-				{ id: "inkling-2-small", api: "openai-completions", provider: "notorganic" },
-				{ id: "balanced", api: "openai-completions", provider: "notorganic" },
 			]);
 			expect(await getSelectableModels(() => false)).toEqual([]);
 			process.env.VITE_NOTORGANIC_ENABLED = "false";

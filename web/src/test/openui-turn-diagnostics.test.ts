@@ -138,11 +138,10 @@ describe("durable content-free OpenUI turn observation", () => {
       messages.push(reply);
       observer.observe({ type: "agent_end" });
       await store.settled();
-      const notice = parseReviewNotice(reply.content.find(block => block.type === "text")?.text ?? "");
-      expect(notice?.kind).toBe("withheld");
-      expect(notice?.text).toContain(TUTOR_RATE_LIMIT_MESSAGE);
-      const view = renderToStaticMarkup(createElement(ReviewNoticeCard, { kind: notice!.kind, reason: withheldSummary(notice!.text) }));
-      expect(view).toContain("<span aria-hidden=\"true\">Reply provider rate limit reached</span>");
+      // No draft exists, so nothing is withheld: the learner gets a retryable failure that names the rate limit.
+      expect(reply.stopReason).toBe("error");
+      expect(reply.content).toEqual([]);
+      expect(reply.errorMessage).toContain(TUTOR_RATE_LIMIT_MESSAGE);
       expect([tutorRequests, judgeRequests]).toEqual([4, 1]);
       const receipt = projectTeachingDraftSnapshot(snapshots.at(-1)!);
       expect(receipt.reason).toBe(TUTOR_RATE_LIMIT_REASON);
@@ -150,7 +149,7 @@ describe("durable content-free OpenUI turn observation", () => {
         Array.from({length: 4}, () => ["generation-error", TUTOR_RATE_LIMIT_REASON, []]));
       expect(receipt.parallelAttempts).toEqual([1, 2]);
       expect(receipt.pairReviews).toBeUndefined();
-      expect(store.getRows()[0]).toMatchObject({ reply: "withheld", model: null, gateIssues: [TUTOR_RATE_LIMIT_REASON] });
+      expect(store.getRows()[0]).toMatchObject({ reply: "error", model: null, gateIssues: [TUTOR_RATE_LIMIT_REASON] });
       expect(store.getRows()[0]?.decisionFailure).toBeUndefined();
       expect(JSON.stringify([reply, receipt, store.getRows()])).not.toContain("PRIVATE provider detail");
     } finally { observer.dispose(); }
@@ -179,7 +178,10 @@ describe("durable content-free OpenUI turn observation", () => {
     observer.observe({type:"agent_start"});
     const snapshots: TeachingDraftSnapshot[] = [];
     const judgementModel = { id: configuredModel, requestTokens: null, stateQuestionTokens: null };
-    const gate = withTeachingDraftGate(() => { tutorRequests++; throw Error("Tutor must not run"); }, {
+    const gate = withTeachingDraftGate(() => { tutorRequests++; const answer = { role: "assistant" as const, api: model.api, provider: model.provider, model: model.id,
+      content: [{ type: "text" as const, text: "Here is an answer." }], stopReason: "stop" as const, timestamp: 2,
+      usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } };
+      const stream = createAssistantMessageEventStream(); stream.push({ type: "done", reason: "stop", message: answer }); stream.end(answer); return stream; }, {
       triage: false, breadth: "broad", sessionId, basePrompt:() => "Tutor", judgementModel, onProgress: snapshot => snapshots.push(snapshot),
       makeCaller: () => createDraftGateJudgementCaller({settings: {...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted"},
         policy: {tiers:[tier], calibration: {entries:{}}}, judgementModel}),
@@ -189,19 +191,17 @@ describe("durable content-free OpenUI turn observation", () => {
       messages.push(reply);
       observer.observe({type:"agent_end"});
       await store.settled();
+      // Review could not plan, so the tutor answers directly, marked not fully verified, and the cause is kept for Settings.
       const notice = parseReviewNotice(reply.content.find(p => p.type === "text")?.text ?? "");
-      expect(notice?.kind).toBe("withheld");
-      expect(notice?.text).toContain(marked ? "relay rejected the page’s origin" : "decision request was denied access");
-      const badge = renderToStaticMarkup(createElement(ReviewNoticeCard, {kind:notice!.kind, reason:withheldSummary(notice!.text)}));
-      expect(badge).toContain('<span aria-hidden="true">Decision planning failed</span>');
+      expect(notice).toEqual({ kind: "unverified", text: "Here is an answer." });
       expect(http).toEqual([CUSTOM_JUDGEMENT_ENDPOINT]);
-      expect(tutorRequests).toBe(0);
+      expect(tutorRequests).toBe(1);
       const receipt = projectTeachingDraftSnapshot(snapshots.at(-1)!);
-      expect(receipt).toMatchObject({ phase:"withheld", reason:"backend-unauthorized", decisionFailure: failure, attempts:[], judgeModel:null });
+      expect(receipt).toMatchObject({ phase:"released", reason:"backend-unauthorized", decisionFailure: failure, attempts:[], judgeModel:null });
       expect(diagnoseDraft(receipt).map(finding => finding.title)).toEqual(["Decision planning failed"]);
       const rows = store.getRows();
       const failed = rows[0]!;
-      expect(failed).toMatchObject({ decisionFailure: failure, decisionModel:null, reply:"withheld", guidance:null, model:null,
+      expect(failed).toMatchObject({ decisionFailure: failure, decisionModel:null, reply:"released", guidance:null,
         draftAttempts:0, gateIssues:[], attempted:null, compiled:null, selected:[] });
       expect([failed.requestedModel, failed.pairReviews, failed.selection]).toEqual([undefined,undefined,undefined]);
       const event = openUIDiagnosticEvent(failed, 1);
@@ -210,9 +210,7 @@ describe("durable content-free OpenUI turn observation", () => {
       expect(summary.decisionPlanningFailures).toEqual({turns:1,groups:[{reason:"backend-unauthorized",configuredModel,turns:1,
         ...(marked ? { detail:"relay-origin-denied" } : {})}]});
       expect(summary.byDecisionModel.map(group => group.key)).toEqual(["unknown"]);
-      expect(queryOpenUiDiagnosticTurns(rows, {view:"withheld",decisionModel:configuredModel})).toMatchObject({matchingTurns:1,turns:[{decisionFailure:failure}]});
-      expect(queryOpenUiDiagnosticTurns(rows, {view:"withheld",decisionModel:"other"})).toMatchObject({matchingTurns:0});
-      const html = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialView:"withheld"}));
+      const html = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialView:"all"}));
       const selected = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialStage:"selected"}));
       const drafted = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialStage:"compiled"}));
       expect(html).toContain("Learner turns with OpenUI");

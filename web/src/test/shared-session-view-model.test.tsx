@@ -6,6 +6,7 @@ import { contentFingerprint } from "../keating/trajectory-review";
 import {
 	sharedSessionOmissionNotice,
 	sharedSessionWorkspaceData,
+	sharedTurnMarkdown,
 } from "../pages/shared-session-view-model";
 
 function richSharedSession(): SharedSession {
@@ -195,5 +196,55 @@ describe("shared session view model", () => {
 			...rich,
 			trajectory: { ...rich.trajectory!, turns: [], artifacts: [] },
 		})).toBeNull();
+	});
+});
+
+describe("readable shared turns", () => {
+	// Synthetic turns with the shapes a real share stores: a withheld notice, a reply whose
+	// links were removed for the public link, and a learner's submitted form answer.
+	const withheld = "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts. Blocking checks: checkpoint_continued.\n\nFailure: no-approved-draft. Draft attempts: 2; completed drafts: 2.";
+	const linked = "<!--keating:review=unverified-->\nFormal checks agree. ([Project statement]([remote URL omitted]); [Coverage]([remote URL omitted])) See also [remote URL omitted].";
+	const answer = `<keating-learner-response version="1">\n${JSON.stringify({ version: 1, kind: "openui-action", id: "r1", submittedAt: "2026-11-26T07:18:55.283Z",
+		review: { title: "Your response", summary: "1 question answered about zeta zeros.", items: [{ label: "Build the intuition", value: "All the zeros lie on one line" }] },
+		payload: { kind: "canonical", type: "submit-question-group", humanFriendlyMessage: "Answered 1 questions about zeta zeros", params: {},
+			document: { id: "zeta-check", lifecycle: "ephemeral", revision: 0 },
+			action: { schemaVersion: 1, type: "submit-question-group", documentId: "zeta-check", documentRevision: 0, nodeId: "check", idempotencyKey: "r1",
+				responses: [{ questionId: "q1", type: "choice", optionIds: ["q1-c2"], text: "" }] },
+			sourceDocument: { schemaVersion: 1, id: "zeta-check", revision: 0, lifecycle: "ready", supportedSurfaces: ["web"],
+				nodes: [{ type: "question-group", id: "check", topic: "zeta zeros", questions: [{ id: "q1", prompt: "What does the hypothesis claim?", kind: "choice", header: "Build the intuition",
+					choices: [{ id: "q1-c1", label: "Primes are regular" }, { id: "q1-c2", label: "All the zeros lie on one line" }] }] }],
+				createdAt: "2026-11-26T06:53:10.483Z", updatedAt: "2026-11-26T06:53:10.483Z" } } })}\n</keating-learner-response>`;
+
+	test("hide review internals, show the learner's answer, and keep removed links readable", () => {
+		const shown = sharedTurnMarkdown("assistant", withheld);
+		expect(shown).toContain("Reply not shown");
+		expect(shown).toContain("Keating couldn't verify a reply");
+		for (const internal of ["<!--", "Blocking checks", "Failure:", "Draft attempts"]) expect(shown).not.toContain(internal);
+
+		const reply = sharedTurnMarkdown("assistant", linked);
+		expect(reply).toBe("Formal checks agree. (Project statement *(link removed)*; Coverage *(link removed)*) See also *(link removed)*.");
+
+		const learner = sharedTurnMarkdown("user", answer);
+		expect(learner).toContain("All the zeros lie on one line");
+		expect(learner).not.toContain("keating-learner-response");
+		expect(learner).not.toContain("\"payload\"");
+		// A truncated envelope still renders as an answer instead of breaking the page.
+		const broken = `<keating-learner-response version="1">\n${JSON.stringify({ version: 1, kind: "openui-action", id: "x", submittedAt: "2026-11-26T07:18:55.283Z",
+			review: { title: "Your response", summary: "", items: [] }, payload: { kind: "canonical", type: "submit-question-group", humanFriendlyMessage: "", params: {} } })}\n</keating-learner-response>`;
+		expect(sharedTurnMarkdown("user", broken)).not.toContain("keating-learner-response");
+	});
+
+	test("number visible turns in order and keep the saved text as the raw source", () => {
+		const rich = richSharedSession();
+		const turns = [{ role: "user", text: "Explain it" }, { role: "assistant", text: withheld }, { role: "user", text: answer }, { role: "assistant", text: linked }]
+			.map((turn, index) => ({ id: `turn-${index * 3 + 1}`, ordinal: index * 3, role: turn.role, text: turn.text, contentFingerprint: contentFingerprint(turn.text) }));
+		const data = sharedSessionWorkspaceData({ ...rich, trajectory: { ...rich.trajectory!, turnCount: turns.length, turns: turns as never, annotations: [], annotationCount: 0 } })!;
+		expect(data.messages.map(message => message.turnNumber)).toEqual([1, 2, 3, 4]);
+		expect(data.messages[2]!.text).toBe(answer);
+		const html = renderToStaticMarkup(<SharedTrajectoryWorkspace data={data} chrome="page" />);
+		expect(html).not.toContain("keating-learner-response");
+		expect(html).not.toContain("Blocking checks");
+		expect(html).not.toContain("[remote URL omitted]");
+		expect(html).toContain("All the zeros lie on one line");
 	});
 });

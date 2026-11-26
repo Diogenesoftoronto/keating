@@ -116,16 +116,16 @@ const shipped = {
         "hint": "Recommended"
       },
       {
-        "label": "Claude Opus 4.8",
-        "value": "claude-opus-4-8"
+        "label": "Claude Opus 5.5",
+        "value": "claude-opus-5-5"
       },
       {
-        "label": "Claude Fable 5",
-        "value": "claude-fable-5"
+        "label": "Claude Fable 5.2",
+        "value": "claude-fable-5-2"
       },
       {
-        "label": "Claude Haiku 4.5",
-        "value": "claude-haiku-4-5",
+        "label": "Claude Haiku 5.5",
+        "value": "claude-haiku-5-5",
         "hint": "Faster"
       },
       {
@@ -241,12 +241,12 @@ const shipped = {
         "hint": "Recommended"
       },
       {
-        "label": "Claude Opus 4.8",
-        "value": "claude-opus-4-8"
+        "label": "Claude Opus 5.5",
+        "value": "claude-opus-5-5"
       },
       {
-        "label": "Claude Haiku 4.5",
-        "value": "claude-haiku-4-5",
+        "label": "Claude Haiku 5.5",
+        "value": "claude-haiku-5-5",
         "hint": "Faster"
       },
       {

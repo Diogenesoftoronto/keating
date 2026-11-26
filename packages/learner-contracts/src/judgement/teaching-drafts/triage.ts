@@ -49,6 +49,9 @@ export function triageRequiresDraft(turn: TeachingPolicyTurn): boolean {
   if (!turn.learnerMessage.trim()) return true;
   // A reply to the tutor's question is an attempt to give feedback on, however short ("A", "oxygen?").
   if (followsSingleFeedbackQuestion(turn)) return true;
+  // An earlier learner message never got a reply (for example, it was withheld), so the
+  // tutor will answer it too. Triage reads only the latest message and cannot see that work.
+  if (turn.conversation.at(-1)?.role === "user") return true;
   return false;
 }
 

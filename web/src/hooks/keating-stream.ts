@@ -1,4 +1,5 @@
-import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE, GPT_6_LUNA_PROFILE, NOTORGANIC_INKLING_ROUTER_ALIASES, SERVICE_ENDPOINTS } from "@keating/runtime-config";
+import { MODEL_FAMILIES, MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE, GPT_6_LUNA_PROFILE, NOTORGANIC_INKLING_ROUTER_ALIASES, SERVICE_ENDPOINTS, type CatalogModel } from "@keating/runtime-config";
+import { catalogPreferenceIds } from "../lib/models-dev-catalog";
 import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
@@ -105,16 +106,18 @@ const LUNA_AUXILIARY_SEARCH_MODEL: Model<"openai-responses"> = {
 };
 
 const AUXILIARY_SEARCH_PROVIDERS = ["openai", "google", "anthropic"] as const;
-const PREFERRED_AUXILIARY_SEARCH_MODELS: Record<(typeof AUXILIARY_SEARCH_PROVIDERS)[number], readonly string[]> = MODEL_PREFERENCES.auxiliarySearch;
 
 export function selectAuxiliaryWebSearchModel(
 	models: readonly Model<Api>[],
 	providersWithKeys: ReadonlySet<string>,
+	releases?: readonly CatalogModel[],
 ): Model<Api> | undefined {
 	for (const provider of AUXILIARY_SEARCH_PROVIDERS) {
 		if (!providersWithKeys.has(provider)) continue;
 		const providerModels = models.filter((model) => model.provider === provider);
-		const preferred = PREFERRED_AUXILIARY_SEARCH_MODELS[provider]
+		// The fetched catalog's newest cheap-tier releases lead; the static list covers the first load.
+		const preferred = catalogPreferenceIds(provider, MODEL_FAMILIES.auxiliarySearch[provider],
+			MODEL_PREFERENCES.auxiliarySearch[provider], releases)
 			.flatMap((id) => providerModels.find((model) => model.id === id) ?? []);
 		const ordered = [...preferred, ...providerModels.filter((model) => !preferred.includes(model))];
 		const capable = ordered.find((model) => applyProviderWebSearch({}, model, true) !== undefined);

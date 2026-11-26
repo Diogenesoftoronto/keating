@@ -34,6 +34,13 @@ describe("draft triage", () => {
     expect(decideTeachingTriage(partial, "high").route).toBe("draft");
   });
 
+  test("a learner message after an unanswered one drafts, since the reply answers both", () => {
+    // A greeting after a withheld reply: the tutor will answer the pending question too.
+    expect(triageRequiresDraft(turn({ learnerMessage: "hi", conversation: [{ role: "user", content: "Explain the Riemann hypothesis" }] }))).toBe(true);
+    expect(triageRequiresDraft(turn({ learnerMessage: "hi", conversation: [] }))).toBe(false);
+    expect(triageRequiresDraft(turn({ learnerMessage: "thanks", conversation: [{ role: "user", content: "Q" }, { role: "assistant", content: "A" }] }))).toBe(false);
+  });
+
   test("submissions, open activities and assessment always draft", () => {
     expect(triageRequiresDraft(turn())).toBe(false);
     expect(triageRequiresDraft(turn({ assessment: "practice" }))).toBe(true);

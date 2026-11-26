@@ -61,3 +61,29 @@ test("review notices never reach the model", () => {
   const converted = toModelMessages([{ role: "assistant", content: [{ type: "text", text: "<!--keating:review=unverified-->\nBest effort" }], timestamp: 3 } as any]);
   expect((converted[0]!.content as { text: string }[])[0]!.text).toBe("Best effort");
 });
+
+test("withheld review notices never reach the model, and a resend replaces the turn it retried", () => {
+  const withheld = (at: number, reason = "Keating couldn't verify a reply. Blocking checks: checkpoint_continued.") =>
+    ({ role: "assistant", content: [{ type: "text", text: `<!--keating:review=withheld-->\n${reason}` }], stopReason: "stop", timestamp: at } as unknown as Message);
+  const user = (text: string, at: number) => ({ role: "user", content: text, timestamp: at } as Message);
+  const reply = (text: string, at: number) => ({ role: "assistant", content: [{ type: "text", text }], stopReason: "stop", timestamp: at } as unknown as Message);
+  const converted = toModelMessages([
+    user("Explain the Riemann hypothesis", 1), withheld(2), user("Explain the Riemann hypothesis", 3), withheld(4),
+    user("hi", 5), reply("<!--keating:review=unverified-->\nHere is an explanation.", 6),
+    user("A", 7), withheld(8), user("A", 9), withheld(10), user("A", 11), reply("Correct.", 12),
+  ]);
+  // Notices are gone; identical resends collapse; a different message ("hi") is kept as its own turn.
+  expect(converted.map(message => [message.role, typeof message.content === "string" ? message.content
+    : message.content.map(part => part.type === "text" ? part.text : part.type).join("")])).toEqual([
+    ["user", "Explain the Riemann hypothesis"], ["user", "hi"], ["assistant", "Here is an explanation."],
+    ["user", "A"], ["assistant", "Correct."],
+  ]);
+  // An unverified reply is real tutor speech and stays; a withheld notice with a tool call is not a notice.
+  const toolCall = { role: "assistant", content: [{ type: "text", text: "<!--keating:review=withheld-->\nx" }, { type: "toolCall", id: "t", name: "read", arguments: {} }],
+    stopReason: "toolUse", timestamp: 1 } as unknown as Message;
+  expect(toModelMessages([toolCall])).toHaveLength(1);
+  // Timing notes differ per send, but the learner's own words decide whether a resend is a retry.
+  const timed = toModelMessagesWithTime([user("A", Date.UTC(2026, 10, 26, 7, 18)), withheld(Date.UTC(2026, 10, 26, 7, 19)),
+    user("A", Date.UTC(2026, 10, 26, 7, 30))], "UTC");
+  expect(timed.filter(message => message.role === "user")).toHaveLength(1);
+});

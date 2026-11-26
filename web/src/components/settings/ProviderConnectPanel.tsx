@@ -34,8 +34,8 @@ import {
 } from "../../keating/model-prefs";
 import {
 	NOTORGANIC_PROVIDER_ID,
-	NOTORGANIC_ESTABLISHED_CHAT_MODELS,
 	getAvailableNotOrganicChatModels,
+	notOrganicChatModelsSnapshot,
 	isNotOrganicFeatureEnabled,
 	notOrganicPublicClient,
 } from "../../notorganic-provider";
@@ -44,7 +44,7 @@ import { ProviderCredentialForm } from "./CloudProviderKeysSection";
 
 type ModelInfo = { id: string; name: string };
 
-export function modelsFor(provider: string, accountModels: ModelInfo[] = NOTORGANIC_ESTABLISHED_CHAT_MODELS): ModelInfo[] {
+export function modelsFor(provider: string, accountModels: ModelInfo[] = notOrganicChatModelsSnapshot()): ModelInfo[] {
 	if (provider === NOTORGANIC_PROVIDER_ID) {
 		return isNotOrganicFeatureEnabled()
 			? accountModels.map(({ id, name }) => ({ id, name }))
@@ -186,13 +186,13 @@ export function ProviderConnectPanel({
 		};
 	}, []);
 	const [catalogRevision, setCatalogRevision] = useState(0);
-	const [accountModels, setAccountModels] = useState<ModelInfo[]>(NOTORGANIC_ESTABLISHED_CHAT_MODELS);
+	const [accountModels, setAccountModels] = useState<ModelInfo[]>(() => notOrganicChatModelsSnapshot());
 	useEffect(() => {
 		if (!isNotOrganicFeatureEnabled()) return;
 		let revision = 0;
 		const refresh = () => {
 			const current = ++revision;
-			setAccountModels(NOTORGANIC_ESTABLISHED_CHAT_MODELS);
+			setAccountModels(notOrganicChatModelsSnapshot());
 			void getAvailableNotOrganicChatModels().then(models => {
 				if (current === revision) setAccountModels(models);
 			});

@@ -33,7 +33,7 @@ import { debuggingExerciseQuestions, offersNewCodePractice, readDebuggingExercis
 import { scopeDebuggingExpectedOutput } from "../debugging-expected-output.js";
 import { proveDebuggingExample, provenDebuggingFailures } from "../debugging-example-proof.js";
 import { nominateTeachingDraftPairs, observedPairCandidateIssues, reviewTeachingDraftPair, type TeachingDraftPair, type TeachingDraftPairReview } from "./pair-review.js";
-import { isTutorRateLimit, TUTOR_RATE_LIMIT_REASON } from "./generation-failure.js";
+import { isTutorEmptyResponse, isTutorRateLimit, TUTOR_EMPTY_REASON, TUTOR_RATE_LIMIT_REASON } from "./generation-failure.js";
 import { canFocusSubmittedGrade, isScopedGradeReply } from "./policy.js";
 import { outstandingAnswerParts, requestedPartCheck, requestedPartQuestion } from "./answer-coverage.js";
 import { makeDecisionPlanningFailure, type DecisionPlanningFailure } from "./planning-failure.js";
@@ -77,6 +77,8 @@ interface DraftContext<T> {
   requestIndex: number;
   candidates: DraftCandidate<T>[];
   usableDrafts: DraftCandidate<T>[];
+  /** Every finished draft with text, reviewed or not. The last resort, so a reply is never withheld. */
+  anyDrafts: DraftCandidate<T>[];
   synthesisUsed: boolean;
   synthesisSourceAttempts: number[] | undefined;
 }
@@ -130,6 +132,7 @@ function createDraftContext<T>(options: TeachingDraftOptions<T>): DraftContext<T
   const candidates: { attempt: number; reply: TeachingPolicyReply; value: T; quality: number }[] = [];
   // Semantic rejections remain honest in the receipt, but must not discard every useful answer.
   const usableDrafts: typeof candidates = [];
+  const anyDrafts: typeof candidates = [];
   let synthesisUsed = false;
   let synthesisSourceAttempts: number[] | undefined;
   return {
@@ -140,7 +143,7 @@ function createDraftContext<T>(options: TeachingDraftOptions<T>): DraftContext<T
     reason, planningMs, interaction, planReview, resourceReview, activitySelection,
     backgroundActivity, usage, selectorProbabilities, selectionCandidateAttempts, selectionOmittedForBudget,
     attempts, state, slides, stateHistory, requestIndex,
-    candidates, usableDrafts, synthesisUsed, synthesisSourceAttempts,
+    candidates, usableDrafts, anyDrafts, synthesisUsed, synthesisSourceAttempts,
   };
 }
 
@@ -155,6 +158,9 @@ type DraftPlan = {
   readonly variantOrder: readonly TeachingDraftVariant[];
 };
 type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestionOnly" | "gradeOnly" | "synthesisSourceAttempts" | "trimmedCheckpointSuffix" | "repairedAssessmentBrief" | "repairSourceAttempt">;
+/** The host's smallest compact evidence set, and the search step when growing it to fill spare room. */
+const COMPACT_SOURCE_CHARS = 12_000;
+const COMPACT_SOURCE_STEP = 2_000;
 /** A private worker may slide its own review window without changing a sibling's evidence. */
 const CHECKPOINT_LEAK_CHECKS = new Set(["checkpoint_answer_leaked", "checkpoint_continued", "checkpoint_repeated"]);
 /** Leak findings, or Jev being unsure (never sure it is wrong) that feedback on the attempt is accurate. */
@@ -202,6 +208,7 @@ export class TeachingDraftSession<T> {
   private decisionFailure?: DecisionPlanningFailure;
   private planMemo?: TeachingDraftPlanMemo;
   private feedbackFallbackTried = false;
+  private releasedLastResort = false;
   private finalComparison?: TeachingDraftFinalComparison;
   private parallelAttempts?: readonly [number, number];
   private repairSourceAttempt?: number;
@@ -250,7 +257,8 @@ export class TeachingDraftSession<T> {
       ...(status === "released" && reply && this.context.attempts.some(entry => entry.attempt === this.context.selectedAttempt && entry.feedbackOnly)
         ? { suggestNextQuestion: true as const } : {}), ...(status === "released" ? { value, reply: structuredClone(reply),
       ...(this.context.activitySelection ? { activitySelection: structuredClone(this.context.activitySelection) } : {}) } : {}), receipt: { ...this.snapshot(), version: TEACHING_POLICY_VERSION,
-      calibration: "uncalibrated", qualityThreshold: qualityFloors[this.context.standard], judgeUsage: this.context.usage, selectorProbabilities: this.context.selectorProbabilities, selectionCandidateAttempts: this.context.selectionCandidateAttempts, selectionOmittedForBudget: this.context.selectionOmittedForBudget } };
+      calibration: "uncalibrated", qualityThreshold: qualityFloors[this.context.standard], judgeUsage: this.context.usage, selectorProbabilities: this.context.selectorProbabilities, selectionCandidateAttempts: this.context.selectionCandidateAttempts, selectionOmittedForBudget: this.context.selectionOmittedForBudget,
+      ...(status === "released" && this.releasedLastResort ? { lastResortDraft: true as const } : {}) } };
   }
 
   private async bounded<R>(operation: () => Promise<R>): Promise<R> {
@@ -284,8 +292,21 @@ export class TeachingDraftSession<T> {
     const turn = step.turn;
     let prepared = prepareTeachingWindow(turn, build, stateQuestionTokens, limits.requestTokens, limits.fitsWire);
     if (!prepared.fitsLimits && turn.sources.length && this.options.compactResearchSources) {
-      const sources = this.options.compactResearchSources(replies);
-      const compact = prepareTeachingWindow({ ...turn, sources }, build, stateQuestionTokens, limits.requestTokens, limits.fitsWire);
+      const compactSources = this.options.compactResearchSources;
+      const windowWith = (maxChars?: number) => prepareTeachingWindow({ ...turn, sources: compactSources(replies, maxChars) },
+        build, stateQuestionTokens, limits.requestTokens, limits.fitsWire);
+      let compact = windowWith();
+      if (compact.fitsLimits && compact.turnsDropped === 0) {
+        // The smallest set can leave most of the reviewer's room unused, so a draft is judged
+        // without the evidence for its own claims. Grow the set while the whole history still fits.
+        const full = JSON.stringify(turn.sources).length;
+        let low = COMPACT_SOURCE_CHARS, high = full;
+        while (high - low > COMPACT_SOURCE_STEP) {
+          const middle = Math.floor((low + high) / 2);
+          const larger = windowWith(middle);
+          if (larger.fitsLimits && larger.turnsDropped === 0) { compact = larger; low = middle; } else high = middle;
+        }
+      }
       if (compact.fitsLimits) prepared = { ...compact, before: prepared.before };
     }
     // The local packing target guides pruning. Report the reviewer's configured limit.
@@ -730,10 +751,15 @@ export class TeachingDraftSession<T> {
     const optOut = prepareAssessmentOptOutDraft(step.turn, plan, trimmed ?? generated.reply);
     const candidate = { ...generated, reply: optOut?.reply ?? trimmed ?? generated.reply };
     completed?.push({ attempt: step.attempt, reply: candidate.reply });
+    // Kept before review, so a failed review cannot lose the draft. Tool calls never run without approval.
+    const fallback = candidate.reply.text.trim()
+      ? { attempt: step.attempt, value: candidate.value, reply: { ...candidate.reply, toolCalls: [] }, quality: Number.MIN_SAFE_INTEGER } : null;
+    if (fallback) this.context.anyDrafts.push(fallback);
     const changes = { ...provenance, ...(trimmed ? { trimmedCheckpointSuffix: true as const } : {}),
       ...(optOut?.repaired ? { repairedAssessmentBrief: true as const } : {}) };
     const review = await this.reviewCandidate(candidate.reply, plan, variant, generationMs, textOnlyRecovery, reviewScope, changes, optOut, step);
     const { status, checks, blocking, assessment, hostChecks, hasCheckpoint, keepUnverified } = review;
+    if (fallback) fallback.quality = bestEffortQuality(checks);
     // A repaired checkpoint must pass on the exact reviewed text. A requested
     // prediction with a presentation-only issue has its own narrow exception.
     const retained = keepUnverified && !trimmed && !optOut?.repaired && (!hasCheckpoint || status === "pass") && canRetainTextDraft(candidate.reply, assessment.checks, hostChecks);
@@ -787,7 +813,8 @@ export class TeachingDraftSession<T> {
       if (this.context.controller.signal.aborted && !this.pairReviews) throw new Error("draft-interrupted");
       this.context.attempts.push({ attempt: step.attempt, reasoning: this.context.reasoning, standard: this.context.standard,
         generationMs: this.context.now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance,
-        ...(isTutorRateLimit(error) ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}) });
+        ...(isTutorRateLimit(error) ? { generationFailure: TUTOR_RATE_LIMIT_REASON }
+          : isTutorEmptyResponse(error) ? { generationFailure: TUTOR_EMPTY_REASON } : {}) });
       step.reason = "generation-unavailable";
       return null;
     }
@@ -919,6 +946,16 @@ export class TeachingDraftSession<T> {
     return nominated.finalists;
   }
 
+  /**
+   * Withholding a finished reply is worse than releasing it with a warning: the learner gets
+   * nothing and can only retry. When no draft passed or was retained, release the best-scored
+   * text of any finished draft, marked unverified by the host.
+   */
+  private lastResortDraft(): DraftCandidate<T> | undefined {
+    if (!this.options.releaseLastResortDraft) return undefined;
+    return [...this.context.anyDrafts].sort((a, b) => b.quality - a.quality || b.attempt - a.attempt)[0];
+  }
+
   private bestEffortChoices(): DraftCandidate<T>[] {
     const ranked = rankBestEffortDrafts(this.context.usableDrafts);
     // Pair preferences cannot displace a narrowly retained, requested prediction with prose.
@@ -977,6 +1014,13 @@ export class TeachingDraftSession<T> {
         this.context.selectionCandidateAttempts = (this.pairReviews ? eligible : this.context.usableDrafts).map(entry => entry.attempt);
         this.context.reason = "best-effort-draft";
         return this.result("released", best.value, best.reply);
+      }
+      const last = this.lastResortDraft();
+      if (last) {
+        this.context.selectedAttempt = last.attempt;
+        this.context.reason = "best-effort-draft";
+        this.releasedLastResort = true;
+        return this.result("released", last.value, last.reply);
       }
       const allRateLimited = this.context.attempts.length > 0 && this.context.attempts.every(attempt => attempt.generationFailure === TUTOR_RATE_LIMIT_REASON);
       this.context.reason = allRateLimited ? TUTOR_RATE_LIMIT_REASON : this.context.reason ?? "no-approved-draft";
@@ -1183,6 +1227,14 @@ export class TeachingDraftSession<T> {
       this.context.attempt = Math.min(this.context.attempt, this.context.maxAttempts);
       return this.result("released", best.value, best.reply);
     }
+    const last = this.options.signal?.aborted ? undefined : this.lastResortDraft();
+    if (last) {
+      this.context.selectedAttempt = last.attempt;
+      this.context.reason = "best-effort-draft";
+      this.releasedLastResort = true;
+      this.context.attempt = Math.min(this.context.attempt, this.context.maxAttempts);
+      return this.result("released", last.value, last.reply);
+    }
     this.context.reason = this.options.signal?.aborted ? "cancelled" : this.context.controller.signal.aborted ? "time-budget" : "review-unavailable";
     if (this.options.signal?.aborted && this.presentedOpeningAttempt !== undefined) {
       this.context.selectedAttempt = this.presentedOpeningAttempt;
@@ -1196,5 +1248,6 @@ export class TeachingDraftSession<T> {
     this.context.controller.abort();
     this.context.candidates.length = 0;
     this.context.usableDrafts.length = 0;
+    this.context.anyDrafts.length = 0;
     }
 }

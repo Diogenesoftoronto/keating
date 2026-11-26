@@ -23,6 +23,7 @@ import {
   type PlanReviewMemory,
   judgementRequestProblem,
   isTutorRateLimit,
+  TUTOR_EMPTY_ERROR,
   TUTOR_RATE_LIMIT_REASON,
   runTeachingDrafts,
   teachingDraftAttemptLimit,
@@ -282,7 +283,9 @@ function checkSchemas(context: Context, reply: TeachingPolicyReply): readonly Te
 }
 
 function approvedMessage(message: AssistantMessage, reply: TeachingPolicyReply, usage: Usage, unverified = false): AssistantMessage {
-  const nativeCalls = message.content.filter((part) => part.type === "toolCall");
+  // An unverified release is text only. Its draft's tool calls were never approved, so none are executed.
+  const nativeCalls = unverified ? [] : message.content.filter((part) => part.type === "toolCall");
+  if (unverified && reply.toolCalls.length) throw new Error("approved-tool-metadata-mismatch");
   if (nativeCalls.length !== reply.toolCalls.length || nativeCalls.some((call, index) => call.name !== reply.toolCalls[index]?.name)) {
     throw new Error("approved-tool-metadata-mismatch");
   }
@@ -385,6 +388,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       return safeMessage(withReviewNotice("withheld", text));
     };
     let reviewedActiveWork: ActiveWork | undefined;
+    /** What an unverified direct answer needs if review fails after these are known. */
+    let fallbackInputs: { draftContext: Context; activeWork: string } | undefined;
+    /** No finished draft exists, so there is nothing to withhold: a retryable failure the learner can resend. */
+    const providerFailure = (): AssistantMessage => {
+      const reason = describeDraftFailure(lastProgress);
+      return { ...safeMessage(""), content: [], stopReason: "error", errorMessage: explainingSavedGrade ? `${SAVED_GRADE_EXPLANATION_NOTICE}\n\n${reason}` : reason };
+    };
     let publishedStage: { text: string; message: AssistantMessage; publishedAt: number } | undefined;
     const publishAnswerStage = ({ reply, value }: { reply: TeachingPolicyReply; value: AssistantMessage }) => {
       if (!current() || publishedStage || reply.toolCalls.length || !reply.text.trim()) return;
@@ -481,7 +491,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
      * level; nothing is drafted or reviewed. Tool calls are still held until
      * their arguments match the offered schemas, as on the baseline path.
      */
-    const answerDirectly = async (reasoning: TeachingDraftReasoning, draftContext: Context, activeWork: string) => {
+    /** `unverified`: review was unavailable, so the reply is held until complete and published with the warning marker. */
+    const answerDirectly = async (reasoning: TeachingDraftReasoning, draftContext: Context, activeWork: string, unverified = false) => {
       const directContext: Context = { ...draftContext,
         systemPrompt: [draftContext.systemPrompt ?? "", activeWork].filter(Boolean).join("\n\n") };
       const logged = recordModelRequest({ sessionId: options.sessionId, kind: "draft", model: `${model.provider}/${model.id}`, context: directContext });
@@ -494,7 +505,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       if (reasoning === "off") delete directOptions.reasoning;
       else directOptions.reasoning = reasoning;
       progress({ ...lastProgress, phase: "released", reasoning, standard: "concise", attempt: 0,
-        elapsedMs: Date.now() - startedAt, reason: "direct-reply" });
+        // A fallback keeps why review did not run (e.g. a planning failure), so Settings can still explain it.
+        elapsedMs: Date.now() - startedAt, reason: unverified ? lastProgress.reason ?? "review-unavailable" : "direct-reply" });
       let final: AssistantMessage | undefined;
       let forwarded = false;
       try {
@@ -504,6 +516,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           if (event.type === "done") { final = event.message; break; }
           if (event.type === "error") { final = event.error; break; }
           if (event.type === "toolcall_start" || event.type === "toolcall_delta" || event.type === "toolcall_end") continue;
+          if (unverified) continue;
           forwarded = true;
           target.push(event);
         }
@@ -521,9 +534,32 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         target.end(failed);
         return;
       }
-      const valid = checkSchemas(draftContext, policyReply(final)).every(check => check.status === "pass");
+      // A provider can "finish" with nothing. Publishing that would leave a blank turn the learner
+      // cannot retry; report it as the failed request it is, as the drafted path does.
+      if (!final.content.some(part => part.type === "text" && part.text.trim() || part.type === "toolCall")) {
+        const failed: AssistantMessage = { ...final, content: [], stopReason: "error", errorMessage: "The tutor provider returned an empty reply." };
+        target.push({ type: "error", reason: "error", error: failed });
+        target.end(failed);
+        return;
+      }
+      // Unreviewed fallback replies never run tools.
+      const valid = !unverified && checkSchemas(draftContext, policyReply(final)).every(check => check.status === "pass");
       const message: AssistantMessage = valid ? final : { ...final, stopReason: final.stopReason === "toolUse" ? "stop" : final.stopReason,
         content: final.content.filter(part => part.type !== "toolCall") };
+      if (unverified) {
+        let marked = false;
+        message.content = message.content.map(part => {
+          if (marked || part.type !== "text" || !part.text.trim()) return part;
+          marked = true;
+          return { ...part, text: withReviewNotice("unverified", part.text) };
+        });
+        if (!marked) {
+          const failed: AssistantMessage = { ...final, content: [], stopReason: "error", errorMessage: "The tutor provider returned an empty reply." };
+          target.push({ type: "error", reason: "error", error: failed });
+          target.end(failed);
+          return;
+        }
+      }
       // Nothing streamed: replay the settled reply exactly as a reviewed one is published.
       if (!forwarded) { publish({ ...message, content: message.content.filter(part => part.type !== "thinking") }); return; }
       if (valid) {
@@ -559,8 +595,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         ? /\[keating-audio-[^\]]+\]/.test(message.content)
         : message.content.some(part => part.type === "image" || part.type === "text" && /\[keating-audio-[^\]]+\]/.test(part.text)));
       if (!baseline && unsupportedEvidence) {
-        progress({ ...lastProgress, phase: "withheld", reason: "unsupported-evidence" });
-        publish(safeMessage(withReviewNotice("withheld", "I can't check this attachment's contents yet. Send its text or a transcript in a new conversation so I can review the response.")));
+        // The reviewer cannot read images or audio yet. Answer anyway, marked as not fully verified.
+        await answerDirectly(ceiling(options, streamOptions), { ...snapshot, tools: [] }, "", true);
         return;
       }
       loadingEvidence = true;
@@ -592,7 +628,9 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         }
         const reply = policyReply(result);
         if (checkSchemas(draftContext, reply).some(check => check.status !== "pass")) {
-          publish(safeMessage(withReviewNotice("withheld", "The tutor requested an unavailable tool or supplied invalid arguments.")));
+          // The invalid tool call cannot run, but the tutor's text can still be shown with a warning.
+          if (reply.text.trim()) { publish(approvedMessage(result, { text: reply.text, toolCalls: [] }, result.usage, true)); return; }
+          publish({ ...result, content: [], stopReason: "error", errorMessage: "The tutor requested an unavailable tool or supplied invalid arguments." });
           return;
         }
         publish(approvedMessage(result, reply, result.usage));
@@ -634,6 +672,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       reviewedActiveWork = turn.activeWork;
       // Tutor and judge read the same record-derived view of the lesson plan.
       const activeWork = formatActiveWork(turn.activeWork);
+      fallbackInputs = { draftContext, activeWork };
       const planReview = planReviewTrigger(snapshot, turn.activeWork);
       // Counts only: which kinds of material this session has shown, and how many learner turns ago.
       const resources = evidence?.resourcePresentations
@@ -699,6 +738,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         parallelDrafts,
         // Release the first passing draft; compare alternatives only where the comparison can change the lesson.
         breadth: options.breadth ?? "focused",
+        // The chat never withholds a finished draft; review findings become the "not fully verified" warning.
+        releaseLastResortDraft: true,
         onAnswerStage: hosted ? publishAnswerStage : undefined,
         maxReasoning: ceiling(options, streamOptions),
         timeoutMs: Math.max(1, budget - (Date.now() - startedAt)),
@@ -775,7 +816,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           }
           if ((textOnlyRecovery || continuation) && message.content.some(part => part.type === "toolCall")) throw new Error("draft-text-only-tool-call");
           if (!message.content.some(part => part.type === "text" && part.text.trim()
-            || part.type === "toolCall")) throw new Error("draft-empty-response");
+            || part.type === "toolCall")) throw new Error(TUTOR_EMPTY_ERROR);
           // The tutor returned a completed candidate. Keep component kinds only;
           // the existing opt-in raw draft inspector is independent.
           try {
@@ -812,18 +853,30 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             ...(result.suggestNextQuestion ? { suggestNextQuestion: true as const } : {}) }); }
           catch { /* Follow-up checks cannot change publication. */ }
         }
+      } else if (result.receipt.attempts.length && result.receipt.attempts.every(attempt => attempt.status === "generation-error")) {
+        publish(providerFailure());
+      } else if (current()) {
+        // Planning could not run, or no draft had text to show (e.g. only rejected tool calls).
+        // Answer directly, marked unverified, rather than withhold.
+        await answerDirectly(ceiling(options, streamOptions), draftContext, activeWork, true);
       } else {
-        publish(withheldFailure());
+        publish(safeMessage("", true));
       }
-    })().catch(() => {
+    })().catch(async () => {
       if (baseline) {
         if (stopped()) publish(safeMessage("", true));
         else publish({ ...safeMessage(""), content: [], stopReason: "error",
           errorMessage: timedOut ? "The tutor request timed out." : "The tutor provider could not complete the request." });
         return;
       }
-      progress({ ...lastProgress, phase: stopped() ? "cancelled" : "withheld", reason: stopped() ? "cancelled" : timedOut ? "time-budget" : loadingEvidence ? "evidence-unavailable" : "review-unavailable" });
-      publish(stopped() ? safeMessage("", true) : withheldFailure());
+      if (stopped()) { publish(safeMessage("", true)); return; }
+      // Review failed before releasing anything. Answer directly, marked unverified, instead of withholding.
+      if (fallbackInputs && !publishedStage && current()) {
+        try { await answerDirectly(ceiling(options, streamOptions), fallbackInputs.draftContext, fallbackInputs.activeWork, true); return; }
+        catch { /* Fall through to the retryable failure. */ }
+      }
+      progress({ ...lastProgress, phase: "withheld", reason: timedOut ? "time-budget" : loadingEvidence ? "evidence-unavailable" : "review-unavailable" });
+      publish(publishedStage ? withheldFailure() : providerFailure());
     }).finally(() => {
       clearTimeout(timer);
       detachEvidenceAbort?.();

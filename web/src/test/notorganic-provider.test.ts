@@ -7,6 +7,10 @@ import {
 	NOTORGANIC_LUNA_MODEL,
 	NOTORGANIC_FLINT_MODEL,
 	NOTORGANIC_MERCURY_2_MODEL,
+	NOTORGANIC_MERCURY_3_MODEL,
+	NOTORGANIC_ASTRA_MODEL,
+	NOTORGANIC_INKLING_MODEL,
+	createNotOrganicModelListing,
 	getAvailableNotOrganicChatModels,
 	NOTORGANIC_IMAGE_MODEL_ALIAS,
 	NOTORGANIC_MODEL_ALIAS,
@@ -39,38 +43,71 @@ describe("Not Organic provider definition", () => {
 		expect(existing.scope).toBe("infer:balanced web:search web:fetch");
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope: "infer:flint web:search web:fetch" })).toBe(false);
 	});
-	it("offers account Mercury 2 only when the authorized gateway advertises the exact model", async () => {
-		const models = async (scope: string, ids: string[], ok = true) => (await getAvailableNotOrganicChatModels({
-			getSession: () => ({ scope }), request: async () => Response.json({ data: ids.map(id => ({ id })) }, { status: ok ? 200 : 503 }),
-		})).map(model => model.id);
+	it("offers exactly the chat models the account gateway lists for this session", async () => {
+		const listing = createNotOrganicModelListing({ storage: null });
+		const ids = async (advertised: string[]) => (await getAvailableNotOrganicChatModels({
+			getSession: () => ({ scope: "infer:text", id: advertised.join(",") }),
+			request: async (path: string) => { expect(path).toBe("/v1/models"); return Response.json({ object: "list", data: advertised.map(id => ({ id, object: "model" })) }); },
+		}, listing)).map(model => model.id);
+		expect(await ids(["mercury-2", "balanced"])).toEqual(["balanced", "mercury-2"]);
+		// Picker order follows the profiles; the gateway decides membership, including the default.
+		expect(await ids(["mercury-3", "gpt-6-astra", "gpt-6.1-sol"])).toEqual(["gpt-6.1-sol", "gpt-6-astra", "mercury-3"]);
+		expect(await ids(["gpt-6-luna", "inkling", "flint"])).toEqual(["gpt-6-luna", "inkling", "flint"]);
+		// Image, speech and embedding aliases share the list but are not chat models.
+		expect(await ids(["image", "embedding", "audio", "realtime", "unknown-alias"])).toEqual([]);
+	});
+	it("gives every advertised chat alias a callable profile", () => {
 		expect(NOTORGANIC_MERCURY_2_MODEL).toMatchObject({
 			id: "mercury-2", provider: "notorganic", api: "openai-completions", baseUrl: NOTORGANIC_DEFAULT_MODEL.baseUrl,
 			cost: NOTORGANIC_DEFAULT_MODEL.cost, input: ["text"],
 		});
-		for (const scope of ["infer:text", "infer:mercury-2"]) {
-			expect(await models(scope, ["flint", "mercury-2"])).toContain("mercury-2");
-			expect(await models(scope, ["flint", "mercury-2"])).not.toContain("flint");
-			expect(notOrganicModelNeedsConsent(NOTORGANIC_MERCURY_2_MODEL, { scope })).toBe(false);
+		expect(NOTORGANIC_MERCURY_3_MODEL).toMatchObject({ id: "mercury-3", name: "Mercury 3", api: "openai-completions", input: ["text"],
+			contextWindow: 1_000_000, maxTokens: 131_072, cost: NOTORGANIC_DEFAULT_MODEL.cost });
+		expect(NOTORGANIC_ASTRA_MODEL).toMatchObject({ id: "gpt-6-astra", name: "GPT-6 Astra", api: "openai-responses",
+			thinkingLevelMap: NOTORGANIC_SOL_MODEL.thinkingLevelMap, input: ["text", "image"] });
+		expect(NOTORGANIC_INKLING_MODEL).toMatchObject({ id: "inkling", name: "Inkling", api: "openai-completions", contextWindow: 262_144 });
+		for (const scope of ["infer:text", "infer:mercury-2"]) expect(notOrganicModelNeedsConsent(NOTORGANIC_MERCURY_2_MODEL, { scope })).toBe(false);
+		for (const model of [NOTORGANIC_MERCURY_3_MODEL, NOTORGANIC_ASTRA_MODEL, NOTORGANIC_INKLING_MODEL]) {
+			expect(notOrganicModelNeedsConsent(model, { scope: "infer:text" })).toBe(false);
 		}
-		expect(await models("infer:text", ["mercury-3", "mercury-2.5"])).not.toContain("mercury-2");
-		expect(await models("infer:text", ["mercury-2"], false)).not.toContain("mercury-2");
-		expect(await models("infer:balanced", ["mercury-2"])).not.toContain("mercury-2");
 	});
-	it("makes Flint selectable only when the consented gateway advertises it", async () => {
-		const baseline = [NOTORGANIC_LUNA_MODEL.id, NOTORGANIC_SOL_MODEL.id, NOTORGANIC_INKLING_2_SMALL_MODEL.id, "balanced"];
+	it("keeps the last answer when the gateway cannot answer, and offers only the default without one", async () => {
+		const store = new Map<string, string>();
+		const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); } };
+		let clock = 0;
 		let calls = 0;
 		const client = (scope: string, response: () => Response | Promise<Response>) => ({
-			getSession: () => ({ scope }), request: async (path: string) => { calls++; expect(path).toBe("/v1/models"); return response(); },
+			getSession: () => ({ scope, id: "device-session" }), request: async () => { calls++; return response(); },
 		});
-		expect((await getAvailableNotOrganicChatModels(null)).map(model => model.id)).toEqual(baseline);
-		expect((await getAvailableNotOrganicChatModels(client("infer:balanced", () => { throw new Error("Must not discover without consent"); }))).map(model => model.id)).toEqual(baseline);
+		const listed = (listing: ReturnType<typeof createNotOrganicModelListing>, scope: string, response: () => Response | Promise<Response>) =>
+			getAvailableNotOrganicChatModels(client(scope, response), listing).then(models => models.map(model => model.id));
+		const failures = [() => Response.json({ error: "unavailable" }, { status: 503 }), () => Response.json({ error: "malformed" }), () => { throw new Error("offline"); }];
+		const unlisted = [NOTORGANIC_LUNA_MODEL.id];
+
+		expect((await getAvailableNotOrganicChatModels(null)).map(model => model.id)).toEqual(unlisted);
+		const fresh = createNotOrganicModelListing({ storage: null, now: () => clock });
+		for (const failure of failures) expect(await listed(fresh, "infer:flint", failure)).toEqual(unlisted);
+
+		const listing = createNotOrganicModelListing({ storage, now: () => clock });
+		expect(await listed(listing, "infer:text", () => Response.json({ data: [{ id: "gpt-6.1-sol" }, { id: "balanced" }] }))).toEqual(["gpt-6.1-sol", "balanced"]);
+		calls = 0;
+		expect(await listed(listing, "infer:text", () => { throw new Error("A fresh answer is reused"); })).toEqual(["gpt-6.1-sol", "balanced"]);
 		expect(calls).toBe(0);
-		for (const response of [() => Response.json({ data: [{ id: "balanced" }] }),
-			() => Response.json({ error: "unavailable" }, { status: 503 }), () => { throw new Error("offline"); }]) {
-			expect((await getAvailableNotOrganicChatModels(client("infer:flint", response))).map(model => model.id)).toEqual(baseline);
-		}
-		expect((await getAvailableNotOrganicChatModels(client("infer:flint", () => Response.json({ data: [{ id: "flint" }] })))).map(model => model.id))
-			.toEqual([...baseline, "flint"]);
+		clock += 61_000;
+		for (const failure of failures) expect(await listed(listing, "infer:text", failure)).toEqual(["gpt-6.1-sol", "balanced"]);
+		// A reload restores the session's last answer; a different grant is a different answer.
+		const reloaded = createNotOrganicModelListing({ storage, now: () => clock });
+		expect(reloaded.snapshot(client("infer:text", () => Response.json({ data: [] })))).toMatchObject([{ id: "gpt-6.1-sol" }, { id: "balanced" }]);
+		expect(reloaded.snapshot(client("infer:balanced", () => Response.json({ data: [] })))).toEqual([NOTORGANIC_LUNA_MODEL]);
+		expect(await listed(reloaded, "infer:text", () => Response.json({ data: [{ id: "mercury-2" }] }))).toEqual(["mercury-2"]);
+	});
+	it("shares one gateway request among concurrent callers", async () => {
+		let calls = 0;
+		const listing = createNotOrganicModelListing({ storage: null });
+		const client = { getSession: () => ({ scope: "infer:text" }), request: async () => { calls++; return Response.json({ data: [{ id: "gpt-6-luna" }] }); } };
+		const results = await Promise.all([1, 2, 3].map(() => getAvailableNotOrganicChatModels(client, listing)));
+		expect(calls).toBe(1);
+		for (const models of results) expect(models).toEqual([NOTORGANIC_LUNA_MODEL]);
 	});
 	it("offers Sol through Responses and preserves narrow legacy grants", () => {
 		expect(NOTORGANIC_SOL_MODEL).toMatchObject({

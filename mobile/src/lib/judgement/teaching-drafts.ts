@@ -219,6 +219,8 @@ export function createMobileTeachingDraftRound(options: {
       // A tool round is an intermediate step: one draft, not a comparison, unless research breadth was asked for.
       parallelDrafts: hosted && !(continuation && (options.breadth ?? "focused") === "focused"),
       breadth: options.breadth ?? "focused",
+      // A learner app releases the best finished draft rather than withholding it.
+      releaseLastResortDraft: true,
       onAnswerStage: hosted && !submitted && !feedbackQuestion && providerOptions.stream && providerOptions.onTextDelta ? ({ reply }) => {
         if (stageDelivery || reply.toolCalls.length || !reply.text.trim()) return;
         // Evidence can change while an independent draft is finishing. Check the
@@ -287,6 +289,16 @@ export function createMobileTeachingDraftRound(options: {
       const text = failure ? describeDecisionPlanningFailure(failure) + (failure.configuredModel ? " The configured decision model is " + failure.configuredModel + "." : "")
         : result.receipt.reason === TUTOR_RATE_LIMIT_REASON ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY;
       return { text: publishedText || text, calls: [], assistantTurn: null, usage: totalUsage };
+    }
+    // A last-resort release is text only: its proposed tool calls were never approved, so none continue.
+    if (result.receipt.lastResortDraft) {
+      if (publishedText && result.reply.text.startsWith(publishedText)) {
+        const addition = result.reply.text.slice(publishedText.length);
+        assertCurrent();
+        if (addition) providerOptions.onTextDelta?.(addition, result.reply.text);
+      }
+      return { text: publishedText && !result.reply.text.startsWith(publishedText) ? publishedText : result.reply.text,
+        calls: [], assistantTurn: null, usage: totalUsage };
     }
     // The reviewed reply is authoritative; native continuation metadata may accompany only the same proposed calls.
     if (result.value.calls.length !== result.reply.toolCalls.length || result.value.calls.some((call, index) =>

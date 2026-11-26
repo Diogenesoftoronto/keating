@@ -64,6 +64,20 @@ describe("draft triage route", () => {
     expect(progress.at(-1)).toMatchObject({ phase: "released", reason: "direct-reply", reasoning: "off" });
   });
 
+  test("an empty finished reply on the direct path is a retryable failure, not a blank turn", async () => {
+    const empty = { ...reply(""), content: [] };
+    const stream = createAssistantMessageEventStream();
+    stream.push({ type: "start", partial: empty });
+    stream.push({ type: "done", reason: "stop", message: empty });
+    stream.end(empty);
+    const gate = withTeachingDraftGate((() => stream) as StreamFn, {
+      sessionId: "triage-empty", basePrompt: () => BASE, makeCaller: () => triageJudge(0.02, 0, []), maxReasoning: "high",
+    });
+    const result = await (await gate(MODEL, context("thanks!"))).result();
+    expect(result.stopReason).toBe("error");
+    expect(result.errorMessage).toBe("The tutor provider returned an empty reply.");
+  });
+
   test("a difficult turn drafts and reviews as before", async () => {
     const calls: JudgementRequest[] = [];
     const gate = withTeachingDraftGate((() => streamed(reply("Four factorial is 24."))) as StreamFn, {

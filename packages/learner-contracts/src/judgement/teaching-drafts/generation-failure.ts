@@ -1,4 +1,11 @@
 export const TUTOR_RATE_LIMIT_REASON = "generation-rate-limited";
+/** The provider reported a finished reply that held no text or tool call. Kept apart so outages can be traced. */
+export const TUTOR_EMPTY_REASON = "generation-empty";
+/** Hosts throw this message when a completed generation is empty. */
+export const TUTOR_EMPTY_ERROR = "draft-empty-response";
+export function isTutorEmptyResponse(error: unknown): boolean {
+  return error instanceof Error && error.message === TUTOR_EMPTY_ERROR;
+}
 export const TUTOR_RATE_LIMIT_MESSAGE = "The reply provider rate limited this request (HTTP 429). Try again or choose a different reply model.";
 
 /** Classify only a failed tutor request. Pi may flatten an HTTP error into a status-prefixed message. */

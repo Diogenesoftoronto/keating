@@ -1,6 +1,9 @@
 import { useAui, useAuiState } from "@assistant-ui/react";
 import { Button } from "../design-system/kit";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
+
+/** Retries the turn in place: drops the withheld reply and drafts again from the same learner message. */
+export const RetryTurnContext = createContext<(() => void | Promise<void>) | null>(null);
 /** Text of the learner message this reply answered, if it was plain text. */
 function lastLearnerText(messages: readonly { role: string; content: readonly { type: string; text?: string }[] }[]): string | null {
 	for (let index = messages.length - 1; index >= 0; index--) {
@@ -21,11 +24,14 @@ export function WithheldReplyRecovery() {
 	const isLast = useAuiState(({ message }) => message.isLast);
 	const running = useAuiState(({ thread }) => thread.isRunning);
 	const learnerText = useAuiState(({ thread }) => lastLearnerText(thread.messages as never));
+	const retryTurn = useContext(RetryTurnContext);
 	const [sent, setSent] = useState(false);
 	if (!isLast) return null;
 	const tryAgain = () => {
 		if (!learnerText || running || sent) return;
 		setSent(true);
+		// Resending as a new message would keep the withheld notice in the transcript and repeat the learner's turn.
+		if (retryTurn) { void Promise.resolve(retryTurn()).catch(() => setSent(false)); return; }
 		aui.thread().append({ role: "user", content: [{ type: "text", text: learnerText }] });
 	};
   return <div data-withheld-recovery="">
