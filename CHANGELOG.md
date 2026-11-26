@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.22
+
+- Keating no longer withholds replies. When its reviewer can't approve a draft, you get the best draft marked "Not fully verified" instead of an apology. If review can't run at all, for example on an image or a very long conversation, the tutor still answers, with the same warning.
+- When the reply model fails before writing anything, you see a clear error with a retry button. "Try again" now retries that turn in place instead of sending your message a second time.
+- Drafts that cite sources are no longer rejected for lack of evidence the reviewer was never shown.
+- Shared conversations are easier to read: your quiz answers show as answers instead of raw data, failed turns are a single line, and turn numbers count up in order.
+- Keating's account models now match exactly what your account can use, and model choices keep up with new releases from each provider.
+
 ## 4.2.21
 
 - New hands-on replies for heavy-learning fields: a 3D heart and chest you can turn, pull apart, label and slice like CT; a pharmacology lab for dosing, loading doses, receptor antagonism and chemotherapy cycles; a research-methods lab for causal diagrams, diagnostic tests, survival curves and forest plots; and a physics lab for electric fields, interference and quantum wells.
