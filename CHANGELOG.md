@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.24
+
+- A follow-up to an earlier reply no longer answers your newest question a second time. If you have moved on, it says which reply it is following up, and a suggested activity for a topic you have left is dropped.
+- Fewer follow-ups: Keating no longer sends a second message just to offer an activity when its reply already asked you something, and it skips corrections that are only technicalities.
+
 ## 4.2.23
 
 - Replies start straight away. Keating answers first and checks in the background; if the check finds a mistake, missing help or a useful activity, a short follow-up arrives a moment later. Graded work, open activities and answers to Keating's questions are still reviewed before they appear. To review every reply first, turn on "Review every reply before it appears" in Settings → Learning.
