@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.23
+
+- Replies start straight away. Keating answers first and checks in the background; if the check finds a mistake, missing help or a useful activity, a short follow-up arrives a moment later. Graded work, open activities and answers to Keating's questions are still reviewed before they appear. To review every reply first, turn on "Review every reply before it appears" in Settings → Learning.
+- Recess questions about a diagram or photo now show that picture beside the question, and a question that needs a picture it can't show is skipped. Pictures load before takeoff, and picture questions give you more time to read.
+- Attached PDFs show as a small preview of the first page with the file name and page count, in chat and on shared pages, instead of their extracted text.
+- A lesson plan no longer repeats its title above the plan card.
+
 ## 4.2.22
 
 - Keating no longer withholds replies. When its reviewer can't approve a draft, you get the best draft marked "Not fully verified" instead of an apology. If review can't run at all, for example on an image or a very long conversation, the tutor still answers, with the same warning.
