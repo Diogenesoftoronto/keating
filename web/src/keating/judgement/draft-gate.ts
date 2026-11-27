@@ -217,6 +217,11 @@ export interface TeachingFollowUpTurn {
   readonly kind: "quick" | "work";
   /** Hidden direction; added to this round's private model context only. */
   readonly note: string;
+  /**
+   * The turn the followed-up reply answered. Review judges the follow-up against it,
+   * not against a newer learner message, which has its own reply already.
+   */
+  readonly turn?: TeachingPolicyTurn;
 }
 
 /** Added to the fast model's prompt. Live probes showed it otherwise disclaims checking or stalls. */
@@ -830,7 +835,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       const toolRound = lastMessage?.role === "toolResult" && (options.breadth ?? "focused") === "focused";
       const parallelDrafts = hosted && !toolRound && options.refinement !== "extended" && lastProgress.maxAttempts >= 2;
       const result = await runTeachingDrafts<AssistantMessage>({
-        turn,
+        turn: followUp?.turn ?? turn,
         ...(evidence?.submittedComprehension && lastMessage?.role === "user" ? { submittedComprehension: evidence.submittedComprehension } : {}),
         reviewResearch: search.reviewResearch,
         compactResearchSources: search.compactSources,

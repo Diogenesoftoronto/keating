@@ -138,12 +138,40 @@ describe("slow follow-up decisions", () => {
     expect(h.posts).toHaveLength(0);
   });
 
-  test("two newer learner messages divert the follow-up and mark it", async () => {
-    const h = host({ newer: 2 });
+  test("one newer learner message diverts the follow-up, marks it and keeps it on the earlier turn", async () => {
+    const h = host({ newer: 1 });
     const result = await runSlowFollowUp(release({ judge: judge({ reply: { direct_help_withheld: 0.95 } }) }), h.value);
     expect(result.outcome).toBe("diverted");
     expect(h.posts[0]!.diverted).toBe(true);
     expect(h.posts[0]!.note).toContain("Following up on my earlier reply about");
+    expect(h.posts[0]!.note).toContain("Do not answer or repeat anything about the learner's newer messages");
+    expect(h.posts[0]!.turn).toBe(TURN);
+  });
+
+  test("an activity for a topic the learner has moved on from is dropped", async () => {
+    const h = host({ newer: 1 });
+    const result = await runSlowFollowUp(release({ judge: judge({ reply: { practice_missing: 0.95 } }) }), h.value);
+    expect(result.outcome).toBe("none");
+    expect(h.posts).toHaveLength(0);
+  });
+
+  test("an activity suggestion alone is not worth a follow-up when the reply already asked something", () => {
+    const interaction = { action: "create", families: [{ family: "quiz", components: ["Quiz"] }] } as unknown as FastReplyCheck["interaction"];
+    const check: FastReplyCheck = { checks: [], freshSources: false, judgementMs: 1, interaction };
+    expect(decideFollowUp(check, { asked: true })).toBeNull();
+    expect(decideFollowUp(check, { asked: false })).toMatchObject({ findings: ["interaction_recommended"] });
+    const withFix: FastReplyCheck = { ...check, checks: [{ id: "direct_help_withheld", source: "jev", severity: "major", status: "fail", probability: 0.9 }] };
+    expect(decideFollowUp(withFix, { asked: true })?.findings).toEqual(["direct_help_withheld", "interaction_recommended"]);
+  });
+
+  test("research that clears the reply settles an unsupported-facts finding", async () => {
+    const h = host({ research: async () => "NOTHING" });
+    const result = await runSlowFollowUp(release({ judge: judge({ reply: { research_skipped: 0.95 } }) }), h.value);
+    expect(result.outcome).toBe("none");
+    expect(h.posts).toHaveLength(0);
+    // A failed search is not a clean bill: the reviewed round still does the work.
+    const failed = host({ research: async () => null });
+    expect((await runSlowFollowUp(release({ judge: judge({ reply: { research_skipped: 0.95 } }) }), failed.value)).outcome).toBe("posted");
   });
 
   test("a follow-up not ready within the bound is diverted", async () => {

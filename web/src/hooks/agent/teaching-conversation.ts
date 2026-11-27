@@ -182,7 +182,7 @@ export function createTeachingConversation({
     post: request => {
       const last = agent.context.messages.at(-1);
       if (!isLive() || agent.context.isStreaming || last?.role !== "assistant" || ["error", "aborted"].includes(last.stopReason)) return false;
-      pendingFollowUp = { kind: request.kind, note: request.note };
+      pendingFollowUp = { kind: request.kind, note: request.note, turn: request.turn };
       void agent.continueAfterReply().catch(() => { /* A failed follow-up leaves the fast reply as published. */ })
         .finally(() => { pendingFollowUp = undefined; });
       return true;

@@ -150,6 +150,26 @@ describe("fast/slow reply pacing in the draft gate", () => {
     expect(h.releases.some(release => release.fast)).toBe(false);
   });
 
+  test("a work follow-up after a newer exchange is reviewed against the reply it follows up, not the newest question", async () => {
+    const earlier = { learnerMessage: "What's the newest approved CRISPR therapy?", conversation: [], learnerEvidence: [], availableTools: [],
+      toolResults: [], sources: [], assessment: "unknown", improvementRuns: null, domain: "science" } as const;
+    let pending: TeachingFollowUpTurn | undefined = { kind: "work", note: "PRIVATE NOTE: correct the approval date.", turn: earlier };
+    const h = harness("Following up on my earlier reply about Casgevy: it was approved in 2023.", {
+      takeFollowUp: () => { const next = pending; pending = undefined; return next; },
+    });
+    const ctx = context("Is CRISPR the same thing as gene therapy?", [
+      { role: "user", content: earlier.learnerMessage, timestamp: 0 }, reply("Casgevy.", 0.5)]);
+    ctx.messages.push(reply("Not exactly: CRISPR is one tool among gene therapies."));
+    await drain(await h.gate(MODEL, ctx));
+    const reviews = h.calls.filter(request => "reply" in (request.state as object));
+    expect(reviews.length).toBeGreaterThan(0);
+    for (const request of reviews) {
+      const state = JSON.stringify(request.state);
+      expect(state).toContain("newest approved CRISPR therapy");
+      expect(state).not.toContain("same thing as gene therapy");
+    }
+  });
+
   test("a round after a settled reply with no queued follow-up does not invent one", async () => {
     const h = harness("Continuing.", { takeFollowUp: () => undefined });
     const ctx = context("Explain the chain rule");
