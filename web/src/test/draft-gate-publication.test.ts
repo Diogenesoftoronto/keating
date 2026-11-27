@@ -103,7 +103,8 @@ test.each(["finish", "stop"] as const)("Flue keeps one visible opening and its r
       additionStarted = true;
       expect(context.tools).toEqual([]);
       expect(options).toMatchObject({ hostedWebSearch: false });
-      expect(context.messages.at(-1)?.content).toBe(JSON.stringify({ publishedText: opening }));
+      expect(context.messages.at(-1)?.content).toBe(JSON.stringify({ deliveryState: "opening-emitted", publishedText: opening }));
+      expect(context.systemPrompt).toContain("has shown the learner");
       await additionAllowed;
       return fauxAssistantMessage([fauxThinking("PRIVATE continuation thought"), fauxText(addition)], { timestamp: 3300 });
     },
@@ -173,6 +174,8 @@ test.each(["finish", "stop"] as const)("Flue keeps one visible opening and its r
     expect(receipts).toHaveLength(1);
     expect(receipts[0]!.messageTimestamp).toBe(1100);
     expect(receipts[0]!.snapshot.phase).toBe(mode === "stop" ? "cancelled" : "released");
+    // The stopped turn showed only the opening; the finished one committed the whole reply.
+    expect(receipts[0]!.snapshot.delivery).toBe(mode === "stop" ? "opening-emitted" : "reply-committed");
     expect(receipts[0]!.snapshot.selectedAttempt).toBe(mode === "stop" ? 1 : 3);
     if (mode === "stop") {
       const nativeUser = final.messages.find(message => message.role === "user")!;

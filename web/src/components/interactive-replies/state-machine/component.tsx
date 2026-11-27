@@ -5,6 +5,7 @@ import {
   LockKeyhole, LockKeyholeOpen, MapPin, Play, Power, Search, Send, Server, TriangleAlert,
 } from "lucide-react";
 import "./component.css";
+import { useCancelGesture } from "../hooks";
 
 /* ============================================================================
    StateMachineBuilder: a finite state machine the learner wires, steps or repairs.
@@ -548,20 +549,9 @@ const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
 /* SSR-safe: no window/document reads during render or initial state. The real width is measured after mount. */
 const INITIAL_WIDTH = 600;
 
-
 /** Dragology listens for pointerup only, so an interrupted gesture (pointercancel, window blur) would leave
     the drag live and the next pointerup would apply the hovered edit. Remount the renderer instead: the
     preview is discarded and the last committed state stays. */
-function useCancelGesture(active: boolean, cancel: () => void) {
-  const ref = useRef({ active, cancel });
-  ref.current = { active, cancel };
-  useEffect(() => {
-    const on = () => { if (!ref.current.active) return; document.body.style.cursor = ""; ref.current.cancel(); };
-    document.addEventListener("pointercancel", on);
-    window.addEventListener("blur", on);
-    return () => { document.removeEventListener("pointercancel", on); window.removeEventListener("blur", on); };
-  }, []);
-}
 
 /* ---------- Component ---------- */
 export function StateMachineBuilder({ config, onChange, onShare }: Props) {

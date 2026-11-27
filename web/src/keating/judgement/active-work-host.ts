@@ -1,6 +1,5 @@
 import {
 	projectActiveWork,
-	tryCompileOpenUISourceToSharedDocument,
 	type ActiveWork,
 	type ActiveWorkAttempt,
 	type ActiveWorkPresentation,
@@ -8,7 +7,7 @@ import {
 } from "@keating/learner-contracts";
 import type { StorageLike } from "../event-store";
 import { loadSharedUiActionState } from "../openui/shared-actions";
-import { parseOpenUIMessageSegments } from "../openui/segments";
+import { documentsInScope } from "../openui/transcript-documents";
 import type { OpenUIDocumentScope } from "../openui/types";
 import type { OpenUiPresentationRecord, QuestionCheckRecord } from "../storage";
 
@@ -30,19 +29,6 @@ export interface ActiveWorkSource {
 	getQuestionChecks(): Promise<QuestionCheckRecord[]>;
 }
 
-function documentsIn(text: string, scope: OpenUIDocumentScope): UiDocument[] {
-	return parseOpenUIMessageSegments(text, scope).flatMap((segment) => {
-		if (segment.type !== "openui" || !segment.complete) return [];
-		if (segment.format === "document") return segment.error || !segment.document ? [] : [segment.document];
-		const compiled = tryCompileOpenUISourceToSharedDocument(segment.program || segment.rawProgram, {
-			documentId: segment.metadata.id,
-			revision: segment.metadata.revision,
-			retention: segment.metadata.lifecycle,
-		});
-		return compiled.ok ? [compiled.document] : [];
-	});
-}
-
 /**
  * Presentation records for one released assistant turn, linked to the plan
  * item that was the focus when it appeared. Document ids use the same scope
@@ -54,7 +40,7 @@ export function presentationsFromAssistantText(
 	planRef: OpenUiPresentationRecord["planRef"],
 	now = Date.now(),
 ): OpenUiPresentationRecord[] {
-	return documentsIn(text, scope).flatMap((document) => document.nodes
+	return documentsInScope(text, scope).flatMap((document) => document.nodes
 		.filter((node) => !NON_INTERACTIVE.has(node.type))
 		.map((node) => ({
 			id: `${document.id}:${node.id}`,

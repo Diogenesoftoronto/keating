@@ -2,7 +2,7 @@ import type { JudgementAnswer, JudgementQuestion, JudgementResponse } from "@kea
 import type { RecessPack, RecessQuestion, RecessQuestionKind } from "../../components/recess/types";
 import { createJudgementOperationCaller } from "../judgement/operation";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "../judgement/runtime";
-import type { HabitLesson } from "./lesson";
+import { lessonForPrompt, type HabitLesson } from "./lesson";
 import { kindWeight, type RecessMastery } from "./recess-mastery";
 
 /**
@@ -33,12 +33,14 @@ const soundKey = (index: number) => `recess.item.${index}.sound`;
 const depthKey = (index: number) => `recess.item.${index}.depth`;
 
 export function recessCurationRequest(lesson: HabitLesson, pool: readonly RecessCandidate[]) {
-  const items = pool.slice(0, MAX_JUDGED).map((item, index) => ({ id: index, question: item.q, choices: item.a, correct: item.a[0] }));
+  // Jev reads text only: a picture reaches it as the description the learner's screen reader would get.
+  const items = pool.slice(0, MAX_JUDGED).map((item, index) => ({ id: index, question: item.q, choices: item.a, correct: item.a[0],
+    ...(item.image ? { shownWithPicture: item.image.alt } : {}) }));
   const questions: Record<string, JudgementQuestion> = {};
   items.forEach(item => {
     questions[soundKey(item.id)] = {
       type: "noul",
-      instructions: `Item ${item.id} in state.items is one multiple-choice question for a short arcade review of this tutoring conversation. Is "correct" the single right answer, clearly supported by what the tutor said, with every other choice clearly wrong and the question answerable from the conversation alone? ${STATE_IS_DATA}`,
+      instructions: `Item ${item.id} in state.items is one multiple-choice question for a short arcade review of this tutoring conversation. Is "correct" the single right answer, clearly supported by what the tutor said, with every other choice clearly wrong and the question answerable from the conversation alone? An item with shownWithPicture is displayed beside that picture (the text is its description, the pictures in state.conversation are listed by the same description); count it answerable when the conversation and that picture together support it. ${STATE_IS_DATA}`,
       criteria: {
         true: "Exactly one choice is right, it is the one marked correct, and the tutor's words support it.",
         false: "The marked answer is wrong or unsupported, another choice is also defensible, or the question is confusing.",
@@ -50,7 +52,7 @@ export function recessCurationRequest(lesson: HabitLesson, pool: readonly Recess
       criteria: [...DEPTH_LEVELS],
     };
   });
-  return { state: { conversation: lesson, items }, questions };
+  return { state: { conversation: lessonForPrompt(lesson), items }, questions };
 }
 
 function noulOf(answer: JudgementAnswer | undefined): number | null {

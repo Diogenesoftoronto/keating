@@ -43,6 +43,20 @@ export function TeachingSection() {
 				/>
 			</SettingRow>
 			<SettingRow
+				id="reviewed-replies"
+				label="Review every reply before it appears"
+				help="By default the tutor answers simple messages at once, and a slower check reads the reply in the background. If it finds a correction, a source or a useful activity, it adds a follow-up message. Turn this on to wait for planning and review before each reply instead. Answers to questions, practice and open activities are always reviewed first."
+				scope="this device"
+			>
+				<Switch
+					labelledBy="reviewed-replies-label"
+					checked={settings.replyPacing === "reviewed"}
+					onChange={(checked) =>
+						update({ replyPacing: checked ? "reviewed" : "fast-slow" })
+					}
+				/>
+			</SettingRow>
+			<SettingRow
 				id="response-comparison"
 				label="Response comparison chance"
 				help="Occasionally generate a second answer and ask which response helped more. The 1% default keeps comparisons useful without interrupting ordinary chats."

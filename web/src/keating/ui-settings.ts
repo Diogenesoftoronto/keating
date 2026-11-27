@@ -15,6 +15,7 @@ export {
 export type ReasoningLevel = ThinkingLevel;
 export type AnimationRenderer = "hyperframes";
 export type UiFontFamily = "roboto" | "space-mono" | "jetbrains-mono";
+export type ReplyPacing = "fast-slow" | "reviewed";
 export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short";
 
 export interface KeatingUiSettings {
@@ -49,6 +50,19 @@ export interface KeatingUiSettings {
 	 * high. On restores the learner's own Reasoning control as the ceiling.
 	 */
 	manualReasoning: boolean;
+	/**
+	 * "fast-slow" (default): simple turns answer at once from a fast model and a
+	 * background check posts any correction, sources or activity as a follow-up.
+	 * "reviewed" waits for planning and draft review before every reply.
+	 * Turns that must stay reviewed (open activities, practice, answers) always do.
+	 */
+	replyPacing: ReplyPacing;
+	/** "provider/model" for the fast reply; empty uses the learner's selected model. */
+	fastModel: string;
+	/** "provider/model" for background follow-up work; empty uses the learner's selected model. */
+	slowModel: string;
+	/** Thinking level for background follow-up work. */
+	slowReasoning: "medium" | "high";
 	flashcardSoundEnabled: boolean;
 	/**
 	 * Opt-in consent to send sanitized crash diagnostics to Keating. Off until
@@ -84,6 +98,10 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	webSearch: "auto",
 	planChanges: "autonomous",
 	manualReasoning: false,
+	replyPacing: "fast-slow",
+	fastModel: "",
+	slowModel: "",
+	slowReasoning: "medium",
 	flashcardSoundEnabled: true,
 	diagnosticsReporting: false,
 };
@@ -233,6 +251,11 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		webSearch,
 		planChanges: value?.planChanges === "approval" ? "approval" : DEFAULT_UI_SETTINGS.planChanges,
 		manualReasoning: value?.manualReasoning === true,
+		// Existing learners get fast/slow too; only an explicit opt-out keeps the reviewed pipeline.
+		replyPacing: value?.replyPacing === "reviewed" ? "reviewed" : DEFAULT_UI_SETTINGS.replyPacing,
+		fastModel: typeof value?.fastModel === "string" ? value.fastModel.trim() : DEFAULT_UI_SETTINGS.fastModel,
+		slowModel: typeof value?.slowModel === "string" ? value.slowModel.trim() : DEFAULT_UI_SETTINGS.slowModel,
+		slowReasoning: value?.slowReasoning === "high" ? "high" : DEFAULT_UI_SETTINGS.slowReasoning,
 		// Flashcard sounds default to on, but an explicit off survives a reload.
 		flashcardSoundEnabled: typeof value?.flashcardSoundEnabled === "boolean"
 			? value.flashcardSoundEnabled

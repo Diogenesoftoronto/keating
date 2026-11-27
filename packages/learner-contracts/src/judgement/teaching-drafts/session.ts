@@ -26,6 +26,7 @@ import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftVarian
 import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_THRESHOLDS } from "../teaching-policy-catalog.js";
 import { effort, standardInstructions, variantPrompt, pairedCandidatePrompt, checkpointReplyMode, allowsQuestionFeedback, allowsNewQuestion, interactionSummary, qualityFloors, blocksDraft, blocksRelease, teachingDraftAttemptLimit, draftQuality, reasoningQuestions, selectedReasoning, standardQuestion, qualityQuestions, selected, splitJudgementRequest } from "./policy.js";
 import { rankDraftCandidates, rankBestEffortDrafts, canRetainTextDraft, bestEffortQuality, needsTextOnlyRecovery, buildRepairFeedback, selectSynthesis, advisoryTeachingChecks, uncertainCheckpointRepetition } from "./policy.js";
+import { advanceTeachingDelivery, NOTHING_SENT, teachingReviewFailure, TUTOR_TIMEOUT_ERROR, TUTOR_TOKEN_LIMIT_ERROR, type TeachingDeliveryState, type TeachingGenerationFinish } from "./delivery.js";
 import { approvesAttemptFirstCheckpoint, asksInProse, retainsAttemptFirstCheckpoint } from "./attempt-first.js";
 import { checkpointReviewScope, directAnswerContextQuestions, scopeCheckpointFinding } from "./checkpoint-scope.js";
 import { feedbackReviewQuestions, remainingCheckpointQuestions, reviewAttemptedCheckpoint } from "./attempt-feedback.js";
@@ -214,6 +215,8 @@ export class TeachingDraftSession<T> {
   private repairSourceAttempt?: number;
   private committedAnswer?: DraftCandidate<T>;
   private presentedOpeningAttempt?: number;
+  /** Moved forward only by a host receipt, and kept for every later attempt of this turn. */
+  private delivery: TeachingDeliveryState = NOTHING_SENT;
   constructor(private readonly options: TeachingDraftOptions<T>) {
     this.context = createDraftContext(options);
     this.reviewer = options;
@@ -231,6 +234,7 @@ export class TeachingDraftSession<T> {
   }
 
   private snapshot(): TeachingDraftSnapshot { return { phase: this.context.phase, attempt: this.context.attempt, maxAttempts: this.context.maxAttempts, reasoning: this.context.reasoning, standard: this.context.standard, elapsedMs: Math.max(0, this.context.now() - this.context.start), attempts: structuredClone(this.context.attempts).sort((a,b) => a.attempt - b.attempt), judgeModel: this.context.judgeModel, selectedAttempt: this.context.selectedAttempt, reason: this.context.reason,
+    delivery: this.delivery.stage,
     ...(this.pairReviews ? { pairReviews: structuredClone(this.pairReviews) } : {}),
     ...(this.parallelAttempts ? { parallelAttempts: this.parallelAttempts } : {}),
     ...(this.repairSourceAttempt !== undefined ? { repairSourceAttempt: this.repairSourceAttempt } : {}),
@@ -252,7 +256,7 @@ export class TeachingDraftSession<T> {
 
   private result(status: TeachingDraftResult<T>["status"], value?: T, reply?: TeachingPolicyReply): TeachingDraftResult<T> {
     this.publish(status);
-    return { status, ...(this.planMemo ? { plan: structuredClone(this.planMemo) } : {}),
+    return { status, delivery: { ...this.delivery }, ...(this.planMemo ? { plan: structuredClone(this.planMemo) } : {}),
       // Feedback-only replies leave the next question to the learner: hosts offer it as one tap.
       ...(status === "released" && reply && this.context.attempts.some(entry => entry.attempt === this.context.selectedAttempt && entry.feedbackOnly)
         ? { suggestNextQuestion: true as const } : {}), ...(status === "released" ? { value, reply: structuredClone(reply),
@@ -811,8 +815,14 @@ export class TeachingDraftSession<T> {
       }
     } catch (error) {
       if (this.context.controller.signal.aborted && !this.pairReviews) throw new Error("draft-interrupted");
+      const message = error instanceof Error ? error.message : "";
+      const generationFinish: TeachingGenerationFinish = isTutorRateLimit(error) ? "rate-limited" : isTutorEmptyResponse(error) ? "empty"
+        : message === TUTOR_TOKEN_LIMIT_ERROR ? "token-limit"
+        : message === TUTOR_TIMEOUT_ERROR || this.context.controller.signal.aborted ? "timeout"
+        : message === "invalid-answer-addition" ? "invalid-reply" : "provider-error";
       this.context.attempts.push({ attempt: step.attempt, reasoning: this.context.reasoning, standard: this.context.standard,
         generationMs: this.context.now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance,
+        generationFinish,
         ...(isTutorRateLimit(error) ? { generationFailure: TUTOR_RATE_LIMIT_REASON }
           : isTutorEmptyResponse(error) ? { generationFailure: TUTOR_EMPTY_REASON } : {}) });
       step.reason = "generation-unavailable";
@@ -932,7 +942,10 @@ export class TeachingDraftSession<T> {
     const revisionChecks = this.context.extended ? checks.filter(blocksDraft) : [...blocking, ...advisory];
     const status: TeachingDraftAttempt["status"] = blocking.some((check) => check.status === "fail") ? "fail" : blocking.length ? "unknown" : "pass";
     const unavailableTools = [...new Set(reply.toolCalls.map(call => call.name).filter(name => !step.turn.availableTools.includes(name)))];
+    // An overflowed or failed reviewer call answered nothing: it is recorded as such, apart from a rejection.
+    const reviewFailure = teachingReviewFailure(judged && !judged.ok ? judged.error.code : null);
     this.context.attempts.push({ attempt: step.attempt, reasoning: this.context.reasoning, standard: this.context.standard, generationMs, judgementMs: this.context.now() - checkStarted, status, checks, variant, ...provenance,
+      ...(reviewFailure ? { reviewFailure } : {}),
       ...(debugging ? { debuggingExercise: { ...debugging.evidence, ...(staticProof ? {staticProof} : {}) } } : {}),
       ...(attemptedFeedback ? { attemptedCheckpointFeedback: attemptedFeedback } : {}),
       ...(unavailableTools.length ? { unavailableTools } : {}) });
@@ -1111,15 +1124,37 @@ export class TeachingDraftSession<T> {
     const variant = baseReview.variant;
     if (this.options.onAnswerStage) {
       try {
-        this.options.onAnswerStage({ reply: structuredClone(base.reply), value: structuredClone(base.value) });
-        this.presentedOpeningAttempt = base.attempt;
-      } catch { /* Optional presentation cannot change the committed answer. */ }
+        // The host may check its own state before showing anything, so the receipt can arrive later.
+        const receipt = await this.bounded(async () => this.options.onAnswerStage!({ reply: structuredClone(base.reply), value: structuredClone(base.value) }));
+        this.delivery = advanceTeachingDelivery(this.delivery, "opening-emitted", receipt);
+        if (this.delivery.stage === "opening-emitted") this.presentedOpeningAttempt = base.attempt;
+      } catch { /* No receipt: the opening was not shown, and the committed answer is unchanged. */ }
     }
+    this.context.controller.signal.throwIfAborted();
     this.context.attempt = 3;
-    const generation = await this.generateCandidate(planned.plan, variant, feedback, undefined, provenance, this.context, { text: base.reply.text });
+    if (this.delivery.stage !== "opening-emitted") {
+      // Nothing is on the learner's screen, so there is nothing to add to. Ask for one complete reply
+      // and review it whole; the committed answer stays the fallback.
+      const complete = feedback.map(item => item.id === "requested_part_missing"
+        ? { ...item, instruction: "Answer each explicitly requested part, including the part omitted from the previous draft." } : item);
+      const generation = await this.generateCandidate(planned.plan, variant, complete, undefined, provenance, this.context);
+      if (generation) {
+        const step: DraftStep = { attempt: this.context.attempt, phase: "checking", turn: this.context.turn, reason: null };
+        const checked = await this.collectCandidate(generation, planned, step, variant, provenance);
+        const rewritten = this.context.candidates.find(candidate => candidate.attempt === step.attempt);
+        if (checked.status === "pass" && rewritten && coversRequest(checked.checks)) {
+          this.context.reason = null;
+          return rewritten;
+        }
+      }
+      this.context.reason = "remaining-part-unresolved";
+      return base;
+    }
+    const opening = this.delivery.text;
+    const generation = await this.generateCandidate(planned.plan, variant, feedback, undefined, provenance, this.context, { text: opening, delivery: "opening-emitted" });
     if (generation) {
       const addition = generation.generated.reply.text.trim();
-      const combined: TeachingPolicyReply = { text: base.reply.text + "\n\n" + addition, toolCalls: [] };
+      const combined: TeachingPolicyReply = { text: opening + "\n\n" + addition, toolCalls: [] };
       const checked = await this.reviewCandidate(combined, planned.plan, variant, generation.generationMs, true, planned.reviewScope, provenance, null, this.context);
       if (checked.status === "pass" && coversRequest(checked.checks)) {
         const completed = { attempt: this.context.attempt, value: generation.generated.value, reply: combined, quality: draftQuality(checked.checks) };

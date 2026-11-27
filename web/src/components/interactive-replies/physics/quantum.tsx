@@ -5,7 +5,7 @@ import {
 } from "./physics";
 import {
   Actions, clamp, Disclosure, fmt, Found, handleCentres, keyStep, sci, Shell, snap, svgToClient, useDrag, useEditable,
-  useReducedMotion, useTestApi, useWidth,
+  useReducedMotion, useTestApi, useElementWidth,
 } from "./common";
 import type { QuantumConfig, QuantumFinding, ShareSummary } from "./types";
 
@@ -50,7 +50,7 @@ export function QuantumLab({ config: c, onChange, onShare }: { config: QuantumCo
   const initial = useMemo<QState>(() => ({ potential: JSON.parse(JSON.stringify(c.potential)), selected: Math.max(0, (c.selected ?? 1) - 1), energy: c.energy?.value ?? 0 }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null), root = useRef<HTMLDivElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const reduced = useReducedMotion();

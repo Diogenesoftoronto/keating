@@ -207,6 +207,8 @@ import { NEXT_QUESTION_PROMPT } from "../keating/judgement/next-question-suggest
 import { NextQuestionChip } from "./chat/NextQuestionChip";
 import { passageQuoteDisplayText } from "../keating/passage-quote";
 import { classifyLlmError, type LlmErrorDetails } from "../core/api-retry";
+import { ATTACHMENT_DETAIL_PARAM, ATTACHMENT_PREVIEW_FIELD, attachmentCardOf, attachmentDetail, attachmentPreviewOf, attachmentSegments, attachmentText } from "../keating/attachment-text";
+import { readPdfAttachment } from "../keating/pdf-attachment";
 import { composerIconButtonClass, srInteractiveClass } from "./chat/composer-styles";
 import { SpeechComposerControl } from "./chat/SpeechComposerControl";
 import {
@@ -382,45 +384,6 @@ function attachmentContentType(file: File): string {
   return file.type;
 }
 
-async function readPdfAsAttachmentText(file: File): Promise<string> {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc ||= new URL(
-    "pdfjs-dist/legacy/build/pdf.worker.mjs",
-    import.meta.url,
-  ).toString();
-
-  const loadingTask = pdfjs.getDocument({
-    data: new Uint8Array(await file.arrayBuffer()),
-  });
-
-  let extractedText = `<pdf filename="${file.name}">`;
-  let hasReadableText = false;
-  try {
-    const pdf = await loadingTask.promise;
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => ("str" in item ? item.str : ""))
-        .filter((text: string) => text.trim())
-        .join(" ");
-      if (pageText.trim()) hasReadableText = true;
-      extractedText += `\n<page number="${pageNumber}">\n${pageText}\n</page>`;
-      page.cleanup();
-    }
-  } finally {
-    await loadingTask.destroy();
-  }
-  extractedText += "\n</pdf>";
-
-  if (!hasReadableText) {
-    throw new Error(
-      `${file.name} did not contain readable PDF text. Scanned PDFs need OCR before attaching.`,
-    );
-  }
-  return `<attachment name="${file.name}" type="application/pdf">\n${extractedText}\n</attachment>`;
-}
-
 const keatingAttachmentAdapter: AttachmentAdapter = {
   accept: `image/*,audio/*,.wav,.mp3,.m4a,.webm,${DOCUMENT_ATTACHMENT_ACCEPT}`,
   async add({ file }) {
@@ -457,16 +420,15 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
     }
 
     if (fileIsPdf(file)) {
+      const pdf = await readPdfAttachment(file);
       return {
         ...attachment,
         type: "document",
         contentType: "application/pdf",
         status: { type: "complete" },
         content: [
-          {
-            type: "text",
-            text: await readPdfAsAttachmentText(file),
-          },
+          // The page picture is display-only: providers read `text` and nothing else.
+          { type: "text", text: pdf.text, ...(pdf.preview ? { [ATTACHMENT_PREVIEW_FIELD]: pdf.preview } : {}) },
         ],
       };
     }
@@ -484,7 +446,7 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
       content: [
         {
           type: "text",
-          text: `<attachment name="${file.name}" type="${file.type || "text/plain"}">\n${await readFileAsText(file)}\n</attachment>`,
+          text: attachmentText(file.name, file.type || "text/plain", await readFileAsText(file)),
         },
       ],
     };
@@ -817,6 +779,25 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
   );
 }
 
+/** A file the learner attached: its first page when one was drawn, then its name and kind. A flat row, not a card. */
+function AttachedFileRow({ name, detail, preview }: { name: string; detail: string; preview?: string }) {
+  return (
+    <div data-attached-file="" className={css({ marginBlock: "0.5rem", display: "flex", maxWidth: "100%", alignItems: "center", gap: "0.625rem" })}>
+      {preview ? (
+        <img src={preview} alt={`First page of ${name}`} loading="lazy" decoding="async"
+          className={css({ flexShrink: 0, width: "3.25rem", height: "auto", maxHeight: "4.5rem", objectFit: "cover", objectPosition: "top",
+            borderRadius: "0.1875rem", boxShadow: "0 0 0 1px color-mix(in srgb, var(--foreground) 14%, transparent)", background: "#fff" })} />
+      ) : (
+        <KeatingGlyph name="clip" size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+      )}
+      <span className={css({ display: "grid", minWidth: 0, lineHeight: 1.35 })}>
+        <span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 })}>{name}</span>
+        <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{detail}</span>
+      </span>
+    </div>
+  );
+}
+
 function FilePart({
   filename,
   mimeType,
@@ -833,6 +814,8 @@ function FilePart({
       <figcaption className={css({fontSize: "0.75rem", color: "var(--muted-foreground)"})}>{filename || "Audio message"}</figcaption>
     </figure>;
   }
+  const card = attachmentCardOf(mimeType);
+  if (card) return <AttachedFileRow name={filename ?? "attachment"} detail={card.detail} preview={data?.startsWith("data:image/") ? data : undefined} />;
   return (
     <div
       className={css({
@@ -2417,23 +2400,25 @@ const MESSAGE_PART_COMPONENTS = {
 };
 type MessagePartComponents = typeof MESSAGE_PART_COMPONENTS;
 
-function displayTextFromAgentText(text: string): string {
-  const match = text.match(/^<attachment name="([^"]+)"/);
-  if (match) return `[attached file: ${match[1]}]`;
-  return text;
-}
-
 function assistantContentFromAgentContent(content: unknown) {
   if (typeof content === "string")
     return [{ type: "text" as const, text: content }];
   if (!Array.isArray(content)) return [{ type: "text" as const, text: "" }];
+  type LearnerPart =
+    | { type: "text"; text: string }
+    | { type: "file"; filename?: string; data: string; mimeType: string }
+    | { type: "image"; image: string; filename?: string };
   return content
-    .map((part: any) => {
+    .flatMap((part: any): LearnerPart | LearnerPart[] => {
       if (part?.type === "text") {
-        return {
-          type: "text" as const,
-          text: displayTextFromAgentText(part.text ?? ""),
-        };
+        // An attached file shows as the file (and its first page, when one was drawn), not its extracted text.
+        const segments = attachmentSegments(part.text ?? "");
+        // The picture belongs to the one file this part was made for.
+        const preview = segments.filter(segment => segment.type === "attachment").length === 1 ? attachmentPreviewOf(part) : undefined;
+        return segments.map(segment => segment.type === "text"
+          ? { type: "text" as const, text: segment.text }
+          : { type: "file" as const, filename: segment.file.name, data: preview ?? "",
+              mimeType: `${segment.file.type || "application/octet-stream"};${ATTACHMENT_DETAIL_PARAM}=${encodeURIComponent(attachmentDetail(segment.file))}` });
       }
       if (part?.type === "audio") return {type: "file" as const, mimeType: part.mimeType, data: `data:${part.mimeType};base64,${part.data}`, filename: part.filename};
       if (part?.type === "image") {
@@ -2637,6 +2622,123 @@ function assistantHasToolCalls(content: unknown): boolean {
   );
 }
 
+type ReplyStatus = NonNullable<ThreadMessageLike["status"]>;
+
+/** Failures a retry cannot fix; the chat offers no retry for these. */
+const NOT_RETRYABLE = new Set(["auth", "billing", "provider-billing", "context-length", "invalid-request", "safety"]);
+
+/**
+ * Only the last reply can be running. While its tools execute the agent is still
+ * running, but a reply whose tool calls all have results is already complete.
+ */
+function replyStatus(msg: any, isLastMessage: boolean, isRunning: boolean): ReplyStatus {
+  const toolsSettled = assistantHasToolCalls(msg.content) && !assistantHasPendingToolCalls(msg.content);
+  if (isRunning && isLastMessage && !toolsSettled && (msg.__keatingStreaming === true || msg.stopReason == null)) {
+    return { type: "running" };
+  }
+  if (msg.stopReason === "error") {
+    return { type: "incomplete", reason: "error", error: msg.errorMessage ?? "Assistant response failed" };
+  }
+  if (msg.stopReason === "aborted") return { type: "incomplete", reason: "cancelled" };
+  return { type: "complete", reason: "stop" };
+}
+
+function assistantReplyParts(msg: any, index: number, streamingLast: boolean): any[] {
+  if (!Array.isArray(msg.content)) return assistantTextParts(textFromContent(msg.content));
+  return msg.content.flatMap((part: any) => {
+    if (part?.type === "thinking") return [{ type: "reasoning" as const, text: part.thinking ?? "" }];
+    if (part?.type !== "toolCall") return assistantTextParts(part?.text ?? "");
+    const missingResult = toolCallEndedWithoutResult(part, streamingLast);
+    return [{
+      type: "tool-call" as const,
+      toolCallId: part.id ?? `tool-${index}`,
+      toolName: part.name ?? "tool",
+      args: part.arguments ?? {},
+      argsText: JSON.stringify(part.arguments ?? {}),
+      result: missingResult ? MISSING_TOOL_RESULT_MESSAGE : foldedToolResult(part),
+      isError: part.__toolError === true || missingResult,
+    }];
+  });
+}
+
+/** A failed or stopped reply that wrote nothing says what happened instead of showing a blank row. */
+function failureFallbackText(msg: any, status: ReplyStatus, content: any[]): string | undefined {
+  if (status.type !== "incomplete" || content.some((part: any) => part.type === "text" && part.text)) return undefined;
+  if (status.reason === "error") return `${ERROR_TEXT_PREFIX}${msg.errorMessage ?? "Assistant response failed"}`;
+  if (status.reason === "cancelled") return msg.errorMessage ?? "Response interrupted before it finished.";
+  return undefined;
+}
+
+function replyFailureMetadata(msg: any, status: ReplyStatus, isLastMessage: boolean, fallbackProvider?: string) {
+  const authError = authErrorFromAgentMessage(msg, fallbackProvider);
+  const incomplete = status.type === "incomplete";
+  const cancelled = incomplete && status.reason === "cancelled";
+  const llmFailure = incomplete
+    ? classifyLlmError(msg.errorMessage ?? (cancelled ? "Request aborted" : "Assistant response failed"))
+    : null;
+  const retryable = isLastMessage && incomplete && !NOT_RETRYABLE.has(llmFailure?.category ?? "");
+  if (!authError && !llmFailure && !retryable && msg.__keatingPrefillStatus !== true) return undefined;
+  return {
+    custom: {
+      keatingAuthError: authError,
+      keatingLlmFailure: llmFailure,
+      keatingProvider: msg.provider ?? fallbackProvider,
+      keatingFailureMessage: msg.errorMessage,
+      keatingFailedLastTurn: isLastMessage && incomplete,
+      keatingRetryAttempts: typeof msg.__keatingRetryAttempts === "number" ? Math.max(1, Math.round(msg.__keatingRetryAttempts)) : 1,
+      keatingRetryExhausted: msg.__keatingRetryExhausted === true,
+      keatingRetryable: retryable,
+      keatingPrefillStatus: msg.__keatingPrefillStatus === true,
+    },
+  };
+}
+
+function assistantReplyRow(msg: any, index: number, totalMessages: number, isRunning: boolean, createdAt: Date, fallbackProvider?: string): ThreadMessageLike {
+  const isLastMessage = index === totalMessages - 1;
+  const status = replyStatus(msg, isLastMessage, isRunning);
+  const content = normalizeAssistantContentParts(assistantReplyParts(msg, index, isRunning && isLastMessage));
+  const fallback = failureFallbackText(msg, status, content);
+  if (fallback !== undefined) content.unshift({ type: "text" as const, text: fallback });
+  return {
+    id: `assistant-${index}-${msg.timestamp ?? ""}`,
+    role: "assistant",
+    createdAt,
+    status,
+    content,
+    metadata: replyFailureMetadata(msg, status, isLastMessage, fallbackProvider),
+  };
+}
+
+function toolResultRow(msg: any, index: number, createdAt: Date): ThreadMessageLike {
+  const missingResult = !hasMeaningfulToolResult(msg.content) && !hasMeaningfulToolResult(msg.details);
+  const failed = msg.isError === true || missingResult;
+  const summary = missingResult
+    ? MISSING_TOOL_RESULT_MESSAGE
+    : textFromContent(msg.content) || JSON.stringify(msg.details, null, 2);
+  return {
+    id: `tool-${index}-${msg.toolCallId ?? ""}`,
+    role: "assistant",
+    createdAt,
+    status: failed ? { type: "incomplete", reason: "error", error: summary } : { type: "complete", reason: "stop" },
+    content: [{ type: "text", text: `${failed ? ERROR_TEXT_PREFIX : ""}Tool ${msg.toolName ?? "result"}:\n${summary}` }],
+  };
+}
+
+function learnerRow(message: AgentMessage, index: number, createdAt: Date): ThreadMessageLike {
+  const msg = message as any;
+  return {
+    id: `user-${index}-${msg.timestamp ?? ""}`,
+    role: "user",
+    createdAt,
+    content: assistantContentFromAgentContent(msg.content),
+    // Presentation metadata only: preserve the full user-role seed for the model.
+    ...(isPrivateForkContextMessage(message) ? {
+      metadata: { custom: { keatingPrivateFork: msg.keatingPrivateFork } },
+    } : {}),
+  };
+}
+
+/** One saved agent message as an assistant-ui row: a reply, a tool result, or a learner turn. */
 function toAssistantMessage(
   message: AgentMessage,
   index: number,
@@ -2645,177 +2747,10 @@ function toAssistantMessage(
   fallbackProvider?: string,
 ): ThreadMessageLike {
   const msg = message as any;
-  const timestamp =
-    typeof msg.timestamp === "number" ? new Date(msg.timestamp) : new Date();
-
-  // Only the last assistant message should show "running" status.
-  // During tool execution, isRunning is still true, but the assistant message
-  // is already complete (followed by toolResult messages).
-  const isLastMessage = index === totalMessages - 1;
-  const hasStopReason = msg.stopReason != null;
-  const isActivelyStreaming =
-    isRunning &&
-    msg.role === "assistant" &&
-    isLastMessage &&
-    !(
-      assistantHasToolCalls(msg.content) &&
-      !assistantHasPendingToolCalls(msg.content)
-    ) &&
-    (msg.__keatingStreaming === true || !hasStopReason);
-  const status = isActivelyStreaming
-    ? { type: "running" as const }
-    : msg.stopReason === "error"
-      ? {
-          type: "incomplete" as const,
-          reason: "error" as const,
-          error: msg.errorMessage ?? "Assistant response failed",
-        }
-      : msg.stopReason === "aborted"
-        ? { type: "incomplete" as const, reason: "cancelled" as const }
-        : { type: "complete" as const, reason: "stop" as const };
-
-  if (msg.role === "assistant") {
-    const content = normalizeAssistantContentParts(
-      Array.isArray(msg.content)
-        ? msg.content.flatMap((part: any) => {
-            if (part?.type === "thinking")
-              return [
-                { type: "reasoning" as const, text: part.thinking ?? "" },
-              ];
-            if (part?.type === "toolCall") {
-              const missingResult = toolCallEndedWithoutResult(
-                part,
-                isRunning && isLastMessage,
-              );
-              return [
-                {
-                  type: "tool-call" as const,
-                  toolCallId: part.id ?? `tool-${index}`,
-                  toolName: part.name ?? "tool",
-                  args: part.arguments ?? {},
-                  argsText: JSON.stringify(part.arguments ?? {}),
-                  result: missingResult
-                    ? MISSING_TOOL_RESULT_MESSAGE
-                    : foldedToolResult(part),
-                  isError: part.__toolError === true || missingResult,
-                },
-              ];
-            }
-            return assistantTextParts(part?.text ?? "");
-          })
-        : assistantTextParts(textFromContent(msg.content)),
-    );
-
-    const id = `assistant-${index}-${msg.timestamp ?? ""}`;
-
-    if (status.type === "incomplete" && status.reason === "error") {
-      const errorText = msg.errorMessage ?? "Assistant response failed";
-      if (!content.some((c: any) => c.type === "text" && c.text)) {
-        content.unshift({
-          type: "text" as const,
-          text: `${ERROR_TEXT_PREFIX}${errorText}`,
-        });
-      }
-    }
-
-    if (
-      status.type === "incomplete" &&
-      status.reason === "cancelled" &&
-      !content.some((c: any) => c.type === "text" && c.text)
-    ) {
-      content.unshift({
-        type: "text" as const,
-        text: msg.errorMessage ?? "Response interrupted before it finished.",
-      });
-    }
-
-    const authError = authErrorFromAgentMessage(msg, fallbackProvider);
-    const llmFailure =
-      status.type === "incomplete"
-        ? classifyLlmError(
-            msg.errorMessage ??
-              (status.reason === "cancelled"
-                ? "Request aborted"
-                : "Assistant response failed"),
-          )
-        : null;
-    const retryAttempts =
-      typeof msg.__keatingRetryAttempts === "number"
-        ? Math.max(1, Math.round(msg.__keatingRetryAttempts))
-        : 1;
-    const retryable =
-      isLastMessage &&
-      status.type === "incomplete" &&
-      llmFailure?.category !== "auth" &&
-      llmFailure?.category !== "billing" &&
-      llmFailure?.category !== "provider-billing" &&
-      llmFailure?.category !== "context-length" &&
-      llmFailure?.category !== "invalid-request" &&
-      llmFailure?.category !== "safety";
-    return {
-      id,
-      role: "assistant",
-      createdAt: timestamp,
-      status,
-      content,
-      metadata:
-        authError ||
-        llmFailure ||
-        retryable ||
-        msg.__keatingPrefillStatus === true
-          ? {
-              custom: {
-                keatingAuthError: authError,
-                keatingLlmFailure: llmFailure,
-                keatingProvider: msg.provider ?? fallbackProvider,
-                keatingFailureMessage: msg.errorMessage,
-                keatingFailedLastTurn: isLastMessage && status.type === "incomplete",
-                keatingRetryAttempts: retryAttempts,
-                keatingRetryExhausted: msg.__keatingRetryExhausted === true,
-                keatingRetryable: retryable,
-                keatingPrefillStatus: msg.__keatingPrefillStatus === true,
-              },
-            }
-          : undefined,
-    };
-  }
-
-  if (msg.role === "toolResult") {
-    const missingResult =
-      !hasMeaningfulToolResult(msg.content) &&
-      !hasMeaningfulToolResult(msg.details);
-    const failed = msg.isError === true || missingResult;
-    const summary = missingResult
-      ? MISSING_TOOL_RESULT_MESSAGE
-      : textFromContent(msg.content) || JSON.stringify(msg.details, null, 2);
-    const id = `tool-${index}-${msg.toolCallId ?? ""}`;
-    const errorPrefix = failed ? ERROR_TEXT_PREFIX : "";
-    return {
-      id,
-      role: "assistant",
-      createdAt: timestamp,
-      status: failed
-        ? { type: "incomplete", reason: "error", error: summary }
-        : { type: "complete", reason: "stop" },
-      content: [
-        {
-          type: "text",
-          text: `${errorPrefix}Tool ${msg.toolName ?? "result"}:\n${summary}`,
-        },
-      ],
-    };
-  }
-
-  return {
-    id: `user-${index}-${msg.timestamp ?? ""}`,
-    role: "user",
-    createdAt: timestamp,
-    content: assistantContentFromAgentContent(msg.content),
-    // Presentation metadata only: preserve the full user-role seed for the model.
-    ...(isPrivateForkContextMessage(message) ? {
-      metadata: { custom: { keatingPrivateFork: msg.keatingPrivateFork } },
-    } : {}),
-  };
+  const createdAt = typeof msg.timestamp === "number" ? new Date(msg.timestamp) : new Date();
+  if (msg.role === "assistant") return assistantReplyRow(msg, index, totalMessages, isRunning, createdAt, fallbackProvider);
+  if (msg.role === "toolResult") return toolResultRow(msg, index, createdAt);
+  return learnerRow(message, index, createdAt);
 }
 
 /** Render the SDK projection directly: stable Flue identities and explicit tool states. */

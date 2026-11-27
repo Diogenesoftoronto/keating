@@ -22,9 +22,12 @@ import type { StateComposition } from "./state-metrics.js";
 import type { TeachingDraftSelectionRule } from "./teaching-selection.js";
 import type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 import type { DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
+import type { TeachingDeliveryReceipt, TeachingDeliveryStage, TeachingDeliveryState, TeachingGenerationFinish, TeachingReviewFailure } from "./teaching-drafts/delivery.js";
 
 export type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 export { isTutorEmptyResponse, isTutorRateLimit, TUTOR_EMPTY_ERROR, TUTOR_EMPTY_REASON, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "./teaching-drafts/generation-failure.js";
+export { advanceTeachingDelivery, NOTHING_SENT, teachingAttemptOutcome, teachingContinuationPrompt, teachingReviewFailure, TUTOR_TIMEOUT_ERROR, TUTOR_TOKEN_LIMIT_ERROR,
+  type TeachingAttemptOutcome, type TeachingDeliveryReceipt, type TeachingDeliveryStage, type TeachingDeliveryState, type TeachingGenerationFinish, type TeachingReviewFailure } from "./teaching-drafts/delivery.js";
 export { DECISION_PLANNING_NOTICE, describeDecisionPlanningFailure, isDecisionPlanningFailure, type DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
@@ -42,6 +45,10 @@ export interface TeachingDraftFeedback {
 export interface TeachingDraftAttempt {
   /** Present only on a failed tutor transport when the provider's rate limit was observed. */
   readonly generationFailure?: "generation-rate-limited" | "generation-empty";
+  /** Why a failed tutor generation ended. Absent when the generation finished normally. */
+  readonly generationFinish?: TeachingGenerationFinish;
+  /** The reviewer call overflowed or failed, so this draft's standing is unknown. Never a rejection. */
+  readonly reviewFailure?: TeachingReviewFailure;
   /** This candidate was explicitly written as a visible reply to the existing ungraded question. */
   readonly feedbackOnly?: true;
   /** This candidate was asked to collect the learner's next answer in one OpenUI Question. */
@@ -86,6 +93,22 @@ export interface TeachingDraftInteraction {
   readonly lead?: "answer-first";
   /** Whether an interactive and a prose draft competed. */
   readonly paired: boolean;
+}
+/**
+ * Content-free record of the background check that followed a fast reply.
+ * The fast reply was already shown; this records what the check found and
+ * whether a follow-up message was posted after it.
+ */
+export interface TeachingFollowUpReceipt {
+  readonly outcome: "none" | "posted" | "diverted" | "aborted" | "failed";
+  /** quick: the fast model fixed a small issue. work: the slow model researched or built an activity. */
+  readonly kind?: "quick" | "work";
+  /** Check and decision ids that called for the follow-up; ids only, never text. */
+  readonly findings: readonly string[];
+  /** From the fast reply's release to the checks' result. */
+  readonly checkedMs: number;
+  /** From the fast reply's release to the follow-up turn starting. */
+  readonly postedMs?: number;
 }
 export interface TeachingStateSample {
   readonly phase: TeachingDraftPhase;
@@ -141,6 +164,8 @@ export interface TeachingDraftSnapshot {
   /** Observed prediction-specific selection rule on a released draft. Older receipts omit it. */
   readonly selectionRule?: TeachingDraftSelectionRule;
   readonly reason: string | null;
+  /** What the host confirmed the learner has been shown. Stage only, never the text. Older receipts omit it. */
+  readonly delivery?: TeachingDeliveryStage;
   /** A failed typed planning outcome on this round. Missing in older or unobserved rounds. */
   readonly decisionFailure?: DecisionPlanningFailure;
   readonly planningMs?: number;
@@ -149,6 +174,8 @@ export interface TeachingDraftSnapshot {
   readonly planReview?: PlanReview;
   /** A resource this session lacked that the tutor was invited to add this turn. */
   readonly resourceReview?: ResourceReview;
+  /** Present on a fast reply once its background check finished. */
+  readonly followUp?: TeachingFollowUpReceipt;
 }
 export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly version: string;
@@ -162,8 +189,11 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly lastResortDraft?: true;
 }
 export interface TeachingDraftGenerationInput {
-  /** Already approved prose. Return only the missing addition, without tools. */
-  readonly continuation?: { readonly text: string };
+  /**
+   * Present only after the host returned a receipt for showing this opening. `text` is exactly what
+   * the learner sees. Return only the missing addition, without tools. When absent, write a complete reply.
+   */
+  readonly continuation?: { readonly text: string; readonly delivery: "opening-emitted" };
   /** The prompt variant actually sent for this attempt. */
   readonly variant?: TeachingDraftVariant;
   /** One independent reply to the current ungraded question. Hosts omit tool schemas for this candidate. */
@@ -213,8 +243,13 @@ export interface TeachingDraftOptions<T> {
   readonly submittedComprehension?: SubmittedComprehensionAnswer;
   /** Hosted query answering can generate its two opening alternatives concurrently. */
   readonly parallelDrafts?: boolean;
-  /** Commits an independently reviewed, immutable prefix while its addition is prepared. */
-  readonly onAnswerStage?: (stage: { readonly reply: TeachingPolicyReply; readonly value: T }) => void;
+  /**
+   * Shows an independently reviewed, immutable prefix while its addition is prepared. The host returns a
+   * receipt holding the exact text once the learner can see it. Anything else (nothing, a rejection, a
+   * throw) means it was not shown, and the repair is then written as a complete reply, not an addition.
+   */
+  readonly onAnswerStage?: (stage: { readonly reply: TeachingPolicyReply; readonly value: T }) =>
+    TeachingDeliveryReceipt | void | Promise<TeachingDeliveryReceipt | void>;
   /** Ephemeral developer inspection only; never copied into snapshots or receipts. */
   readonly onDraftContent?: (candidate: TeachingDraftCandidateText) => void;
   /** Hosted reply comparison is experimental and must be explicitly selected. */
@@ -309,6 +344,8 @@ export interface TeachingDraftResult<T> {
   /** Host binds this private selection to the message actually published, never to a draft. */
   readonly activitySelection?: ReleasedActivitySelection;
   readonly status: "released" | "withheld" | "cancelled";
+  /** What the session knows was shown while drafting, with its exact text. The host commits the final reply. */
+  readonly delivery: TeachingDeliveryState;
   /** Authoritative reviewed content. Hosts must build public output from this snapshot. */
   readonly reply?: TeachingPolicyReply;
   /** Snapshotted host metadata; this opaque value is not itself reviewed content. */

@@ -12,7 +12,9 @@ import type { AgentState, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { FlueConversation } from "../../keating/flue/conversation";
 import { toModelMessagesWithTime } from "../../keating/flue/model-messages";
-import { withTeachingDraftGate } from "../../keating/judgement/draft-gate";
+import { withTeachingDraftGate, type ReplyPacingSettings, type TeachingFollowUpTurn } from "../../keating/judgement/draft-gate";
+import { createSlowFollowUpWorker, type SlowFollowUpHost } from "../../keating/judgement/slow-follow-up";
+import type { TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftContent, publishTeachingDraftStatus } from "../../keating/judgement/draft-status";
 import { rememberTurnReceipt } from "../../keating/judgement/turn-receipts";
 import { rememberNextQuestionSuggestion } from "../../keating/judgement/next-question-suggestions";
@@ -33,7 +35,7 @@ import { loadCompleteLearnerStartupContext, runSessionStartHooks } from "../../k
 import type { WebSpeechSettings } from "../../keating/speech";
 import { registerKeatingWebMcp } from "../../keating/webmcp";
 import { loadKeatingUiSettings } from "../../keating/ui-settings";
-import { getProviderApiKey } from "../../lib/provider-models";
+import { getProviderApiKey, getSelectableModels } from "../../lib/provider-models";
 import { recordSessionHook } from "../../lib/session-debug";
 import { hybridStreamFn } from "../keating-stream";
 import { keatingStorage, sessions } from "../keating-storage";
@@ -127,6 +129,77 @@ export function createTeachingConversation({
     onExtraction: ({ messageTimestamp, ...extraction }) => noteTurnExtraction(sessionId, messageTimestamp, extraction),
   });
   clearTeachingDraftStatus(sessionId);
+  const recordReceipt = (messageTimestamp: number, snapshot: TeachingDraftSnapshot, activeWork?: import("@keating/learner-contracts").ActiveWork) => {
+    try { noteTurnReceipt(sessionId, messageTimestamp, snapshot); } catch { /* Diagnostics only. */ }
+    rememberTurnReceipt(sessionId, messageTimestamp, projectTeachingDraftSnapshot(snapshot));
+    void keatingStorage.recordTeachingDraftReceipt({
+      id: `${sessionId}:${messageTimestamp}`,
+      sessionId,
+      messageTimestamp,
+      createdAt: Date.now(),
+      snapshot: projectTeachingDraftSnapshot(snapshot),
+      ...(activeWork ? { activeWork } : {}),
+    }).catch(() => { /* Review receipts are diagnostic; publication does not depend on them. */ });
+  };
+  // Optional per-role models from settings ("provider/id"); resolved once per value, else the learner's model.
+  const roleModels = new Map<string, Model<Api> | null>();
+  const roleModel = (key: string): Model<Api> | undefined => {
+    if (!key) return undefined;
+    if (!roleModels.has(key)) {
+      roleModels.set(key, null);
+      void getSelectableModels().then(models => {
+        roleModels.set(key, models.find(candidate => `${candidate.provider}/${candidate.id}` === key) ?? null);
+      }).catch(() => {});
+    }
+    return roleModels.get(key) ?? undefined;
+  };
+  const pacing = (): ReplyPacingSettings => {
+    const settings = loadKeatingUiSettings();
+    const fastModel = roleModel(settings.fastModel);
+    const slowModel = roleModel(settings.slowModel);
+    return { mode: settings.replyPacing, slowReasoning: settings.slowReasoning,
+      ...(fastModel ? { fastModel } : {}), ...(slowModel ? { slowModel } : {}) };
+  };
+  // The background check's direction for the next follow-up turn; never a saved message.
+  let pendingFollowUp: TeachingFollowUpTurn | undefined;
+  const fastSnapshots = new Map<number, TeachingDraftSnapshot>();
+  const followUpHost: SlowFollowUpHost = {
+    isLive,
+    isBusy: () => agent.context.isStreaming,
+    whenIdle: () => agent.whenIdle(),
+    learnerMessagesAfter: timestamp => agent.context.messages.filter(message =>
+      (message.role === "user" || message.role === "user-with-attachments") && message.timestamp > timestamp).length,
+    research: async (prompt, signal) => {
+      const settings = loadKeatingUiSettings();
+      const model = roleModel(settings.slowModel) ?? agent.context.model as Model<Api>;
+      const stream = await hybridStreamFn(model, { systemPrompt: "You check a tutor's reply for accuracy and missing facts.",
+        messages: [{ role: "user", content: prompt, timestamp: Date.now() }], tools: [] },
+        { signal, apiKey: await getProviderApiKey(model.provider), sessionId, reasoning: settings.slowReasoning });
+      const result = await stream.result();
+      if (result.stopReason !== "stop") return null;
+      return result.content.flatMap(part => part.type === "text" ? [part.text] : []).join("\n").trim() || null;
+    },
+    post: request => {
+      const last = agent.context.messages.at(-1);
+      if (!isLive() || agent.context.isStreaming || last?.role !== "assistant" || ["error", "aborted"].includes(last.stopReason)) return false;
+      pendingFollowUp = { kind: request.kind, note: request.note };
+      void agent.continueAfterReply().catch(() => { /* A failed follow-up leaves the fast reply as published. */ })
+        .finally(() => { pendingFollowUp = undefined; });
+      return true;
+    },
+    record: (messageTimestamp, { checks, judgementMs, followUp }) => {
+      const snapshot = fastSnapshots.get(messageTimestamp);
+      if (!snapshot) return;
+      fastSnapshots.delete(messageTimestamp);
+      const status = checks.some(check => check.status === "fail") ? "fail" as const
+        : checks.some(check => check.status === "unknown") ? "unknown" as const : "pass" as const;
+      // Recorded like a reviewed draft's checks, so Settings and diagnostics show them.
+      recordReceipt(messageTimestamp, { ...snapshot, selectedAttempt: 1, attempt: 1, followUp,
+        attempts: [{ attempt: 1, reasoning: snapshot.reasoning, standard: snapshot.standard, variant: "default",
+          generationMs: snapshot.elapsedMs, judgementMs, status, checks }] });
+    },
+  };
+  const followUps = createSlowFollowUpWorker(followUpHost);
   const activityLearning = createWebActivityLearning({
     sessionId,
     source: keatingStorage,
@@ -165,8 +238,16 @@ export function createTeachingConversation({
     onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
     onDraftContent: candidate => publishTeachingDraftContent(sessionId, candidate),
+    pacing,
+    takeFollowUp: () => { const next = pendingFollowUp; pendingFollowUp = undefined; return next; },
     onReleasedReply: release => {
       if (release.suggestNextQuestion) rememberNextQuestionSuggestion(sessionId, release.messageTimestamp);
+      // A fast reply's checks start now; only a follow-up message waits for the chat to be idle.
+      if (release.fast) {
+        fastSnapshots.set(release.messageTimestamp, release.fast.snapshot);
+        void followUps.start({ messageTimestamp: release.messageTimestamp, releasedAt: Date.now(), text: release.text,
+          turn: release.fast.turn, judge: release.fast.judge });
+      }
       // An already-unverified reply shows its caveat; the check only adds work there.
       if (release.unverified) return;
       void agent.whenIdle().then(async () => {
@@ -182,18 +263,7 @@ export function createTeachingConversation({
         } finally { clearTimeout(timer); }
       }).catch(() => { /* A failed follow-up check leaves the reply as published. */ });
     },
-    onReceipt: receipt => {
-      try { noteTurnReceipt(sessionId, receipt.messageTimestamp, receipt.snapshot); } catch { /* Diagnostics only. */ }
-      rememberTurnReceipt(sessionId, receipt.messageTimestamp, projectTeachingDraftSnapshot(receipt.snapshot));
-      void keatingStorage.recordTeachingDraftReceipt({
-        id: `${sessionId}:${receipt.messageTimestamp}`,
-        sessionId,
-        messageTimestamp: receipt.messageTimestamp,
-        createdAt: Date.now(),
-        snapshot: projectTeachingDraftSnapshot(receipt.snapshot),
-        ...(receipt.activeWork ? { activeWork: receipt.activeWork } : {}),
-      }).catch(() => { /* Review receipts are diagnostic; publication does not depend on them. */ });
-    },
+    onReceipt: receipt => recordReceipt(receipt.messageTimestamp, receipt.snapshot, receipt.activeWork),
   });
   const agent: FlueConversation = new FlueConversation({
     initialState: nextState,

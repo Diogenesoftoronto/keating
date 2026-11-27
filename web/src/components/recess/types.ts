@@ -20,9 +20,14 @@ export interface RecessQuestion {
   id?: string;
   /** The tutor turn (index into the lesson) and a verbatim plain excerpt that support the correct answer. */
   source?: { turn: number; quote: string };
+  /** The picture the question needs, shown beside it. A question that needs one and has none is never asked. */
+  image?: RecessQuestionImage;
   /** Two to four choices, the first correct. The engine shuffles them (true/false keeps True on the left) and draws one lane per choice. */
   a: readonly string[];
 }
+
+/** A picture from the chat: the learner's attachment, a generated image or one the tutor showed. */
+export interface RecessQuestionImage { id: string; alt: string; src: string }
 
 export type RecessExplainLevel = "sound" | "partial" | "missed";
 /** The open question for the "explain it" pause: chosen before the run, graded while play is paused. */
@@ -119,6 +124,7 @@ export interface RecessHud {
 
 export interface RecessWind {
   q: string;
+  image?: RecessQuestionImage;
   answers: { t: string; ok: boolean }[];
   seconds: number;
 }

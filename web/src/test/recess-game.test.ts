@@ -95,7 +95,8 @@ type RunState = {
 };
 
 type Run = ReturnType<typeof Recess.create>;
-function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playfield, win: EventTarget, game: Run) => void, charge = 0.75) {
+function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playfield, win: EventTarget, game: Run) => void, charge = 0.75,
+  overrides: Partial<Parameters<typeof Recess.create>[0]> = {}) {
   const rect = new Playfield();
   const canvas = () => ({ width: 300, height: 150, hidden: false, getContext: () => ({}) });
   const mocks = {
@@ -118,6 +119,7 @@ function touchRun(control: "follow" | "twin", body: (run: RunState, field: Playf
       sheet: {} as HTMLImageElement, rows: {}, hasJetpack: true, flip: null, toy: null,
       equipment: {}, keycapBoots: false,
       hud() {}, ask() {}, phase() {}, revive() {}, end() {},
+      ...overrides,
     });
     game.setCondition({ charge, tune: 0.75, shine: 0.75 });
     expect(game.start("start")).toBe(true);
@@ -264,4 +266,20 @@ test("firing charge starts at Care charge, tiers down, refills only in play and 
     run.refill(0.2);
     expect(run.energy).toBe(0.3);
   }, 0.6);
+});
+
+test("a gate about a picture hands the page that picture and comes down slower", () => {
+  const image = { id: "img_cell", alt: "Labelled animal cell", src: "data:image/png;base64,AAAA" };
+  const asked: unknown[] = [];
+  const pack = { ...packs.maths, gates: [{ q: "Which labelled part holds the DNA?", a: ["Nucleus", "Ribosome", "Membrane"], image }, { q: "Plain?", a: ["Yes", "No", "Maybe"] }] };
+  touchRun("follow", run => {
+    const G = run as unknown as { startGates(i: number): void; gates: { slow?: boolean } | null };
+    G.startGates(0);
+    expect(asked.at(-1)).toMatchObject({ question: "Which labelled part holds the DNA?", image });
+    expect(G.gates?.slow).toBe(true);
+    G.gates = null;
+    G.startGates(1);
+    expect((asked.at(-1) as { image?: unknown }).image).toBeUndefined();
+    expect((G.gates as { slow?: boolean } | null)?.slow).toBe(false);
+  }, 0.75, { pack, ask: value => { if (value) asked.push(value); } });
 });

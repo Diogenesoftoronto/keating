@@ -237,7 +237,7 @@ export const Recess = (function () {
       usedWind = true; G.state = "down"; inp.keys = {}; inp.held = false;
       const order = choiceOrder(pick.a), answers = order.map((j) => ({ t: pick.a[j], ok: j === 0 }));
       G.emit("downed", { q: pick.q, x: P.x, y: P.y });
-      o.revive({ q: pick.q, answers, seconds: G.calm ? 0 : 15 }, (i) => {
+      o.revive({ q: pick.q, image: pick.image, answers, seconds: G.calm ? 0 : pick.image ? 22 : 15 }, (i) => {
         if (G.state !== "down") return; const a = answers[i], ok = !!(a && a.ok);
         G.res.wind = { q: pick.q, right: pick.a[0], picked: a ? a.t : null, ok, kind: pick.kind, id: pick.id }; G.state = "play"; lastTs = performance.now();
         if (ok) { P.hearts = 2; P.inv = 3; P.anim = "cheer"; P.animT = 0; G.cancelBullets(true); G.emit("revive", { x: P.x, y: P.y }); }
@@ -256,8 +256,8 @@ export const Recess = (function () {
     G.startGates = function (i) {
       const q = G.pack.gates?.[i]; if (!q) return; // a short chat may have fewer questions: skip, never repeat one
       const order = choiceOrder(q.a); // two to four lanes, or floating targets for oddone
-      G.gates = q.kind === "oddone" ? startTargetGate(G, q, order) : { q: q.q, kind: q.kind, id: q.id, a: order.map((j) => ({ t: q.a[j], ok: j === 0 })), y: -30, st: 0, t: 0, pick: -1 };
-      G.cancelBullets(true); if (o.ask) o.ask({ question: q.q, options: G.gates.a.map(a => a.t), kind: q.kind }); G.emit("gateStart", { q: q.q });
+      G.gates = q.kind === "oddone" ? startTargetGate(G, q, order) : { q: q.q, kind: q.kind, id: q.id, a: order.map((j) => ({ t: q.a[j], ok: j === 0 })), y: -30, st: 0, t: 0, pick: -1, slow: !!q.image };
+      G.cancelBullets(true); if (o.ask) o.ask({ question: q.q, options: G.gates.a.map(a => a.t), kind: q.kind, image: q.image }); G.emit("gateStart", { q: q.q });
     };
     // "Explain it": play pauses (world frozen, nothing can hit him), the page asks for a sentence, and the
     // caller grades it, by Jev while paused or by words. The prompt was chosen before the run. A miss costs nothing.
@@ -290,7 +290,7 @@ export const Recess = (function () {
       const Gt = G.gates; if (!Gt) return;
       if (Gt.mode === "targets") { updateTargetGate(G, dt); return; }
       if (Gt.st === 0) {
-        Gt.y += 84 * dt;
+        Gt.y += (Gt.slow ? 56 : 84) * dt; // a picture takes longer to read than a line
         if (Gt.y >= P.y - 8 && G.state === "play") resolveLane(Gt, clamp(Math.floor(P.x / (G.W / Gt.a.length)), 0, Gt.a.length - 1));
       } else { Gt.t += dt; Gt.y += 20 * dt; if (Gt.t > 1.25) { G.gates = null; if (o.ask) o.ask(null); } }
     }

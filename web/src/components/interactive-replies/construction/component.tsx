@@ -6,6 +6,7 @@ import {
   type CompassConstructionConfig, type Layout, type Mark, type Model, type Pt, type Reading, type Resolved, type V,
 } from "./engine";
 import "./component.css";
+import { useCancelGesture } from "../hooks";
 
 export type { CompassConstructionConfig } from "./engine";
 export type ShareSummary = { learner: string; data: string; reply: string };
@@ -141,20 +142,9 @@ function commitDraft(m: Model): Model {
 /* SSR-safe first-render canvas width; the real width is measured before the first paint. */
 const FIRST_WIDTH = 440;
 
-
 /** Dragology listens for pointerup only, so an interrupted gesture (pointercancel, window blur) would leave
     the drag live and the next pointerup would apply the hovered edit. Remount the renderer instead: the
     preview is discarded and the last committed state stays. */
-function useCancelGesture(active: boolean, cancel: () => void) {
-  const ref = useRef({ active, cancel });
-  ref.current = { active, cancel };
-  useEffect(() => {
-    const on = () => { if (!ref.current.active) return; document.body.style.cursor = ""; ref.current.cancel(); };
-    document.addEventListener("pointercancel", on);
-    window.addEventListener("blur", on);
-    return () => { document.removeEventListener("pointercancel", on); window.removeEventListener("blur", on); };
-  }, []);
-}
 
 /* ---------- Component ---------- */
 export function CompassConstruction({ config = presets.equilateralTriangle, onChange, onShare }: {

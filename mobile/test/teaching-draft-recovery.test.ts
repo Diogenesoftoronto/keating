@@ -222,7 +222,7 @@ test.each(["complete", "abort", "unexpected-tool"] as const)("native staged repl
       if (attempt < 3) return { text: attempt === 1 ? opening : "PRIVATE alternative", calls: [], assistantTurn: null, usage };
       expect(options?.tools).toEqual([]);
       expect(options?.systemPrompt).not.toContain(opening);
-      const data = { role: "user", content: JSON.stringify({ publishedText: opening }) };
+      const data = { role: "user", content: JSON.stringify({ deliveryState: "opening-emitted", publishedText: opening }) };
       const body = JSON.parse(String(buildProviderRequest(settings, key, messages, options).init.body));
       expect(body.input.at(-1)).toEqual(data);
       const afterTools = JSON.parse(String(buildProviderRequest(settings, key, messages, { ...options,
@@ -255,4 +255,32 @@ test.each(["complete", "abort", "unexpected-tool"] as const)("native staged repl
     expect(final).toMatchObject({ text: deltas.join(""), toolCalls: 0, usage: { totalTokens: 9 } });
     expect(recorded).toBe(final.text);
   } finally { allowAddition(); }
+});
+
+test("with no opening shown, the native repair asks for a complete reply instead of an addition", async () => {
+  const opening = "A square number is an integer multiplied by itself.";
+  const complete = opening + " For example, three times three is nine.";
+  const prompts: { systemPrompt?: string; additionalUserText?: string }[] = [];
+  const round = createMobileTeachingDraftRound({ triage: false, breadth: "broad", current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased: () => {},
+    judge: async request => {
+      const outcome = await acceptingTeachingJudge(request);
+      if (!outcome.ok) return outcome;
+      const reply = (request.state as { reply?: { text: string } }).reply?.text;
+      const answers = { ...outcome.response.answers };
+      if (answers.identity_invented) answers.identity_invented = { type: "noul", noul: 0 };
+      if (answers.requested_part_missing) answers.requested_part_missing = { type: "noul", noul: Number(!reply?.includes("three times three")) };
+      return { ...outcome, response: { ...outcome.response, answers } };
+    },
+    request: async (_settings, _key, _messages, options) => {
+      prompts.push({ systemPrompt: options?.systemPrompt, additionalUserText: options?.additionalUserText });
+      return { text: prompts.length === 1 ? opening : prompts.length === 2 ? "A square is a number times itself." : complete, calls: [], assistantTurn: null, usage: null };
+    },
+  });
+  // No stream and no text callback: nothing can reach the learner before the final reply.
+  const result = await round(settingsForProvider("openai"), null, [{ id: "u1", role: "user", createdAt: 1, content: "Define a square number and give an example." }]);
+  expect(prompts).toHaveLength(3);
+  expect(prompts[2]!.additionalUserText).toBeUndefined();
+  expect(prompts[2]!.systemPrompt).not.toContain("has shown the learner");
+  expect(prompts[2]!.systemPrompt).toContain("Answer each explicitly requested part");
+  expect(result.text).toBe(complete);
 });

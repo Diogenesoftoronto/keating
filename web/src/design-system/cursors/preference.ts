@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { subscribeStoredPreference } from "../../lib/stored-preference";
 
 /** Whether this device uses Keating cursors or the system ones. On unless switched off. */
 export const cursorPreferenceKey = "keating.cursors.v1";
@@ -28,17 +29,7 @@ export function saveCursorPreference(on: boolean, store?: Pick<Storage, "setItem
 	}
 	if (typeof window !== "undefined") window.dispatchEvent(new Event(changed));
 }
-function subscribe(notify: () => void) {
-	const storage = (e: StorageEvent) => {
-		if (!e.key || e.key === cursorPreferenceKey) notify();
-	};
-	window.addEventListener(changed, notify);
-	window.addEventListener("storage", storage);
-	return () => {
-		window.removeEventListener(changed, notify);
-		window.removeEventListener("storage", storage);
-	};
-}
+const subscribe = subscribeStoredPreference(cursorPreferenceKey, changed);
 export function useCursorPreference(): boolean {
 	return useSyncExternalStore(subscribe, readCursorPreference, () => true);
 }

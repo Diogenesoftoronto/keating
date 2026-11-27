@@ -2,7 +2,7 @@ import type { JudgementAnswer, JudgementResponse } from "@keating/learner-contra
 import type { RecessPack, RecessQuestion } from "../../components/recess/types";
 import { createJudgementOperationCaller } from "../judgement/operation";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "../judgement/runtime";
-import type { HabitLesson } from "./lesson";
+import { lessonForPrompt, type HabitLesson } from "./lesson";
 import { recessPlainText } from "./recess-lesson";
 
 /**
@@ -71,7 +71,7 @@ function levelOf(answer: JudgementAnswer | undefined): number | null {
 
 export function recessExplainRequest(lesson: HabitLesson, item: RecessExplainPrompt, answer: string) {
   return {
-    state: { conversation: lesson, prompt: item.prompt, reference: item.reference, answer: answer.slice(0, EXPLAIN_MAX_CHARS) },
+    state: { conversation: lessonForPrompt(lesson), prompt: item.prompt, reference: item.reference, answer: answer.slice(0, EXPLAIN_MAX_CHARS) },
     questions: {
       [EXPLAIN_SHOWS_KEY]: {
         type: "noul" as const,

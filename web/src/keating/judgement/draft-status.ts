@@ -13,6 +13,7 @@ export interface TeachingDraftStatus {
   readonly feedback: TeachingDraftFeedbackKind | null;
 }
 
+const GENERATION_FINISHES: ReadonlySet<string> = new Set(["token-limit", "timeout", "rate-limited", "empty", "provider-error", "invalid-reply"]);
 const states = new Map<string, TeachingDraftStatus>();
 export interface TeachingDraftInspectedCandidate {
   readonly attempt: number;
@@ -110,6 +111,17 @@ function projectState(state: StateComposition): StateComposition {
 }
 
 /** Content-free projection shared by the live status and the persisted review receipt. */
+const FOLLOW_UP_OUTCOMES = new Set(["none", "posted", "diverted", "aborted", "failed"]);
+/** Ids and timings only: a background check's receipt never carries reply or note text. */
+function projectFollowUp(value: TeachingDraftSnapshot["followUp"]): Pick<TeachingDraftSnapshot, "followUp"> {
+  if (!value || !FOLLOW_UP_OUTCOMES.has(value.outcome) || !Number.isFinite(value.checkedMs)) return {};
+  return { followUp: { outcome: value.outcome,
+    ...(value.kind === "quick" || value.kind === "work" ? { kind: value.kind } : {}),
+    findings: Array.isArray(value.findings) ? value.findings.filter(id => typeof id === "string" && /^[a-z_]{1,64}$/.test(id)).slice(0, 32) : [],
+    checkedMs: Math.max(0, value.checkedMs),
+    ...(typeof value.postedMs === "number" && Number.isFinite(value.postedMs) ? { postedMs: Math.max(0, value.postedMs) } : {}) } };
+}
+
 export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): TeachingDraftSnapshot {
   const activityLearning = projectActivitySelectionReceipt(snapshot.activityLearning);
   const selectionRule = projectTeachingDraftSelection(snapshot)?.rule;
@@ -124,6 +136,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     phase: snapshot.phase, attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts,
     reasoning: snapshot.reasoning, standard: snapshot.standard, elapsedMs: snapshot.elapsedMs,
     judgeModel: snapshot.judgeModel, selectedAttempt: snapshot.selectedAttempt, reason: snapshot.reason,
+    ...(snapshot.delivery === "nothing-sent" || snapshot.delivery === "opening-emitted" || snapshot.delivery === "reply-committed" ? { delivery: snapshot.delivery } : {}),
     ...(isDecisionPlanningFailure(snapshot.decisionFailure) ? { decisionFailure: { ...snapshot.decisionFailure } } : {}),
     ...(selectionRule ? { selectionRule } : {}),
     ...(pairReviews ? { pairReviews } : {}),
@@ -139,6 +152,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(backgroundActivity ? { backgroundActivity } : {}),
     ...projectPlanReview(snapshot.planReview),
     ...projectResourceReview(snapshot.resourceReview),
+    ...projectFollowUp(snapshot.followUp),
     ...(snapshot.state ? { state: projectState(snapshot.state) } : {}),
     ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({
       phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs),
@@ -149,6 +163,8 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     attempts: snapshot.attempts.map<TeachingDraftSnapshot["attempts"][number]>(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
       ...(attempt.status === "generation-error" && attempt.generationFailure === TUTOR_RATE_LIMIT_REASON ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}),
+      ...(attempt.status === "generation-error" && GENERATION_FINISHES.has(attempt.generationFinish as string) ? { generationFinish: attempt.generationFinish } : {}),
+      ...(attempt.reviewFailure === "reviewer-overflow" || attempt.reviewFailure === "reviewer-call-failed" ? { reviewFailure: attempt.reviewFailure } : {}),
       ...(attempt.gradeOnly === true ? { gradeOnly: true as const } : {}),
       ...(attempt.feedbackOnly === true ? { feedbackOnly: true as const } : {}),
       ...(attempt.predictionQuestionOnly === true ? { predictionQuestionOnly: true as const } : {}),

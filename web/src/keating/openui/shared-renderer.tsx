@@ -63,16 +63,33 @@ export function SharedUiDocumentRenderer({ document, receipts = [], onAction }: 
 	const supported = document.supportedSurfaces.includes("web");
 	const interactive = document.lifecycle === "ready" && supported;
 	const retryable = supported && (document.lifecycle === "failed" || document.lifecycle === "cancelled");
+	const repeated = planFrameRepeats(document);
 	return <section className={panel} data-shared-openui-document={document.id} data-openui-revision={document.revision}
 		data-openui-diagnostic-nodes={document.nodes.map(openUiDiagnosticComponentForNode).join(" ")}>
-		{document.title ? <h3 className="lesson-document__title">{document.title}</h3> : null}
-		{document.description ? <p className="lesson-document__lede">{document.description}</p> : null}
+		{document.title && !repeated.title ? <h3 className="lesson-document__title">{document.title}</h3> : null}
+		{document.description && !repeated.description ? <p className="lesson-document__lede">{document.description}</p> : null}
 		{!interactive ? <div role="status" className="lesson-document__inactive">
 			<p>This interaction is {document.lifecycle.replace("_", " ")}. Its content remains available, but controls are disabled.</p>
 			{retryable ? <button className="lesson-quiet k-bloom shared-retry" type="button" onClick={() => onAction?.({ intent: { type: "retry" }, humanFriendlyMessage: "Retry this interaction" })}><KeatingGlyph name="refresh" size={13} />Retry interaction</button> : null}
 		</div> : null}
 		{document.nodes.map((node) => <SharedNode key={`${document.id}:${node.id}`} documentId={document.id} documentRevision={document.revision} persistent={document.retention !== "ephemeral"} node={node} receipts={receipts} disabled={!interactive} onAction={onAction} />)}
 	</section>;
+}
+
+const sameTitle = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/**
+ * A surface holding only a study plan under the plan's own title would show that
+ * title twice: once as the surface header and again in the plan's frame. The
+ * frame is the current design, so it keeps the title and the header's title goes.
+ * The description goes too when the plan shows its own overview; otherwise it
+ * stays as the only lead-in.
+ */
+export function planFrameRepeats(document: Pick<UiDocument, "title" | "nodes">): { title: boolean; description: boolean } {
+	const node = document.nodes.length === 1 ? document.nodes[0] : undefined;
+	if (node?.type !== "study-plan" || !node.items || !document.title) return { title: false, description: false };
+	const title = sameTitle(node.title ?? "Study plan", document.title);
+	return { title, description: title && Boolean(node.overview?.trim()) };
 }
 
 function SharedNode({ documentId, documentRevision, persistent = true, node, receipts, disabled, onAction }: { documentId: string; documentRevision: number; persistent?: boolean; node: UiDocumentNode; receipts: UiActionReceipt[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {

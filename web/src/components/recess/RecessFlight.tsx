@@ -11,7 +11,7 @@ import { RECESS_BOMBS, type RecessBombKind } from "./engine/bombs.js";
 import { Recess } from "./engine/core.js";
 import { createBossSceneView } from "./boss-scene-view";
 import "./boss-scene.css";
-import type { RecessBotArt, RecessCondition, RecessControl, RecessExplainItem, RecessExplainLevel, RecessHud, RecessLessonTurn, RecessPack, RecessQuestionKind, RecessResult, RecessWind } from "./types";
+import type { RecessBotArt, RecessCondition, RecessControl, RecessExplainItem, RecessExplainLevel, RecessHud, RecessLessonTurn, RecessPack, RecessQuestionImage, RecessQuestionKind, RecessResult, RecessWind } from "./types";
 
 export interface RecessFlightSettings {
   control: RecessControl;
@@ -155,6 +155,11 @@ function Hud({ store }: { store: HudStore }) {
   </div>;
 }
 
+/** The exact picture from the chat that the question is about. It was loaded before takeoff. */
+function QuestionPicture({ image }: { image: RecessQuestionImage }) {
+  return <figure className="recess-picture"><img src={image.src} alt={image.alt} decoding="async" draggable={false} /></figure>;
+}
+
 function WindQuestion({ wind, answer, stop }: { wind: RecessWind; answer(index: number): void; stop(): void }) {
   const first = useRef<HTMLButtonElement>(null);
   const [picked, setPicked] = useState<number | null>(null);
@@ -195,6 +200,7 @@ function WindQuestion({ wind, answer, stop }: { wind: RecessWind; answer(index: 
     }
   }}>
     <small>Second Wind</small>
+    {wind.image && <QuestionPicture image={wind.image} />}
     <strong><RecessInlineMarkdown text={wind.q} /></strong>
     <div className="recess-answers">
       {wind.answers.map((choice, index) => <button type="button" key={index} ref={index === 0 ? first : undefined}
@@ -298,7 +304,7 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
     wall: pack.wall.map(recessPlainText),
     myths: pack.myths.map(myth => ({ wrong: recessPlainText(myth.wrong), right: recessPlainText(myth.right) })),
   }), [pack]);
-  const [gate, setGate] = useState<{ question: string; options: string[]; kind?: string } | null>(null);
+  const [gate, setGate] = useState<{ question: string; options: string[]; kind?: string; image?: RecessQuestionImage } | null>(null);
   const [wind, setWind] = useState<{ question: RecessWind; answer(index: number): void } | null>(null);
   const [explain, setExplain] = useState<{ item: RecessExplainItem; done(level: RecessExplainLevel, answer: string): void } | null>(null);
   const arena = useRef<HTMLDivElement>(null);
@@ -428,6 +434,7 @@ export function RecessFlight({ pack, lesson, assets, condition, loadout, setting
       <section ref={cinema} className="recess-cinema" data-calm={settings.calm} hidden/>
       {gate && <div className="recess-gate" role="status" data-kind={gate.kind}>
         {gate.kind && KIND_LABELS[gate.kind as RecessQuestionKind] && <small className="recess-gate-kind">{KIND_LABELS[gate.kind as RecessQuestionKind]}</small>}
+        {gate.image && <QuestionPicture image={gate.image} />}
         <strong><RecessInlineMarkdown text={gate.question} /></strong>
         <span className="recess-sr">{gateHint(gate.options, gate.kind === "oddone")}</span>
         {/* The same choices as buttons: answering never depends on aim, charge or flying. */}

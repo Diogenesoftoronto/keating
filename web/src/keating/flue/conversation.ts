@@ -344,6 +344,18 @@ export class FlueConversation {
       );
     return this.run([], prepare);
   }
+  /**
+   * Run one more model turn after a settled reply, with no new learner message.
+   * Flue records only a hidden resume signal; whatever the stream function adds
+   * to its private context for this turn (a background follow-up direction) is
+   * never saved or shown as a learner turn.
+   */
+  continueAfterReply(): Promise<void> {
+    const last = this.context.messages.at(-1);
+    if (!last || last.role !== "assistant" || ["error", "aborted"].includes(last.stopReason))
+      return Promise.reject(new Error("No settled reply to follow up."));
+    return this.run([]);
+  }
   async dispose(): Promise<void> {
     this.cancel();
     await this.whenIdle();

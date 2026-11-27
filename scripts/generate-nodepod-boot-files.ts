@@ -114,6 +114,9 @@ const EXCLUDE_PATTERNS = [
   // these modules, the sandbox never publishes a profile, and the bundle has to
   // stay inside the same 6 MiB offline-cache budget.
   /^web\/src\/keating\/(?:public-profile-(?:contract|draft|image)|public-learning-profile|learning-profile-oauth)\.ts$/,
+  // Chat attachments: pdf.js and a canvas in the page draw a PDF's first page, and
+  // only the chat and share views read the attachment wrapper. The sandbox does neither.
+  /^web\/src\/keating\/(?:pdf-attachment|attachment-text)\.ts$/,
 ];
 
 async function* walkDir(dir: string): AsyncGenerator<string> {

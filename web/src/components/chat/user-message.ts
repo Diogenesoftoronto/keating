@@ -9,6 +9,7 @@ import type { KeatingAudioContent } from "../../keating/flue/conversation";
 import { modelSupportsAudio } from "../../lib/provider-models";
 import { recordingHasTranscript } from "../../lib/recording-transcripts";
 import { serializeQuotedTurn, type PassageQuote } from "../../keating/passage-quote";
+import { ATTACHMENT_PREVIEW_FIELD, attachmentPreviewOf } from "../../keating/attachment-text";
 
 export type PromptContent = TextContent | ImageContent | KeatingAudioContent;
 
@@ -57,7 +58,9 @@ export function contentFromAppendMessage(message: AppendMessage): PromptContent[
   for (const attachment of message.attachments ?? []) {
     for (const part of attachment.content ?? []) {
       if (part.type === "text" && part.text.trim()) {
-        content.push({ type: "text", text: part.text });
+        // A drawn first page stays with the saved turn for display; providers read `text` only.
+        const preview = attachmentPreviewOf(part);
+        content.push(preview ? { type: "text", text: part.text, [ATTACHMENT_PREVIEW_FIELD]: preview } as TextContent : { type: "text", text: part.text });
       } else if (part.type === "image") {
         const image = dataUrlToImageContent(part.image);
         if (image) content.push(image);

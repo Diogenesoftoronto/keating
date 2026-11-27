@@ -1,4 +1,4 @@
-import type { RecessExplainItem, RecessExplainLevel, RecessBotArt, RecessCondition, RecessControl, RecessHud, RecessPack, RecessResult, RecessTheme, RecessWind } from "../types";
+import type { RecessQuestionImage, RecessExplainItem, RecessExplainLevel, RecessBotArt, RecessCondition, RecessControl, RecessHud, RecessPack, RecessResult, RecessTheme, RecessWind } from "../types";
 import type { RecessLoadout } from "../../../keating/habits/quest-catalog";
 import type { RecessAudio } from "./audio.js";
 import type { RecessBombKind } from "./bombs.js";
@@ -44,7 +44,7 @@ interface RecessOptions extends RecessBotArt {
   /** Optional DOM layer for oddone target labels (Markdown and maths). The engine sets --t{i}-x/--t{i}-y and data-st/pick/ok on it each frame. */
   targetLayer?: HTMLElement | null;
   hud(value: RecessHud): void;
-  ask(value: { question: string; options: string[]; kind?: string } | null): void;
+  ask(value: { question: string; options: string[]; kind?: string; image?: RecessQuestionImage } | null): void;
   phase(value: "play" | "outro"): void;
   revive(value: RecessWind | null, answer?: (index: number) => void): void;
   /** "Explain it" pause: show the prompt, call done with the grade. Called with null when the run stops mid-pause. */

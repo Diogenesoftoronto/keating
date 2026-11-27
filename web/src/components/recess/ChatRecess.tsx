@@ -5,7 +5,8 @@ import { useKeatingUiSettings } from "../../hooks/use-ui-settings";
 import { sessions } from "../../hooks/keating-storage";
 import type { HabitsCommand, HabitsMode, HabitsSnapshot } from "../../keating/habits/contracts";
 import { compileLessonPack } from "../../keating/habits/director";
-import { habitLesson, type HabitLesson } from "../../keating/habits/lesson";
+import { habitLesson, lessonForPrompt, type HabitLesson } from "../../keating/habits/lesson";
+import { packPictures, swapUnloadedPictures, unloadablePictures } from "../../keating/habits/recess-images";
 import { HABIT_KIT, RECESS_HELPERS, RECESS_WEAPONS, resolveRecessLoadout, type RecessLoadout } from "../../keating/habits/quest-catalog";
 import { buildChatRecessPack, recessPlainText, recessQuestionCandidates } from "../../keating/habits/recess-lesson";
 import { curateRecessPack, type RecessCandidate } from "../../keating/habits/recess-curate";
@@ -125,7 +126,8 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
   const strip = useRef<HTMLElement>(null);
 
   // ── the lesson: rules now, Jev's read in the background ──
-  const lessonKey = useMemo(() => JSON.stringify(lesson), [lesson]);
+  // Pictures are keyed by id: their data never needs to be compared or copied here.
+  const lessonKey = useMemo(() => JSON.stringify(lessonForPrompt(lesson)), [lesson]);
   const stableLesson = useMemo(() => lesson, [lessonKey]);
   const rules = useMemo(() => recessReadinessRules(stableLesson), [stableLesson]);
   const localPack = useMemo(() => buildChatRecessPack(stableLesson), [stableLesson]);
@@ -191,7 +193,22 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
     return () => abort.abort();
   }, [basePack, chatPlayable, flying, curation, stableLesson, pool, scope, curateKey]);
 
-  const chatPack = curation?.pack ?? basePack;
+  // ── the chat's pictures, loaded before launch: a question whose picture will not show is swapped out, never asked blind ──
+  const curatedPack = curation?.pack ?? basePack;
+  const pictures = useMemo(() => curatedPack ? packPictures(curatedPack) : [], [curatedPack]);
+  const picturesKey = pictures.map(image => image.id).join(",");
+  const [pictureCheck, setPictureCheck] = useState<{ key: string; failed: Set<string> } | null>(null);
+  const picturesChecked = !pictures.length || pictureCheck?.key === picturesKey;
+  useEffect(() => {
+    if (!pictures.length || pictureCheck?.key === picturesKey) return;
+    let active = true;
+    unloadablePictures(pictures).then(failed => { if (active) setPictureCheck({ key: picturesKey, failed }); });
+    return () => { active = false; };
+  }, [pictures, picturesKey, pictureCheck]);
+  const chatPack = useMemo(() => curatedPack && pictureCheck?.key === picturesKey
+    ? swapUnloadedPictures(curatedPack, pictureCheck.failed, pool)
+    : curatedPack, [curatedPack, pictureCheck, picturesKey, pool]);
+  const picturesPending = choice.kind === "chat" && !picturesChecked;
   const pack: RecessPack | null = choice.kind === "demo" ? packs[choice.id] ?? null : chatReady ? chatPack : null;
   const [run, setRun] = useState<Run | null>(null);
   /** The run the flight log describes: its pack holds each question's source in the chat. */
@@ -299,7 +316,7 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
   }
 
   function launch() {
-    if (!pack || !assets || !host || pending || !conditionReady) return;
+    if (!pack || !assets || !host || pending || !conditionReady || picturesPending) return;
     setFailure("");
     setResult(null);
     setSettlement(null);
@@ -580,8 +597,8 @@ export default function ChatRecess({ lesson, sessionId, model, mode, host, onDra
           onClick={() => setArtAttempt(n => n + 1)}>
           <RecessIcon name="replay" size={14}/>Retry artwork
         </button> : <button type="button" ref={startKey} className="recess-key recess-start" data-primary={reviewIsPrimary ? "false" : "true"} data-glyph-host
-          disabled={!pack || !assets || pending || !conditionReady} onClick={launch}>
-          <RecessIcon name={result ? "replay" : "launch"} size={14}/>{!pack ? "Choose a lesson" : !assets ? "Loading artwork…" : pending ? "Saving charge…" : !conditionReady ? "Reading charge…" : result ? "Fly again" : "Start Recess"}
+          disabled={!pack || !assets || pending || !conditionReady || picturesPending} onClick={launch}>
+          <RecessIcon name={result ? "replay" : "launch"} size={14}/>{!pack ? "Choose a lesson" : !assets ? "Loading artwork…" : picturesPending ? "Loading pictures…" : pending ? "Saving charge…" : !conditionReady ? "Reading charge…" : result ? "Fly again" : "Start Recess"}
         </button>}
         {stage === "log" && review && <button type="button" className="recess-key" data-primary={reviewIsPrimary ? "true" : "false"} data-glyph-host
           onClick={() => onDraft(review)}>

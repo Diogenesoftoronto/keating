@@ -19,6 +19,7 @@ import {
 } from "../keating/trajectory-review";
 import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
 import { learnerResponseReviewMarkdown } from "../keating/learner-response";
+import { attachmentMarkdown } from "../keating/attachment-text";
 
 /** A malformed answer envelope from a public link must not break the page; Raw keeps the source. */
 function learnerAnswerMarkdown(text: string): string {
@@ -40,7 +41,7 @@ export function sharedTurnMarkdown(role: string, text: string): string {
 		const summary = withheldSummary(notice.text);
 		return `> **Reply not shown.** ${summary || "Keating couldn't verify this reply."}`;
 	}
-	const visible = role === "user" ? learnerAnswerMarkdown(text) : stripReviewNotice(text);
+	const visible = role === "user" ? attachmentMarkdown(learnerAnswerMarkdown(text)) : stripReviewNotice(text);
 	return visible
 		.replace(/\[([^\]\n]+)\]\(\[remote URL omitted\]\)/g, "$1 *(link removed)*")
 		.replace(/\[remote URL omitted\]/g, "*(link removed)*");

@@ -99,11 +99,12 @@ test.each(["complete", "incomplete", "addition rejected", "echo", "tool", "cance
           tool_success_invented: mode === "addition rejected" && text?.includes(example) ? .99 : .01 };
       }),
       onProgress: snapshot => snapshots.push(snapshot),
-      onAnswerStage: ({ reply }) => { stages.push(reply.text); },
+      onAnswerStage: ({ reply }) => { stages.push(reply.text); return { text: reply.text }; },
       generate: async input => {
         inputs.push(input);
         if (input.attempt <= 2) return draft(input.attempt === 1 ? base : alternate);
         expect(stages).toEqual([alternate]);
+        expect(input.continuation?.delivery).toBe("opening-emitted");
         expect(input.feedback.map(item => item.id)).toEqual(["requested_part_missing"]);
         expect(input.continuation?.text).toBe(alternate);
         if (mode === "cancel") controller.abort();
@@ -159,7 +160,7 @@ test("a sibling or addition that introduces a new confirmed problem cannot displ
         known_context_reasked: text?.includes(worse) ? .99 : .01 };
     }),
     generate: async ({ attempt }) => draft(attempt === 1 ? base : attempt === 2 ? alternate + " " + worse : worse),
-    onAnswerStage: ({ reply }) => stages.push(reply.text),
+    onAnswerStage: ({ reply }) => { stages.push(reply.text); return { text: reply.text }; },
   });
   expect(stages).toEqual([base]);
   expect(result.receipt.attempts).toHaveLength(3);
@@ -170,7 +171,7 @@ test("a sibling or addition that introduces a new confirmed problem cannot displ
 test("an explicit explanation that both drafts omit can be added without rewriting the reviewed answer", async () => {
   const inputs: TeachingDraftGenerationInput[] = [];
   const result = await runTeachingDrafts({
-    turn, parallelDrafts: true,
+    turn, parallelDrafts: true, onAnswerStage: ({ reply }) => ({ text: reply.text }),
     judge: makeTeachingDraftJudge(req => {
       const text = (req.state as { reply?: { text: string } }).reply?.text;
       return { explanation_requested: .99, explanation_missing: text?.includes(example) ? .01 : .99 };
@@ -213,11 +214,78 @@ test("a timed-out addition retains the exact prefix Jev selected, even when anot
       if (attempt === 3) await pending.wait;
       return draft(attempt === 1 ? base : alternate);
     },
-    onAnswerStage: stage => published.push(stage.reply.text),
+    onAnswerStage: stage => { published.push(stage.reply.text); return { text: stage.reply.text }; },
   });
   pending.open();
   expect(published).toEqual([alternate]);
   expect(result.reply?.text).toBe(alternate);
   expect(result.activitySelection?.candidate).toMatchObject({ attempt: 2, reply: result.reply! });
-  expect(result.receipt).toMatchObject({ selectedAttempt: 2, reason: "remaining-part-unresolved" });
+  expect(result.receipt).toMatchObject({ selectedAttempt: 2, reason: "remaining-part-unresolved", delivery: "opening-emitted" });
+  expect(result.delivery).toEqual({ stage: "opening-emitted", text: alternate });
+});
+
+const full = alternate + " For example: " + example;
+const noReceipt = {
+  "no display callback": undefined,
+  "a skipped emit": () => undefined,
+  "an emit that throws": () => { throw new Error("display failed"); },
+  "an emit that rejects": async () => { throw new Error("display failed"); },
+  "an empty receipt": () => ({ text: "  " }),
+} as const;
+test.each(Object.keys(noReceipt) as (keyof typeof noReceipt)[])(
+  "without a delivery receipt (%s) the repair asks for a complete reply, never an addition", async kind => {
+    const inputs: TeachingDraftGenerationInput[] = [], reviewed: string[] = [];
+    const result = await runTeachingDrafts({
+      turn, parallelDrafts: true, maxAttempts: 4,
+      ...(noReceipt[kind] ? { onAnswerStage: noReceipt[kind] } : {}),
+      judge: makeTeachingDraftJudge(req => {
+        const text = (req.state as { reply?: { text: string } }).reply?.text;
+        if (text) reviewed.push(text);
+        return { draft_choice: "draft_2", requested_part_missing: text?.includes(example) ? .01 : .99 };
+      }),
+      generate: async input => {
+        inputs.push(input);
+        return draft(input.attempt === 1 ? base : input.attempt === 2 ? alternate : full);
+      },
+    });
+    expect(inputs).toHaveLength(3);
+    expect(inputs[2]!.continuation).toBeUndefined();
+    expect(inputs[2]!.feedback.map(item => item.id)).toEqual(["requested_part_missing"]);
+    expect(inputs[2]!.feedback[0]!.instruction).not.toContain("already shown");
+    // The complete reply is reviewed as written, not glued onto an opening nobody saw.
+    expect(reviewed.at(-1)).toBe(full);
+    expect(result.reply?.text).toBe(full);
+    expect(result.delivery).toEqual({ stage: "nothing-sent" });
+    expect(result.receipt).toMatchObject({ selectedAttempt: 3, delivery: "nothing-sent" });
+  },
+);
+
+test("an unshown opening stays the released answer when the complete reply fails review", async () => {
+  const result = await runTeachingDrafts({
+    turn, parallelDrafts: true, maxAttempts: 4, onAnswerStage: () => undefined,
+    judge: makeTeachingDraftJudge(() => ({ draft_choice: "draft_2", requested_part_missing: .99 })),
+    generate: async ({ attempt }) => draft(attempt === 1 ? base : attempt === 2 ? alternate : full),
+  });
+  expect(result.status).toBe("released");
+  expect(result.reply?.text).toBe(alternate);
+  expect(result.receipt).toMatchObject({ selectedAttempt: 2, reason: "remaining-part-unresolved", delivery: "nothing-sent" });
+});
+
+test("the addition quotes the exact text on the receipt, and the state survives a failed addition", async () => {
+  const inputs: TeachingDraftGenerationInput[] = [];
+  const result = await runTeachingDrafts({
+    turn, parallelDrafts: true, maxAttempts: 4,
+    onAnswerStage: async ({ reply }) => ({ text: reply.text }),
+    judge: makeTeachingDraftJudge(req => ({ draft_choice: "draft_2",
+      requested_part_missing: (req.state as { reply?: { text: string } }).reply?.text.includes(example) ? .01 : .99 })),
+    generate: async input => {
+      inputs.push(input);
+      if (input.attempt === 3) throw new Error("draft-token-limit");
+      return draft(input.attempt === 1 ? base : alternate);
+    },
+  });
+  expect(inputs[2]!.continuation).toEqual({ text: alternate, delivery: "opening-emitted" });
+  expect(result.reply?.text).toBe(alternate);
+  expect(result.delivery).toEqual({ stage: "opening-emitted", text: alternate });
+  expect(result.receipt.attempts[2]).toMatchObject({ status: "generation-error", generationFinish: "token-limit" });
 });

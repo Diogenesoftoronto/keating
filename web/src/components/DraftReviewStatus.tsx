@@ -36,6 +36,16 @@ function issues(snapshot: TeachingDraftSnapshot): string[] {
   return [...groups];
 }
 
+function fastReplyDescription(followUp: TeachingDraftSnapshot["followUp"]): string {
+  const lead = "Fast reply: shown at once, then checked in the background.";
+  if (!followUp) return `${lead} The check is still running.`;
+  if (followUp.outcome === "none") return `${lead} The check found nothing to add.`;
+  if (followUp.outcome === "posted" || followUp.outcome === "diverted") {
+    return `${lead} The check found ${followUp.findings.join(", ") || "something to add"}, so a ${followUp.kind === "work" ? "reviewed" : "quick"} follow-up was posted.`;
+  }
+  return `${lead} The check did not finish (${followUp.outcome}).`;
+}
+
 export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = false }: { sessionId: string; status: TeachingDraftStatus | null; showDeveloperDetails?: boolean }) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -55,6 +65,8 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
   const bestEffort = snapshot.phase === "released" && snapshot.reason === "best-effort-draft";
   const description = snapshot.phase === "released"
     ? snapshot.reason === "direct-reply" ? "A quick check judged this a simple turn, so the tutor answered directly without drafting or review."
+      : snapshot.reason === "fast-reply" ? fastReplyDescription(snapshot.followUp)
+      : snapshot.reason === "follow-up-quick" ? "A quick follow-up written from the background check of the previous reply."
       : bestEffort ? "The best available response is shown. Some review concerns remain; you can flag a problem below."
       : `${reviewedCount} ${reviewedCount === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
     : snapshot.phase === "withheld"

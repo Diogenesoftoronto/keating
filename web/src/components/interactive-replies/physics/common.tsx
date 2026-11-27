@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from "react";
 import { RotateCcw, Undo2 } from "lucide-react";
+export { useElementWidth } from "../hooks";
+export { useReducedMotion } from "../../../hooks/use-media-query";
 
 /* Shared hooks and chrome for the three PhysicsLab modes. */
 
@@ -14,32 +16,6 @@ export function sci(v: number, digits = 2): string {
   if (e >= -2 && e < 4) return fmt(v, Math.max(0, digits - 1 - Math.max(0, e)));
   const m = v / 10 ** e, sup = String(e).replace("-", "⁻").replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+d]);
   return `${m.toFixed(digits - 1)}×10${sup}`.replace("-", "−");
-}
-
-export function useWidth(ref: React.RefObject<HTMLElement | null>, fallback = 640) {
-  const [w, setW] = useState(fallback);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => { const nw = Math.round(el.getBoundingClientRect().width); if (nw > 0) setW(nw); });
-    ro.observe(el);
-    const nw = Math.round(el.getBoundingClientRect().width); if (nw > 0) setW(nw);
-    return () => ro.disconnect();
-  }, [ref]);
-  return w;
-}
-
-export function useReducedMotion() {
-  const [r, setR] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const q = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setR(q.matches);
-    const on = () => setR(q.matches);
-    q.addEventListener?.("change", on);
-    return () => q.removeEventListener?.("change", on);
-  }, []);
-  return r;
 }
 
 /** Committed state + undo stack + a live preview while a gesture runs. Cancelled gestures discard the preview. */

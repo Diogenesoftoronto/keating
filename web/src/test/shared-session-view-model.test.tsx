@@ -234,6 +234,17 @@ describe("readable shared turns", () => {
 		expect(sharedTurnMarkdown("user", broken)).not.toContain("keating-learner-response");
 	});
 
+	test("show an attached file as a line instead of the model's attachment markup", () => {
+		const pdf = 'I have worked on a draft for this.\n<attachment name="current-draft.pdf" type="application/pdf">\n<pdf filename="current-draft.pdf">\n<page number="1">\nConcept Proposal: Keating\n</page>\n<page number="2">\nis needed to increase engagement\n</page>\n</pdf>\n</attachment>';
+		const shown = sharedTurnMarkdown("user", pdf);
+		expect(shown).toBe("I have worked on a draft for this.\n\n*Attached* **current-draft.pdf** · PDF, 2 pages");
+		for (const markup of ["<attachment", "<pdf", "<page", "Concept Proposal"]) expect(shown).not.toContain(markup);
+		const notes = sharedTurnMarkdown("user", '<attachment name="my_notes [v2].md" type="text/markdown">\n# Notes\n</attachment>\nWhat do you think?');
+		expect(notes).toBe("*Attached* **my\\_notes \\[v2\\].md** · MD\n\nWhat do you think?");
+		// A link-length cap can cut the closing tag; the markup still stays out of view.
+		expect(sharedTurnMarkdown("user", '<attachment name="long.pdf" type="application/pdf">\n<pdf filename="long.pdf">\n<page number="1">\ntext')).toBe("*Attached* **long.pdf** · PDF, 1 page");
+	});
+
 	test("number visible turns in order and keep the saved text as the raw source", () => {
 		const rich = richSharedSession();
 		const turns = [{ role: "user", text: "Explain it" }, { role: "assistant", text: withheld }, { role: "user", text: answer }, { role: "assistant", text: linked }]

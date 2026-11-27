@@ -1223,6 +1223,17 @@ body .recess-row > button.keating-select.keating-select {
   text-transform: uppercase;
 }
 .recess-gate[data-kind="truefalse"] strong { font-size: 0.96rem; }
+/* The chat's own picture beside a question that needs it: whole, never cropped. */
+.recess-picture { margin: 0; justify-self: center; max-width: 100%; }
+.recess-picture img {
+  display: block;
+  max-width: 100%;
+  max-height: min(28vh, 220px);
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+.recess-wind .recess-picture img { max-height: min(36vh, 280px); }
 .recess-gate .katex,
 .recess-gate-lanes .katex,
 .recess-gate-targets .katex,
@@ -1564,6 +1575,7 @@ body .recess-row > button.keating-select.keating-select {
     padding: 12px;
     border-radius: 12px 12px 0 0;
   }
+  .recess-picture img { max-height: 22vh; }
   .recess-gate {
     top: 40px;
     padding: 7px 10px;

@@ -5,6 +5,8 @@ import {
   readEc50, readHalfLife, response, solveScale, terms, type Cycle, type Dose, type OncParams, type PdState, type Route,
 } from "./model";
 import "./component.css";
+import { useElementWidth } from "../hooks";
+import { useReducedMotion } from "../../../hooks/use-media-query";
 
 /* PharmLab: the learner drags the drug itself (doses on a timeline, antagonist molecules onto a concentration line,
    chemotherapy cycles onto a calendar). Every curve comes from model.ts. Educational model, not for clinical dosing. */
@@ -389,32 +391,6 @@ const molar = (m: number) => {
 const sci = (n: number) => { const e = Math.floor(Math.log10(n)); const m = n / 10 ** e; return m < 1.05 ? `10${sup(e)}` : `${m.toFixed(1)}×10${sup(e)}`; };
 const sup = (e: number) => String(e).split("").map(ch => "⁰¹²³⁴⁵⁶⁷⁸⁹"["0123456789".indexOf(ch)] ?? (ch === "-" ? "⁻" : ch)).join("");
 
-function useWidth(ref: React.RefObject<HTMLElement | null>, fallback = 640) {
-  const [w, setW] = useState(fallback);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => { const nw = Math.round(el.getBoundingClientRect().width); if (nw > 0) setW(nw); });
-    ro.observe(el);
-    const nw = Math.round(el.getBoundingClientRect().width); if (nw > 0) setW(nw);
-    return () => ro.disconnect();
-  }, [ref]);
-  return w;
-}
-
-function useReducedMotion() {
-  const [r, setR] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const q = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setR(q.matches);
-    const on = () => setR(q.matches);
-    q.addEventListener?.("change", on);
-    return () => q.removeEventListener?.("change", on);
-  }, []);
-  return r;
-}
-
 /** Committed state + undo stack + a live preview while a gesture runs. Cancelled gestures discard the preview. */
 function useEditable<S>(initial: S, onChange?: () => void) {
   const [state, setState] = useState(initial);
@@ -595,7 +571,7 @@ function PkLab({ config: c, onChange, onShare }: { config: PkConfig; onChange?: 
   const initial = useMemo<PkState>(() => ({ doses: c.regimen.doses.map(d => ({ ...d })), cl: 1, v: 1, interval: c.regimen.interval }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const [msg, setMsg] = useState("");
@@ -1012,7 +988,7 @@ function ReceptorLab({ config: c, onChange, onShare }: { config: PdConfig; onCha
   const initial = useMemo<RecState>(() => ({ conc: Object.fromEntries(ligs.map(l => [l.id, l.conc ?? 0])), probe: ag.probe ?? ag.ec50 * 10 }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const s = ed.view, base = ed.state;
@@ -1144,7 +1120,7 @@ function QuantalLab({ config: c, onChange, onShare }: { config: PdConfig; onChan
   const initial = useMemo<QState>(() => ({ dose: q.dose, td50: q.td50 }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const s = ed.view, base = ed.state;
@@ -1237,7 +1213,7 @@ function OncLab({ config: c, onChange, onShare }: { config: OncConfig; onChange?
   const initial = useMemo<OncState>(() => ({ cycles: c.regimen.cycles.map(x => ({ ...x })), gcsf: !!c.marrow.gcsf }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const shown = ed.view, base = ed.state;

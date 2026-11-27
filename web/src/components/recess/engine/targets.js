@@ -102,7 +102,7 @@ export function startTargetGate(G, q, order) {
     st: 0,
     t: 0,
     // Time to read the question before any shot counts; shots already flying never answer it.
-    arm: Math.max(ARM_TIME, 1.2),
+    arm: Math.max(ARM_TIME, q.image ? 2.4 : 1.2), // a picture takes longer to read
     pick: -1,
     targets: layoutTargets(G, a.length),
   };

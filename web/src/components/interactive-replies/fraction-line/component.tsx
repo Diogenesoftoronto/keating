@@ -2,6 +2,7 @@ import { Component, useEffect, useId, useMemo, useRef, useState, type ReactNode 
 import { DraggableRenderer, inOrder, param, scale, translate, type Draggable } from "dragology";
 import { ArrowDown, ArrowUp, Check, Layers, MapPin, RotateCcw, Scissors, Undo2 } from "lucide-react";
 import "./component.css";
+import { useCancelGesture } from "../hooks";
 
 /* ================= Public config ================= */
 export type Tone = "a" | "b" | "c";
@@ -503,20 +504,9 @@ export function Frac({ num, den, tone }: { num: number | string; den: number | s
   return <span className={`nl-frac nl-tone-${tone}`}><span>{num}</span><span>{den}</span></span>;
 }
 
-
 /** Dragology listens for pointerup only, so an interrupted gesture (pointercancel, window blur) would leave
     the drag live and the next pointerup would apply the hovered edit. Remount the renderer instead: the
     preview is discarded and the last committed state stays. */
-function useCancelGesture(active: boolean, cancel: () => void) {
-  const ref = useRef({ active, cancel });
-  ref.current = { active, cancel };
-  useEffect(() => {
-    const on = () => { if (!ref.current.active) return; document.body.style.cursor = ""; ref.current.cancel(); };
-    document.addEventListener("pointercancel", on);
-    window.addEventListener("blur", on);
-    return () => { document.removeEventListener("pointercancel", on); window.removeEventListener("blur", on); };
-  }, []);
-}
 
 /* ================= Component ================= */
 export function NumberLine(props: NumberLineProps) {

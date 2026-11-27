@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { displacementAt, intensityAt, measuredFringeSpacing, pathDifference, screenProfile, wavelets, type Wavelet, type WaveScene } from "./physics";
 import {
   Actions, clamp, Disclosure, fmt, Found, handleCentres, keyStep, readColour, Shell, snap, svgToClient, useDrag, useEditable,
-  useReducedMotion, useScheme, useTestApi, useWidth, type Pt,
+  useReducedMotion, useScheme, useTestApi, useElementWidth, type Pt,
 } from "./common";
 import type { ShareSummary, WaveFinding, WavesConfig } from "./types";
 
@@ -95,7 +95,7 @@ export function WavesLab({ config: c, onChange, onShare }: { config: WavesConfig
   }), [c]);
   const ed = useEditable(initial, onChange);
   const wrap = useRef<HTMLDivElement>(null), svg = useRef<SVGSVGElement>(null), canvas = useRef<HTMLCanvasElement>(null), root = useRef<HTMLDivElement>(null);
-  const W = useWidth(wrap);
+  const W = useElementWidth(wrap);
   const [dragging, setDragging] = useState<string | null>(null);
   const bind = useDrag(svg, ed, setDragging);
   const reduced = useReducedMotion();

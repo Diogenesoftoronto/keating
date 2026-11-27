@@ -1,6 +1,7 @@
 import { packs } from "../../components/recess/engine/packs.js";
 import type { RecessPack, RecessQuestion } from "../../components/recess/types";
 import type { HabitLesson } from "./lesson";
+import { pictureFor } from "./recess-images";
 
 /* Recess builds a playable level from the real chat, without a model.
  *
@@ -1304,7 +1305,8 @@ function quoteFor(turnText: string, snippet: string): string {
 }
 
 function toQuestion(item: Candidate): KindedQuestion {
-  return { kind: item.kind, q: item.q, a: item.a, id: questionId(item.kind, item.q, item.a[0]), ...(item.source ? { source: item.source } : {}) };
+  return { kind: item.kind, q: item.q, a: item.a, id: questionId(item.kind, item.q, item.a[0]),
+    ...(item.source ? { source: item.source } : {}), ...(item.image ? { image: item.image } : {}) };
 }
 
 function interleave(pools: readonly Candidate[][], limit: number): KindedQuestion[] {
@@ -1427,7 +1429,7 @@ const ANALYSIS_CACHE_SIZE = 8;
 /** The full local analysis behind `buildChatRecessPack`, also used for readiness. Memoised per lesson
  * content (small LRU), so rules, pack, candidates and readiness share one pass; callers get a copy. */
 export function analyzeRecessLesson(lesson: HabitLesson): RecessLessonAnalysis | null {
-  const key = JSON.stringify(lesson.map(turn => [turn.role, turn.text]));
+  const key = JSON.stringify(lesson.map(turn => [turn.role, turn.text, turn.images?.map(image => image.id) ?? []]));
   let analysis = analysisCache.get(key);
   if (analysis === undefined) {
     analysis = computeAnalysis(lesson);
@@ -1487,6 +1489,12 @@ function computeAnalysis(lesson: HabitLesson): RecessLessonAnalysis | null {
     const sentence = item.sentence === undefined ? undefined : byId.get(item.sentence);
     const origin = item.origin ?? (sentence ? { turn: sentence.turn, text: restore(sentence.doc, sentence.masked) } : undefined);
     if (origin) item.source = { turn: offset + origin.turn, quote: quoteFor(window[origin.turn].text, origin.text) };
+  }
+  // A question about a picture carries that picture, or it is not asked.
+  for (const pool of pools) for (let index = pool.length - 1; index >= 0; index--) {
+    const image = pictureFor(pool[index], completed);
+    if (image === null) pool.splice(index, 1);
+    else if (image) pool[index].image = { id: image.id, alt: image.alt, src: image.src };
   }
   const picked = mixQuestions(pools, 6);
   const reviveCount = picked.length >= 6 ? 2 : picked.length >= 3 ? 1 : 0;

@@ -2,6 +2,7 @@ import { Segmented } from "../../design-system/kit";
 import { KeatingBot } from "../KeatingBot";
 import "./companion-setting.css";
 import { useSyncExternalStore } from "react";
+import { subscribeStoredPreference } from "../../lib/stored-preference";
 export type CompanionMode = "lively" | "calm" | "off";
 export const preferenceKey = "keating.companion.mode.v1";
 const changed = "keating:companion-mode-changed";
@@ -25,17 +26,7 @@ export function saveMode(
 	}
 	if (typeof window !== "undefined") window.dispatchEvent(new Event(changed));
 }
-function subscribe(notify: () => void) {
-	const storage = (e: StorageEvent) => {
-		if (!e.key || e.key === preferenceKey) notify();
-	};
-	window.addEventListener(changed, notify);
-	window.addEventListener("storage", storage);
-	return () => {
-		window.removeEventListener(changed, notify);
-		window.removeEventListener("storage", storage);
-	};
-}
+const subscribe = subscribeStoredPreference(preferenceKey, changed);
 export function useCompanionMode() {
 	return useSyncExternalStore(subscribe, readMode, () => "lively" as const);
 }

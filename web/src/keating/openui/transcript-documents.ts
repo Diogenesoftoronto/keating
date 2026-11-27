@@ -1,5 +1,6 @@
 import { tryCompileOpenUISourceToSharedDocument, type UiDocument } from "@keating/learner-contracts";
 import { parseOpenUIMessageSegments } from "./segments";
+import type { OpenUIDocumentScope } from "./types";
 
 /**
  * Rebuilds presented OpenUI documents from a saved session transcript, with
@@ -23,9 +24,9 @@ export function transcriptMessageText(content: unknown): string {
 	return content.map((part) => part && typeof part === "object" && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string" ? (part as { text: string }).text : "").filter(Boolean).join("\n");
 }
 
-/** Complete, valid documents in one message, under the chat renderer's scope. */
-export function transcriptDocumentsIn(text: string, sessionId: string, messageId: string): UiDocument[] {
-	return parseOpenUIMessageSegments(text, { sessionId, messageId }).flatMap((segment) => {
+/** Complete, valid documents in one message's text, compiled under `scope`. */
+export function documentsInScope(text: string, scope: OpenUIDocumentScope): UiDocument[] {
+	return parseOpenUIMessageSegments(text, scope).flatMap((segment) => {
 		if (segment.type !== "openui" || !segment.complete) return [];
 		if (segment.format === "document") return segment.error || !segment.document ? [] : [segment.document];
 		const compiled = tryCompileOpenUISourceToSharedDocument(segment.program || segment.rawProgram, {
@@ -35,6 +36,11 @@ export function transcriptDocumentsIn(text: string, sessionId: string, messageId
 		});
 		return compiled.ok ? [compiled.document] : [];
 	});
+}
+
+/** Complete, valid documents in one message, under the chat renderer's scope. */
+export function transcriptDocumentsIn(text: string, sessionId: string, messageId: string): UiDocument[] {
+	return documentsInScope(text, { sessionId, messageId });
 }
 
 const OFFSETS = [0, ...Array.from({ length: 40 }, (_, step) => (step % 2 ? -1 : 1) * (Math.floor(step / 2) + 1))];

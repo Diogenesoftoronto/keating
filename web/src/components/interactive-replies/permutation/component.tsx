@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DraggableRenderer, Vec2, rotateDeg, translate, type Draggable } from "dragology";
 import "./component.css";
+import { useCancelGesture } from "../hooks";
 
 /* ============================================================================
    PermutationLab: one permutation, seen several linked ways at once.
@@ -270,20 +271,9 @@ const plural = (k: number, w: string) => `${k} ${w}${k === 1 ? "" : "s"}`;
 /** "seat 2" / "seats 1 and 2" */
 const placesText = (place: string, xs: string[]) => `${place}${xs.length === 1 ? "" : "s"} ${listJoin(xs)}`;
 
-
 /** Dragology listens for pointerup only, so an interrupted gesture (pointercancel, window blur) would leave
     the drag live and the next pointerup would apply the hovered edit. Remount the renderer instead: the
     preview is discarded and the last committed state stays. */
-function useCancelGesture(active: boolean, cancel: () => void) {
-  const ref = useRef({ active, cancel });
-  ref.current = { active, cancel };
-  useEffect(() => {
-    const on = () => { if (!ref.current.active) return; document.body.style.cursor = ""; ref.current.cancel(); };
-    document.addEventListener("pointercancel", on);
-    window.addEventListener("blur", on);
-    return () => { document.removeEventListener("pointercancel", on); window.removeEventListener("blur", on); };
-  }, []);
-}
 
 /* ---------- Component ---------- */
 /* SSR-safe first-render width; the real width is measured before the first paint. */
